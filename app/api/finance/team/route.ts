@@ -1,6 +1,7 @@
 // The subs tracker's data: one encrypted blob per team, plus the team's login
 // record (encryption salt and password verifier — never the password itself),
 // so a password change reaches every device.
+import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminPassword } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
@@ -53,8 +54,28 @@ export async function GET(req: NextRequest) {
 
 type Body = {
   blob?: { ct?: unknown; iv?: unknown };
-  auth?: { encSalt?: unknown; verifySalt?: unknown; verifyHash?: unknown };
+  auth?: Record<string, unknown>;
 };
+
+/** A team's login record. writeHash is the SHA-256 of the team's write token. */
+type Auth = { encSalt: string; verifySalt: string; verifyHash: string; writeSalt?: string; writeHash?: string };
+
+const sha256 = (s: string) => createHash("sha256").update(s).digest("base64");
+const same = (a: string, b: string) =>
+  a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+/** A well-formed login record from a request, or null. */
+function cleanAuth(a: Record<string, unknown> | undefined): Auth | null {
+  if (!a || typeof a.encSalt !== "string" || typeof a.verifySalt !== "string" || typeof a.verifyHash !== "string") {
+    return null;
+  }
+  const out: Auth = { encSalt: a.encSalt, verifySalt: a.verifySalt, verifyHash: a.verifyHash };
+  if (typeof a.writeSalt === "string" && typeof a.writeHash === "string") {
+    out.writeSalt = a.writeSalt;
+    out.writeHash = a.writeHash;
+  }
+  return out;
+}
 
 async function put(req: NextRequest) {
   const id = await team(req);
@@ -67,13 +88,26 @@ async function put(req: NextRequest) {
   try {
     // A team with no password yet is set up once, by a coach who gives the
     // Coach Admin password; after that it can only be opened with its own.
-    const hasAuth = !!parse(await redis(["GET", financeAuthKey(id)]));
+    const current = parse<Auth>(await redis(["GET", financeAuthKey(id)]));
+    const hasAuth = !!current;
     const setupKey = req.headers.get("x-admin-key");
     if (!hasAuth || setupKey !== null) {
       if (hasAuth) return NextResponse.json({ error: "team already set up" }, { status: 409 });
       if (!body.auth || !checkAdminPassword(setupKey ?? "", process.env.ADMIN_KEY)) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
+    }
+    // Saving needs the team's write token, which only someone who knows the
+    // team password can work out; the server keeps just its SHA-256. Teams set
+    // up before tokens existed have no writeHash until they next unlock.
+    const auth = cleanAuth(body.auth);
+    if (current?.writeHash) {
+      const token = req.headers.get("x-write-token") ?? "";
+      if (!token || !same(sha256(token), current.writeHash)) {
+        return NextResponse.json({ error: "not allowed" }, { status: 403 });
+      }
+      // a password change can't take the protection away
+      if (auth && !auth.writeHash) return NextResponse.json({ error: "bad login record" }, { status: 400 });
     }
     const cur = parse<{ rev?: number }>(await redis(["GET", financeDataKey(id)]));
     const record = {
@@ -82,22 +116,9 @@ async function put(req: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
     const writes = [redis(["SET", financeDataKey(id), JSON.stringify(record)])];
-    // A password change sends the team's new login record with the data.
-    const a = body.auth;
-    if (
-      a &&
-      typeof a.encSalt === "string" &&
-      typeof a.verifySalt === "string" &&
-      typeof a.verifyHash === "string"
-    ) {
-      writes.push(
-        redis([
-          "SET",
-          financeAuthKey(id),
-          JSON.stringify({ encSalt: a.encSalt, verifySalt: a.verifySalt, verifyHash: a.verifyHash }),
-        ]),
-      );
-    }
+    // A password change (or a team's first write token) sends the team's new
+    // login record with the data.
+    if (auth) writes.push(redis(["SET", financeAuthKey(id), JSON.stringify(auth)]));
     await Promise.all(writes);
     return NextResponse.json({ rev: record.rev });
   } catch (e) {

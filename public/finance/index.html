@@ -519,13 +519,29 @@
     if(!res.ok) throw new Error('GET ' + res.status);
     return res.json();
   }
+  // Saves carry the team's write token, worked out from its password; the
+  // server only accepts a save whose token matches the one the team was set
+  // up with, so nobody can overwrite a team's data without its password.
+  let writeToken = null;
+  function writeHeaders(){
+    const h = {'content-type':'application/json'};
+    if(writeToken) h['x-write-token'] = writeToken;
+    return h;
+  }
+  async function sha256b64(text){ return b64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))); }
+  /** A new write salt for `pass`, with its token and the hash the server keeps. */
+  async function newWriteAuth(pass){
+    const writeSalt = crypto.getRandomValues(new Uint8Array(16));
+    const token = await deriveVerify(pass, writeSalt);
+    return { writeSalt: b64(writeSalt), writeHash: await sha256b64(token), token };
+  }
   async function serverPut(id, blob){
-    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ blob }) });
+    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:writeHeaders(), body: JSON.stringify({ blob }) });
     if(!res.ok) throw new Error('PUT ' + res.status);
     return res.json();
   }
   async function serverPutFull(id, blob, auth){
-    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ blob, auth }) });
+    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:writeHeaders(), body: JSON.stringify({ blob, auth }) });
     if(!res.ok) throw new Error('PUT ' + res.status);
     return res.json();
   }
@@ -1248,8 +1264,19 @@
     currentTeam = matchedId;
     currentAuth = matchedAuth;
     cryptoKey = await deriveKey(pass, ub64(matchedAuth.encSalt));
+    writeToken = matchedAuth.writeSalt ? await deriveVerify(pass, ub64(matchedAuth.writeSalt)) : null;
     await loadFromRecord(records[matchedId], pass);
+    if(!matchedAuth.writeSalt) await addWriteToken(pass);
     return true;
+  }
+  // A team set up before write tokens gets one the first time it's unlocked.
+  async function addWriteToken(pass){
+    try {
+      const w = await newWriteAuth(pass);
+      const auth = Object.assign({}, currentAuth, { writeSalt: w.writeSalt, writeHash: w.writeHash });
+      const res = await serverPutFull(currentTeam, await encryptState(), auth);
+      currentAuth = auth; writeToken = w.token; localRev = res.rev;
+    } catch(e){ console.warn('Could not add the write token yet', e); }
   }
   // ---------- First-time setup: give a team its password ----------
   // A team without a password can't be opened by anyone, so a coach sets one
@@ -1283,7 +1310,8 @@
     const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
     try {
       const encSalt = crypto.getRandomValues(new Uint8Array(16)), verifySalt = crypto.getRandomValues(new Uint8Array(16));
-      const auth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash: await deriveVerify(pass, verifySalt) };
+      const w = await newWriteAuth(pass);
+      const auth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash: await deriveVerify(pass, verifySalt), writeSalt: w.writeSalt, writeHash: w.writeHash };
       currentTeam = id; currentAuth = auth;
       cryptoKey = await deriveKey(pass, encSalt);
       state = defaultState(); state.settings.team = teamName(id);
@@ -1292,7 +1320,7 @@
       if(res.status === 401){ err.textContent = 'That Coach Admin password isn\u2019t right.'; cryptoKey = null; currentTeam = null; return; }
       if(res.status === 409){ err.textContent = 'This team already has a password \u2014 unlock it instead.'; cryptoKey = null; currentTeam = null; return; }
       if(!res.ok) throw new Error('PUT ' + res.status);
-      localRev = (await res.json()).rev; apiAvailable = true;
+      localRev = (await res.json()).rev; apiAvailable = true; writeToken = w.token;
       writeCache(currentTeam, { blob, rev: localRev });
       unlockApp();
       flash('Team set up \u2014 share its password with whoever looks after its subs');
@@ -1395,12 +1423,13 @@
     const verifySalt = crypto.getRandomValues(new Uint8Array(16));
     const newKey = await deriveKey(newPass, encSalt);
     const verifyHash = await deriveVerify(newPass, verifySalt);
-    const newAuth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash };
+    const w = await newWriteAuth(newPass);
+    const newAuth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash, writeSalt: w.writeSalt, writeHash: w.writeHash };
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, newKey, new TextEncoder().encode(JSON.stringify(state))));
     const blob = { iv:b64(iv), ct:b64(ct) };
-    const res = await serverPutFull(currentTeam, blob, newAuth); // writes data + auth together
-    cryptoKey = newKey; currentAuth = newAuth; localRev = res.rev;
+    const res = await serverPutFull(currentTeam, blob, newAuth); // writes data + auth together, with the old token
+    cryptoKey = newKey; currentAuth = newAuth; localRev = res.rev; writeToken = w.token;
     writeCache(currentTeam, { blob, rev: localRev });
   }
 
