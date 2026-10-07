@@ -113,7 +113,7 @@ const TOOLS: {
   },
 ];
 
-export default function AdminHome() {
+export default function AdminHome({ canResetPassword = false }: { canResetPassword?: boolean }) {
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -191,6 +191,14 @@ export default function AdminHome() {
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
+            {canResetPassword && (
+              <Link
+                href="/reset-password"
+                className="mt-4 block text-center text-sm font-semibold text-green-700 hover:text-green-800"
+              >
+                Forgot the password?
+              </Link>
+            )}
             <Link
               href="/"
               className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"

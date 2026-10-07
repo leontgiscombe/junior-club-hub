@@ -17,6 +17,8 @@ type Snapshot = {
   changes: ClubChanges;
   crest: { width: number; height: number; updatedAt: string } | null;
   teams: Team[];
+  /** The club's own sign-in details on the platform (none on a single-club hub). */
+  account: { email: string } | null;
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
@@ -415,6 +417,20 @@ export default function ClubSettings() {
 
         <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
 
+        {snap.account && (
+          <AccountSection
+            email={snap.account.email}
+            adminKey={key}
+            onPasswordChanged={(next) => {
+              // stay signed in with the new password
+              setKey(next);
+              const url = new URL(window.location.href);
+              url.searchParams.set("key", next);
+              window.history.replaceState(null, "", url);
+            }}
+          />
+        )}
+
         <div className="sticky bottom-4 mt-6">
           <button
             onClick={save}
@@ -663,5 +679,83 @@ function Toggle({
         className="relative mt-1 h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400"
       />
     </label>
+  );
+}
+
+// The club's contact email (where password resets go) and its coach password.
+// Saved on their own, so they don't touch unsaved changes above.
+function AccountSection({
+  email,
+  adminKey,
+  onPasswordChanged,
+}: {
+  email: string;
+  adminKey: string;
+  onPasswordChanged: (password: string) => void;
+}) {
+  const [newEmail, setNewEmail] = useState(email);
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [busy, setBusy] = useState<"email" | "password" | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function save(kind: "email" | "password") {
+    setMessage(null);
+    if (kind === "password" && password !== password2) {
+      return setMessage({ ok: false, text: "The two passwords don't match." });
+    }
+    setBusy(kind);
+    try {
+      const res = await fetch(`/api/settings?key=${encodeURIComponent(adminKey)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account: kind === "email" ? { email: newEmail } : { password } }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "That didn't save");
+      if (kind === "password") {
+        onPasswordChanged(password);
+        setPassword("");
+        setPassword2("");
+        setMessage({ ok: true, text: "Password changed. Share the new one with your coaches." });
+      } else {
+        setMessage({ ok: true, text: "Email saved." });
+      }
+    } catch (e) {
+      setMessage({ ok: false, text: e instanceof Error ? e.message : "That didn't save" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const input =
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+  const button =
+    "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40";
+  return (
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="font-extrabold text-gray-900">🔑 Sign-In</h2>
+      <label className="mt-4 block">
+        <span className="text-sm font-bold text-gray-800">Club email</span>
+        <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={input} />
+        <span className="mt-1 block text-xs text-gray-400">Password reset links are sent here.</span>
+      </label>
+      <button onClick={() => save("email")} disabled={busy !== null || newEmail.trim() === email} className={button}>
+        {busy === "email" ? "Saving…" : "Save Email"}
+      </button>
+      <div className="mt-5 border-t border-gray-100 pt-4">
+        <span className="text-sm font-bold text-gray-800">Change the coach password</span>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password (8+ characters)" autoComplete="new-password" className={input} />
+        <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="New password again" autoComplete="new-password" className={`${input} mt-2`} />
+        <button onClick={() => save("password")} disabled={busy !== null || password.length < 8} className={button}>
+          {busy === "password" ? "Changing…" : "Change Password"}
+        </button>
+      </div>
+      {message && (
+        <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
+          {message.text}
+        </p>
+      )}
+    </section>
   );
 }

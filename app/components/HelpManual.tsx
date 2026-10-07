@@ -450,6 +450,12 @@ export default function HelpManual() {
             Training Plans or the Camera Register. It leaves the home page and Coach Admin, and
             whatever was saved in it stays for when it&apos;s switched back on.
           </p>
+          <H3>Sign-In</H3>
+          <p>
+            Under <B>🔑 Sign-In</B>, change the club&apos;s email or its coach password. If the
+            password is ever forgotten, tap <B>Forgot the password?</B> on the Coach Admin sign-in
+            page: a reset link goes to the club&apos;s email and works once, for an hour.
+          </p>
           <H3>Teams</H3>
           <p>
             Under <B>👥 Teams</B>, tap <B>Edit</B> on a team to change its name, emoji, the name
