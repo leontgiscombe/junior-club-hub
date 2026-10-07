@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { useTeams } from "./ClubProvider";
+import { useClub, useTeams } from "./ClubProvider";
 import { nameOf, type Team } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import { approachingMilestones, reachedMilestones } from "@/lib/milestones";
@@ -240,6 +240,7 @@ function winners(list: Player[], field: StatField) {
 
 export default function StatsTracker() {
   const { TEAMS, teamName, teamAccent } = useTeams();
+  const { features } = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -1092,13 +1093,15 @@ export default function StatsTracker() {
             >
               🏃 Training Log
             </Link>
-            <Link
-              href={`/admin/stats/player-of-the-month?key=${encodeURIComponent(key)}`}
-              className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
-              title="This month's winner from the awards, with a poster"
-            >
-              🌟 Player of the Month
-            </Link>
+            {features.playerOfMonth && (
+              <Link
+                href={`/admin/stats/player-of-the-month?key=${encodeURIComponent(key)}`}
+                className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
+                title="This month's winner from the awards, with a poster"
+              >
+                🌟 Player of the Month
+              </Link>
+            )}
             <Link
               href={`/admin/stats/presentation?key=${encodeURIComponent(key)}&team=${team}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"

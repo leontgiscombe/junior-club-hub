@@ -3576,6 +3576,11 @@ document.querySelectorAll('.guide-video-link').forEach(link=>{
 <script>
 /* The club's name and slogan come from the hub's settings (club.config.ts). */
 fetch('/api/club').then(function(r){ return r.json(); }).then(function(c){
+  if(c.club.features && c.club.features.trainingHub === false){
+    // switched off on Coach Admin → Settings
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-family:Nunito,sans-serif"><h1 style="font-size:24px">The Training Hub is switched off</h1><a href="/" style="color:#15803d;font-weight:800">&larr; Back to the Team Hub</a></div>';
+    return;
+  }
   document.querySelectorAll('[data-club]').forEach(function(el){ el.textContent = c.club[el.dataset.club] || el.textContent; });
   document.querySelectorAll('.main-badge,.quiz-badge').forEach(function(img){ img.src = c.club.crest; img.alt = c.club.name; });
   document.title = c.club.name + ' \u2014 Training Hub';

@@ -1506,7 +1506,18 @@
       return;
     }
     if(!(window.fetch)){ /* very old browser */ }
-    loadConfig().then(()=>{ setupGate(); registerSW(); }).catch(e=>{
+    loadConfig().then(()=>{
+      if(CLUB.features && CLUB.features.financialAdmin === false){
+        // switched off on Coach Admin → Settings
+        $("#gate-title").textContent = 'Financial Admin is switched off';
+        $("#gate-sub").textContent = CLUB.name + ' isn\u2019t using Financial Admin.';
+        $("#gate-form").style.display = 'none';
+        $("#setup-toggle").style.display = 'none';
+        $("#gate-note").textContent = '';
+        return;
+      }
+      setupGate(); registerSW();
+    }).catch(e=>{
       console.error(e);
       $("#gate-sub").textContent = 'Could not reach the hub. Check your connection and reload.';
     });

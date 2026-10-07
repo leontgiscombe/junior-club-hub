@@ -14,6 +14,7 @@ export async function GET() {
       slogan: CLUB.slogan,
       season: CLUB.kitSeason,
       crest: CLUB.crest.src,
+      features: CLUB.features,
     },
     teams: TEAMS.map((t) => ({
       id: t.slug,

@@ -4,7 +4,7 @@
 import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isTeam } from "@/lib/settings";
+import { getClub, isTeam } from "@/lib/settings";
 import {
   financeAuthKey,
   financeConfigured,
@@ -24,6 +24,8 @@ const parse = <T,>(v: unknown): T | null => {
 };
 
 async function team(req: NextRequest) {
+  // switched off on Coach Admin → Settings: no team is open
+  if (!(await getClub()).features.financialAdmin) return null;
   const id = req.nextUrl.searchParams.get("id") ?? "";
   return (await isTeam(id)) ? id : null;
 }

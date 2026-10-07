@@ -13,9 +13,25 @@ export type Club = {
   kitSeason: string;
   faClubName: string;
   storagePrefix: string;
+  /** Which parts of the hub the club uses (results have their own switch). */
+  features: Features;
 };
 
-export const DEFAULT_CLUB: Club = { ...DEFAULTS, crest: { ...DEFAULTS.crest } };
+/** The parts of the hub a club can switch off on Coach Admin → Settings. */
+export const FEATURES = {
+  trainingHub: { label: "Player Training Hub", hint: "The players' tactics guide, quiz and skill challenges." },
+  kitSizes: { label: "Kit Sizes", hint: "Parents send their child's kit sizes; coaches see the responses." },
+  financialAdmin: { label: "Financial Admin", hint: "Each team's subs, payments and spending." },
+  playerOfMonth: { label: "Player of the Month", hint: "The monthly winner from the awards, with a poster." },
+  trainingPlans: { label: "Training Plans", hint: "Weekly session plans from a shared drill library." },
+  cameraRegister: { label: "Camera Register", hint: "Who films each home game, and whether it's uploaded." },
+} as const;
+export type Feature = keyof typeof FEATURES;
+export type Features = Record<Feature, boolean>;
+
+const ALL_ON = Object.fromEntries(Object.keys(FEATURES).map((f) => [f, true])) as Features;
+
+export const DEFAULT_CLUB: Club = { ...DEFAULTS, crest: { ...DEFAULTS.crest }, features: { ...ALL_ON } };
 
 /** What a coach can change on the Settings page, with each field's limit. */
 export const EDITABLE = {
@@ -28,7 +44,10 @@ export const EDITABLE = {
 export type EditableText = keyof typeof EDITABLE;
 
 /** The saved changes: any of the text fields, and whether results are public. */
-export type ClubChanges = Partial<Record<EditableText, string>> & { publicResults?: boolean };
+export type ClubChanges = Partial<Record<EditableText, string>> & {
+  publicResults?: boolean;
+  features?: Partial<Features>;
+};
 
 /** Keep only well-formed, trimmed fields within their limits. */
 export function cleanChanges(input: unknown): ClubChanges {
@@ -40,6 +59,14 @@ export function cleanChanges(input: unknown): ClubChanges {
     if (typeof v === "string" && v.trim()) out[field] = v.trim().slice(0, EDITABLE[field]);
   }
   if (typeof src.publicResults === "boolean") out.publicResults = src.publicResults;
+  if (src.features && typeof src.features === "object") {
+    const features: Partial<Features> = {};
+    for (const f of Object.keys(FEATURES) as Feature[]) {
+      const v = (src.features as Record<string, unknown>)[f];
+      if (typeof v === "boolean") features[f] = v;
+    }
+    if (Object.keys(features).length) out.features = features;
+  }
   return out;
 }
 

@@ -1,5 +1,7 @@
 import AdminView from "../../components/AdminView";
+import { requireFeature } from "@/lib/settings";
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  await requireFeature("kitSizes", "/admin");
   return <AdminView />;
 }

@@ -1,5 +1,5 @@
 import CameraRegister from "../../components/CameraRegister";
-import { getClub } from "@/lib/settings";
+import { getClub, requireFeature } from "@/lib/settings";
 
 export async function generateMetadata() {
   const CLUB = await getClub();
@@ -9,6 +9,7 @@ export async function generateMetadata() {
   };
 }
 
-export default function CameraPage() {
+export default async function CameraPage() {
+  await requireFeature("cameraRegister", "/admin");
   return <CameraRegister />;
 }

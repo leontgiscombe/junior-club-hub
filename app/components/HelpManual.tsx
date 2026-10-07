@@ -436,6 +436,13 @@ export default function HelpManual() {
             Phones that already saved the hub to their home screen keep the old icon until it&apos;s
             removed and added again.
           </p>
+          <H3>Parts of the Hub</H3>
+          <p>
+            Under <B>🧩 Parts of the Hub</B>, switch off anything the club doesn&apos;t use: results
+            for parents, the Player Training Hub, Kit Sizes, Financial Admin, Player of the Month,
+            Training Plans or the Camera Register. It leaves the home page and Coach Admin, and
+            whatever was saved in it stays for when it&apos;s switched back on.
+          </p>
           <H3>Teams</H3>
           <p>
             Under <B>👥 Teams</B>, tap <B>Edit</B> on a team to change its name, emoji, the name

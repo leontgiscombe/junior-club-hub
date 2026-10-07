@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import KitForm from "../../components/KitForm";
 import KitHeader, { KitFooter } from "../../components/KitHeader";
 import { kitSquad } from "@/lib/kitSquad";
-import { getClub, getTeams } from "@/lib/settings";
+import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import { findTeam } from "@/lib/teams";
 
 // the squad list comes from the stats tracker, so read it fresh each visit
@@ -13,6 +13,7 @@ export default async function KitTeamPage({
 }: {
   params: Promise<{ team: string }>;
 }) {
+  await requireFeature("kitSizes");
   const { team } = await params;
   const found = findTeam(await getTeams(), team);
   if (!found) notFound();
