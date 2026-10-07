@@ -5,7 +5,7 @@
 // page changes.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { CLUB } from "@/club.config";
+import { useClub } from "./ClubProvider";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -17,6 +17,7 @@ const SECTIONS = [
   { id: "player-of-the-month", title: "Player of the Month" },
   { id: "camera-and-kit", title: "Camera Register and Kit Responses" },
   { id: "subs", title: "Financial Admin" },
+  { id: "settings", title: "Settings" },
   { id: "end-of-season", title: "End of Season" },
   { id: "coachs-week", title: "A Coach's Week" },
   { id: "questions", title: "Questions and Fixes" },
@@ -62,6 +63,7 @@ const B = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function HelpManual() {
+  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -186,7 +188,7 @@ export default function HelpManual() {
           <p>
             The tools are the <B>Match Log</B> (marked <em>Start here</em>), <B>Training Log</B>,{" "}
             <B>Player of the Month</B>, <B>Training Plans</B>, <B>Stats Tracker</B>,{" "}
-            <B>Camera Register</B>, <B>Kit Responses</B> and this <B>Help</B>. Each has a{" "}
+            <B>Camera Register</B>, <B>Kit Responses</B>, <B>Settings</B> and this <B>Help</B>. Each has a{" "}
             <B>← Coach Admin</B> link at the top to get back.
           </p>
           <H3>Picking Your Team</H3>
@@ -416,6 +418,23 @@ export default function HelpManual() {
             Under <B>Settings</B> you can turn on <B>reminders</B>: your phone gets a nudge on the
             1st and 15th of each month to check subs. On an iPhone, add the page to your home screen
             first — it appears as <B>Finance</B> with a football-and-£ icon.
+          </p>
+        </Section>
+
+        <Section id="settings" title="Settings">
+          <p>
+            <B>Settings</B> in Coach Admin is where the club&apos;s details live: its name, full
+            name, initials, slogan, season and crest, and whether parents can see results. Every
+            page shows a change as soon as you tap <B>Save Changes</B>.
+          </p>
+          <Steps>
+            <li>Tap <B>Upload Crest</B> and pick the club&apos;s badge. A PNG with a see-through background looks best; it also becomes the home-screen icon.</li>
+            <li>Fill in any of the boxes. An empty box uses the default shown in it.</li>
+            <li>Tap <B>Save Changes</B>. The preview at the top shows how the home page will look.</li>
+          </Steps>
+          <p>
+            Phones that already saved the hub to their home screen keep the old icon until it&apos;s
+            removed and added again.
           </p>
         </Section>
 

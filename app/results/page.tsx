@@ -13,15 +13,18 @@ import { getCurrentSeason } from "@/lib/season";
 import { TEAMS } from "@/lib/teams";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount } from "@/lib/cleanSheets";
-import { CLUB } from "@/club.config";
+import { getClub } from "@/lib/settings";
 
 // Always fresh — results change through the season.
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: `Results – ${CLUB.name}`,
-  description: `Results, tables and top scorers for ${CLUB.fullName}.`,
-};
+export async function generateMetadata() {
+  const CLUB = await getClub();
+  return {
+    title: `Results – ${CLUB.name}`,
+    description: `Results, tables and top scorers for ${CLUB.fullName}.`,
+  };
+}
 
 /**
  * "Alfie Essery" -> "Alfie E." — enough for parents to know who scored without
@@ -57,6 +60,7 @@ export default async function ResultsPage({
   searchParams: Promise<{ team?: string }>;
 }) {
   // switched off in club.config.ts while the teams play non-competitively
+  const CLUB = await getClub();
   if (!CLUB.publicResults) redirect("/");
   const { team: requested } = await searchParams;
   const selected = TEAMS.some((t) => t.slug === requested) ? requested : null;
@@ -105,6 +109,7 @@ export default async function ResultsPage({
       <header className="bg-gradient-to-br from-green-900 to-green-500 px-6 pb-8 pt-10 text-center text-white">
         <Image
           src={CLUB.crest.src}
+          unoptimized
           alt={CLUB.crest.alt}
           width={CLUB.crest.width}
           height={CLUB.crest.height}

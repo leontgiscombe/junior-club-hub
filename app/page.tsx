@@ -1,17 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
-import { CLUB, TEAMS } from "@/club.config";
-
-export const metadata = {
-  title: `${CLUB.name} – Team Hub`,
-  description: `Training, kit sizes and team admin for ${CLUB.fullName}, all in one place.`,
-};
+import { TEAMS } from "@/club.config";
+import { getClub } from "@/lib/settings";
 
 // the same heavy lettering as the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
-export default function Home() {
+export default async function Home() {
+  const CLUB = await getClub();
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Banner: the poster's dry-brush paint strokes under a green wash */}
@@ -28,6 +25,7 @@ export default function Home() {
         <div className="relative">
           <Image
             src={CLUB.crest.src}
+            unoptimized
             alt={CLUB.crest.alt}
             width={CLUB.crest.width}
             height={CLUB.crest.height}

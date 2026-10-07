@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { TEAMS } from "@/lib/teams";
-import { CLUB } from "@/club.config";
+import { getClub } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
 
 export const metadata = {
@@ -9,7 +9,8 @@ export const metadata = {
   description: "Choose your team to set your child's kit size for the season.",
 };
 
-export default function KitTeamPicker() {
+export default async function KitTeamPicker() {
+  const CLUB = await getClub();
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <KitHeader back={{ href: "/", label: "Team Hub" }} title="Kit Sizes" subtitle={CLUB.fullName} />

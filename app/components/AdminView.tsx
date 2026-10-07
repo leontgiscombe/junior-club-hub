@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { TEAMS, isValidTeam, teamName, type TeamSlug } from "@/lib/teams";
 import { getMyTeam, setMyTeam } from "@/lib/myTeam";
-import { CLUB } from "@/club.config";
+import { useClub } from "./ClubProvider";
 
 interface Submission {
   id: string;
@@ -52,6 +52,7 @@ function downloadCSV(rows: Submission[], team: string) {
 // — used by the per-team admin pages at /kit/<team>/admin. With no prop it shows
 // all teams with a selector, used by the combined /kit/admin page.
 export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
+  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [team, setTeam] = useState<TeamSlug>(lockedTeam ?? TEAMS[0].slug);
   const [authed, setAuthed] = useState(false);

@@ -3,7 +3,7 @@ import KitForm from "../../components/KitForm";
 import KitHeader, { KitFooter } from "../../components/KitHeader";
 import { isValidTeam, teamName } from "@/lib/teams";
 import { kitSquad } from "@/lib/kitSquad";
-import { CLUB } from "@/club.config";
+import { getClub } from "@/lib/settings";
 
 // the squad list comes from the stats tracker, so read it fresh each visit
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function KitTeamPage({
 }) {
   const { team } = await params;
   if (!isValidTeam(team)) notFound();
-  const squad = await kitSquad(team);
+  const [squad, CLUB] = await Promise.all([kitSquad(team), getClub()]);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">

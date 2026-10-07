@@ -1,13 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
-import { CLUB } from "@/club.config";
+import { getClub } from "@/lib/settings";
 
 // the same heavy lettering as the home page and the posters
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
 /** The kit pages' banner: the home page's paint strokes, crest and lettering. */
-export default function KitHeader({
+export default async function KitHeader({
   back,
   title,
   subtitle,
@@ -16,6 +16,7 @@ export default function KitHeader({
   title: string;
   subtitle: string;
 }) {
+  const CLUB = await getClub();
   return (
     <header className="relative overflow-hidden bg-[#060906] px-6 pb-14 pt-6 text-center text-white">
       <Image
@@ -35,6 +36,7 @@ export default function KitHeader({
         </div>
         <Image
           src={CLUB.crest.src}
+          unoptimized
           alt={CLUB.crest.alt}
           width={CLUB.crest.width}
           height={CLUB.crest.height}
@@ -57,7 +59,8 @@ export default function KitHeader({
   );
 }
 
-export function KitFooter() {
+export async function KitFooter() {
+  const CLUB = await getClub();
   return (
     <footer className="mt-10 bg-[#060906] px-6 py-8 text-center">
       <p className={`${display.className} text-lg uppercase tracking-wide text-[#3ee04f]`}>
