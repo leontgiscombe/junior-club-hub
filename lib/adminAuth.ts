@@ -7,7 +7,9 @@
 // nobody can sign in. Neither is ever stored in the repo.
 import crypto from "crypto";
 import { headers } from "next/headers";
+import { SESSION_KEY } from "./access";
 import { clientIp } from "./clientIp";
+import { canCoach, currentPerson } from "./people";
 import { rawKv } from "./kv";
 import { DEFAULT_TENANT, getTenant } from "./tenant";
 import { checkTenantPassword, getTenantRecord } from "./tenants";
@@ -75,12 +77,24 @@ export async function coachLockedOut(): Promise<boolean> {
   }
 }
 
-/** Whether `supplied` is the coach password of the club this request is for. */
+/**
+ * Whether `supplied` is the coach password of the club this request is for —
+ * or SESSION_KEY from someone signed in as one of its admins or coaches.
+ */
 export async function isCoach(supplied: string): Promise<boolean> {
   const tenant = await getTenant();
   if (!tenant) return false;
   // no password given isn't a guess (public pages ask without one)
   if (!supplied) return false;
+  // signed in with an account: a club admin or coach here needs no password
+  if (supplied === SESSION_KEY) {
+    try {
+      const me = await currentPerson(tenant);
+      return canCoach(me?.person ?? null);
+    } catch {
+      return false;
+    }
+  }
   if (await coachLockedOut()) return false;
   let ok: boolean;
   if (tenant === DEFAULT_TENANT) ok = checkAdminPassword(supplied, process.env.ADMIN_KEY);

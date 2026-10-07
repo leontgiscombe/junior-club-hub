@@ -14,6 +14,37 @@ export const MEMBER_COOKIE = "gch_member";
 export const PATH_HEADER = "x-hub-path";
 export const MEMBER_COOKIE_MAX_AGE = 400 * 24 * 3600;
 
+/** Signed-in people's session cookie (lib/auth.ts). */
+export const SESSION_COOKIE = "gch_session";
+/** What the coach screens send in place of the coach password when someone's signed in with an account. */
+export const SESSION_KEY = "~account";
+
+/** A person's roles at a club. Club admins and coaches can use Coach Admin. */
+export const ROLES = {
+  admin: "Club admin",
+  coach: "Coach",
+  treasurer: "Treasurer",
+  parent: "Parent",
+  player: "Player",
+} as const;
+export type Role = keyof typeof ROLES;
+export const COACH_ROLES: Role[] = ["admin", "coach"];
+
+/** Someone with an account, at one club: who they are, their roles, and whether they're approved. */
+export type Person = {
+  userId: string;
+  name: string;
+  email: string;
+  roles: Role[];
+  status: MemberStatus;
+  relation?: Relation;
+  team?: { slug: string; name: string };
+  child?: string;
+  note?: string;
+  createdAt: string;
+  decidedAt?: string;
+};
+
 export type Access = { private: boolean; code: string | null };
 export type MemberStatus = "pending" | "approved" | "declined";
 /** Who's asking to join, as they say on the join page. */
@@ -43,6 +74,8 @@ export type Member = {
 const prefix = (tenant: string) => `${tenant === DEFAULT_TENANT ? "" : `t:${tenant}:`}${CLUB.storagePrefix}`;
 export const accessKey = (tenant: string) => `${prefix(tenant)}:settings:access`;
 export const membersKey = (tenant: string) => `${prefix(tenant)}:members`;
+export const peopleKey = (tenant: string) => `${prefix(tenant)}:people`;
+export const sessionKey = (hash: string) => `platform:session:${hash}`;
 export const JOIN_CODES_KEY = "platform:join-codes";
 
 // join codes: 6 characters, without ones that look alike (0/O, 1/I/L)
@@ -116,5 +149,32 @@ export async function isApprovedMember(tenant: string, token: string): Promise<b
   if (memberCache.size > 5000) memberCache.clear();
   if (ok) memberCache.set(k, { at: Date.now() });
   else memberCache.delete(k);
+  return ok;
+}
+
+/** The account a session cookie belongs to, if it's still signed in. */
+export async function sessionUserId(token: string): Promise<string | null> {
+  if (!token) return null;
+  const s = parse<{ userId?: string }>(await kvCall(["GET", sessionKey(await hashToken(token))]));
+  return typeof s?.userId === "string" ? s.userId : null;
+}
+
+export async function readPerson(tenant: string, userId: string): Promise<Person | null> {
+  return parse<Person>(await kvCall(["HGET", peopleKey(tenant), userId]));
+}
+
+const personCache = new Map<string, { at: number }>();
+
+/** Whether a signed-in person is an approved member of `tenant` (approvals remembered for a minute). */
+export async function isApprovedPerson(tenant: string, sessionToken: string): Promise<boolean> {
+  if (!sessionToken) return false;
+  const k = `${tenant}:${sessionToken}`;
+  const hit = personCache.get(k);
+  if (hit && Date.now() - hit.at < 60_000) return true;
+  const userId = await sessionUserId(sessionToken);
+  const ok = !!userId && (await readPerson(tenant, userId))?.status === "approved";
+  if (personCache.size > 5000) personCache.clear();
+  if (ok) personCache.set(k, { at: Date.now() });
+  else personCache.delete(k);
   return ok;
 }

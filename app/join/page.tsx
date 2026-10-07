@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { MEMBER_COOKIE, normaliseCode, readMember, showCode } from "@/lib/access";
 import { getAccess } from "@/lib/members";
+import { currentPerson } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
 import JoinForm from "./JoinForm";
@@ -19,13 +20,15 @@ export async function generateMetadata() {
 
 export default async function JoinPage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
   const tenant = await requireTenant();
-  const [club, access, member, { code }] = await Promise.all([
+  const [club, access, member, me, { code }] = await Promise.all([
     getClub(),
     getAccess(tenant),
     (async () => readMember(tenant, (await cookies()).get(MEMBER_COOKIE)?.value ?? ""))(),
+    currentPerson(tenant),
     searchParams,
   ]);
-  if (member?.status === "approved") redirect("/");
+  // already in (an approved account, or a phone approved before accounts)
+  if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
@@ -37,7 +40,11 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           {access.private && <p className="mt-1 text-sm text-gray-500">This hub is for the club&apos;s members.</p>}
         </div>
         {access.private ? (
-          <JoinForm initialStatus={member?.status ?? "none"} initialCode={normaliseCode(code ?? "").length === 6 ? showCode(normaliseCode(code ?? "")) : ""} />
+          <JoinForm
+            initialStatus={me?.person?.status ?? "none"}
+            initialCode={normaliseCode(code ?? "").length === 6 ? showCode(normaliseCode(code ?? "")) : ""}
+            account={me ? { email: me.user.email, name: me.user.name } : null}
+          />
         ) : (
           // (a link, not a redirect: the hub may take a few seconds to notice it's open)
           <div className="mt-6 text-center">

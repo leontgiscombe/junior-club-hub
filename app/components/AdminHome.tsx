@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
+import { SESSION_KEY } from "@/lib/access";
 import { useClub } from "./ClubProvider";
 import type { Feature } from "@/lib/clubSettings";
 
@@ -150,13 +151,29 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
     }
   }, []);
 
+  // signed in with an account: who as, and whether they're a coach here
+  const [account, setAccount] = useState<{ email: string; canCoach: boolean } | null>(null);
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
     if (urlKey) {
       setKey(urlKey);
       login(urlKey);
+      return;
     }
+    // no password in the link: a club admin or coach signed in with their account goes straight in
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((me) => {
+        if (!me?.user) return;
+        setAccount({ email: me.user.email, canCoach: !!me.canCoach });
+        if (me.canCoach) {
+          setKey(SESSION_KEY);
+          login(SESSION_KEY);
+        }
+      })
+      .catch(() => {});
   }, [login]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -186,6 +203,23 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
           </div>
           <div className="rounded-3xl bg-white p-7 shadow-2xl">
             <p className="mb-4 text-center text-sm font-semibold text-gray-500">🔒 Coaches only</p>
+            {account && !account.canCoach && (
+              <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+                You&apos;re signed in as {account.email}, but you&apos;re not a coach at this club. A club admin can
+                give you the Coach role in Members.
+              </p>
+            )}
+            {!account && (
+              <>
+                <Link
+                  href="/signin?next=/admin"
+                  className="mb-3 block w-full rounded-xl bg-green-600 py-3 text-center font-bold text-white hover:bg-green-700"
+                >
+                  Sign In With Your Email
+                </Link>
+                <p className="mb-3 text-center text-xs text-gray-400">or use the coach password</p>
+              </>
+            )}
             <input
               type="password"
               value={key}
@@ -258,6 +292,12 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
         <p className="mx-auto mb-4 w-fit rounded-full bg-white px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-gray-500 shadow-sm">
           Choose a tool
         </p>
+        {account && key === SESSION_KEY && (
+          <p className="mb-4 text-center text-xs text-gray-500">
+            Signed in as {account.email} ·{" "}
+            <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
+          </p>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
             <Link

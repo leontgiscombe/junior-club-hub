@@ -80,6 +80,12 @@ export default function PrivacyPage() {
               data we cannot read.
             </>,
             <>
+              <strong>Your account (if you have one):</strong> your email address and name, the clubs
+              you belong to and your role at each (e.g. coach, parent), and a cookie that keeps you
+              signed in on your device. There&apos;s no password — you sign in with a code we email
+              you. You can delete your account at any time from its page.
+            </>,
+            <>
               <strong>Members (if the club makes its hub private):</strong> the name of each person
               who asks to join, whether they&apos;re a parent, player or coach, their team, a parent&apos;s
               own child&apos;s name (as they type it, seen only by the club&apos;s coaches), whether a

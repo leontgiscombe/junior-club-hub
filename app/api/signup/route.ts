@@ -77,12 +77,12 @@ export async function POST(req: NextRequest) {
       heading: `Welcome to ${PLATFORM_NAME}!`,
       paragraphs: [
         `${name}'s hub is ready at ${tenantUrl(address)}.`,
-        "Sign in to Coach Admin with your coach password to add your badge, colours and any more teams, then share the address with your parents.",
-        "If you ever forget the coach password, use “Forgot the password?” on the sign-in page and a reset link comes to this email.",
-        `Your club code is ${showCode(code)}. Parents type it at ${platformUrl("/").replace(/^https?:\/\//, "").replace(/\/$/, "")} to ask to join, and you approve them in Coach Admin → Members.`,
+        "Open Coach Admin and choose “Sign In With Your Email” — with this email address you're the club's admin, no password needed. Add your badge, colours and any more teams there.",
+        `Your club code is ${showCode(code)}. Parents, players and your other coaches type it at ${platformUrl("/").replace(/^https?:\/\//, "").replace(/\/$/, "")}, sign in with their email and ask to join. You approve them, and choose what each can do, in Coach Admin → Members.`,
+        "The coach password you chose still works too, for now.",
         ...(contact ? [`Any questions, just reply to this email or write to ${contact}.`] : []),
       ],
-      button: { label: "Open Coach Admin", url: tenantUrl(address, "/admin/settings") },
+      button: { label: "Open Coach Admin", url: tenantUrl(address, "/admin") },
       footer: `You're getting this because this email was used to sign ${name} up on ${PLATFORM_NAME}.`,
     }),
   });

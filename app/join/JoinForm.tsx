@@ -1,19 +1,30 @@
 "use client";
 
-// Ask to join: first the club's code; once it's right, your name, who you are,
-// your team and (for a parent) your child's name. Then this phone waits for a
-// coach to approve it, checking every so often by itself. The team list only
-// shows once the code is right, and nobody sees the club's players here.
+// Ask to join: first the club's code; once it's right, sign in (or make an
+// account) with your email; then your name, who you are, your team and (for a
+// parent) your child's name. Then you wait for a coach to approve you — this
+// page checks every so often by itself. The team list only shows once the code
+// is right, and nobody sees the club's players here.
 import { useEffect, useState } from "react";
 import { RELATIONS, type Relation } from "@/lib/access";
+import SignInForm from "../components/SignInForm";
 
 type Status = "none" | "pending" | "approved" | "declined";
 type TeamOption = { slug: string; name: string };
 
-export default function JoinForm({ initialStatus, initialCode }: { initialStatus: Status; initialCode: string }) {
+export default function JoinForm({
+  initialStatus,
+  initialCode,
+  account,
+}: {
+  initialStatus: Status;
+  initialCode: string;
+  account: { email: string; name: string } | null;
+}) {
   const [status, setStatus] = useState<Status>(initialStatus);
   const [code, setCode] = useState(initialCode);
-  const [name, setName] = useState("");
+  const [signedIn, setSignedIn] = useState(!!account);
+  const [name, setName] = useState(account?.name ?? "");
   const [note, setNote] = useState("");
   const [relation, setRelation] = useState<Relation | "">("");
   const [team, setTeam] = useState("");
@@ -124,8 +135,31 @@ export default function JoinForm({ initialStatus, initialCode }: { initialStatus
     );
   }
 
+  if (!signedIn) {
+    return (
+      <div className="mt-6">
+        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
+          That&apos;s the right code. Now sign in with your email — it makes your account, if you
+          haven&apos;t one, so you can open the hub on any device.
+        </p>
+        <SignInForm
+          next={`/join?code=${encodeURIComponent(code)}`}
+          onSignedIn={async () => {
+            // the account's name, if it has one already
+            const me = await fetch("/api/auth/me", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+            if (me?.user?.name) setName(me.user.name);
+            if (me?.person?.status === "approved") window.location.href = "/";
+            else if (me?.person?.status === "pending") setStatus("pending");
+            setSignedIn(true);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
+      {account && <p className="text-center text-xs text-gray-400">Signed in as {account.email}</p>}
       <label>
         <span className="text-sm font-bold text-gray-800">Your name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoComplete="name" className={input} />
