@@ -2,8 +2,8 @@
 //
 // It reads storage directly rather than going through an API, so there is no
 // public endpoint to widen by accident, and it only ever renders what is safe
-// to show: scores, and players by shortened name (see `shortName`). Nothing
-// from the kit or camera side appears here.
+// to show: scores, and players by name — shortened unless the club's hub is
+// private (lib/names.ts). Nothing from the kit or camera side appears here.
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -13,6 +13,7 @@ import { getCurrentSeason } from "@/lib/season";
 import { getClub, getTeams } from "@/lib/settings";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount } from "@/lib/cleanSheets";
+import { shortName, showFullNames } from "@/lib/names";
 
 // Always fresh — results change through the season.
 export const dynamic = "force-dynamic";
@@ -25,16 +26,6 @@ export async function generateMetadata() {
   };
 }
 
-/**
- * "Jamie Smith" -> "Jamie S." — enough for parents to know who scored without
- * publishing children's full names on a page anyone can open.
- */
-function shortName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  if (parts.length === 1) return parts[0];
-  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
-}
 
 function formatDate(date: string) {
   const d = new Date(`${date}T00:00`);
@@ -64,10 +55,11 @@ export default async function ResultsPage({
   const { team: requested } = await searchParams;
   const selected = TEAMS.some((t) => t.slug === requested) ? requested : null;
 
-  const [players, matches, season] = await Promise.all([
+  const [players, matches, season, fullNames] = await Promise.all([
     listPlayers(),
     listMatches(),
     getCurrentSeason(),
+    showFullNames(),
   ]);
 
   const teams = TEAMS.map((team) => {
@@ -290,7 +282,7 @@ export default async function ResultsPage({
                           {card.rows.map((p) => (
                             <div key={p.id} className="flex items-center gap-2">
                               <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900">
-                                {shortName(p.name)}
+                                {fullNames ? p.name : shortName(p.name)}
                               </span>
                               <span className="shrink-0 text-sm font-extrabold tabular-nums text-green-700">
                                 {p[card.field]}

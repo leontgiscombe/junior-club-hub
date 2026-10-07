@@ -54,7 +54,7 @@ export default function ChildrenEditor({
             value={c.name}
             onChange={(e) => set(i, { name: e.target.value })}
             maxLength={60}
-            placeholder="e.g. Sam B"
+            placeholder="e.g. Sam Bloggs"
             aria-label={`Child ${i + 1}'s name`}
             className={`${field} min-w-0 flex-1 basis-32`}
           />
