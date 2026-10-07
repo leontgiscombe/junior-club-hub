@@ -237,6 +237,11 @@ export default async function Home() {
           {CLUB.slogan}
         </p>
         <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>
+        <p className="mt-3 text-xs text-gray-500">
+          <a href="/privacy" className="hover:text-gray-300">Privacy</a>
+          {" · "}
+          <a href="/terms" className="hover:text-gray-300">Terms</a>
+        </p>
       </footer>
     </div>
   );

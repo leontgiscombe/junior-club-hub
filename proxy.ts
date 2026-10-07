@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/api\/(signup|clubs|health)(\/|$)/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/api\/(signup|clubs|health)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
 
 export function proxy(req: NextRequest) {
   const tenant = tenantFromHost(req.headers.get("host") ?? "");

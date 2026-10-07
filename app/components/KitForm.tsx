@@ -301,6 +301,10 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
       {!canSubmit && !submitting && (
         <p className="text-center text-xs text-gray-400">Choose your child and all three sizes to continue</p>
       )}
+      <p className="text-center text-xs text-gray-400">
+        Sizes go to your child&apos;s coaches only.{" "}
+        <a href="/privacy" className="underline hover:text-gray-600">How we use your information</a>
+      </p>
     </form>
   );
 }
