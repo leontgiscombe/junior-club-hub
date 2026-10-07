@@ -1,4 +1,4 @@
-# Junior Club Hub
+# Grassroots Club Hub
 
 A team hub for junior football clubs: one Next.js app on Vercel with an
 Upstash Redis database, set up for a club from one settings file.
@@ -52,13 +52,13 @@ Built-in drills and a season plan are optional and live in `drill-pack/`
 
 ## Many clubs in one app
 
-Set `ROOT_DOMAIN` (e.g. `juniorclubhub.app`) and point it and its wildcard
-(`*.juniorclubhub.app`) at the deployment:
+Set `ROOT_DOMAIN` (e.g. `grassroots-club-hub.co.uk`) and point it and its wildcard
+(`*.grassroots-club-hub.co.uk`) at the deployment:
 
 - **The root domain** is the platform's own site (`app/platform/`): what the
   hub does, **find your club**, and **sign up**, where a club picks its name,
   web address, contact email and coach password.
-- **Each club** lives at its own subdomain (`riverside.juniorclubhub.app`).
+- **Each club** lives at its own subdomain (`riverside.grassroots-club-hub.co.uk`).
   `proxy.ts` and `lib/tenant.ts` work out the club from the address;
   `lib/kv.ts` stores everything for it under its own key prefix
   (`t:riverside:…`), so clubs never see each other's data. Its coach password
@@ -80,7 +80,7 @@ Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
 2. **Blueprint:** in Render, **New → Blueprint**, pick this repo, and fill in
    the values it asks for:
    - `KV_REST_API_URL`, `KV_REST_API_TOKEN`: from Upstash.
-   - `ROOT_DOMAIN`: your domain, e.g. `juniorclubhub.app`.
+   - `ROOT_DOMAIN`: your domain, e.g. `grassroots-club-hub.co.uk`.
    - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: for subs reminders (generate a
      pair with `npx web-push generate-vapid-keys`).
    - `TRAINING_PLANS_OWNER_KEY`: optional.
@@ -89,7 +89,7 @@ Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
    `CRON_SECRET` is generated for you and shared with the reminder job.
    Leave `ADMIN_KEY` unset: on a platform every club has its own password.
 3. **Domain:** in the web service's **Settings → Custom Domains**, add your
-   domain and its wildcard (`*.juniorclubhub.app`), and create the DNS records
+   domain and its wildcard (`*.grassroots-club-hub.co.uk`), and create the DNS records
    Render shows (a wildcard needs an extra record for its certificate). Every
    club's address then works with HTTPS.
 4. Open your domain: the platform's site, ready for the first club to sign up.
