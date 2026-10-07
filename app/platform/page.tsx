@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Anton } from "next/font/google";
-import { PLATFORM_NAME, rootDomain } from "@/lib/tenant";
+import { PLATFORM_NAME } from "@/lib/tenant";
 import FindClub from "./FindClub";
 
 export const metadata = {
@@ -44,7 +44,7 @@ export default function PlatformHome() {
               Start Your Club →
             </Link>
             <a href="#find" className="rounded-2xl bg-white/10 px-6 py-3.5 font-bold text-white ring-1 ring-white/30 hover:bg-white/20">
-              Find Your Club
+              Join Your Club
             </a>
           </div>
         </div>
@@ -52,12 +52,12 @@ export default function PlatformHome() {
 
       <main className="mx-auto -mt-8 w-full max-w-3xl flex-1 px-5 pb-12">
         <section id="find" className="relative rounded-3xl border border-gray-200 bg-white p-6 shadow-lg">
-          <h2 className="text-xl font-extrabold text-gray-900">Find Your Club</h2>
+          <h2 className="text-xl font-extrabold text-gray-900">Join Your Club</h2>
           <p className="mt-1 mb-4 text-sm text-gray-500">
-            Parents and coaches: your club shares its own link. Tap it, or type your club&apos;s web
-            address here, then save it to your phone.
+            Parents and players: type the club code your coach gave you. Once a coach approves you,
+            save the hub to your phone.
           </p>
-          <FindClub rootDomain={rootDomain()} />
+          <FindClub />
         </section>
 
         <section className="mt-8 grid gap-3 sm:grid-cols-2">
