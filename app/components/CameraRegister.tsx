@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
+import { accountKey, keyQuery } from "./coachKey";
 
 // Home games come from the match log now, so a fixture is only entered once.
 // This page is the filming view of those same games.
@@ -74,6 +75,14 @@ export default function CameraRegister() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -161,7 +170,7 @@ export default function CameraRegister() {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Coach Admin
@@ -222,7 +231,7 @@ export default function CameraRegister() {
             <p className="text-4xl mb-3">🎬</p>
             <p>No home games yet.</p>
             <Link
-              href={`/admin/stats/matches?key=${encodeURIComponent(key)}`}
+              href={`/admin/stats/matches${keyQuery(key)}`}
               className="mt-2 inline-block text-sm font-semibold text-green-700 hover:text-green-800"
             >
               Add Fixtures in the Match Log →

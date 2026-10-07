@@ -6,12 +6,25 @@
 //   - with the team's recovery code, the records are kept;
 //   - without it, they can't be opened by anyone, so they're deleted and the
 //     team starts again with a new recovery code.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Team } from "@/lib/clubSettings";
 import { newFinanceAuth, openWithRecoveryCode, type FinanceAuth } from "@/lib/financeCrypto";
 
 export default function FinancePasswords({ adminKey, teams }: { adminKey: string; teams: Team[] }) {
   const [team, setTeam] = useState("");
+  // a team with no Financial Admin password yet is set up here (no code needed)
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    if (!team) return;
+    let cancelled = false;
+    fetch(`/api/finance/team?id=${encodeURIComponent(team)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => !cancelled && setFresh(!d?.auth))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [team]);
   const [code, setCode] = useState("");
   const [noCode, setNoCode] = useState(false);
   const [password, setPassword] = useState("");
@@ -28,10 +41,10 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
     if (!team) return setMessage({ ok: false, text: "Choose the team first." });
     if (password.length < 8) return setMessage({ ok: false, text: "The new password needs at least 8 characters." });
     if (password !== password2) return setMessage({ ok: false, text: "The two passwords don't match." });
-    if (!noCode && !code.trim()) {
+    if (!fresh && !noCode && !code.trim()) {
       return setMessage({ ok: false, text: "Enter the team's recovery code, or tick the box if you don't have it." });
     }
-    if (noCode && !confirm(`This permanently deletes ${teamName}'s Financial Admin records (players, payments and spending) and starts the team again. Carry on?`)) {
+    if (!fresh && noCode && !confirm(`This permanently deletes ${teamName}'s Financial Admin records (players, payments and spending) and starts the team again. Carry on?`)) {
       return;
     }
     setBusy(true);
@@ -86,8 +99,8 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
     <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <h2 className="font-extrabold text-gray-900">💷 Financial Admin Passwords</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Forgotten a team&apos;s Financial Admin password? Reset it here with the team&apos;s recovery
-        code and keep all its records. The code was shown when the team was set up, and can be
+        Set up a team&apos;s Financial Admin password, or reset a forgotten one with the team&apos;s
+        recovery code and keep all its records. The code is shown when the team is set up, and can be
         remade in Financial Admin → Settings by anyone who knows the password.
       </p>
 
@@ -103,6 +116,11 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
         </select>
       </label>
 
+      {fresh && team ? (
+        <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">
+          This team hasn&apos;t got a Financial Admin password yet — choose one to set it up.
+        </p>
+      ) : (<>
       <label className="mt-3 block">
         <span className="text-sm font-bold text-gray-800">Recovery code</span>
         <input
@@ -123,6 +141,7 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
           start again (you can re-import a backup export afterwards).
         </span>
       </label>
+      </>)}
 
       <label className="mt-3 block">
         <span className="text-sm font-bold text-gray-800">New team password</span>
@@ -135,7 +154,7 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
         disabled={busy || !team || password.length < 8}
         className={`mt-3 cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 ${noCode ? "bg-red-600 hover:bg-red-700" : "bg-gray-900 hover:bg-black"}`}
       >
-        {busy ? "Resetting…" : noCode ? "Delete Records & Reset" : "Reset Password"}
+        {busy ? "Saving…" : fresh && team ? "Set Up Team" : noCode ? "Delete Records & Reset" : "Reset Password"}
       </button>
 
       {message && (

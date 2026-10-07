@@ -76,7 +76,11 @@ export function teamsOf(p: Pick<Person, "children" | "child" | "team" | "relatio
   return [...new Set([...own, ...childrenOf(p).flatMap((c) => (c.team ? [c.team.slug] : []))])];
 }
 
-export type Access = { private: boolean; code: string | null };
+/**
+ * Who can open a club's hub, and how coaches sign in: `passwordOff` means the
+ * shared coach password no longer works — everyone uses their own account.
+ */
+export type Access = { private: boolean; code: string | null; passwordOff?: boolean };
 export type MemberStatus = "pending" | "approved" | "declined";
 /** Who's asking to join, as they say on the join page. */
 export const RELATIONS = {
@@ -106,6 +110,7 @@ const prefix = (tenant: string) => `${tenant === DEFAULT_TENANT ? "" : `t:${tena
 export const accessKey = (tenant: string) => `${prefix(tenant)}:settings:access`;
 export const membersKey = (tenant: string) => `${prefix(tenant)}:members`;
 export const peopleKey = (tenant: string) => `${prefix(tenant)}:people`;
+export const invitesKey = (tenant: string) => `${prefix(tenant)}:invites`;
 export const sessionKey = (hash: string) => `platform:session:${hash}`;
 export const JOIN_CODES_KEY = "platform:join-codes";
 
@@ -148,7 +153,11 @@ const parse = <T,>(v: unknown): T | null => {
 
 export async function readAccess(tenant: string): Promise<Access> {
   const a = parse<Partial<Access>>(await kvCall(["GET", accessKey(tenant)]));
-  return { private: a?.private === true, code: typeof a?.code === "string" ? a.code : null };
+  return {
+    private: a?.private === true,
+    code: typeof a?.code === "string" ? a.code : null,
+    ...(a?.passwordOff === true ? { passwordOff: true } : {}),
+  };
 }
 
 export async function readMember(tenant: string, token: string): Promise<Member | null> {

@@ -7,7 +7,7 @@
 // nobody can sign in. Neither is ever stored in the repo.
 import crypto from "crypto";
 import { headers } from "next/headers";
-import { SESSION_KEY } from "./access";
+import { SESSION_KEY, readAccess } from "./access";
 import { clientIp } from "./clientIp";
 import { canCoach, currentPerson } from "./people";
 import { rawKv } from "./kv";
@@ -95,6 +95,10 @@ export async function isCoach(supplied: string): Promise<boolean> {
       return false;
     }
   }
+  // the club has switched the shared password off: accounts only
+  try {
+    if ((await readAccess(tenant)).passwordOff) return false;
+  } catch {}
   if (await coachLockedOut()) return false;
   let ok: boolean;
   if (tenant === DEFAULT_TENANT) ok = checkAdminPassword(supplied, process.env.ADMIN_KEY);
@@ -115,9 +119,9 @@ export async function isCoach(supplied: string): Promise<boolean> {
 }
 
 /**
- * Whether `supplied` can do what only a club admin can (like deleting a player):
- * someone signed in with the Club admin role — or, until clubs switch it off,
- * the club's own coach password.
+ * Whether `supplied` can do what only a club admin can (changing settings and
+ * roles, deleting players…): someone signed in with the Club admin role — or,
+ * until the club switches it off, the club's own coach password.
  */
 export async function isClubAdmin(supplied: string): Promise<boolean> {
   const tenant = await getTenant();

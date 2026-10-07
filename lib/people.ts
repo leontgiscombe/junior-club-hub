@@ -3,7 +3,19 @@
 // account id. Whoever signs in with the club's own email (the one it signed up
 // with) is its club admin. Server only.
 import { randomBytes } from "crypto";
-import { COACH_ROLES, MAX_CHILDREN, ROLES, childrenOf, kvCall, peopleKey, readPerson, type Child, type Person, type Role } from "./access";
+import {
+  COACH_ROLES,
+  MAX_CHILDREN,
+  ROLES,
+  childrenOf,
+  invitesKey,
+  kvCall,
+  peopleKey,
+  readPerson,
+  type Child,
+  type Person,
+  type Role,
+} from "./access";
 import { getTeams } from "./settings";
 import { addPlayer, deletePlayer, listPlayers, setPlayerTeam } from "./statsStorage";
 import { currentUser, userClubsKey, type User } from "./auth";
@@ -66,6 +78,65 @@ export async function personFor(tenant: string, user: User): Promise<Person | nu
       await save(tenant, owner);
       return owner;
     }
+  }
+  // invited by email: in, with the invited roles (even if they'd already asked to join)
+  if (person?.status !== "approved") return (await redeemInvite(tenant, user, person)) ?? person;
+  return person;
+}
+
+/** Someone a club admin invited by email, waiting to sign in. */
+export type Invite = { email: string; name?: string; roles: Role[]; team?: TeamRef; invitedBy: string; createdAt: string };
+
+const parseInvite = (v: unknown): Invite | null => {
+  if (typeof v !== "string") return null;
+  try {
+    return JSON.parse(v) as Invite;
+  } catch {
+    return null;
+  }
+};
+
+export async function createInvite(tenant: string, invite: Invite): Promise<void> {
+  await kvCall(["HSET", invitesKey(tenant), invite.email, JSON.stringify(invite)]);
+}
+
+export async function listInvites(tenant: string): Promise<Invite[]> {
+  const flat = (await kvCall<string[]>(["HGETALL", invitesKey(tenant)])) ?? [];
+  const out: Invite[] = [];
+  for (let i = 1; i < flat.length; i += 2) {
+    const inv = parseInvite(flat[i]);
+    if (inv) out.push(inv);
+  }
+  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function cancelInvite(tenant: string, email: string): Promise<void> {
+  await kvCall(["HDEL", invitesKey(tenant), email]);
+}
+
+/** The first time an invited person signs in: they're in, with the roles they were invited with. */
+async function redeemInvite(tenant: string, user: User, existing: Person | null): Promise<Person | null> {
+  const invite = parseInvite(await kvCall(["HGET", invitesKey(tenant), user.email]));
+  if (!invite) return null;
+  const now = new Date().toISOString();
+  const person: Person = {
+    ...(existing ?? {}),
+    userId: user.id,
+    email: user.email,
+    name: existing?.name || user.name || invite.name || user.email.split("@")[0],
+    roles: invite.roles,
+    status: "approved",
+    ...(invite.team ? { team: invite.team } : {}),
+    note: `Invited by ${invite.invitedBy}`,
+    createdAt: existing?.createdAt ?? now,
+    decidedAt: now,
+  };
+  await save(tenant, person);
+  await cancelInvite(tenant, user.email);
+  // a parent who'd already listed children: they join the squad, as on any approval
+  if (childrenOf(person).length) {
+    await addChildrenToSquad(tenant, user.id, {});
+    return (await readPerson(tenant, user.id)) ?? person;
   }
   return person;
 }

@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
+import { keyQuery } from "./coachKey";
 
 type TeamOption = { slug: string; name: string };
 type SquadPlayer = {
@@ -147,7 +148,7 @@ export default function PlayersAdmin() {
     <main className="min-h-screen bg-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
-          <Link href={`/admin?key=${encodeURIComponent(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
+          <Link href={`/admin${keyQuery(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
             ← Coach Admin
           </Link>
           <h1 className="mt-2 text-xl font-extrabold">🧒 Players</h1>
