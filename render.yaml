@@ -17,11 +17,11 @@ services:
         sync: false
       - key: KV_REST_API_TOKEN
         sync: false
-      # the domain clubs get a subdomain of, e.g. juniorclubhub.app
+      # the domain clubs get a subdomain of, e.g. grassroots-club-hub.co.uk
       - key: ROOT_DOMAIN
         sync: false
       - key: PLATFORM_NAME
-        value: Junior Club Hub
+        value: Grassroots Club Hub
       # Financial Admin reminders (generate the pair with: npx web-push generate-vapid-keys)
       - key: VAPID_PUBLIC_KEY
         sync: false

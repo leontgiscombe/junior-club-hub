@@ -1121,9 +1121,9 @@
         'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(summary),'TRIGGER:PT0M','END:VALARM',
         'END:VEVENT'].join('\r\n');
     }
-    const cal = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Junior Club Hub//Subs Tracker//EN','CALSCALE:GREGORIAN',
-      vevent(1, 'subs-1-'+currentTeam+'@junior-club-hub', 'Check '+team+' subs - chase anyone unpaid'),
-      vevent(15,'subs-15-'+currentTeam+'@junior-club-hub','Mid-month check: '+team+' subs'),
+    const cal = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Grassroots Club Hub//Subs Tracker//EN','CALSCALE:GREGORIAN',
+      vevent(1, 'subs-1-'+currentTeam+'@grassroots-club-hub', 'Check '+team+' subs - chase anyone unpaid'),
+      vevent(15,'subs-15-'+currentTeam+'@grassroots-club-hub','Mid-month check: '+team+' subs'),
       'END:VCALENDAR'].join('\r\n');
     download('subs-reminders-'+currentTeam+'.ics', cal, 'text/calendar');
     pushStatus('Calendar reminders downloaded \u2014 open the file to add them (repeats on the 1st and 15th of each month).');

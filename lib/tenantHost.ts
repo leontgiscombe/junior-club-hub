@@ -1,5 +1,5 @@
-// Which club a request is for. With ROOT_DOMAIN set (e.g. juniorclubhub.app),
-// each club lives at its own subdomain — riverside.juniorclubhub.app — and the
+// Which club a request is for. With ROOT_DOMAIN set (e.g. grassroots-club-hub.co.uk),
+// each club lives at its own subdomain — riverside.grassroots-club-hub.co.uk — and the
 // root domain itself is the platform's own site (sign up, find your club).
 // Without it, or on any other address (a Vercel preview, a club's single
 // deployment), the hub runs one club: "default", with its data where a
@@ -48,4 +48,4 @@ export function tenantUrl(tenant: string, path = "/"): string {
 }
 
 /** The platform's own name, on its site and sign-up page. */
-export const PLATFORM_NAME = process.env.PLATFORM_NAME || "Junior Club Hub";
+export const PLATFORM_NAME = process.env.PLATFORM_NAME || "Grassroots Club Hub";
