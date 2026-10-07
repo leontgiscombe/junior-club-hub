@@ -17,7 +17,7 @@ export default async function KitTeamPicker() {
 
       <main className="relative mx-auto -mt-8 w-full max-w-md flex-1 px-4">
         {/* the new kits, without any team's sponsor */}
-        <div className="relative overflow-hidden rounded-3xl bg-[#0b1a0c] shadow-lg">
+        <div className="relative overflow-hidden rounded-3xl bg-[var(--club-night)] shadow-lg">
           <div className="relative aspect-[1024/557] w-full">
             <Image
               src="/kit-generic.jpg"
@@ -28,7 +28,7 @@ export default async function KitTeamPicker() {
               priority
             />
           </div>
-          <span className="absolute left-4 top-4 rounded-full bg-[#3ee04f] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#060906] shadow">
+          <span className="absolute left-4 top-4 rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[var(--club-night)] shadow">
             New for {CLUB.kitSeason}
           </span>
         </div>

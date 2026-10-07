@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* The club's brand colours. A colour chosen on Coach Admin → Settings
+   overrides these and Tailwind's green scale (lib/palette.ts). */
+:root {
+  --club-bright: #3ee04f;
+  --club-night: #060906;
+  --club-brush-filter: none;
+}
+
 /* Slide transitions for the end-of-season presentation mode (/stats/presentation) */
 @keyframes slide-in {
   from {

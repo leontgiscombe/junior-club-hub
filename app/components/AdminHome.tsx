@@ -12,7 +12,7 @@ const display = Anton({ weight: "400", subsets: ["latin"] });
 
 // Each tool's icon tile colour — looks only; the list and its order are below.
 const TILE: Record<string, string> = {
-  "/admin/stats/matches": "from-green-600 to-emerald-500",
+  "/admin/stats/matches": "from-green-700 to-green-500",
   "/admin/stats/training": "from-teal-600 to-cyan-500",
   "/admin/stats/player-of-the-month": "from-amber-500 to-yellow-400",
   "/admin/training/plans": "from-blue-600 to-sky-500",
@@ -30,6 +30,7 @@ function BrushBackdrop() {
       <Image
         src="/poster/brush-background.jpg"
         alt=""
+        style={{ filter: "var(--club-brush-filter)" }}
         fill
         priority
         sizes="100vw"
@@ -150,7 +151,7 @@ export default function AdminHome() {
 
   if (!authed) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#060906] px-4 py-10">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
         <BrushBackdrop />
         <div className="relative w-full max-w-sm">
           <div className="mb-6 text-center text-white">
@@ -168,7 +169,7 @@ export default function AdminHome() {
             >
               Coach Admin
             </h1>
-            <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[#3ee04f]`}>
+            <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
               {CLUB.fullName}
             </p>
           </div>
@@ -206,7 +207,7 @@ export default function AdminHome() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="relative overflow-hidden bg-[#060906] px-6 pb-14 pt-8 text-center text-white">
+      <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-14 pt-8 text-center text-white">
         <BrushBackdrop />
         <div className="relative">
           <div className="mx-auto w-full max-w-2xl text-left">
@@ -228,7 +229,7 @@ export default function AdminHome() {
           >
             Coach Admin
           </h1>
-          <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[#3ee04f]`}>
+          <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
             {CLUB.fullName}
           </p>
         </div>
@@ -248,13 +249,13 @@ export default function AdminHome() {
               <span className="mb-3 flex items-center gap-3">
                 <span
                   className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-3xl shadow-sm ${
-                    TILE[tool.path] ?? "from-green-600 to-emerald-500"
+                    TILE[tool.path] ?? "from-green-700 to-green-500"
                   }`}
                 >
                   {tool.icon}
                 </span>
                 {tool.badge && (
-                  <span className="rounded-full bg-[#3ee04f] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[#060906]">
+                  <span className="rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--club-night)]">
                     {tool.badge}
                   </span>
                 )}
@@ -270,8 +271,8 @@ export default function AdminHome() {
         </div>
       </main>
 
-      <footer className="bg-[#060906] px-6 py-8 text-center">
-        <p className={`${display.className} text-lg uppercase tracking-wide text-[#3ee04f]`}>
+      <footer className="bg-[var(--club-night)] px-6 py-8 text-center">
+        <p className={`${display.className} text-lg uppercase tracking-wide text-[var(--club-bright)]`}>
           {CLUB.slogan}
         </p>
         <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>

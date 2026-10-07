@@ -212,8 +212,8 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 
 /* ── HOME, in the Team Hub's look ── */
 .home-hero{position:relative;overflow:hidden;background:#060906;padding:18px 20px 64px;color:white;display:flex;flex-direction:column;align-items:center}
-.home-hero::before{content:"";position:absolute;inset:0;background:url(/poster/brush-background.jpg) center top/cover;opacity:.7}
-.home-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,46,22,.35),transparent 40%,rgba(5,46,22,.85))}
+.home-hero::before{content:"";position:absolute;inset:0;background:url(/poster/brush-background.jpg) center top/cover;opacity:.7;filter:var(--club-brush-filter,none)}
+.home-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in oklch,var(--color-green-950,#052e16) 35%,transparent),transparent 40%,color-mix(in oklch,var(--color-green-950,#052e16) 85%,transparent))}
 .home-hero>*{position:relative;z-index:1}
 .home-back{align-self:flex-start;color:rgba(255,255,255,.85);font-weight:700;font-size:13px;text-decoration:none;margin-bottom:10px}
 .home-hero .main-badge{width:116px;margin:4px auto 14px}
@@ -3581,6 +3581,8 @@ fetch('/api/club').then(function(r){ return r.json(); }).then(function(c){
     document.body.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;font-family:Nunito,sans-serif"><h1 style="font-size:24px">The Training Hub is switched off</h1><a href="/" style="color:#15803d;font-weight:800">&larr; Back to the Team Hub</a></div>';
     return;
   }
+  // the club's colour, chosen on Coach Admin → Settings
+  Object.keys(c.colourVars || {}).forEach(function(k){ document.documentElement.style.setProperty(k, c.colourVars[k]); });
   document.querySelectorAll('[data-club]').forEach(function(el){ el.textContent = c.club[el.dataset.club] || el.textContent; });
   document.querySelectorAll('.main-badge,.quiz-badge').forEach(function(img){ img.src = c.club.crest; img.alt = c.club.name; });
   document.title = c.club.name + ' \u2014 Training Hub';

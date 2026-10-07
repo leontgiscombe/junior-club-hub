@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { EDITABLE, FEATURES, slugFor, type Feature } from "@/lib/clubSettings";
+import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 
 type Snapshot = {
   club: Club;
@@ -234,7 +235,11 @@ export default function ClubSettings() {
     JSON.stringify(fromDrafts(teams)) !== JSON.stringify(fromDrafts(snap.teams.map(toDraft)));
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-16">
+    // the page previews the colour being picked, before it's saved
+    <main
+      className="min-h-screen bg-gray-50 pb-16"
+      style={(draft.colour ? clubColourVars(draft.colour) : DEFAULT_COLOUR_VARS) as React.CSSProperties}
+    >
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
           <Link
@@ -252,21 +257,21 @@ export default function ClubSettings() {
 
       <div className="mx-auto max-w-2xl px-4">
         {/* Preview: the home page's banner with the details as they'll show */}
-        <div className="relative mt-4 overflow-hidden rounded-3xl bg-[#060906] px-6 py-8 text-center text-white shadow-lg">
+        <div className="relative mt-4 overflow-hidden rounded-3xl bg-[var(--club-night)] px-6 py-8 text-center text-white shadow-lg">
           <div
             className="absolute inset-0 bg-cover bg-top opacity-70"
-            style={{ backgroundImage: "url(/poster/brush-background.jpg)" }}
+            style={{ backgroundImage: "url(/poster/brush-background.jpg)", filter: "var(--club-brush-filter)" }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={club.crest.src} alt={club.crest.alt} className="mx-auto mb-3 h-24 w-auto" />
             <p className="text-3xl font-black uppercase tracking-wide">{shown("name")}</p>
-            <p className="mt-1 text-sm font-bold uppercase tracking-widest text-[#3ee04f]">Team Hub</p>
+            <p className="mt-1 text-sm font-bold uppercase tracking-widest text-[var(--club-bright)]">Team Hub</p>
             <p className="mt-3 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
               {shown("kitSeason")} season
             </p>
-            <p className="mt-4 text-sm font-bold uppercase text-[#3ee04f]">{shown("slogan")}</p>
+            <p className="mt-4 text-sm font-bold uppercase text-[var(--club-bright)]">{shown("slogan")}</p>
             <p className="mt-1 text-xs text-gray-400">{shown("fullName")}</p>
           </div>
         </div>
@@ -274,6 +279,53 @@ export default function ClubSettings() {
 
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
+
+        {/* Colour */}
+        <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h2 className="font-extrabold text-gray-900">🎨 Club Colour</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            The hub&apos;s buttons, banners and highlights take this colour. This page shows it as
+            you pick.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() =>
+                setDraft((d) => {
+                  const next = { ...d };
+                  delete next.colour;
+                  return next;
+                })
+              }
+              className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                !draft.colour ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+              }`}
+            >
+              <span className="h-5 w-5 rounded-full" style={{ background: "#16a34a" }} />
+              Hub green
+            </button>
+            {PRESET_COLOURS.filter((p) => p.name !== "Green").map((p) => (
+              <button
+                key={p.hex}
+                onClick={() => setDraft((d) => ({ ...d, colour: p.hex }))}
+                className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                  draft.colour === p.hex ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+                }`}
+              >
+                <span className="h-5 w-5 rounded-full" style={{ background: p.hex }} />
+                {p.name}
+              </button>
+            ))}
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold">
+              <input
+                type="color"
+                value={draft.colour ?? "#16a34a"}
+                onChange={(e) => setDraft((d) => ({ ...d, colour: e.target.value }))}
+                className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
+              />
+              Your own
+            </label>
+          </div>
+        </section>
 
         {/* Crest */}
         <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">

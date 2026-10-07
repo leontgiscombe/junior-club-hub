@@ -16,9 +16,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #1f7a3d;
-    --green-dark: #155c2d;
-    --green-light: #e7f4ec;
+    /* the club's colour, set from /api/club when one is chosen */
+    --green: var(--color-green-700, #1f7a3d);
+    --green-dark: var(--color-green-800, #155c2d);
+    --green-light: var(--color-green-50, #e7f4ec);
     --amber: #b8860b;
     --amber-bg: #fdf6e3;
     --red: #c0392b;
@@ -202,11 +203,11 @@
   .wa-btn:hover { background:#1da851; color:#fff; }
 
   /* ── Team Hub look: paint-stroke banner, Anton lettering, club colours ── */
-  :root { --pitch: #3ee04f; --night: #060906; --radius: 18px; --shadow: 0 4px 18px rgba(6,9,6,.07), 0 1px 3px rgba(6,9,6,.05); --bg: #f1f5f2; }
+  :root { --pitch: var(--club-bright, #3ee04f); --night: var(--club-night, #060906); --radius: 18px; --shadow: 0 4px 18px rgba(6,9,6,.07), 0 1px 3px rgba(6,9,6,.05); --bg: #f1f5f2; }
   .display { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .4px; }
   header.app { position: relative; overflow: hidden; background: var(--night); padding: 20px 20px 26px; }
-  header.app::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center 30%/cover; opacity: .7; }
-  header.app::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,46,22,.35), rgba(5,46,22,.85)); }
+  header.app::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center 30%/cover; opacity: .7; filter: var(--club-brush-filter, none); }
+  header.app::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in oklch, var(--green-dark) 35%, transparent), color-mix(in oklch, var(--green-dark) 85%, black)); }
   header.app > * { position: relative; z-index: 1; }
   .badge { width: 58px; height: 58px; border-radius: 16px; background: transparent; box-shadow: none; padding: 0; }
   .badge img { filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
@@ -218,7 +219,7 @@
   .tabs-inner::-webkit-scrollbar { display: none; }
   .tab { border: none; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 13.5px; }
   .tab:hover { background: var(--green-light); border-color: transparent; }
-  .tab.active { background: var(--green); color: #fff; border-bottom-color: transparent; box-shadow: 0 3px 10px rgba(31,122,61,.3); }
+  .tab.active { background: var(--green); color: #fff; border-bottom-color: transparent; box-shadow: 0 3px 10px color-mix(in oklch, var(--green) 30%, transparent); }
   h2.section { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .5px; font-size: 26px; color: var(--green-dark); line-height: 1.1; }
   .stat { position: relative; overflow: hidden; border: none; padding: 18px 18px 16px; }
   .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--line); }
@@ -231,13 +232,13 @@
   th { background: #f6f9f7; }
   th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
   button, .btn { border-radius: 12px; }
-  .btn-primary { background: linear-gradient(135deg, #24924a, var(--green-dark)); box-shadow: 0 3px 10px rgba(31,122,61,.25); }
+  .btn-primary { background: linear-gradient(135deg, var(--green), var(--green-dark)); box-shadow: 0 3px 10px color-mix(in oklch, var(--green) 25%, transparent); }
   .pill { font-weight: 700; }
   .modal { border-radius: 20px; }
   .modal-head h3 { font-weight: 800; }
   .gate { background: var(--night); }
-  .gate::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center/cover; opacity: .7; }
-  .gate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,46,22,.3), rgba(5,46,22,.9)); }
+  .gate::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center/cover; opacity: .7; filter: var(--club-brush-filter, none); }
+  .gate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in oklch, var(--green-dark) 30%, transparent), color-mix(in oklch, var(--green-dark) 90%, black)); }
   .gate-card { position: relative; z-index: 1; border-radius: 24px; padding: 30px 26px 24px; }
   .gate-logo { width: 84px; height: 84px; border-radius: 22px; display: block; margin: -72px auto 14px; box-shadow: 0 10px 24px rgba(0,0,0,.35); border: 4px solid #fff; }
   .gate-kicker { font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; font-size: 28px; letter-spacing: .5px; color: var(--green-dark); line-height: 1; margin: 0 0 10px; }
@@ -287,9 +288,9 @@
       <div class="gate-err" id="setup-err"></div>
       <button class="btn btn-primary" id="setup-btn" type="submit" style="width:100%">Set Up Team</button>
     </form>
-    <p style="margin:12px 0 0;text-align:center"><a href="#" id="setup-toggle" style="color:#1f7a3d;font-weight:700;font-size:13px">Setting up a team for the first time?</a></p>
+    <p style="margin:12px 0 0;text-align:center"><a href="#" id="setup-toggle" style="color:var(--green);font-weight:700;font-size:13px">Setting up a team for the first time?</a></p>
     <p class="gate-note" id="gate-note"></p>
-    <p style="margin-top:14px;text-align:center"><a href="/" style="color:#1f7a3d;font-weight:700;font-size:14px;text-decoration:none">&larr; Back to Team Hub</a></p>
+    <p style="margin-top:14px;text-align:center"><a href="/" style="color:var(--green);font-weight:700;font-size:14px;text-decoration:none">&larr; Back to Team Hub</a></p>
   </div>
 </div>
 <header class="app">
@@ -480,6 +481,8 @@
     if(!res.ok) throw new Error('config ' + res.status);
     const c = await res.json();
     CLUB = c.club; VAPID_PUBLIC = c.vapidPublicKey || "";
+    // the club's colour, chosen on Coach Admin → Settings
+    Object.entries(c.colourVars || {}).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
     TEAM_IDS = c.teams.map(t=>t.id);
     TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.name }]));
     const slogan = $("#foot-slogan"); if(slogan) slogan.textContent = CLUB.slogan || '';
@@ -1339,7 +1342,7 @@
   }
   function applyTeamBranding(){
     // Banner stays club green for every team; the team is shown by name only.
-    const meta = document.querySelector('meta[name=theme-color]'); if(meta) meta.setAttribute('content', '#1f7a3d');
+    const meta = document.querySelector('meta[name=theme-color]'); if(meta) meta.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--green').trim() || '#1f7a3d');
     const name = (state.settings && state.settings.team) || teamName(currentTeam);
     const h1 = $("#app-title"); if(h1) h1.textContent = name;
     document.title = name + ' \u2014 Subs Tracker';
