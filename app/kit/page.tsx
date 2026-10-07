@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { kitAspect } from "@/lib/clubSettings";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
 
@@ -18,13 +19,17 @@ export default async function KitTeamPicker() {
       <main className="relative mx-auto -mt-8 w-full max-w-md flex-1 px-4">
         {/* the new kits, without any team's sponsor */}
         <div className="relative overflow-hidden rounded-3xl bg-[var(--club-night)] shadow-lg">
-          <div className="relative aspect-[1024/557] w-full">
+          <div
+            className="relative w-full"
+            style={{ aspectRatio: kitAspect(CLUB.kitImage) }}
+          >
             <Image
-              src="/kit-generic.jpg"
-              alt={`The ${CLUB.kitSeason} home and away kits`}
+              src={CLUB.kitImage.src}
+              unoptimized={CLUB.kitImage.src.startsWith("/api/")}
+              alt={`The ${CLUB.kitSeason} kit`}
               fill
               sizes="(max-width: 448px) 100vw, 448px"
-              className="object-cover"
+              className="object-contain"
               priority
             />
           </div>

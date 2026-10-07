@@ -1,10 +1,11 @@
 // Coach Admin → Settings: the club's name, initials, slogan, season, whether
-// results are public, and its crest. Behind the Coach Admin password.
-//   GET    ?key=…                         -> { club, defaults, changes, crest, teams }
+// results are public, and its pictures (crest and kit). Behind the Coach Admin password.
+//   GET    ?key=…                         -> { club, defaults, changes, crest, kitImage, teams }
 //   PUT    ?key=…  { changes?, teams?, account? } -> saves the identity changes, teams,
 //                                            and/or the club's email or coach password
-//   POST   ?key=…  { image, width, height } -> uploads a crest (a data: URL)
-//   DELETE ?key=…                         -> goes back to the default crest
+//   POST   ?key=…  { image, width, height, slot? } -> uploads the crest, or the kit
+//                                            picture with slot "kit" (a data: URL)
+//   DELETE ?key=…[&slot=kit]              -> goes back to the default crest (or kit picture)
 import { NextRequest, NextResponse } from "next/server";
 import { isCoach } from "@/lib/adminAuth";
 import { DEFAULT_CLUB, cleanChanges, cleanTeams } from "@/lib/clubSettings";
@@ -12,9 +13,10 @@ import {
   getAllTeams,
   getClub,
   getClubChanges,
-  getCrest,
+  getImageInfo,
   saveClubChanges,
-  saveCrest,
+  saveImage,
+  type ImageSlot,
   saveTeams,
 } from "@/lib/settings";
 import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
@@ -22,8 +24,11 @@ import { getTenantRecord, setTenantEmail, setTenantPassword } from "@/lib/tenant
 
 export const dynamic = "force-dynamic";
 
-const CREST_TYPES = ["image/png", "image/jpeg", "image/webp"];
-const MAX_CREST_BYTES = 400 * 1024;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+// the crest is small; the kit picture is a wide photo (both are shrunk in the browser first)
+const MAX_BYTES: Record<ImageSlot, number> = { crest: 400 * 1024, kit: 600 * 1024 };
+const MAX_SIDE: Record<ImageSlot, number> = { crest: 2000, kit: 2400 };
+const slotOf = (v: unknown): ImageSlot => (v === "kit" ? "kit" : "crest");
 
 const authorised = (req: NextRequest) => isCoach(req.nextUrl.searchParams.get("key") ?? "");
 const unauthorised = () => NextResponse.json({ error: "Incorrect password" }, { status: 401 });
@@ -31,10 +36,11 @@ const failed = (e: unknown) =>
   NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 500 });
 
 async function snapshot() {
-  const [club, changes, crest, teams] = await Promise.all([
+  const [club, changes, crest, kit, teams] = await Promise.all([
     getClub(),
     getClubChanges(),
-    getCrest(),
+    getImageInfo("crest"),
+    getImageInfo("kit"),
     getAllTeams(),
   ]);
   // a club on the platform has its own email and password; a single-club hub uses ADMIN_KEY
@@ -45,6 +51,7 @@ async function snapshot() {
     defaults: DEFAULT_CLUB,
     changes,
     crest: crest ? { width: crest.width, height: crest.height, updatedAt: crest.updatedAt } : null,
+    kitImage: kit ? { width: kit.width, height: kit.height, updatedAt: kit.updatedAt } : null,
     teams,
     account: record ? { email: record.email } : null,
   };
@@ -105,21 +112,22 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await authorised(req))) return unauthorised();
   const body = (await req.json().catch(() => null)) as
-    | { image?: unknown; width?: unknown; height?: unknown }
+    | { image?: unknown; width?: unknown; height?: unknown; slot?: unknown }
     | null;
+  const slot = slotOf(body?.slot);
   const match = typeof body?.image === "string" ? /^data:([\w/+.-]+);base64,(.+)$/.exec(body.image) : null;
   const width = Number(body?.width), height = Number(body?.height);
-  if (!match || !CREST_TYPES.includes(match[1])) {
+  if (!match || !IMAGE_TYPES.includes(match[1])) {
     return NextResponse.json({ error: "Use a PNG, JPEG or WebP image" }, { status: 400 });
   }
-  if (!(width > 0 && height > 0 && width <= 2000 && height <= 2000)) {
+  if (!(width > 0 && height > 0 && width <= MAX_SIDE[slot] && height <= MAX_SIDE[slot])) {
     return NextResponse.json({ error: "That image's size doesn't look right" }, { status: 400 });
   }
-  if (Buffer.byteLength(match[2], "base64") > MAX_CREST_BYTES) {
+  if (Buffer.byteLength(match[2], "base64") > MAX_BYTES[slot]) {
     return NextResponse.json({ error: "That image is too big — try a smaller one" }, { status: 400 });
   }
   try {
-    await saveCrest({
+    await saveImage(slot, {
       type: match[1],
       data: match[2],
       width: Math.round(width),
@@ -135,7 +143,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!(await authorised(req))) return unauthorised();
   try {
-    await saveCrest(null);
+    await saveImage(slotOf(req.nextUrl.searchParams.get("slot")), null);
     return NextResponse.json(await snapshot());
   } catch (e) {
     return failed(e);

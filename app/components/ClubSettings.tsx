@@ -1,14 +1,14 @@
 "use client";
 
 // Coach Admin → Settings: the club's name, initials, slogan, season, crest,
-// whether results are public, and its teams. Saved to the database and shown on
+// kit picture, whether results are public, and its teams. Saved to the database and shown on
 // every page straight away; an empty box goes back to the default in
 // club.config.ts.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
-import { EDITABLE, FEATURES, slugFor, type Feature } from "@/lib/clubSettings";
+import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 
 type Snapshot = {
@@ -16,6 +16,7 @@ type Snapshot = {
   defaults: Club;
   changes: ClubChanges;
   crest: { width: number; height: number; updatedAt: string } | null;
+  kitImage: { width: number; height: number; updatedAt: string } | null;
   teams: Team[];
   /** The club's own sign-in details on the platform (none on a single-club hub). */
   account: { email: string } | null;
@@ -61,7 +62,11 @@ const FIELDS: { field: EditableText; label: string; hint: string }[] = [
 ];
 
 /** Shrink an image file to fit within `max` pixels and turn it into a PNG data URL. */
-async function shrinkImage(file: File, max = 512): Promise<{ image: string; width: number; height: number }> {
+/** The picture as a data: URL no bigger than `max` pixels a side: a PNG (keeps a see-through background) or a JPEG (for photos). */
+async function shrinkImage(
+  file: File,
+  { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
+): Promise<{ image: string; width: number; height: number }> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -76,8 +81,14 @@ async function shrinkImage(file: File, max = 512): Promise<{ image: string; widt
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-    return { image: canvas.toDataURL("image/png"), width, height };
+    const ctx = canvas.getContext("2d")!;
+    if (type === "image/jpeg") {
+      // a JPEG can't be see-through, so anything see-through becomes white
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, width, height);
+    }
+    ctx.drawImage(img, 0, 0, width, height);
+    return { image: canvas.toDataURL(type, 0.85), width, height };
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -93,11 +104,13 @@ export default function ClubSettings() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState<ClubChanges>({});
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState<"crest" | "kit" | null>(null);
   const [teams, setTeams] = useState<TeamDraft[]>([]);
 
-  const take = useCallback((data: Snapshot) => {
+  // keepEdits: after uploading a picture, so changes not yet saved stay as they are
+  const take = useCallback((data: Snapshot, keepEdits = false) => {
     setSnap(data);
+    if (keepEdits) return;
     setDraft(data.changes);
     setTeams(data.teams.map(toDraft));
   }, []);
@@ -135,17 +148,18 @@ export default function ClubSettings() {
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  async function send(method: string, body?: unknown, done?: string) {
+  async function send(method: string, body?: unknown, done?: string, opts: { slot?: string; keepEdits?: boolean } = {}) {
     setError(null);
     setNotice(null);
-    const res = await fetch(`/api/settings?key=${encodeURIComponent(key)}`, {
+    const slot = opts.slot ? `&slot=${opts.slot}` : "";
+    const res = await fetch(`/api/settings?key=${encodeURIComponent(key)}${slot}`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error ?? "That didn't save");
-    take(data);
+    take(data, opts.keepEdits);
     if (done) setNotice(done);
     // every page picks the new settings up
     router.refresh();
@@ -171,27 +185,36 @@ export default function ClubSettings() {
     }
   }
 
-  async function uploadCrest(file: File | undefined) {
+  // the pictures save straight away, without touching changes not yet saved
+  const PICTURES = {
+    crest: { name: "crest", shrink: { max: 512, type: "image/png" } },
+    kit: { name: "kit picture", shrink: { max: 1600, type: "image/jpeg" } },
+  } as const;
+
+  async function uploadPicture(slot: keyof typeof PICTURES, file: File | undefined) {
     if (!file) return;
-    setUploading(true);
+    const { name, shrink } = PICTURES[slot];
+    setUploading(slot);
     try {
-      await send("POST", await shrinkImage(file), "New crest saved.");
+      const body = { ...(await shrinkImage(file, shrink)), slot };
+      await send("POST", body, `New ${name} saved.`, { keepEdits: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not upload that crest");
+      setError(e instanceof Error ? e.message : `Could not upload that ${name}`);
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   }
 
-  async function resetCrest() {
-    if (!confirm("Go back to the default crest?")) return;
-    setUploading(true);
+  async function resetPicture(slot: keyof typeof PICTURES) {
+    const { name } = PICTURES[slot];
+    if (!confirm(`Go back to the default ${name}?`)) return;
+    setUploading(slot);
     try {
-      await send("DELETE", undefined, "Back to the default crest.");
+      await send("DELETE", undefined, `Back to the default ${name}.`, { slot, keepEdits: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not reset the crest");
+      setError(e instanceof Error ? e.message : `Could not reset the ${name}`);
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   }
 
@@ -344,25 +367,65 @@ export default function ClubSettings() {
               className="h-20 w-20 rounded-2xl border border-gray-100 bg-gray-50 object-contain p-1.5"
             />
             <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
-              {uploading ? "Uploading…" : snap.crest ? "Change Crest" : "Upload Crest"}
+              {uploading === "crest" ? "Uploading…" : snap.crest ? "Change Crest" : "Upload Crest"}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 className="hidden"
-                disabled={uploading}
+                disabled={!!uploading}
                 onChange={(e) => {
-                  uploadCrest(e.target.files?.[0]);
+                  uploadPicture("crest", e.target.files?.[0]);
                   e.target.value = "";
                 }}
               />
             </label>
             {snap.crest && (
               <button
-                onClick={resetCrest}
-                disabled={uploading}
+                onClick={() => resetPicture("crest")}
+                disabled={!!uploading}
                 className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
               >
                 Use Default Crest
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* Kit picture */}
+        <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h2 className="font-extrabold text-gray-900">👕 Kit Picture</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Shown on the home page and the Kit Sizes pages, so parents can see the kit they&apos;re
+            choosing sizes for. A wide photo or design works best.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={club.kitImage.src}
+            alt=""
+            className="mt-4 w-full max-w-sm rounded-2xl border border-gray-100 bg-[var(--club-night)] object-contain"
+            style={{ aspectRatio: kitAspect(club.kitImage) }}
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
+              {uploading === "kit" ? "Uploading…" : snap.kitImage ? "Change Kit Picture" : "Upload Kit Picture"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                disabled={!!uploading}
+                onChange={(e) => {
+                  uploadPicture("kit", e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {snap.kitImage && (
+              <button
+                onClick={() => resetPicture("kit")}
+                disabled={!!uploading}
+                className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+              >
+                Use Default Picture
               </button>
             )}
           </div>

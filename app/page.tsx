@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { kitAspect } from "@/lib/clubSettings";
 import { Anton } from "next/font/google";
 import { getClub, getTeams } from "@/lib/settings";
 
@@ -94,13 +95,17 @@ export default async function Home() {
             href="/kit"
             className="group relative mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
           >
-            <div className="relative aspect-[1024/557] w-full bg-[var(--club-night)]">
+            <div
+              className="relative w-full bg-[var(--club-night)]"
+              style={{ aspectRatio: kitAspect(CLUB.kitImage) }}
+            >
               <Image
-                src="/kit-generic.jpg"
-                alt={`The ${CLUB.kitSeason} home and away kits`}
+                src={CLUB.kitImage.src}
+                unoptimized={CLUB.kitImage.src.startsWith("/api/")}
+                alt={`The ${CLUB.kitSeason} kit`}
                 fill
                 sizes="(max-width: 672px) 100vw, 672px"
-                className="object-cover"
+                className="object-contain"
               />
               <span className="absolute left-4 top-4 rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[var(--club-night)] shadow">
                 New for {CLUB.kitSeason}
