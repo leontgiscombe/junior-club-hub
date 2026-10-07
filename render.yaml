@@ -1,0 +1,55 @@
+# Render Blueprint: the app and its reminder job. In Render, New → Blueprint,
+# pick this repo, and fill in the values marked sync: false when asked.
+services:
+  - type: web
+    name: junior-club-hub
+    runtime: node
+    region: frankfurt
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Upstash Redis: the REST URL and token from the database's page
+      - key: KV_REST_API_URL
+        sync: false
+      - key: KV_REST_API_TOKEN
+        sync: false
+      # the domain clubs get a subdomain of, e.g. juniorclubhub.app
+      - key: ROOT_DOMAIN
+        sync: false
+      - key: PLATFORM_NAME
+        value: Junior Club Hub
+      # Financial Admin reminders (generate the pair with: npx web-push generate-vapid-keys)
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      # optional: the owner's password for changing the built-in drill library
+      - key: TRAINING_PLANS_OWNER_KEY
+        sync: false
+
+  # Subs reminders on the 1st and 15th of each month, 9am UTC
+  - type: cron
+    name: junior-club-hub-reminders
+    runtime: node
+    region: frankfurt
+    plan: starter
+    schedule: "0 9 1,15 * *"
+    buildCommand: echo "nothing to build"
+    startCommand: node scripts/run-reminders.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # the web service's own address, e.g. https://junior-club-hub.onrender.com
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: junior-club-hub
+          envVarKey: CRON_SECRET
