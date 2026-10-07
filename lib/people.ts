@@ -108,7 +108,10 @@ export async function leaveClub(tenant: string, userId: string): Promise<void> {
   await kvCall(["SREM", userClubsKey(userId), tenant]);
 }
 
-/** A sensible first role for someone being approved, from who they said they are. */
+/**
+ * A safe first role for someone being approved, from who they said they are.
+ * Never Coach: that opens Coach Admin, so a coach has to give it on purpose.
+ */
 export function suggestedRole(p: Person): Role {
-  return p.relation === "player" ? "player" : p.relation === "coach" ? "coach" : "parent";
+  return p.relation === "player" ? "player" : "parent";
 }

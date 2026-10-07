@@ -369,12 +369,19 @@ function RoleChips({ roles, disabled, onChange }: { roles: Role[]; disabled: boo
 
 /** Someone waiting: choose their role(s), then approve or decline. */
 function PendingPerson({ person, busy, onDecide }: { person: Person; busy: boolean; onDecide: (body: Record<string, unknown>) => void }) {
-  const first: Role = person.relation === "player" ? "player" : person.relation === "coach" ? "coach" : "parent";
+  // someone saying they're a coach starts as a Parent: Coach (which opens
+  // Coach Admin) is only given when a coach ticks it on purpose
+  const first: Role = person.relation === "player" ? "player" : "parent";
   const [roles, setRoles] = useState<Role[]>([first]);
   return (
     <li className="py-3">
       <span className="block font-bold text-gray-900">{person.name}</span>
       <span className="block text-sm text-gray-500">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
+      {person.relation === "coach" && (
+        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          ⚠️ Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
+        </p>
+      )}
       <p className="mt-2 text-xs font-semibold text-gray-500">Approve as:</p>
       <RoleChips roles={roles} disabled={busy} onChange={setRoles} />
       <div className="mt-2 flex gap-2">
