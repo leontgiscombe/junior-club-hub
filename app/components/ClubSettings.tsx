@@ -305,6 +305,8 @@ export default function ClubSettings() {
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
 
+        <ShareHub clubName={shown("name")} />
+
         {/* Colour */}
         <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <h2 className="font-extrabold text-gray-900">🎨 Club Colour</h2>
@@ -819,6 +821,59 @@ function AccountSection({
           {message.text}
         </p>
       )}
+    </section>
+  );
+}
+
+/** The hub's own link, to send to parents and coaches: clubs aren't listed anywhere, so this is how people find it. */
+function ShareHub({ clubName }: { clubName: string }) {
+  const [copied, setCopied] = useState(false);
+  const [url, setUrl] = useState("");
+  const [canShare, setCanShare] = useState(false);
+  // the address the coach is using now, and whether the phone can share it
+  // (after the first render, as the server knows neither)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setUrl(window.location.origin);
+      setCanShare("share" in navigator);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
+
+  return (
+    <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="font-extrabold text-gray-900">📣 Share Your Hub</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by
+        WhatsApp, email or your club&apos;s app. They can save it to their phone&apos;s home screen.
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-800">{url || "…"}</code>
+        <button
+          onClick={copy}
+          disabled={!url}
+          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+        >
+          {copied ? "Copied ✓" : "Copy Link"}
+        </button>
+        {canShare && (
+          <button
+            onClick={() => navigator.share({ title: `${clubName} Team Hub`, url }).catch(() => {})}
+            disabled={!url}
+            className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
+          >
+            Share
+          </button>
+        )}
+      </div>
     </section>
   );
 }

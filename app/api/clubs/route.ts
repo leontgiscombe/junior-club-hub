@@ -1,17 +1,30 @@
-// Find your club: the clubs on the platform whose name or address matches ?q=.
+// Find your club, by its exact web address: there's no list or search of
+// clubs, so nobody can browse who's on the platform. Looking addresses up is
+// limited per IP address, so they can't be guessed in bulk.
+//   GET ?address=riverside -> { url } or 404
 import { NextRequest, NextResponse } from "next/server";
-import { getTenant, tenantUrl } from "@/lib/tenant";
-import { listTenants } from "@/lib/tenants";
+import { rawKv } from "@/lib/kv";
+import { TENANT_ID, getTenant, tenantUrl } from "@/lib/tenant";
+import { getTenantRecord } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
+const MAX_LOOKUPS = 30; // an hour, per IP address
+
 export async function GET(req: NextRequest) {
   if ((await getTenant()) !== null) return NextResponse.json({ error: "Not here" }, { status: 404 });
-  const q = (req.nextUrl.searchParams.get("q") ?? "").trim().toLowerCase();
-  if (q.length < 2) return NextResponse.json({ clubs: [] });
-  const clubs = (await listTenants())
-    .filter((t) => t.name.toLowerCase().includes(q) || t.id.includes(q))
-    .slice(0, 20)
-    .map((t) => ({ name: t.name, url: tenantUrl(t.id) }));
-  return NextResponse.json({ clubs });
+  const address = (req.nextUrl.searchParams.get("address") ?? "").trim().toLowerCase();
+  const kv = await rawKv();
+  if (!kv) return NextResponse.json({ error: "Storage isn't set up" }, { status: 503 });
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const tries = await kv.incr(`platform:lookup-ip:${ip}`);
+  if (tries === 1) await kv.expire(`platform:lookup-ip:${ip}`, 3600);
+  if (tries > MAX_LOOKUPS) {
+    return NextResponse.json({ error: "Too many tries — ask your coach for your club's link" }, { status: 429 });
+  }
+  const record = TENANT_ID.test(address) ? await getTenantRecord(address) : null;
+  if (!record) {
+    return NextResponse.json({ error: "No club at that address — check it with your coach" }, { status: 404 });
+  }
+  return NextResponse.json({ url: tenantUrl(record.id) });
 }

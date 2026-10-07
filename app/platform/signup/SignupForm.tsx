@@ -1,7 +1,7 @@
 "use client";
 
-// Sign a club up: its name, its web address (suggested from the name), the
-// organiser's email and the coach password.
+// Sign a club up: its name, its web address (suggested from the name), its
+// first team, the organiser's email and the coach password.
 import { useEffect, useState } from "react";
 
 const toAddress = (name: string) =>
@@ -17,6 +17,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
   const [address, setAddress] = useState("");
   const [addressTouched, setAddressTouched] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -47,7 +48,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address: shownAddress, email, password, website, agreed }),
+        body: JSON.stringify({ name, address: shownAddress, team, email, password, website, agreed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
@@ -66,7 +67,8 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
         <h2 className="mt-3 text-2xl font-extrabold text-gray-900">{name} is set up!</h2>
         <p className="mt-2 text-gray-500">
           Your hub is at <span className="font-bold text-gray-900">{shownAddress}.{rootDomain}</span>.
-          Sign in to Coach Admin with your coach password to add your badge, colours and teams.
+          Sign in to Coach Admin with your coach password to add your badge, colours and any
+          more teams.
         </p>
         <a href={done} className="mt-5 inline-block rounded-2xl bg-green-600 px-6 py-3.5 font-bold text-white hover:bg-green-700">
           Go to Your Hub →
@@ -99,6 +101,11 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
           <span className="shrink-0 pr-3 text-sm text-gray-400">.{rootDomain}</span>
         </div>
         {addressError && shownAddress && <span className="mt-1 block text-xs text-red-600">{addressError}</span>}
+      </label>
+      <label>
+        <span className="text-sm font-bold text-gray-800">Your team</span>
+        <input value={team} onChange={(e) => setTeam(e.target.value)} maxLength={30} className={input} placeholder="e.g. U10s Lions" />
+        <span className="mt-1 block text-xs text-gray-400">Your club starts with this one team. Add more any time in Coach Admin → Settings.</span>
       </label>
       <label>
         <span className="text-sm font-bold text-gray-800">Your email</span>
