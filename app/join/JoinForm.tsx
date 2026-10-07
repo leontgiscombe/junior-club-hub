@@ -187,7 +187,7 @@ export default function JoinForm({
         <div>
           <span className="text-sm font-bold text-gray-800">Your child (or children)</span>
           <span className="mb-2 block text-xs text-gray-400">
-            Their name and team. First name and initial is enough. Only the club&apos;s coaches see them.
+            Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
           </span>
           <ChildrenEditor value={children} teams={teams} onChange={setChildren} />
         </div>

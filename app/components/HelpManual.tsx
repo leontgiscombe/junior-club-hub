@@ -207,7 +207,7 @@ export default function HelpManual() {
           <H3>Sending a Kit Size</H3>
           <Steps>
             <li>On the home page, tap <B>Kit Sizes</B>, then the child&apos;s team.</li>
-            <li>Choose the child from the team list (shown as first name and initial). Not there? Pick <B>My child isn&apos;t listed</B> and type their name.</li>
+            <li>Choose the child from the team list (shown as first name and initial — or full names, if your hub is private). Not there? Pick <B>My child isn&apos;t listed</B> and type their name.</li>
             <li>Pick a <B>shirt</B>, <B>shorts</B> and <B>socks</B> size. A size guide is on the page.</li>
             <li>Tap submit. The page shows <B>All done!</B> with the sizes chosen.</li>
             <li>More than one child in the club? Tap <B>Submit Another Child</B>.</li>

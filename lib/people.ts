@@ -19,8 +19,8 @@ export const pickTeam = (slug: unknown, teams: TeamRef[]): TeamRef | undefined =
   teams.find((t) => t.slug === slug);
 
 /**
- * Children from a request: each with a name (kept short — a first name and
- * initial is plenty) and, if it's one of the club's, a team. Existing ids are
+ * Children from a request: each with their name (their full name, for the
+ * club's squad) and, if it's one of the club's, a team. Existing ids are
  * kept, so a child stays the same child when a parent edits them.
  */
 export function cleanChildren(input: unknown, teams: TeamRef[]): Child[] {

@@ -67,11 +67,14 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong>Kit sizes:</strong> the child&apos;s name and their shirt, shorts and sock sizes,
-              sent by a parent. The public form only ever shows a first name and initial.
+              sent by a parent. If the club&apos;s hub is open to everyone, the form only shows a
+              first name and initial; if it&apos;s private, only approved members can see it, and it
+              shows full names.
             </>,
             <>
-              <strong>Results page (if the club turns it on):</strong> scores and top scorers, with
-              players shown by first name and initial only.
+              <strong>Results page (if the club turns it on):</strong> scores and top scorers. On a
+              hub open to everyone, players are shown by first name and initial only; on a private
+              hub, only approved members can see it, and it shows full names.
             </>,
             <>
               <strong>Financial Admin:</strong> subs, payments, parent contact details, notes and
@@ -89,7 +92,8 @@ export default function PrivacyPage() {
               <strong>Members (if the club makes its hub private):</strong> the name of each person
               who asks to join, whether they&apos;re a parent, player or coach, their team, the names and
               teams of a parent&apos;s children (added by the parent — children don&apos;t have
-              accounts — and seen only by the club&apos;s coaches; the parent can change or remove them
+              accounts — and seen by the club&apos;s coaches; once approved, a child is in the
+              club&apos;s squad, which approved members of a private hub can see; the parent can change or remove them
               at any time), whether a coach approved them, and a cookie on their phone that remembers they&apos;re approved.
               It&apos;s only used to let them in.
             </>,

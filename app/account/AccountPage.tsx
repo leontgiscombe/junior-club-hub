@@ -150,7 +150,7 @@ export default function AccountPage() {
             {here.person.relation === "parent" || here.person.children.length ? (
               <>
                 <p className="mt-1 mb-3 text-sm text-gray-500">
-                  Their name and team. First name and initial is enough. Only the club&apos;s coaches see them.
+                  Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
                 </p>
                 <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} clubDecidesTeams />
               </>

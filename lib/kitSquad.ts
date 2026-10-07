@@ -1,8 +1,10 @@
-// The kit form's "pick your child" list. The form is public, so it never sees a
-// child's full name: each squad member appears as their first name and surname
-// initial ("Jamie S."), with more of the surname only when two would read the
-// same. The full name is looked up on the server from the player's id when the
-// form is sent.
+// The kit form's "pick your child" list. On a hub open to everyone the form
+// never sees a child's full name: each squad member appears as their first name
+// and surname initial ("Jamie S."), with more of the surname only when two
+// would read the same. A private hub, seen only by approved members, shows full
+// names (lib/names.ts). The full name is looked up on the server from the
+// player's id when the form is sent.
+import { showFullNames } from "./names";
 import { listPlayers, type Player } from "./statsStorage";
 
 export interface SquadOption {
@@ -33,10 +35,12 @@ export function squadLabels(players: Pick<Player, "id" | "name">[]): SquadOption
   return options.sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** A team's squad, ready for the public kit form. */
+/** A team's squad, ready for the kit form. */
 export async function kitSquad(team: string): Promise<SquadOption[]> {
-  const players = (await listPlayers()).filter((p) => p.team === team);
-  return squadLabels(players);
+  const [players, full] = await Promise.all([listPlayers(), showFullNames()]);
+  const squad = players.filter((p) => p.team === team);
+  if (full) return squad.map((p) => ({ id: p.id, label: p.name.trim() })).sort((a, b) => a.label.localeCompare(b.label));
+  return squadLabels(squad);
 }
 
 /** The squad member a kit form named, if they're in that team. */
