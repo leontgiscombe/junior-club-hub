@@ -10,10 +10,9 @@ import { redirect } from "next/navigation";
 import { listPlayers, type Player } from "@/lib/statsStorage";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { getCurrentSeason } from "@/lib/season";
-import { TEAMS } from "@/lib/teams";
+import { getClub, getTeams } from "@/lib/settings";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount } from "@/lib/cleanSheets";
-import { getClub } from "@/lib/settings";
 
 // Always fresh — results change through the season.
 export const dynamic = "force-dynamic";
@@ -27,7 +26,7 @@ export async function generateMetadata() {
 }
 
 /**
- * "Alfie Essery" -> "Alfie E." — enough for parents to know who scored without
+ * "Jamie Smith" -> "Jamie S." — enough for parents to know who scored without
  * publishing children's full names on a page anyone can open.
  */
 function shortName(name: string): string {
@@ -59,8 +58,8 @@ export default async function ResultsPage({
   // parent can be sent straight to their own team's results.
   searchParams: Promise<{ team?: string }>;
 }) {
-  // switched off in club.config.ts while the teams play non-competitively
-  const CLUB = await getClub();
+  // switched off on Coach Admin → Settings while the teams play non-competitively
+  const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   if (!CLUB.publicResults) redirect("/");
   const { team: requested } = await searchParams;
   const selected = TEAMS.some((t) => t.slug === requested) ? requested : null;

@@ -8,7 +8,7 @@
 //
 // Unlike the match and training logs, plans and drills are not cleared at the
 // end of a season — they are meant to be reused.
-import { TEAMS } from "./teams";
+import { getTeams } from "./settings";
 import { BUILT_IN_DRILLS } from "./builtInDrills";
 import {
   DRILL_KINDS,
@@ -155,7 +155,7 @@ export async function listDrills(): Promise<Drill[]> {
 export async function listPlans(): Promise<TrainingPlan[]> {
   const kv = await getKv();
   const all = kv ? await kv.hgetall<Record<string, unknown>>(PLANS_KEY) : null;
-  return TEAMS.map((t) => {
+  return (await getTeams()).map((t) => {
     const stored = all?.[t.slug];
     return stored == null ? emptyPlan(t.slug) : cleanPlan(t.slug, parse(stored));
   });

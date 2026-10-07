@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { TEAMS, isValidTeam, teamName, type TeamSlug } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
+import type { TeamSlug } from "@/lib/teams";
 import { getMyTeam, setMyTeam } from "@/lib/myTeam";
 import { useClub } from "./ClubProvider";
 
@@ -52,6 +53,7 @@ function downloadCSV(rows: Submission[], team: string) {
 // — used by the per-team admin pages at /kit/<team>/admin. With no prop it shows
 // all teams with a selector, used by the combined /kit/admin page.
 export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
+  const { TEAMS, teamName, isValidTeam } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [team, setTeam] = useState<TeamSlug>(lockedTeam ?? TEAMS[0].slug);
@@ -119,13 +121,13 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     const urlTeam = params.get("team");
     const startTeam =
       lockedTeam ??
-      (urlTeam && isValidTeam(urlTeam) ? urlTeam : getMyTeam() ?? TEAMS[0].slug);
+      (urlTeam && isValidTeam(urlTeam) ? urlTeam : getMyTeam(isValidTeam) ?? TEAMS[0].slug);
     setTeam(startTeam);
     if (urlKey) {
       setKey(urlKey);
       load(urlKey, startTeam);
     }
-  }, [load, lockedTeam]);
+  }, [load, lockedTeam, TEAMS, isValidTeam]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!authed) {

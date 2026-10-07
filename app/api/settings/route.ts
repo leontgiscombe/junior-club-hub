@@ -1,13 +1,21 @@
 // Coach Admin → Settings: the club's name, initials, slogan, season, whether
 // results are public, and its crest. Behind the Coach Admin password.
-//   GET    ?key=…                         -> { club, defaults, changes, crest }
-//   PUT    ?key=…  { changes }             -> saves the identity changes
+//   GET    ?key=…                         -> { club, defaults, changes, crest, teams }
+//   PUT    ?key=…  { changes?, teams? }    -> saves the identity changes and/or teams
 //   POST   ?key=…  { image, width, height } -> uploads a crest (a data: URL)
 //   DELETE ?key=…                         -> goes back to the default crest
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { DEFAULT_CLUB, cleanChanges } from "@/lib/clubSettings";
-import { getClub, getClubChanges, getCrest, saveClubChanges, saveCrest } from "@/lib/settings";
+import { DEFAULT_CLUB, cleanChanges, cleanTeams } from "@/lib/clubSettings";
+import {
+  getAllTeams,
+  getClub,
+  getClubChanges,
+  getCrest,
+  saveClubChanges,
+  saveCrest,
+  saveTeams,
+} from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +29,18 @@ const failed = (e: unknown) =>
   NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 500 });
 
 async function snapshot() {
-  const [club, changes, crest] = await Promise.all([getClub(), getClubChanges(), getCrest()]);
+  const [club, changes, crest, teams] = await Promise.all([
+    getClub(),
+    getClubChanges(),
+    getCrest(),
+    getAllTeams(),
+  ]);
   return {
     club,
     defaults: DEFAULT_CLUB,
     changes,
     crest: crest ? { width: crest.width, height: crest.height, updatedAt: crest.updatedAt } : null,
+    teams,
   };
 }
 
@@ -37,9 +51,23 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   if (!authorised(req)) return unauthorised();
-  const body = (await req.json().catch(() => null)) as { changes?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { changes?: unknown; teams?: unknown } | null;
   try {
-    await saveClubChanges(cleanChanges(body?.changes));
+    if (body?.teams !== undefined) {
+      const teams = cleanTeams(body.teams);
+      if (!teams) return NextResponse.json({ error: "Keep at least one team" }, { status: 400 });
+      // A team is never dropped, only archived, so its kit sizes, stats,
+      // logs and subs stay put and it can be brought back.
+      const missing = (await getAllTeams()).filter((t) => !teams.some((n) => n.slug === t.slug));
+      if (missing.length) {
+        return NextResponse.json(
+          { error: `Archive ${missing.map((t) => t.name).join(", ")} instead of removing it` },
+          { status: 400 },
+        );
+      }
+      await saveTeams(teams);
+    }
+    if (body?.changes !== undefined) await saveClubChanges(cleanChanges(body.changes));
     return NextResponse.json(await snapshot());
   } catch (e) {
     return failed(e);

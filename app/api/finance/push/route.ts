@@ -1,7 +1,8 @@
 // Saves or removes a browser's push subscription for the monthly subs
 // reminder. A subscription is only a push endpoint — no personal details.
 import { NextRequest, NextResponse } from "next/server";
-import { FINANCE_TEAMS, PUSH_SUBS_KEY, financeConfigured, redis } from "@/lib/financeStorage";
+import { PUSH_SUBS_KEY, financeConfigured, redis } from "@/lib/financeStorage";
+import { isTeam } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ async function handle(req: NextRequest, add: boolean) {
     // Drop any earlier record for this browser, then add the fresh one.
     await removeEndpoint(sub.endpoint);
     if (add) {
-      const team = body?.team && FINANCE_TEAMS.includes(body.team) ? body.team : "";
+      const team = body?.team && (await isTeam(body.team)) ? body.team : "";
       const record = { endpoint: sub.endpoint, keys: sub.keys, team, addedAt: new Date().toISOString() };
       await redis(["SADD", PUSH_SUBS_KEY, JSON.stringify(record)]);
     }

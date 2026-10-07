@@ -9,12 +9,9 @@
 //
 // Get a team's snippet from Full-Time admin: Media → Code Snippets → team
 // fixtures. Its code is the number in `var lrcode = '…'`.
-import { CLUB, TEAMS } from "@/club.config";
-
-/** Each team's Full-Time snippet code (set in club.config.ts). A team without one isn't synced. */
-export const FA_SNIPPETS: Record<string, string> = Object.fromEntries(
-  TEAMS.flatMap((t) => (t.faSnippet ? [[t.slug, t.faSnippet]] : []))
-);
+// Each team's code is set on Coach Admin → Settings; a team without one isn't
+// synced.
+import { CLUB } from "@/club.config";
 
 /** How our own teams are named on Full-Time, to tell us apart from the opposition. */
 const OUR_CLUB = new RegExp(

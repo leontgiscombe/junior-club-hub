@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { listFixtures, clearFixtures } from "@/lib/cameraStorage";
 import { addMatch } from "@/lib/matchStorage";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const fixtures = await listFixtures();
   const matches = [];
   for (const fixture of fixtures) {
-    if (!isValidTeam(fixture.team)) continue;
+    if (!(await isTeam(fixture.team))) continue;
     const { match } = await addMatch({
       team: fixture.team,
       opponent: fixture.opponent,

@@ -32,9 +32,11 @@ Upstash Redis database, set up for a club from one settings file.
 
 ## Setting it up for a club
 
-1. **`club.config.ts`**: the club's name, initials, full name, slogan, crest,
-   season, the teams (with their FA Full-Time codes and league opponents, if
-   any) and whether results are public.
+1. **Coach Admin → Settings**: the club's name, initials, full name, slogan,
+   crest, season, whether results are public, and the teams (with their FA
+   Full-Time codes and league opponents, if any). These are saved in the
+   database; **`club.config.ts`** holds the defaults a new hub starts with,
+   and the storage prefix.
 2. **`public/club-crest.png`**: the club's crest, plus the home-screen icons
    `public/hub-icon-180.png` and `hub-icon-512.png`.
 3. **`public/kit-generic.jpg`**: a picture of the kit for the Kit Sizes pages.

@@ -3,14 +3,13 @@
 // salt and password verifier, never the password) at "{prefix}:v1:auth:{team}",
 // and reminder subscriptions at "{prefix}:push:subs". The data is encrypted in
 // the browser with the team's password; the server only sees the blob.
-import { CLUB, TEAMS } from "@/club.config";
+import { CLUB } from "@/club.config";
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
 export const financeConfigured = () => !!(REDIS_URL && REDIS_TOKEN);
 
-export const FINANCE_TEAMS: readonly string[] = TEAMS.map((t) => t.slug);
 
 const P = CLUB.storagePrefix;
 export const financeDataKey = (team: string) => `${P}:v1:${team}`;

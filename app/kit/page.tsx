@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { TEAMS } from "@/lib/teams";
-import { getClub } from "@/lib/settings";
+import { getClub, getTeams } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
 
 export const metadata = {
@@ -10,7 +9,7 @@ export const metadata = {
 };
 
 export default async function KitTeamPicker() {
-  const CLUB = await getClub();
+  const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <KitHeader back={{ href: "/", label: "Team Hub" }} title="Kit Sizes" subtitle={CLUB.fullName} />

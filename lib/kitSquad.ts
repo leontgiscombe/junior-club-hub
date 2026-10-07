@@ -1,6 +1,6 @@
 // The kit form's "pick your child" list. The form is public, so it never sees a
 // child's full name: each squad member appears as their first name and surname
-// initial ("Alfie M."), with more of the surname only when two would read the
+// initial ("Jamie S."), with more of the surname only when two would read the
 // same. The full name is looked up on the server from the player's id when the
 // form is sent.
 import { listPlayers, type Player } from "./statsStorage";

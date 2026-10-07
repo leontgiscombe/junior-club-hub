@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { getClubWithIcons } from "@/lib/settings";
+import { getClubWithIcons, getTeams } from "@/lib/settings";
 import { ClubProvider } from "./components/ClubProvider";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
@@ -22,11 +22,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { club } = await getClubWithIcons();
+  const [{ club }, teams] = await Promise.all([getClubWithIcons(), getTeams()]);
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full bg-gray-50 font-sans antialiased">
-        <ClubProvider club={club}>{children}</ClubProvider>
+        <ClubProvider club={club} teams={teams}>{children}</ClubProvider>
       </body>
     </html>
   );

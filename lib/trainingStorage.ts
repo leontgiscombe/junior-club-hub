@@ -10,7 +10,7 @@
 // the same way the match log's awards do, so the stats tracker, CSV and
 // presentation all read one set of totals.
 import { adjustPlayerStat } from "./statsStorage";
-import { TEAMS } from "./teams";
+import { getTeams } from "./settings";
 
 // Every team trains on a Monday, from the start of the season to the end of
 // July. Move these when the next season's dates are known.
@@ -91,7 +91,7 @@ export async function listTraining(): Promise<TrainingSession[]> {
     (await listStored()).map((s) => [keyFor(s.team, s.date), s])
   );
   const sessions: TrainingSession[] = [];
-  for (const team of TEAMS) {
+  for (const team of await getTeams()) {
     for (const date of trainingDates()) {
       const key = keyFor(team.slug, date);
       sessions.push(

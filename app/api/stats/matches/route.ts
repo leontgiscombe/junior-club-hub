@@ -45,7 +45,7 @@ import {
 } from "@/lib/matchStorage";
 import { listPlayers } from "@/lib/statsStorage";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 import { isValidHolder } from "@/lib/cameraHolders";
 import type { FaFixture } from "@/lib/faFullTime";
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
   const cup = friendly && Boolean(body.cup);
   const time = String(body.time ?? "");
 
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   if (!opponent || !date) {
@@ -223,7 +223,7 @@ export async function DELETE(request: Request) {
 
 /** Fixtures read from a team's Full-Time snippet, checked before they're stored. */
 async function faSync(team: string, raw: unknown) {
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   const fixtures: FaFixture[] = (Array.isArray(raw) ? raw : [])

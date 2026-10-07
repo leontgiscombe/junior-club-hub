@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { TEAMS, teamName } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
+import { nameOf, type Team } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import { approachingMilestones, reachedMilestones } from "@/lib/milestones";
 import {
@@ -102,9 +103,6 @@ const ZERO: Record<StatField, number> = {
   bestTrainer: 0,
 };
 
-function teamAccent(slug: string) {
-  return TEAMS.find((t) => t.slug === slug)?.accent ?? "⚽";
-}
 
 // "2026/27" for a date in the 2026-27 season (August–May, July onwards counts
 // as the new one) — mirrors defaultSeasonName in lib/statsStorage.ts.
@@ -150,17 +148,17 @@ function downloadTeamCSV(players: Player[], team: string) {
 }
 
 // An archived season spans every team, so that export keeps a Team column.
-function downloadSeasonCSV(players: Player[], seasonLabel: string) {
+function downloadSeasonCSV(players: Player[], seasonLabel: string, teams: readonly Team[]) {
   const header = ["Team", "Player", "Position", ...STATS.map((s) => s.label)].join(",");
   const lines = [...players]
     .sort(
       (a, b) =>
-        TEAMS.findIndex((t) => t.slug === a.team) -
-          TEAMS.findIndex((t) => t.slug === b.team) || a.name.localeCompare(b.name)
+        teams.findIndex((t) => t.slug === a.team) -
+          teams.findIndex((t) => t.slug === b.team) || a.name.localeCompare(b.name)
     )
     .map((p) =>
       [
-        csvCell(teamName(p.team)),
+        csvCell(nameOf(teams, p.team)),
         csvCell(p.name),
         csvCell(positionLabel(p.position)),
         ...STATS.map((s) => p[s.field] ?? 0),
@@ -241,6 +239,7 @@ function winners(list: Player[], field: StatField) {
 }
 
 export default function StatsTracker() {
+  const { TEAMS, teamName, teamAccent } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -561,7 +560,7 @@ export default function StatsTracker() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not load that season");
-      downloadSeasonCSV(data.archive.players ?? [], archive.name);
+      downloadSeasonCSV(data.archive.players ?? [], archive.name, TEAMS);
     } catch (err) {
       setSeasonError(err instanceof Error ? err.message : "Could not load that season");
     } finally {

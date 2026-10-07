@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TEAMS, teamName } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
 import { positionIcon, statsForSquad } from "@/lib/positions";
 import { cleanSheetCount } from "@/lib/cleanSheets";
 import type { Position } from "@/lib/statsStorage";
@@ -123,11 +123,9 @@ type Slide =
     }
   | { kind: "end" };
 
-function teamAccent(slug: string) {
-  return TEAMS.find((t) => t.slug === slug)?.accent ?? "⚽";
-}
 
 export default function StatsPresentation() {
+  const { TEAMS, teamName, teamAccent } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -192,7 +190,7 @@ export default function StatsPresentation() {
       setKey(urlKey);
       load(urlKey, params.get("archive"));
     }
-  }, [load]);
+  }, [load, TEAMS]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const slides = useMemo<Slide[]>(() => {
@@ -246,7 +244,7 @@ export default function StatsPresentation() {
     }
     out.push({ kind: "end" });
     return out;
-  }, [players, matches, teamFilter]);
+  }, [players, matches, teamFilter, TEAMS]);
 
   const total = slides.length;
   const next = useCallback(() => setIndex((i) => Math.min(i + 1, total - 1)), [total]);

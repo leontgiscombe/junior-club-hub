@@ -436,6 +436,14 @@ export default function HelpManual() {
             Phones that already saved the hub to their home screen keep the old icon until it&apos;s
             removed and added again.
           </p>
+          <H3>Teams</H3>
+          <p>
+            Under <B>👥 Teams</B>, tap <B>Edit</B> on a team to change its name, emoji, the name
+            used on posters, its FA Full-Time code (so fixtures arrive by themselves) and its league
+            opponents. <B>+ Add Team</B> adds one, and the arrows change the order the tabs appear
+            in. <B>Archive Team</B> hides a team everywhere but keeps its kit sizes, stats, logs and
+            subs; <B>Bring Back</B> restores it. Tap <B>Save Changes</B> when you&apos;re done.
+          </p>
         </Section>
 
         <Section id="end-of-season" title="End of Season">

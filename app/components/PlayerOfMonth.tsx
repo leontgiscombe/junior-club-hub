@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toBlob, toPng } from "html-to-image";
-import { CLUB as CONFIG, TEAMS as CLUB_TEAMS } from "@/club.config";
+import { CLUB as CONFIG } from "@/club.config";
 import { useClub } from "./ClubProvider";
-import { TEAMS, teamName } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
 import { defaultSeasonName } from "@/lib/season";
 import {
@@ -128,6 +128,7 @@ function defaultMonth(months: string[]): string {
 }
 
 export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
+  const { TEAMS, teamName, findTeam } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -323,7 +324,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
       ? `${winnerName} picked up ${awardPhrase(winner.counts)} during ${mName}. Brilliant effort, ${winnerName} — keep it up! 💪⚽`
       : "");
   const slogan = edits.slogan ?? CLUB.slogan;
-  const clubTeam = CLUB_TEAMS.find((t) => t.slug === team);
+  const clubTeam = findTeam(team);
   const squadLabel = `${CLUB.initials} ${clubTeam?.squadName ?? teamName(team)}`;
   const season = month ? defaultSeasonName(new Date(`${month}-01T00:00`)).replace(/^20(\d\d)\/(\d\d)$/, "$1/$2") : "";
   const canShare =

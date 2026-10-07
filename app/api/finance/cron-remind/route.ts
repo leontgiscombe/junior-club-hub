@@ -3,8 +3,7 @@
 // paid. It sends a generic message only and never reads the encrypted team data.
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
-import { TEAMS } from "@/club.config";
-import { getClub } from "@/lib/settings";
+import { getAllTeams, getClub } from "@/lib/settings";
 import { PUSH_SUBS_KEY, financeConfigured, redis } from "@/lib/financeStorage";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +34,7 @@ export async function GET(req: NextRequest) {
     VAPID_PRIVATE,
   );
 
-  const CLUB = await getClub();
+  const [CLUB, TEAMS] = await Promise.all([getClub(), getAllTeams()]);
   const monthName = new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const body =
     req.nextUrl.searchParams.get("when") === "mid"
