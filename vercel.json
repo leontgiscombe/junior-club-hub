@@ -1,0 +1,19 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "github": {
+    "silent": true
+  },
+  "crons": [
+    {
+      "path": "/api/finance/cron-remind",
+      "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/finance/cron-remind?when=mid",
+      "schedule": "0 9 15 * *"
+    }
+  ]
+}
