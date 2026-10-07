@@ -113,3 +113,22 @@ export async function isCoach(supplied: string): Promise<boolean> {
   }
   return ok;
 }
+
+/**
+ * Whether `supplied` can do what only a club admin can (like deleting a player):
+ * someone signed in with the Club admin role — or, until clubs switch it off,
+ * the club's own coach password.
+ */
+export async function isClubAdmin(supplied: string): Promise<boolean> {
+  const tenant = await getTenant();
+  if (!tenant || !supplied) return false;
+  if (supplied === SESSION_KEY) {
+    try {
+      const me = await currentPerson(tenant);
+      return me?.person?.status === "approved" && me.person.roles.includes("admin");
+    } catch {
+      return false;
+    }
+  }
+  return isCoach(supplied);
+}

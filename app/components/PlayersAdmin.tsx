@@ -16,7 +16,7 @@ type SquadPlayer = {
   parents: { name: string; email: string }[];
   requestedTeam?: TeamOption;
 };
-type Snapshot = { teams: TeamOption[]; players: SquadPlayer[] };
+type Snapshot = { teams: TeamOption[]; players: SquadPlayer[]; canDelete: boolean };
 
 export default function PlayersAdmin() {
   const [key, setKey] = useState("");
@@ -70,6 +70,27 @@ export default function PlayersAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, team }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "That didn't work");
+      setSnap(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That didn't work");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(p: SquadPlayer) {
+    if (
+      !confirm(
+        `Delete ${p.name} from the squad? Their season stats go too${p.parents.length ? `, and they come off ${p.parents.map((x) => x.name).join(" and ")}'s list of children` : ""}. This can't be undone (except from a backup).`,
+      )
+    )
+      return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/players?key=${encodeURIComponent(key)}&id=${encodeURIComponent(p.id)}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That didn't work");
       setSnap(data);
@@ -169,6 +190,7 @@ export default function PlayersAdmin() {
                             .join(" · ")}
                         </span>
                       </span>
+                      <span className="flex items-center gap-2">
                       <select
                         value={p.team}
                         onChange={(e) => move(p.id, e.target.value)}
@@ -181,6 +203,17 @@ export default function PlayersAdmin() {
                           <option key={t.slug} value={t.slug}>{t.name}</option>
                         ))}
                       </select>
+                      {snap.canDelete && (
+                        <button
+                          onClick={() => remove(p)}
+                          disabled={busy}
+                          aria-label={`Delete ${p.name}`}
+                          className="rounded-lg px-2 py-2 text-sm font-semibold text-gray-400 hover:text-red-600 disabled:opacity-40"
+                        >
+                          Delete
+                        </button>
+                      )}
+                      </span>
                     </li>
                   ))}
                 </ul>
