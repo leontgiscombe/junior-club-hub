@@ -35,7 +35,7 @@ export function isPosition(value: unknown): value is Position {
 
 export interface Player {
   id: string;
-  team: string; // team slug (see lib/teams.ts)
+  team: string; // team slug (see lib/teams.ts); "" for a player not in a team yet
   name: string;
   position: Position;
   appearances: number;
@@ -141,6 +141,23 @@ export async function writePlayers(players: Player[]): Promise<void> {
   const batch: Record<string, string> = {};
   for (const player of players) batch[player.id] = JSON.stringify(player);
   await kv.hset(KEY, batch);
+}
+
+/** One player, if they're in the squad. */
+export async function getPlayer(id: string): Promise<Player | null> {
+  const kv = await getKv();
+  if (!kv || !id) return null;
+  const current = await kv.hget<unknown>(KEY, id);
+  return current == null ? null : parse(current);
+}
+
+/** Put a player in a team ("" for none yet). */
+export async function setPlayerTeam(id: string, team: string): Promise<boolean> {
+  const kv = await getKv();
+  const player = await getPlayer(id);
+  if (!kv || !player) return false;
+  await kv.hset(KEY, { [id]: JSON.stringify({ ...player, team }) });
+  return true;
 }
 
 export async function listPlayers(): Promise<Player[]> {

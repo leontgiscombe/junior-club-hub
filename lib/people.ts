@@ -3,7 +3,9 @@
 // account id. Whoever signs in with the club's own email (the one it signed up
 // with) is its club admin. Server only.
 import { randomBytes } from "crypto";
-import { COACH_ROLES, MAX_CHILDREN, ROLES, kvCall, peopleKey, readPerson, type Child, type Person, type Role } from "./access";
+import { COACH_ROLES, MAX_CHILDREN, ROLES, childrenOf, kvCall, peopleKey, readPerson, type Child, type Person, type Role } from "./access";
+import { getTeams } from "./settings";
+import { addPlayer, listPlayers, setPlayerTeam } from "./statsStorage";
 import { currentUser, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
@@ -130,11 +132,18 @@ export async function decidePerson(
   return true;
 }
 
-/** Change a person's own team, or their children (a parent editing theirs, or a coach fixing them). */
+/**
+ * Change a person's own team, or their children — a parent editing theirs, or a
+ * coach fixing them. A child who's already a squad player keeps the team the
+ * club gave them (only a coach can change it, and that moves the player too);
+ * a new child of an approved parent joins the squad with no team yet, and the
+ * team the parent chose waiting as a request.
+ */
 export async function updatePerson(
   tenant: string,
   userId: string,
   change: { team?: TeamRef | null; children?: Child[] },
+  opts: { byCoach?: boolean } = {},
 ): Promise<Person | null> {
   const person = await readPerson(tenant, userId);
   if (!person) return null;
@@ -142,13 +151,94 @@ export async function updatePerson(
   if (change.team === null) delete next.team;
   else if (change.team) next.team = change.team;
   if (change.children) {
-    next.children = change.children;
+    const before = new Map(childrenOf(person).map((c) => [c.id, c]));
+    const out: Child[] = [];
+    for (const c of change.children) {
+      const old = before.get(c.id);
+      if (old?.playerId) {
+        let team = old.team;
+        if (opts.byCoach && c.team?.slug !== old.team?.slug) {
+          await setPlayerTeam(old.playerId, c.team?.slug ?? "");
+          team = c.team;
+        }
+        out.push({ id: old.id, name: c.name, playerId: old.playerId, ...(team ? { team } : {}) });
+      } else if (person.status === "approved") {
+        const team = opts.byCoach ? c.team : undefined;
+        const { player } = await addPlayer({ team: team?.slug ?? "", name: c.name });
+        out.push({
+          id: c.id,
+          name: c.name,
+          playerId: player.id,
+          ...(team ? { team } : {}),
+          ...(!opts.byCoach && c.team ? { requestedTeam: c.team } : {}),
+        });
+      } else {
+        // still waiting for approval: their team is the parent's request
+        out.push({ id: c.id, name: c.name, ...(c.team ? { team: c.team } : {}) });
+      }
+    }
+    next.children = out;
     // the one child typed before children were listed is now in the list
     delete next.child;
     if (next.relation === "parent") delete next.team;
   }
   await save(tenant, next);
   return next;
+}
+
+/**
+ * A just-approved parent's children join the club's squad: each linked to the
+ * squad player the coach picked (`links`: child id → player id), or added as a
+ * new player in the team the parent chose.
+ */
+export async function addChildrenToSquad(tenant: string, userId: string, links: Record<string, string>): Promise<void> {
+  const person = await readPerson(tenant, userId);
+  if (!person) return;
+  const kids = childrenOf(person);
+  if (!kids.length || kids.every((c) => c.playerId)) return;
+  const [players, teams] = await Promise.all([listPlayers(), getTeams()]);
+  const teamRef = (slug: string) => {
+    const t = teams.find((x) => x.slug === slug);
+    return t ? { slug: t.slug, name: t.name } : undefined;
+  };
+  const out: Child[] = [];
+  for (const c of kids) {
+    if (c.playerId) {
+      out.push(c);
+      continue;
+    }
+    const existing = players.find((p) => p.id === links[c.id]);
+    if (existing) {
+      const team = teamRef(existing.team);
+      out.push({ id: c.id, name: c.name, playerId: existing.id, ...(team ? { team } : {}) });
+    } else {
+      const { player } = await addPlayer({ team: c.team?.slug ?? "", name: c.name });
+      out.push({ id: c.id, name: c.name, playerId: player.id, ...(c.team ? { team: c.team } : {}) });
+    }
+  }
+  const next: Person = { ...person, children: out };
+  delete next.child;
+  await save(tenant, next);
+}
+
+/** Put a squad player in a team (the club's decision), and update the parent's record to match. */
+export async function assignPlayerTeam(tenant: string, playerId: string, slug: string): Promise<boolean> {
+  const teams = await getTeams();
+  const team = teams.find((t) => t.slug === slug);
+  if (slug && !team) return false;
+  if (!(await setPlayerTeam(playerId, slug))) return false;
+  for (const person of await listPeople(tenant)) {
+    const kids = childrenOf(person);
+    if (!kids.some((c) => c.playerId === playerId)) continue;
+    const children = kids.map((c) => {
+      if (c.playerId !== playerId) return c;
+      const updated: Child = { id: c.id, name: c.name, playerId };
+      if (team) updated.team = { slug: team.slug, name: team.name };
+      return updated;
+    });
+    await save(tenant, { ...person, children });
+  }
+  return true;
 }
 
 export async function leaveClub(tenant: string, userId: string): Promise<void> {
