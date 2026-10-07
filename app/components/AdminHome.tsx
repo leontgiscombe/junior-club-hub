@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
-import { CLUB } from "@/club.config";
+import { useClub } from "./ClubProvider";
 
 // the same heavy lettering as the home page and the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
@@ -18,6 +18,7 @@ const TILE: Record<string, string> = {
   "/admin/stats": "from-indigo-600 to-violet-500",
   "/admin/camera": "from-rose-600 to-pink-500",
   "/admin/kit": "from-orange-600 to-amber-500",
+  "/admin/settings": "from-gray-700 to-gray-500",
   "/admin/help": "from-slate-600 to-slate-500",
 };
 
@@ -91,6 +92,12 @@ const TOOLS: {
     body: "Kit-size submissions by team, with CSV export.",
   },
   {
+    path: "/admin/settings",
+    icon: "⚙️",
+    title: "Settings",
+    body: "The club's name, crest, slogan and season, everywhere in the hub.",
+  },
+  {
     path: "/admin/help",
     icon: "❓",
     title: "Help",
@@ -99,6 +106,7 @@ const TOOLS: {
 ];
 
 export default function AdminHome() {
+  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -141,6 +149,7 @@ export default function AdminHome() {
           <div className="mb-6 text-center text-white">
             <Image
               src={CLUB.crest.src}
+              unoptimized
               alt={CLUB.crest.alt}
               width={CLUB.crest.width}
               height={CLUB.crest.height}
@@ -200,6 +209,7 @@ export default function AdminHome() {
           </div>
           <Image
             src={CLUB.crest.src}
+            unoptimized
             alt={CLUB.crest.alt}
             width={CLUB.crest.width}
             height={CLUB.crest.height}

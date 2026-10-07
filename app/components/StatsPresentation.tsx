@@ -13,7 +13,7 @@ import {
   seasonRecord,
   type SeasonRecord,
 } from "@/lib/record";
-import { CLUB } from "@/club.config";
+import { useClub } from "./ClubProvider";
 
 type StatField =
   | "appearances"
@@ -128,6 +128,7 @@ function teamAccent(slug: string) {
 }
 
 export default function StatsPresentation() {
+  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -328,6 +329,7 @@ export default function StatsPresentation() {
           <>
             <Image
               src={CLUB.crest.src}
+              unoptimized
               alt={CLUB.crest.alt}
               width={CLUB.crest.width}
               height={CLUB.crest.height}

@@ -1,11 +1,13 @@
 // The club's details for the plain pages in public/ (Financial Admin and the
 // Training Hub): name, crest, slogan, teams and the public key for reminders.
 import { NextResponse } from "next/server";
-import { CLUB, TEAMS } from "@/club.config";
+import { TEAMS } from "@/club.config";
+import { getClub } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
+  const CLUB = await getClub();
   return NextResponse.json({
     club: {
       name: CLUB.name,

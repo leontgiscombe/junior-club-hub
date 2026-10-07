@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toBlob, toPng } from "html-to-image";
-import { CLUB, TEAMS as CLUB_TEAMS } from "@/club.config";
+import { CLUB as CONFIG, TEAMS as CLUB_TEAMS } from "@/club.config";
+import { useClub } from "./ClubProvider";
 import { TEAMS, teamName } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import { defaultSeasonName } from "@/lib/season";
@@ -53,9 +54,7 @@ interface PosterEdits {
 
 const POSTER_W = 1080;
 const POSTER_H = 1600;
-const DEFAULT_SLOGAN = CLUB.slogan;
-
-const editsKey = (team: string, month: string) => `${CLUB.storagePrefix}:potm:${team}:${month}`;
+const editsKey = (team: string, month: string) => `${CONFIG.storagePrefix}:potm:${team}:${month}`;
 
 function readEdits(team: string, month: string): PosterEdits {
   try {
@@ -129,6 +128,7 @@ function defaultMonth(months: string[]): string {
 }
 
 export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
+  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -322,7 +322,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     (winner
       ? `${winnerName} picked up ${awardPhrase(winner.counts)} during ${mName}. Brilliant effort, ${winnerName} — keep it up! 💪⚽`
       : "");
-  const slogan = edits.slogan ?? DEFAULT_SLOGAN;
+  const slogan = edits.slogan ?? CLUB.slogan;
   const clubTeam = CLUB_TEAMS.find((t) => t.slug === team);
   const squadLabel = `${CLUB.initials} ${clubTeam?.squadName ?? teamName(team)}`;
   const season = month ? defaultSeasonName(new Date(`${month}-01T00:00`)).replace(/^20(\d\d)\/(\d\d)$/, "$1/$2") : "";
@@ -646,6 +646,7 @@ function Poster({
   photo: string | null;
   photoY: number;
 }) {
+  const CLUB = useClub();
   const display: React.CSSProperties = { fontFamily: "var(--font-poster)", textTransform: "uppercase" };
   const month = monthName.toUpperCase();
   // a month with five Mondays or match days needs smaller rows to fit

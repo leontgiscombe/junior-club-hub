@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { CLUB } from "@/club.config";
+import { getClubWithIcons } from "@/lib/settings";
+import { ClubProvider } from "./components/ClubProvider";
 
-export const metadata: Metadata = {
-  title: `${CLUB.name} – Team Hub`,
-  description: `Training, kit sizes and team admin for ${CLUB.fullName}, all in one place.`,
-  // The crest on the paint-stroke background, for phone home screens
-  icons: { icon: "/club-crest.png", apple: "/hub-icon-180.png" },
-  appleWebApp: { title: `${CLUB.initials} Hub` },
-};
+// Every page reads the club's saved settings, so none is built ahead of time.
+export const dynamic = "force-dynamic";
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const { club, icons } = await getClubWithIcons();
+  return {
+    title: `${club.name} – Team Hub`,
+    description: `Training, kit sizes and team admin for ${club.fullName}, all in one place.`,
+    // the crest on the paint-stroke background, for phone home screens
+    icons: { icon: icons.icon, apple: icons.apple },
+    appleWebApp: { title: `${club.initials} Hub` },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { club } = await getClubWithIcons();
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full bg-gray-50 font-sans antialiased">
-        {children}
+        <ClubProvider club={club}>{children}</ClubProvider>
       </body>
     </html>
   );
