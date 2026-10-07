@@ -1,7 +1,7 @@
 // Who runs the platform, for the privacy policy and terms (app/privacy,
 // app/terms). Set PLATFORM_OPERATOR to the person or business legally
 // responsible (e.g. "Jane Smith trading as Grassroots Club Hub") and
-// PLATFORM_CONTACT_EMAIL to where privacy questions should go.
+// PLATFORM_CONTACT_EMAIL to where questions should go (hello@…).
 import { PLATFORM_NAME, rootDomain } from "./tenantHost";
 
 export const LEGAL_UPDATED = "7 October 2026";
