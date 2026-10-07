@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { RELATIONS, ROLES, SESSION_KEY, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
+import { keyQuery } from "./coachKey";
 
 type TeamOption = { slug: string; name: string };
 
@@ -18,7 +19,16 @@ type Snapshot = {
   members: Member[];
   teams: TeamOption[];
   players: SquadPlayer[];
+  invites: { email: string; name?: string; roles: Role[]; team?: TeamOption; invitedBy: string; createdAt: string }[];
+  /** a club admin: can give the Club admin, Coach and Treasurer roles, change the code, etc. */
+  canAdmin: boolean;
+  passwordOff: boolean;
+  /** a club admin signed in with their own account (who alone can switch the password off) */
+  accountAdmin: boolean;
 };
+
+/** The roles only a club admin can give or take away. */
+const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
 type SquadPlayer = { id: string; name: string; team: string };
 
 /** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
@@ -172,7 +182,7 @@ export default function MembersAdmin() {
     <main className="min-h-screen bg-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
-          <Link href={`/admin?key=${encodeURIComponent(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
+          <Link href={`/admin${keyQuery(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
             ← Coach Admin
           </Link>
           <h1 className="mt-2 text-xl font-extrabold">👪 Members</h1>
@@ -205,7 +215,7 @@ export default function MembersAdmin() {
             <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
               {copied === "link" ? "Copied ✓" : "Copy Join Link"}
             </button>
-            <button
+            {snap.canAdmin && <button
               onClick={() => {
                 if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
               }}
@@ -213,9 +223,11 @@ export default function MembersAdmin() {
               className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
             >
               New Code
-            </button>
+            </button>}
           </div>
         </section>
+
+        <InviteSection snap={snap} busy={busy} onAct={act} />
 
         {/* Private hub */}
         <section className={card}>
@@ -231,7 +243,7 @@ export default function MembersAdmin() {
             <input
               type="checkbox"
               checked={snap.private}
-              disabled={busy}
+              disabled={busy || !snap.canAdmin}
               onChange={(e) => {
                 const on = e.target.checked;
                 if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them here.")) return;
@@ -241,6 +253,8 @@ export default function MembersAdmin() {
             />
           </label>
         </section>
+
+        {snap.canAdmin && <PasswordSection snap={snap} busy={busy} onAct={act} />}
 
         {/* Waiting */}
         <section className={card}>
@@ -255,7 +269,7 @@ export default function MembersAdmin() {
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
               {pending.map((p) => (
-                <PendingPerson key={p.userId} person={p} players={snap.players} busy={busy} onDecide={act} />
+                <PendingPerson key={p.userId} person={p} players={snap.players} canAdmin={snap.canAdmin} busy={busy} onDecide={act} />
               ))}
             </ul>
           )}
@@ -275,7 +289,7 @@ export default function MembersAdmin() {
               </summary>
               <ul className="divide-y divide-gray-100 px-4">
                 {g.people.map((p) => (
-                  <MemberRow key={p.userId} person={p} inTeam={g.key || undefined} teams={snap.teams} busy={busy} onAct={act} />
+                  <MemberRow key={p.userId} person={p} inTeam={g.key || undefined} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
                 ))}
               </ul>
             </details>
@@ -340,16 +354,29 @@ export default function MembersAdmin() {
 const ALL_ROLES = Object.keys(ROLES) as Role[];
 
 /** A person's roles as chips to tap on and off. */
-function RoleChips({ roles, disabled, onChange }: { roles: Role[]; disabled: boolean; onChange: (roles: Role[]) => void }) {
+function RoleChips({
+  roles,
+  disabled,
+  onChange,
+  canAdmin = true,
+}: {
+  roles: Role[];
+  disabled: boolean;
+  onChange: (roles: Role[]) => void;
+  /** a coach who isn't a club admin can only give (or take away) Parent and Player */
+  canAdmin?: boolean;
+}) {
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
       {ALL_ROLES.map((r) => {
         const on = roles.includes(r);
+        const locked = !canAdmin && ADMIN_ROLES.includes(r);
         return (
           <button
             key={r}
             type="button"
-            disabled={disabled}
+            disabled={disabled || locked}
+            title={locked ? "Only a club admin can change this role" : undefined}
             aria-pressed={on}
             onClick={() => onChange(on ? roles.filter((x) => x !== r) : [...roles, r])}
             className={`rounded-full px-3 py-1 text-xs font-bold transition-colors disabled:opacity-50 ${
@@ -368,11 +395,13 @@ function RoleChips({ roles, disabled, onChange }: { roles: Role[]; disabled: boo
 function PendingPerson({
   person,
   players,
+  canAdmin,
   busy,
   onDecide,
 }: {
   person: Person;
   players: SquadPlayer[];
+  canAdmin: boolean;
   busy: boolean;
   onDecide: (body: Record<string, unknown>) => void;
 }) {
@@ -423,7 +452,7 @@ function PendingPerson({
         </div>
       )}
       <p className="mt-2 text-xs font-semibold text-gray-500">Approve as:</p>
-      <RoleChips roles={roles} disabled={busy} onChange={setRoles} />
+      <RoleChips roles={roles} disabled={busy} onChange={setRoles} canAdmin={canAdmin} />
       <div className="mt-2 flex gap-2">
         <button
           onClick={() => onDecide({ action: "approvePerson", userId: person.userId, roles, links })}
@@ -445,12 +474,14 @@ function MemberRow({
   person,
   inTeam,
   teams,
+  canAdmin,
   busy,
   onAct,
 }: {
   person: Person;
   inTeam?: string;
   teams: TeamOption[];
+  canAdmin: boolean;
   busy: boolean;
   onAct: (body: Record<string, unknown>) => void;
 }) {
@@ -473,18 +504,25 @@ function MemberRow({
           <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
             {editing ? "Close" : "Edit"}
           </button>
-          <button
-            onClick={() => {
-              if (confirm(`Remove ${person.name}? They won't be able to open the hub until they ask again.`)) onAct({ action: "removePerson", userId: person.userId });
-            }}
-            disabled={busy}
-            className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
-          >
-            Remove
-          </button>
+          {(canAdmin || !person.roles.some((r) => ADMIN_ROLES.includes(r))) && (
+            <button
+              onClick={() => {
+                if (confirm(`Remove ${person.name}? They won't be able to open the hub until they ask again.`)) onAct({ action: "removePerson", userId: person.userId });
+              }}
+              disabled={busy}
+              className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+            >
+              Remove
+            </button>
+          )}
         </span>
       </div>
-      <RoleChips roles={person.roles} disabled={busy} onChange={(roles) => roles.length && onAct({ action: "personRoles", userId: person.userId, roles })} />
+      <RoleChips
+        roles={person.roles}
+        disabled={busy || (!canAdmin && person.roles.some((r) => ADMIN_ROLES.includes(r)))}
+        canAdmin={canAdmin}
+        onChange={(roles) => roles.length && onAct({ action: "personRoles", userId: person.userId, roles })}
+      />
       {editing && (
         <div className="mt-3 rounded-xl bg-gray-50 p-3">
           {isParent ? (
@@ -520,5 +558,100 @@ function MemberRow({
         </div>
       )}
     </li>
+  );
+}
+
+/** Invite someone by email: signing in with that email makes them a member, with the roles chosen here. */
+function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [roles, setRoles] = useState<Role[]>(["coach"]);
+  const [team, setTeam] = useState("");
+  const shownRoles = snap.canAdmin ? roles : roles.filter((r) => !ADMIN_ROLES.includes(r));
+  const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+  return (
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="font-extrabold text-gray-900">✉️ Invite by Email</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        For your coaches and helpers: they get an email, sign in with that address, and they&apos;re straight in
+        with the roles you choose — no code or approval needed.
+      </p>
+      <div className="mt-3 flex flex-col gap-2">
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="their@email.com" className={field} />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Their name (optional)" maxLength={60} className={field} />
+        {snap.teams.length > 0 && (
+          <select value={team} onChange={(e) => setTeam(e.target.value)} className={field}>
+            <option value="">Team (optional)</option>
+            {snap.teams.map((t) => (
+              <option key={t.slug} value={t.slug}>{t.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      <RoleChips roles={shownRoles} disabled={busy} onChange={setRoles} canAdmin={snap.canAdmin} />
+      <button
+        onClick={() => {
+          onAct({ action: "invite", email, name, roles: shownRoles, team });
+          setEmail("");
+          setName("");
+        }}
+        disabled={busy || !email.includes("@") || !shownRoles.length}
+        className="mt-3 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
+      >
+        Send Invite
+      </button>
+      {snap.invites.length > 0 && (
+        <ul className="mt-4 divide-y divide-gray-100 border-t border-gray-100">
+          {snap.invites.map((i) => (
+            <li key={i.email} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+              <span className="min-w-0">
+                <span className="block font-semibold text-gray-900">{i.name || i.email}</span>
+                <span className="block text-sm text-gray-500">
+                  {[i.name ? i.email : "", i.roles.map((r) => ROLES[r]).join(", "), i.team?.name, `invited ${when(i.createdAt)}`].filter(Boolean).join(" · ")}
+                </span>
+              </span>
+              {(snap.canAdmin || !i.roles.some((r) => ADMIN_ROLES.includes(r))) && (
+                <button onClick={() => onAct({ action: "cancelInvite", email: i.email })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
+                  Cancel
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** The club's shared coach password: on (still works) or off (everyone signs in with their own account). */
+function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
+  return (
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="font-extrabold text-gray-900">🔑 Shared Coach Password</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        {snap.passwordOff
+          ? "Off: everyone signs in with their own account. Nobody can get in with a shared password."
+          : "On: anyone with the club's coach password can still use Coach Admin. Once your coaches have their own accounts, switch it off — then removing someone from Members takes away their access straight away."}
+      </p>
+      {snap.accountAdmin ? (
+        <button
+          onClick={() => {
+            if (snap.passwordOff || confirm("Switch the shared coach password off? Only people with their own account and the Club admin or Coach role will be able to use Coach Admin.")) {
+              onAct({ action: "password", off: !snap.passwordOff });
+            }
+          }}
+          disabled={busy}
+          className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-40 ${
+            snap.passwordOff ? "border border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-gray-900 text-white hover:bg-black"
+          }`}
+        >
+          {snap.passwordOff ? "Switch the Password Back On" : "Switch the Password Off"}
+        </button>
+      ) : (
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          To change this, sign in with your own club admin account (Coach Admin → Sign In With Your Email).
+        </p>
+      )}
+    </section>
   );
 }

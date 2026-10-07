@@ -16,6 +16,7 @@ import {
 import { cleanSheetCount, playedCount } from "@/lib/cleanSheets";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
+import { accountKey, keyQuery } from "./coachKey";
 
 type StatField =
   | "appearances"
@@ -316,6 +317,14 @@ export default function StatsTracker() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -656,7 +665,7 @@ export default function StatsTracker() {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Coach Admin
@@ -739,13 +748,13 @@ export default function StatsTracker() {
           )}
 
           <Link
-            href={`/admin/stats/matches?key=${encodeURIComponent(key)}`}
+            href={`/admin/stats/matches${keyQuery(key)}`}
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-600 px-5 py-2.5 font-bold text-white shadow-sm hover:bg-green-700"
           >
             Open the Match Log →
           </Link>
           <Link
-            href={`/admin/stats/training?key=${encodeURIComponent(key)}`}
+            href={`/admin/stats/training${keyQuery(key)}`}
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-green-600 bg-white px-5 py-2 font-bold text-green-700 hover:bg-green-50"
           >
             🏃 Open the Training Log →
@@ -1080,14 +1089,14 @@ export default function StatsTracker() {
               ⬇ Export <span className="hidden sm:inline">{teamName(team)} </span>CSV
             </button>
             <Link
-              href={`/admin/stats/matches?key=${encodeURIComponent(key)}`}
+              href={`/admin/stats/matches${keyQuery(key)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
               title="Log each game's goals and who assisted"
             >
               ⚽ Match Log
             </Link>
             <Link
-              href={`/admin/stats/training?key=${encodeURIComponent(key)}`}
+              href={`/admin/stats/training${keyQuery(key)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
               title="Pick each Monday's best trainer"
             >
@@ -1095,7 +1104,7 @@ export default function StatsTracker() {
             </Link>
             {features.playerOfMonth && (
               <Link
-                href={`/admin/stats/player-of-the-month?key=${encodeURIComponent(key)}`}
+                href={`/admin/stats/player-of-the-month${keyQuery(key)}`}
                 className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
                 title="This month's winner from the awards, with a poster"
               >
@@ -1103,7 +1112,7 @@ export default function StatsTracker() {
               </Link>
             )}
             <Link
-              href={`/admin/stats/presentation?key=${encodeURIComponent(key)}&team=${team}`}
+              href={`/admin/stats/presentation${keyQuery(key, `team=${team}`)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
               title="Full-screen awards slideshow for presentation evening"
             >
@@ -1365,7 +1374,7 @@ export default function StatsTracker() {
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
                       <Link
-                        href={`/admin/stats/presentation?key=${encodeURIComponent(key)}&archive=${a.id}`}
+                        href={`/admin/stats/presentation${keyQuery(key, `archive=${a.id}`)}`}
                         className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap"
                         title={`Present the ${a.name} awards`}
                       >

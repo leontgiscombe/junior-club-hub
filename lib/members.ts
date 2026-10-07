@@ -47,6 +47,14 @@ export async function renewCode(tenant: string): Promise<string> {
   return code;
 }
 
+/** Switch the shared coach password off (accounts only) or back on. */
+export async function setPasswordOff(tenant: string, value: boolean): Promise<void> {
+  const access = await getAccess(tenant);
+  const next: Access = { ...access, passwordOff: value };
+  if (!value) delete next.passwordOff;
+  await saveAccess(tenant, next);
+}
+
 export async function setPrivate(tenant: string, value: boolean): Promise<void> {
   const access = await getAccess(tenant);
   await saveAccess(tenant, { ...access, private: value });

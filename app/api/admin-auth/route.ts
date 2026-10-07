@@ -2,7 +2,7 @@
 // otherwise 401. Used by the /admin landing page to gate access with a single
 // login before showing the tools.
 import { NextRequest, NextResponse } from "next/server";
-import { MEMBER_COOKIE, MEMBER_COOKIE_MAX_AGE, SESSION_KEY } from "@/lib/access";
+import { MEMBER_COOKIE, MEMBER_COOKIE_MAX_AGE, SESSION_KEY, readAccess } from "@/lib/access";
 import { coachLockedOut, isCoach } from "@/lib/adminAuth";
 import { approveCoachPhone } from "@/lib/members";
 import { getTenant } from "@/lib/tenant";
@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key") ?? "";
   if (!(await isCoach(key))) {
+    const tenantNow = await getTenant();
+    if (key !== SESSION_KEY && tenantNow && (await readAccess(tenantNow).catch(() => null))?.passwordOff) {
+      return NextResponse.json({ error: "This club no longer uses a shared password — sign in with your email" }, { status: 403 });
+    }
     if (await coachLockedOut()) {
       return NextResponse.json({ error: "Too many wrong passwords — try again in 15 minutes" }, { status: 429 });
     }

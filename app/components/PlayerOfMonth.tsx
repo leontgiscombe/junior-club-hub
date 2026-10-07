@@ -21,6 +21,7 @@ import {
   type MonthAwardKind,
   type MonthStanding,
 } from "@/lib/playerOfMonth";
+import { accountKey, keyQuery } from "./coachKey";
 
 interface Player {
   id: string;
@@ -182,6 +183,14 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -337,7 +346,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     <main className="min-h-screen bg-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-100 hover:text-white"
         >
           ← Coach Admin

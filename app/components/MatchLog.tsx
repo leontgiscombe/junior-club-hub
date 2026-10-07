@@ -7,6 +7,7 @@ import { useMyTeam } from "@/lib/myTeam";
 import FaSync from "./FaSync";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
+import { accountKey, keyQuery } from "./coachKey";
 
 interface Player {
   id: string;
@@ -168,6 +169,14 @@ export default function MatchLog() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -390,7 +399,7 @@ export default function MatchLog() {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin/stats?key=${encodeURIComponent(key)}`}
+          href={`/admin/stats${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Stats Tracker

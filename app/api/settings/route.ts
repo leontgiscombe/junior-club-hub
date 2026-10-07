@@ -7,7 +7,7 @@
 //                                            picture with slot "kit" (a data: URL)
 //   DELETE ?key=…[&slot=kit]              -> goes back to the default crest (or kit picture)
 import { NextRequest, NextResponse } from "next/server";
-import { isCoach } from "@/lib/adminAuth";
+import { isClubAdmin, isCoach } from "@/lib/adminAuth";
 import { DEFAULT_CLUB, cleanChanges, cleanTeams } from "@/lib/clubSettings";
 import {
   getAllTeams,
@@ -32,6 +32,13 @@ const slotOf = (v: unknown): ImageSlot => (v === "kit" ? "kit" : "crest");
 
 const authorised = (req: NextRequest) => isCoach(req.nextUrl.searchParams.get("key") ?? "");
 const unauthorised = () => NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+// coaches can look at Settings; changing them is for club admins
+const adminOnly = async (req: NextRequest) =>
+  (await isClubAdmin(req.nextUrl.searchParams.get("key") ?? ""))
+    ? null
+    : (await authorised(req))
+      ? NextResponse.json({ error: "Only a club admin can change Settings" }, { status: 403 })
+      : unauthorised();
 const failed = (e: unknown) =>
   NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 500 });
 
@@ -59,11 +66,12 @@ async function snapshot() {
 
 export async function GET(req: NextRequest) {
   if (!(await authorised(req))) return unauthorised();
-  return NextResponse.json(await snapshot());
+  return NextResponse.json({ ...(await snapshot()), canAdmin: await isClubAdmin(req.nextUrl.searchParams.get("key") ?? "") });
 }
 
 export async function PUT(req: NextRequest) {
-  if (!(await authorised(req))) return unauthorised();
+  const refused = await adminOnly(req);
+  if (refused) return refused;
   const body = (await req.json().catch(() => null)) as
     | { changes?: unknown; teams?: unknown; account?: { email?: unknown; password?: unknown } }
     | null;
@@ -110,7 +118,8 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await authorised(req))) return unauthorised();
+  const refused = await adminOnly(req);
+  if (refused) return refused;
   const body = (await req.json().catch(() => null)) as
     | { image?: unknown; width?: unknown; height?: unknown; slot?: unknown }
     | null;
@@ -141,7 +150,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!(await authorised(req))) return unauthorised();
+  const refused = await adminOnly(req);
+  if (refused) return refused;
   try {
     await saveImage(slotOf(req.nextUrl.searchParams.get("slot")), null);
     return NextResponse.json(await snapshot());

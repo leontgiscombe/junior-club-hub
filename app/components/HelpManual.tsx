@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useClub } from "./ClubProvider";
+import { accountKey, keyQuery } from "./coachKey";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -98,6 +99,14 @@ export default function HelpManual() {
     if (urlKey) {
       setKey(urlKey);
       login(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          login(k);
+        }
+      });
     }
   }, [login]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -142,7 +151,7 @@ export default function HelpManual() {
     <main className="min-h-screen bg-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-100 hover:text-white"
         >
           ← Coach Admin

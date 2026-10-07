@@ -14,6 +14,7 @@ import {
   type SeasonRecord,
 } from "@/lib/record";
 import { useClub } from "./ClubProvider";
+import { accountKey, keyQuery } from "./coachKey";
 
 type StatField =
   | "appearances"
@@ -189,6 +190,14 @@ export default function StatsPresentation() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey, params.get("archive"));
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k, params.get("archive"));
+        }
+      });
     }
   }, [load, TEAMS]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -537,7 +546,7 @@ export default function StatsPresentation() {
         onClick={(e) => e.stopPropagation()}
       >
         <Link
-          href={`/admin/stats?key=${encodeURIComponent(key)}`}
+          href={`/admin/stats${keyQuery(key)}`}
           className="pointer-events-auto rounded-full bg-black/25 px-4 py-2 text-xs font-semibold text-white/80 backdrop-blur hover:bg-black/40 hover:text-white"
         >
           ← Exit

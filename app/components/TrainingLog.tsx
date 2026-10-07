@@ -12,6 +12,7 @@ import {
   type TrainingPlan,
 } from "@/lib/trainingPlanTypes";
 import { DrillDetails, KindBadge } from "./DrillDetails";
+import { accountKey, keyQuery } from "./coachKey";
 
 interface Player {
   id: string;
@@ -222,6 +223,14 @@ export default function TrainingLog() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -430,7 +439,7 @@ export default function TrainingLog() {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin/stats?key=${encodeURIComponent(key)}`}
+          href={`/admin/stats${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Stats Tracker
@@ -526,7 +535,7 @@ export default function TrainingLog() {
               ? `${teamName(team)}'s training plan has no week for the next session.`
               : `${teamName(team)} has no training plan scheduled.`}{" "}
             <Link
-              href={`/admin/training/plans?key=${encodeURIComponent(key)}`}
+              href={`/admin/training/plans${keyQuery(key)}`}
               className="font-semibold text-green-700 hover:underline"
             >
               Training Plans →
@@ -538,7 +547,7 @@ export default function TrainingLog() {
           <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
             No players in {teamName(team)} yet — add the squad on the{" "}
             <Link
-              href={`/admin/stats?key=${encodeURIComponent(key)}`}
+              href={`/admin/stats${keyQuery(key)}`}
               className="font-semibold underline"
             >
               Stats Tracker

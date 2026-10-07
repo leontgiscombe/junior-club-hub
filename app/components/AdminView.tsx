@@ -6,6 +6,7 @@ import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { getMyTeam, setMyTeam } from "@/lib/myTeam";
 import { useClub } from "./ClubProvider";
+import { accountKey, keyQuery } from "./coachKey";
 
 interface Submission {
   id: string;
@@ -100,7 +101,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     setDeleting(id);
     try {
       await fetch(
-        `/api/responses?key=${encodeURIComponent(key)}&team=${team}&id=${id}`,
+        `/api/responses${keyQuery(key, `team=${team}`)}&id=${id}`,
         { method: "DELETE" }
       );
       setSubmissions((prev) => prev.filter((s) => s.id !== id));
@@ -126,6 +127,14 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey, startTeam);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k, startTeam);
+        }
+      });
     }
   }, [load, lockedTeam, TEAMS, isValidTeam]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -178,7 +187,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Coach Admin

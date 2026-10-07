@@ -11,6 +11,7 @@ import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
+import { accountKey, keyQuery } from "./coachKey";
 
 type Snapshot = {
   club: Club;
@@ -107,6 +108,8 @@ export default function ClubSettings() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"crest" | "kit" | null>(null);
   const [teams, setTeams] = useState<TeamDraft[]>([]);
+  // coaches can look; only club admins can change Settings
+  const [canAdmin, setCanAdmin] = useState(true);
 
   // keepEdits: after uploading a picture, so changes not yet saved stay as they are
   const take = useCallback((data: Snapshot, keepEdits = false) => {
@@ -128,7 +131,9 @@ export default function ClubSettings() {
           return;
         }
         if (!res.ok) throw new Error();
-        take(await res.json());
+        const data = await res.json();
+        take(data);
+        setCanAdmin(data.canAdmin !== false);
         setAuthed(true);
       } catch {
         setError("Could not load the settings. Please try again.");
@@ -145,6 +150,14 @@ export default function ClubSettings() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -269,7 +282,7 @@ export default function ClubSettings() {
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
           <Link
-            href={`/admin?key=${encodeURIComponent(key)}`}
+            href={`/admin${keyQuery(key)}`}
             className="text-sm font-medium text-green-200 hover:text-white"
           >
             ← Coach Admin
@@ -280,6 +293,13 @@ export default function ClubSettings() {
           </p>
         </div>
       </div>
+      {!canAdmin && (
+        <div className="mx-auto mt-4 max-w-2xl px-4">
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            👀 You can look, but only a <strong>club admin</strong> can change Settings.
+          </p>
+        </div>
+      )}
 
       <div className="mx-auto max-w-2xl px-4">
         {/* Preview: the home page's banner with the details as they'll show */}
@@ -483,11 +503,11 @@ export default function ClubSettings() {
 
         <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
 
-        {snap.club.features.financialAdmin && (
+        {canAdmin && snap.club.features.financialAdmin && (
           <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
         )}
 
-        {snap.account && (
+        {canAdmin && snap.account && (
           <AccountSection
             email={snap.account.email}
             adminKey={key}
@@ -501,7 +521,7 @@ export default function ClubSettings() {
           />
         )}
 
-        <div className="sticky bottom-4 mt-6">
+        {canAdmin && <div className="sticky bottom-4 mt-6">
           <button
             onClick={save}
             disabled={saving || !dirty}
@@ -509,7 +529,7 @@ export default function ClubSettings() {
           >
             {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
           </button>
-        </div>
+        </div>}
       </div>
     </main>
   );

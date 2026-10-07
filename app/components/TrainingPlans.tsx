@@ -16,6 +16,7 @@ import {
   type TrainingPlan,
 } from "@/lib/trainingPlanTypes";
 import { DrillDetails, KindBadge } from "./DrillDetails";
+import { accountKey, keyQuery } from "./coachKey";
 
 type View = "plan" | "library";
 
@@ -195,6 +196,14 @@ export default function TrainingPlans() {
     if (urlKey) {
       setKey(urlKey);
       load(urlKey);
+    } else {
+      // signed in with an account: no password needed
+      accountKey().then((k) => {
+        if (k) {
+          setKey(k);
+          load(k);
+        }
+      });
     }
   }, [load]);
 
@@ -1115,7 +1124,7 @@ export default function TrainingPlans() {
     <main className="min-h-screen bg-gray-50 pb-24">
       <div className="bg-green-700 px-4 py-6 text-white">
         <Link
-          href={`/admin?key=${encodeURIComponent(key)}`}
+          href={`/admin${keyQuery(key)}`}
           className="text-sm font-medium text-green-200 hover:text-white"
         >
           ← Coach Admin

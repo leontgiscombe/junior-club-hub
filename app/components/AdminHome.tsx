@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
+import { keyQuery } from "./coachKey";
 import { useClub } from "./ClubProvider";
 import type { Feature } from "@/lib/clubSettings";
 
@@ -145,6 +146,10 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
         setError("Too many wrong passwords — try again in 15 minutes");
         return;
       }
+      if (res.status === 403) {
+        setError((await res.json().catch(() => ({}))).error ?? "Sign in with your email");
+        return;
+      }
       if (res.status === 401) {
         setError("Incorrect password");
         return;
@@ -160,6 +165,8 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
 
   // signed in with an account: who as, and whether they're a coach here
   const [account, setAccount] = useState<{ email: string; canCoach: boolean } | null>(null);
+  // the club has switched its shared password off: accounts only
+  const [passwordOff, setPasswordOff] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -173,6 +180,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((me) => {
+        if (me?.passwordSignIn === false) setPasswordOff(true);
         if (!me?.user) return;
         setAccount({ email: me.user.email, canCoach: !!me.canCoach });
         if (me.canCoach) {
@@ -224,9 +232,13 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
                 >
                   Sign In With Your Email
                 </Link>
-                <p className="mb-3 text-center text-xs text-gray-400">or use the coach password</p>
+                {!passwordOff && <p className="mb-3 text-center text-xs text-gray-400">or use the coach password</p>}
               </>
             )}
+            {passwordOff ? (
+              error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>
+            ) : (
+              <>
             <input
               type="password"
               value={key}
@@ -243,7 +255,9 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
-            {canResetPassword && (
+              </>
+            )}
+            {canResetPassword && !passwordOff && (
               <Link
                 href="/reset-password"
                 className="mt-4 block text-center text-sm font-semibold text-green-700 hover:text-green-800"
@@ -263,7 +277,8 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
     );
   }
 
-  const suffix = `?key=${encodeURIComponent(key)}`;
+  // an account needs no password in its links
+  const suffix = keyQuery(key);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">

@@ -1,5 +1,5 @@
 // A coach resetting a team's Financial Admin password from Coach Admin →
-// Settings, with the Coach Admin password. The new login record is made in the
+// Settings — club admins only. The new login record is made in the
 // coach's browser:
 //   - with the team's recovery code, it locks the same data key with the new
 //     password, so the team's records are kept (keep: true);
@@ -7,7 +7,7 @@
 //     and the team starts again (keep: false).
 //   POST ?id=team  { auth, keep }   (header x-admin-key)
 import { NextRequest, NextResponse } from "next/server";
-import { isCoach } from "@/lib/adminAuth";
+import { isClubAdmin } from "@/lib/adminAuth";
 import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
@@ -16,8 +16,8 @@ import { cleanAuth, type Auth } from "@/lib/financeAuth";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  if (!(await isCoach(req.headers.get("x-admin-key") ?? ""))) {
-    return NextResponse.json({ error: "That Coach Admin password isn't right" }, { status: 401 });
+  if (!(await isClubAdmin(req.headers.get("x-admin-key") ?? ""))) {
+    return NextResponse.json({ error: "Only a club admin can reset a team's Financial Admin password" }, { status: 403 });
   }
   if (!(await getClub()).features.financialAdmin) return NextResponse.json({ error: "Financial Admin is off" }, { status: 400 });
   const id = req.nextUrl.searchParams.get("id") ?? "";
