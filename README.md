@@ -71,6 +71,33 @@ Set `ROOT_DOMAIN` (e.g. `juniorclubhub.app`) and point it and its wildcard
 Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
 `http://localhost:3000` (the platform) and `http://<club>.localhost:3000`.
 
+## Hosting on Render
+
+`render.yaml` is a Render Blueprint for the app and its reminder job.
+
+1. **Database:** create an Upstash Redis database (upstash.com), in the EU
+   region nearest Render's Frankfurt. Keep its REST URL and token.
+2. **Blueprint:** in Render, **New → Blueprint**, pick this repo, and fill in
+   the values it asks for:
+   - `KV_REST_API_URL`, `KV_REST_API_TOKEN`: from Upstash.
+   - `ROOT_DOMAIN`: your domain, e.g. `juniorclubhub.app`.
+   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`: for subs reminders (generate a
+     pair with `npx web-push generate-vapid-keys`).
+   - `TRAINING_PLANS_OWNER_KEY`: optional.
+   - On the reminder job, `APP_URL`: the web service's `onrender.com` address.
+
+   `CRON_SECRET` is generated for you and shared with the reminder job.
+   Leave `ADMIN_KEY` unset: on a platform every club has its own password.
+3. **Domain:** in the web service's **Settings → Custom Domains**, add your
+   domain and its wildcard (`*.juniorclubhub.app`), and create the DNS records
+   Render shows (a wildcard needs an extra record for its certificate). Every
+   club's address then works with HTTPS.
+4. Open your domain: the platform's site, ready for the first club to sign up.
+
+The plans in `render.yaml` are Starter for the web service (always on: the
+free plan sleeps, so the first visit after a quiet spell takes a minute) and
+the cron job. Change them in the file or the dashboard.
+
 ## Developing
 
 ```
