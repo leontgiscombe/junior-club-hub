@@ -4,6 +4,7 @@
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { rawKv } from "./kv";
+import { releaseCode } from "./members";
 import { DEFAULT_TENANT, RESERVED, TENANT_ID } from "./tenant";
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -167,7 +168,9 @@ export async function deleteTenant(id: string): Promise<number | null> {
   const kv = await rawKv();
   if (!kv) throw new Error("Storage isn't set up");
   if (!TENANT_ID.test(id) || !(await getTenantRecord(id))) return null;
-  // take it off the list first, so nothing new is written while its data goes
+  // its join code stops working, then it's taken off the list, so nothing new
+  // is written while its data goes
+  await releaseCode(id);
   await kv.hdel(TENANTS_KEY, id);
   known.delete(id);
   let deleted = 0;

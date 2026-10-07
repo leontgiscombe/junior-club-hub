@@ -7,10 +7,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
 import { slugFor } from "@/lib/clubSettings";
+import { showCode } from "@/lib/access";
+import { getAccess, setPrivate } from "@/lib/members";
 import { saveClubChanges, saveTeams } from "@/lib/settings";
 import { sendEmail, simpleEmail } from "@/lib/email";
 import { operator } from "@/lib/legal";
-import { PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
+import { PLATFORM_NAME, getTenant, platformUrl, tenantUrl } from "@/lib/tenant";
 import { addressProblem, createTenant } from "@/lib/tenants";
 import { clientIp } from "@/lib/clientIp";
 
@@ -63,6 +65,9 @@ export async function POST(req: NextRequest) {
   }
   await saveClubChanges({ name, fullName: name }, address);
   await saveTeams([{ slug: slugFor(team, []), name: team, accent: "⚽" }], address);
+  // new hubs are private: parents join with the club code and a coach approves them
+  await setPrivate(address, true);
+  const { code } = await getAccess(address);
   const contact = operator().email;
   await sendEmail({
     to: email,
@@ -74,6 +79,7 @@ export async function POST(req: NextRequest) {
         `${name}'s hub is ready at ${tenantUrl(address)}.`,
         "Sign in to Coach Admin with your coach password to add your badge, colours and any more teams, then share the address with your parents.",
         "If you ever forget the coach password, use “Forgot the password?” on the sign-in page and a reset link comes to this email.",
+        `Your club code is ${showCode(code)}. Parents type it at ${platformUrl("/").replace(/^https?:\/\//, "").replace(/\/$/, "")} to ask to join, and you approve them in Coach Admin → Members.`,
         ...(contact ? [`Any questions, just reply to this email or write to ${contact}.`] : []),
       ],
       button: { label: "Open Coach Admin", url: tenantUrl(address, "/admin/settings") },

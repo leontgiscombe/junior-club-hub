@@ -19,6 +19,7 @@ const TILE: Record<string, string> = {
   "/admin/stats": "from-indigo-600 to-violet-500",
   "/admin/camera": "from-rose-600 to-pink-500",
   "/admin/kit": "from-orange-600 to-amber-500",
+  "/admin/members": "from-emerald-600 to-teal-500",
   "/admin/settings": "from-gray-700 to-gray-500",
   "/admin/help": "from-slate-600 to-slate-500",
 };
@@ -98,6 +99,12 @@ const TOOLS: {
     title: "Kit Responses",
     feature: "kitSizes",
     body: "Kit-size submissions by team, with CSV export.",
+  },
+  {
+    path: "/admin/members",
+    icon: "👪",
+    title: "Members",
+    body: "The club code for parents, and approving who can open the hub.",
   },
   {
     path: "/admin/settings",

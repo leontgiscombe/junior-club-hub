@@ -859,6 +859,8 @@ function ShareHub({ clubName }: { clubName: string }) {
       <p className="mt-1 text-sm text-gray-500">
         Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by
         WhatsApp, email or your club&apos;s app. They can save it to their phone&apos;s home screen.
+        Your club code, and who&apos;s allowed in, are in{" "}
+        <Link href="/admin/members" className="font-semibold text-green-700 underline">Coach Admin → Members</Link>.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-800">{url || "…"}</code>

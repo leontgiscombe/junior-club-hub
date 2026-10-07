@@ -5,6 +5,7 @@
 // (still covers a club's data being deleted or overwritten by mistake). Every
 // copy expires on its own after 8 days. Server only.
 import { kvCredentials } from "./kv";
+import { reclaimCode } from "./members";
 
 type Creds = { url: string; token: string };
 type Cmd = (string | number)[];
@@ -155,5 +156,7 @@ export async function restoreClub(id: string, date: string): Promise<number | nu
   cmds.push(...(await copyCommands(backup, saved, (k) => k.slice(prefix.length))));
   cmds.push(["HSET", "platform:tenants", id, record]);
   await writeAll(main, cmds);
+  // its join code works again (unless another club has had it since)
+  await reclaimCode(id);
   return saved.length;
 }
