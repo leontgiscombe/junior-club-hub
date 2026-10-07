@@ -92,7 +92,13 @@ Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
    domain and its wildcard (`*.grassroots-club-hub.co.uk`), and create the DNS records
    Render shows (a wildcard needs an extra record for its certificate). Every
    club's address then works with HTTPS.
-4. Open your domain: the platform's site, ready for the first club to sign up.
+4. **Email:** password resets and welcome emails go through Resend
+   (resend.com). Add your domain there, create the DNS records it shows at
+   your domain's DNS (they sit alongside Render's), and once it's verified set
+   `RESEND_API_KEY` and `EMAIL_FROM` (e.g.
+   `Grassroots Club Hub <hello@grassroots-club-hub.co.uk>`) on the web service.
+   Until then, emails are written to the service's logs instead.
+5. Open your domain: the platform's site, ready for the first club to sign up.
 
 The plans in `render.yaml` are Starter for the web service (always on: the
 free plan sleeps, so the first visit after a quiet spell takes a minute) and

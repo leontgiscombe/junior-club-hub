@@ -1,7 +1,7 @@
 // The clubs on the platform: each one's web address (its id), name, contact
 // email and coach password (scrypt-hashed, never stored as typed). Kept in one
 // platform-wide record outside every club's own data. Server only.
-import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { rawKv } from "./kv";
 import { DEFAULT_TENANT, RESERVED, TENANT_ID } from "./tenant";
@@ -94,4 +94,54 @@ export async function tenantExists(id: string): Promise<boolean> {
   const exists = !!(await getTenantRecord(id));
   known.set(id, { exists, at: Date.now() });
   return exists;
+}
+
+async function saveRecord(record: TenantRecord): Promise<void> {
+  const kv = await rawKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  await kv.hset(TENANTS_KEY, { [record.id]: JSON.stringify(record) });
+}
+
+/** Give a club a new coach password. */
+export async function setTenantPassword(id: string, password: string): Promise<void> {
+  const record = await getTenantRecord(id);
+  if (!record) throw new Error("No such club");
+  const salt = randomBytes(16);
+  await saveRecord({ ...record, passwordSalt: salt.toString("base64"), passwordHash: await hash(password, salt) });
+}
+
+/** Change a club's contact email. */
+export async function setTenantEmail(id: string, email: string): Promise<void> {
+  const record = await getTenantRecord(id);
+  if (!record) throw new Error("No such club");
+  await saveRecord({ ...record, email });
+}
+
+// Password-reset links: a random token, valid for an hour and once only. Only
+// its SHA-256 is stored, so the database never holds a working link.
+const RESET_TTL_SECONDS = 3600;
+const resetKey = (token: string) => `platform:reset:${createHash("sha256").update(token).digest("hex")}`;
+
+export async function createResetToken(tenant: string): Promise<string> {
+  const kv = await rawKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  const token = randomBytes(32).toString("base64url");
+  await kv.set(resetKey(token), tenant, { ex: RESET_TTL_SECONDS });
+  return token;
+}
+
+/** The club a reset token is for, if it's still valid; it can't be used again. */
+export async function redeemResetToken(token: string): Promise<string | null> {
+  const kv = await rawKv();
+  if (!kv || !token) return null;
+  const tenant = await kv.getdel<string>(resetKey(token));
+  return typeof tenant === "string" ? tenant : null;
+}
+
+/** Whether a reset token is still valid, without using it up. */
+export async function resetTokenTenant(token: string): Promise<string | null> {
+  const kv = await rawKv();
+  if (!kv || !token) return null;
+  const tenant = await kv.get<string>(resetKey(token));
+  return typeof tenant === "string" ? tenant : null;
 }

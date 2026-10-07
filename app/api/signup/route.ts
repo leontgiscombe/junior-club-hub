@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
 import { saveClubChanges } from "@/lib/settings";
-import { getTenant, tenantUrl } from "@/lib/tenant";
+import { sendEmail, simpleEmail } from "@/lib/email";
+import { PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
 import { addressProblem, createTenant } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
@@ -53,5 +54,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That address was just taken — try another" }, { status: 409 });
   }
   await saveClubChanges({ name, fullName: name }, address);
+  await sendEmail({
+    to: email,
+    subject: `${name} is on ${PLATFORM_NAME}`,
+    ...simpleEmail({
+      heading: `Welcome to ${PLATFORM_NAME}!`,
+      paragraphs: [
+        `${name}'s hub is ready at ${tenantUrl(address)}.`,
+        "Sign in to Coach Admin with your coach password to add your badge, colours and teams, then share the address with your parents.",
+        "If you ever forget the coach password, use “Forgot the password?” on the sign-in page and a reset link comes to this email.",
+      ],
+      button: { label: "Open Coach Admin", url: tenantUrl(address, "/admin/settings") },
+      footer: `You're getting this because this email was used to sign ${name} up on ${PLATFORM_NAME}.`,
+    }),
+  });
   return NextResponse.json({ url: tenantUrl(address, "/admin/settings") });
 }

@@ -1,7 +1,8 @@
 // Coach Admin → Settings: the club's name, initials, slogan, season, whether
 // results are public, and its crest. Behind the Coach Admin password.
 //   GET    ?key=…                         -> { club, defaults, changes, crest, teams }
-//   PUT    ?key=…  { changes?, teams? }    -> saves the identity changes and/or teams
+//   PUT    ?key=…  { changes?, teams?, account? } -> saves the identity changes, teams,
+//                                            and/or the club's email or coach password
 //   POST   ?key=…  { image, width, height } -> uploads a crest (a data: URL)
 //   DELETE ?key=…                         -> goes back to the default crest
 import { NextRequest, NextResponse } from "next/server";
@@ -16,6 +17,8 @@ import {
   saveCrest,
   saveTeams,
 } from "@/lib/settings";
+import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
+import { getTenantRecord, setTenantEmail, setTenantPassword } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +37,16 @@ async function snapshot() {
     getCrest(),
     getAllTeams(),
   ]);
+  // a club on the platform has its own email and password; a single-club hub uses ADMIN_KEY
+  const tenant = await getTenant();
+  const record = tenant && tenant !== DEFAULT_TENANT ? await getTenantRecord(tenant) : null;
   return {
     club,
     defaults: DEFAULT_CLUB,
     changes,
     crest: crest ? { width: crest.width, height: crest.height, updatedAt: crest.updatedAt } : null,
     teams,
+    account: record ? { email: record.email } : null,
   };
 }
 
@@ -50,8 +57,30 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   if (!(await authorised(req))) return unauthorised();
-  const body = (await req.json().catch(() => null)) as { changes?: unknown; teams?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as
+    | { changes?: unknown; teams?: unknown; account?: { email?: unknown; password?: unknown } }
+    | null;
   try {
+    if (body?.account) {
+      const tenant = await getTenant();
+      if (!tenant || tenant === DEFAULT_TENANT) {
+        return NextResponse.json({ error: "This hub's password is set where it's hosted (ADMIN_KEY)" }, { status: 400 });
+      }
+      const { email, password } = body.account;
+      if (email !== undefined) {
+        const e = typeof email === "string" ? email.trim().slice(0, 120) : "";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+          return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+        }
+        await setTenantEmail(tenant, e);
+      }
+      if (password !== undefined) {
+        if (typeof password !== "string" || password.length < 8) {
+          return NextResponse.json({ error: "The new password needs at least 8 characters" }, { status: 400 });
+        }
+        await setTenantPassword(tenant, password);
+      }
+    }
     if (body?.teams !== undefined) {
       const teams = cleanTeams(body.teams);
       if (!teams) return NextResponse.json({ error: "Keep at least one team" }, { status: 400 });
