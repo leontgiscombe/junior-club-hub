@@ -21,6 +21,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [website, setWebsite] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address: shownAddress, email, password, website }),
+        body: JSON.stringify({ name, address: shownAddress, email, password, website, agreed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
@@ -113,10 +114,19 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
         <span className="text-sm font-bold text-gray-800">Coach password again</span>
         <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} required autoComplete="new-password" className={input} />
       </label>
+      <label className="flex cursor-pointer items-start gap-3 text-sm text-gray-600">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} required className="mt-0.5 h-5 w-5 shrink-0 accent-green-600" />
+        <span>
+          I agree to the{" "}
+          <a href="/terms" target="_blank" className="font-semibold text-green-700 underline">Terms of Use</a>{" "}
+          for my club, and I&apos;ve read the{" "}
+          <a href="/privacy" target="_blank" className="font-semibold text-green-700 underline">Privacy Policy</a>.
+        </span>
+      </label>
       {/* left empty by people; bots fill it in */}
       <input value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
       {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      <button disabled={busy || !!addressError} className="mt-1 cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
+      <button disabled={busy || !!addressError || !agreed} className="mt-1 cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
         {busy ? "Setting up…" : "Create Your Club's Hub"}
       </button>
     </form>

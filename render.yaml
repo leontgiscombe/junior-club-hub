@@ -35,6 +35,12 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      # for the privacy policy and terms: who runs the platform (a person's or
+      # business's legal name) and where privacy questions go
+      - key: PLATFORM_OPERATOR
+        sync: false
+      - key: PLATFORM_CONTACT_EMAIL
+        sync: false
       # optional: the owner's password for changing the built-in drill library
       - key: TRAINING_PLANS_OWNER_KEY
         sync: false

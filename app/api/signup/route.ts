@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
   const email = typeof body.email === "string" ? body.email.trim().slice(0, 120) : "";
   const password = typeof body.password === "string" ? body.password : "";
   if (!name) return NextResponse.json({ error: "Enter the club's name" }, { status: 400 });
+  if (body.agreed !== true) {
+    return NextResponse.json({ error: "Please agree to the Terms of Use to sign up" }, { status: 400 });
+  }
   if (!EMAIL.test(email)) return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
   if (password.length < 8) {
     return NextResponse.json({ error: "The coach password needs at least 8 characters" }, { status: 400 });

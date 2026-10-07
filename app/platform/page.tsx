@@ -81,7 +81,14 @@ export default function PlatformHome() {
         </section>
       </main>
 
-      <footer className="bg-[var(--club-night)] px-6 py-8 text-center text-sm text-gray-400">{PLATFORM_NAME}</footer>
+      <footer className="bg-[var(--club-night)] px-6 py-8 text-center text-sm text-gray-400">
+        {PLATFORM_NAME}
+        <p className="mt-3 text-xs text-gray-500">
+          <a href="/privacy" className="hover:text-gray-300">Privacy</a>
+          {" · "}
+          <a href="/terms" className="hover:text-gray-300">Terms</a>
+        </p>
+      </footer>
     </div>
   );
 }
