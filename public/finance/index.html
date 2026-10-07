@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Monthly subs and finance tracker for the club's teams">
+<meta name="theme-color" content="#1f7a3d">
+<title>Financial Admin</title>
+<link rel="manifest" href="/finance/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/finance/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finance">
+<link rel="icon" type="image/svg+xml" href="/finance/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1f7a3d;
+    --green-dark: #155c2d;
+    --green-light: #e7f4ec;
+    --amber: #b8860b;
+    --amber-bg: #fdf6e3;
+    --red: #c0392b;
+    --red-bg: #fdeceb;
+    --ink: #1c2a22;
+    --muted: #5f6f66;
+    --line: #dfe7e2;
+    --bg: #f4f7f5;
+    --card: #ffffff;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.app {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    color: #fff;
+    padding: 18px 20px;
+  }
+  .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .badge {
+    width: 50px; height: 50px; border-radius: 12px;
+    background: #fff; overflow: hidden;
+    display: grid; place-items: center;
+    flex: 0 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,.2); padding: 3px;
+  }
+  .badge img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .header-titles h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
+  .header-titles p { margin: 2px 0 0; font-size: 13px; opacity: .9; }
+  .header-spacer { flex: 1; }
+  nav.tabs {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .tabs-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 2px; overflow-x: auto; }
+  .tab {
+    appearance: none; border: none; background: none; cursor: pointer;
+    padding: 14px 16px; font-size: 14px; font-weight: 600; color: var(--muted);
+    border-bottom: 3px solid transparent; white-space: nowrap; font-family: inherit;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+  main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 60px; }
+  .view { display: none; }
+  .view.active { display: block; animation: fade .2s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  h2.section { font-size: 18px; margin: 0 0 4px; }
+  .section-sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 600; }
+  .stat .value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+  .stat .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stat.good .value { color: var(--green-dark); }
+  .stat.warn .value { color: var(--amber); }
+  .stat.bad .value { color: var(--red); }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px; margin-bottom: 18px;
+  }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .panel-head h3 { margin: 0; font-size: 15px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
+  tbody tr:hover { background: #fafbfa; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.paid { background: var(--green-light); color: var(--green-dark); }
+  .pill.unpaid { background: var(--red-bg); color: var(--red); }
+  .pill.exempt { background: #eef1ff; color: #4453b8; }
+
+  button, .btn {
+    appearance: none; font-family: inherit; font-size: 14px; font-weight: 600;
+    padding: 9px 15px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); cursor: pointer; transition: .12s;
+  }
+  button:hover, .btn:hover { border-color: #c3d0c8; background: #f7faf8; }
+  .btn-primary { background: var(--green); border-color: var(--green); color: #fff; }
+  .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+  .btn-sm { padding: 5px 10px; font-size: 13px; }
+  .btn-danger { color: var(--red); border-color: #ecc6c2; }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-ghost { border-color: transparent; background: transparent; }
+
+  input, select, textarea {
+    font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line);
+    border-radius: 9px; background: #fff; color: var(--ink); width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: var(--green); }
+  label.field { display: block; margin-bottom: 12px; }
+  label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--muted); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 620px){ .form-grid { grid-template-columns: 1fr; } }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .toolbar .grow { flex: 1; min-width: 140px; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty .big { font-size: 40px; margin-bottom: 8px; }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(15,25,20,.5); display: none;
+    align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50; overflow-y: auto;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 14px; width: 100%; max-width: 560px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; animation: pop .15s ease;
+  }
+  @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+  .modal-head h3 { margin: 0; font-size: 16px; }
+  .modal-body { padding: 20px; }
+  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; background: #fafbfa; }
+
+  .subs-grid-wrap { overflow-x: auto; }
+  .month-picker { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .money { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .owe { color: var(--red); font-weight: 700; }
+  .clear { color: var(--green-dark); font-weight: 700; }
+  .muted { color: var(--muted); }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .checkline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .checkline input[type=checkbox] { width: auto; }
+  .hint { font-size: 12px; color: var(--muted); background: var(--green-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
+  .flag { font-size: 11px; background: var(--red-bg); color: var(--red); padding: 2px 7px; border-radius: 6px; font-weight: 600; margin-left: 6px; }
+  .monthlbl { font-weight: 700; font-size: 15px; min-width: 150px; text-align: center; }
+  .report-overlay { position: fixed; inset: 0; background: #fff; z-index: 80; overflow-y: auto; display: none; }
+  .report-overlay.open { display: block; }
+  .report-actions { position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--line); padding: 12px 20px; display: flex; gap: 8px; justify-content: flex-end; }
+  .report-body { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; }
+  .report-body h1 { font-size: 22px; margin: 0 0 2px; }
+  .report-body .report-meta { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
+  .report-body h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 2px solid var(--green); padding-bottom: 4px; color: var(--green-dark); }
+  .report-body table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .report-body th, .report-body td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+  .report-body td.num, .report-body th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .report-body tr.tot td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: none; }
+  .report-body .pos { color: var(--green-dark); font-weight: 700; }
+  .report-body .neg { color: var(--red); font-weight: 700; }
+  @media print {
+    nav.tabs, .toolbar, .row-actions, header.app .header-spacer, .hub-link { display: none !important; }
+    body { background: #fff; }
+    body.report-open header.app, body.report-open nav.tabs, body.report-open main, body.report-open .modal-backdrop { display: none !important; }
+    body.report-open .report-overlay { position: static; display: block; }
+    .report-actions { display: none !important; }
+  }
+  /* Login gate */
+  body.locked header.app, body.locked nav.tabs, body.locked main { display: none !important; }
+  .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); }
+  body.locked .gate { display: flex; }
+  .gate-card { background: var(--card); border-radius: 16px; padding: 28px 26px; width: 100%; max-width: 380px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); text-align: center; }
+  .gate-lock { width: 56px; height: 56px; border-radius: 50%; background: var(--green-light); color: var(--green-dark);
+    display: grid; place-items: center; font-size: 26px; margin: 0 auto 14px; }
+  .gate-card h2 { margin: 0 0 4px; font-size: 19px; }
+  .gate-card p.gate-sub { margin: 0 0 18px; font-size: 13px; color: var(--muted); }
+  .gate-card input { margin-bottom: 12px; text-align: center; }
+  .gate-err { color: var(--red); font-size: 13px; margin-bottom: 10px; min-height: 17px; }
+  .gate-note { margin-top: 14px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .wa-btn { display:inline-block; background:#25D366; color:#fff; border:1px solid #1da851; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap; line-height:1.3; }
+  .wa-btn:hover { background:#1da851; color:#fff; }
+
+  /* ── Team Hub look: paint-stroke banner, Anton lettering, club colours ── */
+  :root { --pitch: #3ee04f; --night: #060906; --radius: 18px; --shadow: 0 4px 18px rgba(6,9,6,.07), 0 1px 3px rgba(6,9,6,.05); --bg: #f1f5f2; }
+  .display { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .4px; }
+  header.app { position: relative; overflow: hidden; background: var(--night); padding: 20px 20px 26px; }
+  header.app::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center 30%/cover; opacity: .7; }
+  header.app::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,46,22,.35), rgba(5,46,22,.85)); }
+  header.app > * { position: relative; z-index: 1; }
+  .badge { width: 58px; height: 58px; border-radius: 16px; background: transparent; box-shadow: none; padding: 0; }
+  .badge img { filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+  .header-titles h1 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; font-size: 26px; line-height: 1.05; letter-spacing: .5px; text-shadow: 3px 3px 0 rgba(0,0,0,.7); }
+  .header-titles p { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #dcfce7; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 3px 10px; opacity: 1; }
+  header.app .btn-sm { border-radius: 999px; padding: 6px 12px; backdrop-filter: blur(4px); }
+  nav.tabs { background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); box-shadow: 0 2px 10px rgba(6,9,6,.04); }
+  .tabs-inner { padding: 8px 12px; gap: 6px; scrollbar-width: none; }
+  .tabs-inner::-webkit-scrollbar { display: none; }
+  .tab { border: none; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 13.5px; }
+  .tab:hover { background: var(--green-light); border-color: transparent; }
+  .tab.active { background: var(--green); color: #fff; border-bottom-color: transparent; box-shadow: 0 3px 10px rgba(31,122,61,.3); }
+  h2.section { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .5px; font-size: 26px; color: var(--green-dark); line-height: 1.1; }
+  .stat { position: relative; overflow: hidden; border: none; padding: 18px 18px 16px; }
+  .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--line); }
+  .stat.good::before { background: linear-gradient(180deg, #3ee04f, var(--green)); }
+  .stat.warn::before { background: linear-gradient(180deg, #f9c74f, var(--amber)); }
+  .stat.bad::before { background: linear-gradient(180deg, #f28b82, var(--red)); }
+  .stat .value { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 36px; letter-spacing: .5px; line-height: 1.1; }
+  .panel { border: none; padding: 20px; }
+  .panel-head h3 { font-size: 16px; font-weight: 800; }
+  th { background: #f6f9f7; }
+  th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
+  button, .btn { border-radius: 12px; }
+  .btn-primary { background: linear-gradient(135deg, #24924a, var(--green-dark)); box-shadow: 0 3px 10px rgba(31,122,61,.25); }
+  .pill { font-weight: 700; }
+  .modal { border-radius: 20px; }
+  .modal-head h3 { font-weight: 800; }
+  .gate { background: var(--night); }
+  .gate::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center/cover; opacity: .7; }
+  .gate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,46,22,.3), rgba(5,46,22,.9)); }
+  .gate-card { position: relative; z-index: 1; border-radius: 24px; padding: 30px 26px 24px; }
+  .gate-logo { width: 84px; height: 84px; border-radius: 22px; display: block; margin: -72px auto 14px; box-shadow: 0 10px 24px rgba(0,0,0,.35); border: 4px solid #fff; }
+  .gate-kicker { font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; font-size: 28px; letter-spacing: .5px; color: var(--green-dark); line-height: 1; margin: 0 0 10px; }
+  .gate-card h2 { font-size: 16px; }
+  .gate-card input { border-radius: 12px; padding: 12px; font-size: 16px; }
+  .gate-card .btn-primary { padding: 12px; font-size: 15px; }
+  .app-foot { text-align: center; padding: 28px 20px 34px; background: var(--night); }
+  .app-foot p { margin: 0; font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; color: var(--pitch); font-size: 17px; letter-spacing: .5px; }
+  .app-foot small { display: block; margin-top: 6px; color: #9ca3af; font-size: 12px; }
+  body.locked .app-foot { display: none; }
+  @media (max-width: 620px) {
+    .header-inner { gap: 10px; }
+    .header-titles h1 { font-size: 22px; }
+    .stat .value { font-size: 30px; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat { padding: 14px 12px 12px 16px; }
+    .stat .label { font-size: 10.5px; }
+    main { padding: 18px 12px 48px; }
+    .panel { padding: 14px 12px; }
+    table { font-size: 13px; }
+    th, td { padding: 9px 6px; }
+    th { font-size: 10.5px; letter-spacing: .3px; }
+    td select { padding: 7px 4px; min-width: 0; }
+    td .pill, td button .pill { padding: 3px 8px; }
+  }
+  @media print { .app-foot { display: none !important; } header.app::before, header.app::after { display: none; } header.app { background: var(--green); } }
+</style>
+</head>
+<body class="locked">
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <img class="gate-logo" src="/finance/icon-192.png" alt="">
+    <p class="gate-kicker">Financial Admin</p>
+    <h2 id="gate-title">Enter Password</h2>
+    <p class="gate-sub" id="gate-sub">This tracker is password protected.</p>
+    <form id="gate-form">
+      <input type="password" id="gate-pass" placeholder="Password" autocomplete="current-password">
+      <input type="password" id="gate-pass2" placeholder="Confirm password" autocomplete="new-password" style="display:none">
+      <div class="gate-err" id="gate-err"></div>
+      <button class="btn btn-primary" id="gate-btn" type="submit" style="width:100%">Unlock</button>
+    </form>
+    <form id="setup-form" style="display:none">
+      <select id="setup-team" style="margin-bottom:12px"></select>
+      <input type="password" id="setup-pass" placeholder="New team password (8+ characters)" autocomplete="new-password">
+      <input type="password" id="setup-pass2" placeholder="Confirm the team password" autocomplete="new-password">
+      <input type="password" id="setup-admin" placeholder="Coach Admin password" autocomplete="off">
+      <div class="gate-err" id="setup-err"></div>
+      <button class="btn btn-primary" id="setup-btn" type="submit" style="width:100%">Set Up Team</button>
+    </form>
+    <p style="margin:12px 0 0;text-align:center"><a href="#" id="setup-toggle" style="color:#1f7a3d;font-weight:700;font-size:13px">Setting up a team for the first time?</a></p>
+    <p class="gate-note" id="gate-note"></p>
+    <p style="margin-top:14px;text-align:center"><a href="/" style="color:#1f7a3d;font-weight:700;font-size:14px;text-decoration:none">&larr; Back to Team Hub</a></p>
+  </div>
+</div>
+<header class="app">
+  <div class="header-inner">
+    <div class="badge"><img id="club-badge" src="" alt=""></div>
+    <div class="header-titles">
+      <h1 id="app-title">Financial Admin</h1>
+      <p>Financial Admin &middot; subs &amp; spending</p>
+    </div>
+    <div class="header-spacer"></div>
+    <span id="sync-status" title="Sync status" style="color:#fff;font-size:12px;font-weight:600;opacity:.9;margin-right:4px;white-space:nowrap"></span>
+    <a class="btn btn-sm hub-link" href="/" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff;text-decoration:none">&#x1F3E0; Team Hub</a>
+    <button class="btn btn-sm" id="lock-btn" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff">🔒 Lock</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabs">
+    <button class="tab active" data-view="dashboard">📊 Dashboard</button>
+    <button class="tab" data-view="subs">💷 Monthly Subs</button>
+    <button class="tab" data-view="players">👥 Players</button>
+    <button class="tab" data-view="outstanding">📋 Who Owes</button>
+    <button class="tab" data-view="expenses">🧾 Expenses</button>
+    <button class="tab" data-view="settings">⚙️ Settings</button>
+  </div>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <h2 class="section">Season Overview</h2>
+    <p class="section-sub" id="dash-season-line"></p>
+    <div class="cards" id="dash-cards"></div>
+    <div class="panel">
+      <div class="panel-head"><h3>Monthly Collection</h3><button class="btn btn-sm" data-goto="subs">Collect Subs →</button></div>
+      <div id="dash-months"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Top Outstanding Balances</h3><button class="btn btn-sm" data-goto="outstanding">View All →</button></div>
+      <div id="dash-owes"></div>
+    </div>
+  </section>
+
+  <!-- MONTHLY SUBS -->
+  <section class="view" id="view-subs">
+    <h2 class="section">Monthly Subs</h2>
+    <p class="section-sub">Pick a month, then tick off who has paid their monthly fee.</p>
+    <div class="hint">💡 Tip: tap a player's status to cycle Paid → Unpaid → Exempt. Exempt is handy for a player who's away or on a free trial that month.</div>
+    <div class="month-picker">
+      <button class="btn" id="prev-month">‹ Prev</button>
+      <span class="monthlbl" id="cur-month-lbl"></span>
+      <button class="btn" id="next-month">Next ›</button>
+      <button class="btn btn-sm" id="mark-all-paid" style="margin-left:auto">Mark All Paid</button>
+    </div>
+    <div class="panel" id="subs-panel">
+      <div class="subs-grid-wrap" id="subs-table"></div>
+    </div>
+  </section>
+
+  <!-- PLAYERS -->
+  <section class="view" id="view-players">
+    <h2 class="section">Players &amp; Parents</h2>
+    <p class="section-sub">Squad list with parent contacts and emergency / medical info.</p>
+    <div class="toolbar" style="margin-bottom:16px">
+      <input class="grow" id="player-search" placeholder="Search players or parents…">
+      <button class="btn btn-primary" id="add-player-btn">+ Add Player</button>
+    </div>
+    <div class="panel"><div class="subs-grid-wrap" id="players-table"></div></div>
+  </section>
+
+  <!-- OUTSTANDING -->
+  <section class="view" id="view-outstanding">
+    <h2 class="section">Who Owes Money</h2>
+    <p class="section-sub">Outstanding monthly subs across the season — your chase-up list.</p>
+    <div class="toolbar" style="margin-bottom:16px">
+      <button class="btn btn-sm btn-primary" id="wa-remind-all">💬 Remind All Unpaid</button>
+      <button class="btn btn-sm" id="copy-chase">Copy Chase-Up List</button>
+      <button class="btn btn-sm" id="print-owes">Print</button>
+    </div>
+    <div class="panel"><div class="subs-grid-wrap" id="owes-table"></div></div>
+  </section>
+
+  <!-- EXPENSES -->
+  <section class="view" id="view-expenses">
+    <h2 class="section">Expenses &amp; Other Income</h2>
+    <p class="section-sub">Pitch hire, referees, kit, tournament fees, fundraising — track the full picture.</p>
+    <div class="toolbar" style="margin-bottom:16px">
+      <button class="btn btn-primary" id="add-expense-btn">+ Add Entry</button>
+      <button class="btn" id="season-report-btn">📄 Season Report</button>
+    </div>
+    <div class="cards" id="expense-cards"></div>
+    <div class="panel"><div class="subs-grid-wrap" id="expenses-table"></div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <h2 class="section">Settings &amp; Backup</h2>
+    <p class="section-sub">Set your monthly fee, season and start month, and keep a backup of your data.</p>
+    <div class="panel">
+      <div class="panel-head"><h3>Team &amp; Subs</h3></div>
+      <div class="form-grid">
+        <label class="field"><span>Team name</span><input id="set-team"></label>
+        <label class="field"><span>Season</span><input id="set-season" placeholder="e.g. 2026/27"></label>
+        <label class="field"><span>Monthly fee per player (£)</span><input id="set-fee" type="number" min="0" step="0.5"></label>
+        <label class="field"><span>Currency symbol</span><input id="set-currency" maxlength="3"></label>
+        <label class="field"><span>Subs start month</span><input id="set-start" type="month"></label>
+      </div>
+      <button class="btn btn-primary" id="save-settings">Save Settings</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Backup &amp; Restore</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Your team's data syncs to the club database (stored encrypted). Exporting a backup is still a good idea before big changes. Note: the exported file itself is <strong>not</strong> password-protected, so store and share it securely.</p>
+      <div class="toolbar">
+        <button class="btn" id="export-json">⬇ Export Backup (.json)</button>
+        <button class="btn" id="export-csv">⬇ Export Payments (.csv)</button>
+        <button class="btn" id="import-json">⬆ Import Backup</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none">
+        <button class="btn btn-danger" id="reset-data" style="margin-left:auto">Reset All Data</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Monthly Reminders</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Get a push notification on the 1st of each month reminding you to check this team's subs and chase anyone who hasn't paid. Turn it on for each device (phone) you want reminded.</p>
+      <div class="toolbar">
+        <button class="btn btn-primary" id="push-enable-btn">🔔 Turn On Monthly Reminder</button>
+        <button class="btn" id="push-test-btn">Send Test Notification</button>
+        <button class="btn" id="push-disable-btn" style="display:none">Turn Off Monthly Reminder</button>
+        <button class="btn" id="cal-add-btn">📅 Add Reminders to Calendar</button>
+      </div>
+      <p class="muted" id="push-status" style="font-size:12px;margin:10px 0 0"></p>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">On iPhone/iPad you must first add this app to your Home Screen (Share → Add to Home Screen) and open it from there, then turn on reminders.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Security &amp; Sync</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. There is no password reset, so keep a backup export too.</p>
+      <div class="toolbar">
+        <button class="btn" id="change-pass-btn">Change Team Password</button>
+        <button class="btn" id="refresh-btn">↻ Refresh From Server</button>
+        <button class="btn" id="lock-now-btn">🔒 Lock Now</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>About &amp; Privacy</h3></div>
+      <p class="muted" style="font-size:13px">This tracker holds children's and parents' personal details. It is encrypted with your admin password and stays only on this device/browser. Keep the device secure, only record what you need, and delete a player's record when they leave the team. Share backups securely.</p>
+    </div>
+  </section>
+</main>
+<footer class="app-foot"><p id="foot-slogan"></p><small><span id="foot-club"></span> &middot; Financial Admin</small></footer>
+
+<!-- MODAL -->
+<div class="report-overlay" id="report-overlay">
+  <div class="report-actions">
+    <button class="btn btn-primary" id="report-print">🖨 Print / Save as PDF</button>
+    <button class="btn" id="report-close">Close</button>
+  </div>
+  <div class="report-body" id="report-body"></div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">Title</h3><button class="btn-ghost" id="modal-x" aria-label="Close">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const LS_KEY = "club_subs_tracker_v1";
+  const uid = () => Math.random().toString(36).slice(2,10);
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const thisMonth = () => new Date().toISOString().slice(0,7); // YYYY-MM
+
+  const OLD_ENC_KEY = "club_subs_secure_v1";
+  const ENC_PREFIX  = "club_subs_secure_v1__";   // per-team vaults: prefix + teamId
+  const PBKDF2_ITER = 250000;
+
+  // Each team has its own name, accent colours and its own separately-encrypted data.
+  // The club's teams, name and reminder key come from /api/club
+  // (club.config.ts), so nothing club-specific is written into this page.
+  let TEAMS = {};      // id -> { name }
+  let TEAM_IDS = [];
+  let CLUB = { name: "", fullName: "", slogan: "", season: "" };
+  let VAPID_PUBLIC = "";
+  async function loadConfig(){
+    const res = await fetch('/api/club', { cache:'no-store' });
+    if(!res.ok) throw new Error('config ' + res.status);
+    const c = await res.json();
+    CLUB = c.club; VAPID_PUBLIC = c.vapidPublicKey || "";
+    TEAM_IDS = c.teams.map(t=>t.id);
+    TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.name }]));
+    const slogan = $("#foot-slogan"); if(slogan) slogan.textContent = CLUB.slogan || '';
+    const club = $("#foot-club"); if(club) club.textContent = CLUB.fullName;
+    const badge = $("#club-badge"); if(badge){ badge.src = CLUB.crest; badge.alt = CLUB.name; }
+  }
+  const teamName = (id) => (TEAMS[id] && TEAMS[id].name) || CLUB.name;
+
+  const API_BASE = "/api/finance/team";
+  const cacheKey = (id) => "club_cache_v2__" + id;
+
+  let cryptoKey = null;   // AES key held in memory only while unlocked
+  let currentTeam = null; // team id, set once unlocked
+  let currentAuth = null; // active team's auth config (encSalt/verifySalt/verifyHash)
+  let localRev = 0;       // last known server revision for the current team
+  let apiAvailable = true;
+
+  function b64(bytes){ let str=''; const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){ str+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); } return btoa(str); }
+  function ub64(s){ return Uint8Array.from(atob(s), c=>c.charCodeAt(0)); }
+  function baseKey(password){ return crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits','deriveKey']); }
+  async function deriveKey(password, salt){ const bk=await baseKey(password); return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:PBKDF2_ITER, hash:'SHA-256'}, bk, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']); }
+  async function deriveVerify(password, salt){ const bk=await baseKey(password); const bits=await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:PBKDF2_ITER, hash:'SHA-256'}, bk, 256); return b64(new Uint8Array(bits)); }
+
+  async function encryptState(){
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(JSON.stringify(state))));
+    return { iv:b64(iv), ct:b64(ct) };
+  }
+  async function decryptBlob(blob){
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:ub64(blob.iv)}, cryptoKey, ub64(blob.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+
+  // ---- Server (Upstash-backed API) with local cache fallback ----
+  async function serverGet(id){
+    const res = await fetch(API_BASE + "?id=" + id, { cache:'no-store' });
+    if(!res.ok) throw new Error('GET ' + res.status);
+    return res.json();
+  }
+  async function serverPut(id, blob){
+    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ blob }) });
+    if(!res.ok) throw new Error('PUT ' + res.status);
+    return res.json();
+  }
+  async function serverPutFull(id, blob, auth){
+    const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ blob, auth }) });
+    if(!res.ok) throw new Error('PUT ' + res.status);
+    return res.json();
+  }
+  function readCache(id){ try { return JSON.parse(localStorage.getItem(cacheKey(id))); } catch(e){ return null; } }
+  function writeCache(id, record){ try { localStorage.setItem(cacheKey(id), JSON.stringify(record)); } catch(e){} }
+
+  function setSyncStatus(kind){
+    const el = document.getElementById('sync-status'); if(!el) return;
+    const map = { saved:'✓ Saved', saving:'… Saving', offline:'⚠ Offline – will sync', synced:'✓ Synced' };
+    el.textContent = map[kind] || '';
+  }
+
+  // Load a team from an already-fetched server record; migrate any old on-device
+  // vault up to the server on first hosted login.
+  async function loadFromRecord(record, password){
+    if(record && record.blob){
+      try {
+        const parsed = await decryptBlob(record.blob);
+        applyLoaded(parsed);
+        localRev = record.rev || 0;
+        writeCache(currentTeam, record);
+        setSyncStatus(apiAvailable ? 'synced' : 'offline');
+        return;
+      } catch(e){ /* fall through to empty/migrate */ }
+    }
+    const migrated = await migrateLocalVault(password);
+    if(migrated){ applyLoaded(migrated); await persist(); }
+    else { state = defaultState(); state.settings.team = teamName(currentTeam); localRev = (record&&record.rev)||0; }
+    setSyncStatus(apiAvailable ? 'saved' : 'offline');
+  }
+  function applyLoaded(parsed){
+    state = Object.assign(defaultState(), parsed);
+    state.settings = Object.assign(defaultState().settings, parsed.settings||{});
+  }
+
+  // Earlier copies kept an on-device vault; this one never has.
+  async function migrateLocalVault(){ return null; }
+
+
+  const defaultState = () => ({
+    settings: { team: "", season: CLUB.season, fee: 0, currency: "£", startMonth: thisMonth() },
+    players: [],
+    // payments keyed "YYYY-MM|playerId" -> {status:'paid'|'unpaid'|'exempt', method, date}
+    payments: {},
+    expenses: [] // {id,date,type:'expense'|'income',category,desc,amount}
+  });
+
+  let state = defaultState();
+
+  async function persist(){
+    if(!cryptoKey || !currentTeam) return;
+    setSyncStatus('saving');
+    const blob = await encryptState();
+    writeCache(currentTeam, { blob, rev: localRev });      // offline safety first
+    try {
+      const res = await serverPut(currentTeam, blob);
+      localRev = res.rev; apiAvailable = true;
+      writeCache(currentTeam, { blob, rev: localRev });
+      setSyncStatus('saved');
+    } catch(e){ apiAvailable = false; setSyncStatus('offline'); pendingSync = true; throw e; }
+  }
+  let saveChain = Promise.resolve();
+  let pendingSync = false;
+  function save(){ saveChain = saveChain.then(persist).catch(e=>console.error('Save failed', e)); return saveChain; }
+  async function flushPending(){ if(pendingSync && cryptoKey){ pendingSync=false; save(); } }
+  window.addEventListener('online', flushPending);
+
+  const money = (n) => state.settings.currency + (Number(n)||0).toFixed(2);
+  const esc = (s) => String(s==null?"":s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // Monthly fee for month m ("YYYY-MM"); with no month, the current fee.
+  function fee(){
+    return Number(state.settings.fee)||0;
+  }
+  function payKey(m,pid){ return m+"|"+pid; }
+  function getPay(m,pid){ return state.payments[payKey(m,pid)] || null; }
+  function activePlayers(){ return state.players.filter(p=>!p.archived); }
+
+  // ---- Month helpers ----
+  function monthAdd(m, delta){
+    const [y,mo] = m.split('-').map(Number);
+    const d = new Date(y, mo-1+delta, 1);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0');
+  }
+  function fmtMonth(m){
+    const [y,mo] = m.split('-').map(Number);
+    return new Date(y, mo-1, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  }
+  function fmtMonthShort(m){
+    const [y,mo] = m.split('-').map(Number);
+    return new Date(y, mo-1, 1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'});
+  }
+  // List of season months from startMonth up to the later of this month or the current view.
+  function seasonMonths(){
+    // Months that count toward what's owed/collected: from the start month up to
+    // and including the CURRENT calendar month only. Viewing a future month in the
+    // Subs tab must never extend this — future months don't count as owed.
+    let start = state.settings.startMonth || thisMonth();
+    let end = thisMonth();
+    if(start > end) return []; // season starts in a future month — nothing owed yet
+    const out = [];
+    let m = start;
+    let guard = 0;
+    while(m <= end && guard < 240){ out.push(m); m = monthAdd(m,1); guard++; }
+    return out;
+  }
+  // Months a given player is liable for (from their join month) that count toward
+  // what's owed — capped at the current month via seasonMonths().
+  function playerMonths(pid){
+    const pl = state.players.find(p=>p.id===pid);
+    const joinM = pl && pl.joined ? pl.joined.slice(0,7) : null;
+    return seasonMonths().filter(m => !joinM || m >= joinM);
+  }
+  // Whether a player is liable for a specific month (used by the Subs tab so a future
+  // month can still be viewed/pre-collected without counting toward what's owed).
+  function liableInMonth(pl, m){
+    const start = state.settings.startMonth || thisMonth();
+    if(m < start) return false;
+    const joinM = pl.joined ? pl.joined.slice(0,7) : null;
+    if(joinM && m < joinM) return false;
+    return true;
+  }
+
+  // ---- Financial calcs ----
+  function playerBalance(pid){
+    let owed = 0, paid = 0, monthsBehind = [];
+    playerMonths(pid).forEach(m => {
+      const f = fee(m);
+      const p = getPay(m, pid);
+      if(p && p.status === 'exempt') return;
+      if(p && p.status === 'paid'){ paid += f; return; }
+      owed += f; monthsBehind.push(m);
+    });
+    return { owed, paid, monthsBehind };
+  }
+  function totalCollectedSubs(){
+    let t = 0;
+    activePlayers().forEach(pl=>{
+      playerMonths(pl.id).forEach(m=>{
+        const p = getPay(m, pl.id);
+        if(p && p.status==='paid') t += fee(m);
+      });
+    });
+    return t;
+  }
+  function totalOutstanding(){ return activePlayers().reduce((s,p)=>s+playerBalance(p.id).owed,0); }
+  function expenseTotals(){
+    let income=0, expense=0;
+    state.expenses.forEach(e=> e.type==='income' ? income+=Number(e.amount)||0 : expense+=Number(e.amount)||0);
+    return { income, expense };
+  }
+
+  // ---- End-of-season treasurer's report ----
+  function playerSeasonSummary(pid){
+    const months = playerMonths(pid);
+    let paidM=0, exemptM=0, unpaidM=0, paid=0, owed=0;
+    months.forEach(m=>{ const p=getPay(m,pid); if(p&&p.status==='exempt') exemptM++; else if(p&&p.status==='paid'){ paidM++; paid+=fee(m); } else { unpaidM++; owed+=fee(m); } });
+    return { total:months.length, paidM, exemptM, unpaidM, paid, owed };
+  }
+  function buildReport(){
+    const players = [...state.players].sort((a,b)=>a.name.localeCompare(b.name));
+    let collected=0, outstanding=0, due=0;
+    const rows = players.map(p=>({p, s:playerSeasonSummary(p.id)})).filter(r=> r.s.paidM>0 || r.s.unpaidM>0 || r.s.exemptM>0);
+    rows.forEach(r=>{ collected+=r.s.paid; outstanding+=r.s.owed; due+=r.s.paid + r.s.owed; });
+    const {income, expense} = expenseTotals();
+    const totalIncome = collected + income;
+    const net = totalIncome - expense;
+    const rate = due>0 ? Math.round(collected/due*100) : 100;
+    const months = seasonMonths();
+    const period = months.length ? (fmtMonthShort(months[0]) + ' \u2013 ' + fmtMonthShort(months[months.length-1])) : 'Season not started';
+
+    const expByCat={}, incByCat={};
+    state.expenses.forEach(e=>{ const amt=Number(e.amount)||0; const c=e.category||'Other'; if(e.type==='income'){ incByCat[c]=(incByCat[c]||0)+amt; } else { expByCat[c]=(expByCat[c]||0)+amt; } });
+    const catRows = (obj, sign)=> Object.keys(obj).sort().map(c=>'<tr><td>'+esc(c)+'</td><td class="num">'+sign+money(obj[c])+'</td></tr>').join('') || '<tr><td class="muted" colspan="2">None</td></tr>';
+
+    const playerRows = rows.map(r=>
+      '<tr><td>'+esc(r.p.name)+(r.p.archived?' <span class="muted">(left)</span>':'')+'</td>'
+      + '<td class="num">'+r.s.paidM+'</td><td class="num">'+r.s.exemptM+'</td><td class="num">'+r.s.unpaidM+'</td>'
+      + '<td class="num">'+money(r.s.paid)+'</td><td class="num">'+(r.s.owed>0?'<span class="neg">'+money(r.s.owed)+'</span>':money(0))+'</td></tr>'
+    ).join('') || '<tr><td class="muted" colspan="6">No players in this season yet.</td></tr>';
+
+    const entries = [...state.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const entryRows = entries.map(e=>
+      '<tr><td>'+fmtDate(e.date)+'</td><td>'+(e.type==='income'?'Income':'Expense')+'</td><td>'+esc(e.category||'')+'</td><td>'+esc(e.desc||'')+'</td>'
+      + '<td class="num">'+(e.type==='income'?'+':'\u2212')+money(e.amount)+'</td></tr>'
+    ).join('') || '<tr><td class="muted" colspan="5">No expenses or income recorded.</td></tr>';
+
+    return ''
+      + '<h1>'+esc(teamLabel())+'</h1>'
+      + '<div class="report-meta">Treasurer\u2019s report \u00b7 Season '+esc(state.settings.season||'')+' \u00b7 '+period+'</div>'
+      + '<div class="report-meta">Generated '+fmtDate(todayISO())+' \u00b7 Monthly subs '+money(fee())+' per player</div>'
+
+      + '<h2>Financial summary</h2>'
+      + '<table><tbody>'
+      + '<tr><td>Subs collected</td><td class="num">'+money(collected)+'</td></tr>'
+      + '<tr><td>Other income (fundraising, sponsorship, etc.)</td><td class="num">'+money(income)+'</td></tr>'
+      + '<tr class="tot"><td>Total income</td><td class="num">'+money(totalIncome)+'</td></tr>'
+      + '<tr><td>Total expenses</td><td class="num">\u2212'+money(expense)+'</td></tr>'
+      + '<tr class="tot"><td>Net balance ('+(net>=0?'surplus':'deficit')+')</td><td class="num '+(net>=0?'pos':'neg')+'">'+money(net)+'</td></tr>'
+      + '</tbody></table>'
+
+      + '<h2>Subs collection</h2>'
+      + '<table><tbody>'
+      + '<tr><td>Collection rate</td><td class="num">'+rate+'%</td></tr>'
+      + '<tr><td>Total due to date</td><td class="num">'+money(due)+'</td></tr>'
+      + '<tr><td>Collected</td><td class="num">'+money(collected)+'</td></tr>'
+      + '<tr><td>Still outstanding</td><td class="num">'+(outstanding>0?'<span class="neg">'+money(outstanding)+'</span>':money(0))+'</td></tr>'
+      + '</tbody></table>'
+
+      + '<h2>Per player</h2>'
+      + '<table><thead><tr><th>Player</th><th class="num">Paid</th><th class="num">Exempt</th><th class="num">Unpaid</th><th class="num">Collected</th><th class="num">Outstanding</th></tr></thead>'
+      + '<tbody>'+playerRows
+      + '<tr class="tot"><td>Totals</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num">'+money(collected)+'</td><td class="num">'+money(outstanding)+'</td></tr>'
+      + '</tbody></table>'
+
+      + '<h2>Income &amp; expenses by category</h2>'
+      + '<table><thead><tr><th>Income</th><th class="num">Amount</th></tr></thead><tbody>'+catRows(incByCat,'+')+'</tbody></table>'
+      + '<div style="height:8px"></div>'
+      + '<table><thead><tr><th>Expenses</th><th class="num">Amount</th></tr></thead><tbody>'+catRows(expByCat,'\u2212')+'</tbody></table>'
+
+      + '<h2>All transactions</h2>'
+      + '<table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th class="num">Amount</th></tr></thead><tbody>'+entryRows+'</tbody></table>'
+
+      + '<div class="report-meta" style="margin-top:24px">'+esc(CLUB.fullName)+' subs tracker</div>';
+  }
+  function openReport(){
+    $("#report-body").innerHTML = buildReport();
+    document.body.classList.add('report-open');
+    $("#report-overlay").classList.add('open');
+    window.scrollTo(0,0);
+  }
+  function closeReport(){
+    document.body.classList.remove('report-open');
+    $("#report-overlay").classList.remove('open');
+  }
+
+  // ---------- Rendering ----------
+  const $ = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+
+  function renderAll(){
+    renderDashboard(); renderSubs(); renderPlayers(); renderOutstanding(); renderExpenses(); renderSettings();
+  }
+
+  function renderDashboard(){
+    const collected = totalCollectedSubs();
+    const outstanding = totalOutstanding();
+    const {income, expense} = expenseTotals();
+    const balance = collected + income - expense;
+    const nPlayers = activePlayers().length;
+    const months = seasonMonths();
+    // collection rate across season
+    let due=0, got=0;
+    activePlayers().forEach(pl=>{
+      playerMonths(pl.id).forEach(m=>{
+        const p=getPay(m,pl.id);
+        if(p&&p.status==='exempt') return;
+        const f=fee(m);
+        due += f;
+        if(p&&p.status==='paid') got += f;
+      });
+    });
+    const rate = due>0 ? Math.round(got/due*100) : 100;
+
+    $("#dash-season-line").textContent = `${state.settings.team} · Season ${state.settings.season} · ${money(fee())}/month per player`;
+    $("#dash-cards").innerHTML = `
+      <div class="stat good"><div class="label">Subs collected</div><div class="value">${money(collected)}</div><div class="sub">${nPlayers} players · ${months.length} month${months.length!==1?'s':''}</div></div>
+      <div class="stat ${outstanding>0?'bad':'good'}"><div class="label">Outstanding subs</div><div class="value">${money(outstanding)}</div><div class="sub">${outstanding>0?'To be chased':'All square 🎉'}</div></div>
+      <div class="stat ${rate>=90?'good':rate>=70?'warn':'bad'}"><div class="label">Collection rate</div><div class="value">${rate}%</div><div class="sub">${money(got)} of ${money(due)} due</div></div>
+      <div class="stat ${balance>=0?'good':'bad'}"><div class="label">Club balance</div><div class="value">${money(balance)}</div><div class="sub">Subs + income − expenses</div></div>`;
+
+    // monthly breakdown
+    const recent = [...months].reverse().slice(0,6);
+    if(!recent.length || !nPlayers){ $("#dash-months").innerHTML = emptyMsg("⚽", nPlayers?"No months yet":"No players yet", nPlayers?"Set a subs start month in Settings.":"Add players on the Players tab to begin."); }
+    else {
+      $("#dash-months").innerHTML = `<table><thead><tr><th>Month</th><th class="num">Paid</th><th class="num">Unpaid</th><th class="num">Collected</th></tr></thead><tbody>${
+        recent.map(m=>{
+          let paid=0,unpaid=0;
+          activePlayers().forEach(pl=>{
+            if(!playerMonths(pl.id).includes(m)) return;
+            const p=getPay(m,pl.id);
+            if(p&&p.status==='paid') paid++;
+            else if(p&&p.status==='exempt'){}
+            else unpaid++;
+          });
+          return `<tr><td>${fmtMonth(m)}</td><td class="num clear">${paid}</td><td class="num ${unpaid?'owe':''}">${unpaid}</td><td class="num money">${money(paid*fee(m))}</td></tr>`;
+        }).join('')
+      }</tbody></table>`;
+    }
+    // top owes
+    const owes = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed).slice(0,6);
+    if(!owes.length){ $("#dash-owes").innerHTML = emptyMsg("✅","Everyone's paid up","No outstanding subs. Nice work!"); }
+    else {
+      $("#dash-owes").innerHTML = `<table><thead><tr><th>Player</th><th>Parent contact</th><th class="num">Owes</th></tr></thead><tbody>${
+        owes.map(x=>`<tr><td>${esc(x.p.name)}<div class="muted" style="font-size:12px">${x.b.monthsBehind.length} month${x.b.monthsBehind.length!==1?'s':''} behind</div></td><td class="muted">${esc(x.p.parentName||'')} ${x.p.parentPhone?'· '+esc(x.p.parentPhone):''}</td><td class="num owe">${money(x.b.owed)}</td></tr>`).join('')
+      }</tbody></table>`;
+    }
+  }
+
+  function emptyMsg(icon,title,sub){
+    return `<div class="empty"><div class="big">${icon}</div><strong>${title}</strong><br><span class="muted">${sub}</span></div>`;
+  }
+
+  // ---- MONTHLY SUBS ----
+  let currentMonth = thisMonth();
+  function renderSubs(){
+    $("#cur-month-lbl").textContent = fmtMonth(currentMonth);
+    const f = fee(currentMonth);
+    const players = activePlayers().filter(p=>liableInMonth(p, currentMonth));
+    if(!activePlayers().length){ $("#subs-table").innerHTML = emptyMsg("🧒","No players yet","Add players first on the Players tab."); return; }
+    if(!players.length){ $("#subs-table").innerHTML = emptyMsg("📅","No players for this month","Everyone joined after this month, or it's before your subs start month."); return; }
+    let collected=0;
+    const rows = players.map(pl=>{
+      const p = getPay(currentMonth, pl.id) || {status:'unpaid'};
+      if(p.status==='paid') collected += f;
+      const statusPill = {
+        paid:`<span class="pill paid">Paid</span>`,
+        unpaid:`<span class="pill unpaid">Unpaid</span>`,
+        exempt:`<span class="pill exempt">Exempt</span>`
+      }[p.status] || `<span class="pill unpaid">Unpaid</span>`;
+      return `<tr>
+        <td><strong>${esc(pl.name)}</strong>${pl.medical?`<span class="flag" title="${esc(pl.medical)}">⚕ medical</span>`:''}${(p.status!=='paid' && p.status!=='exempt')?' '+waButton(pl, monthMessage(pl)):''}</td>
+        <td><button class="btn btn-sm status-btn" data-pid="${pl.id}">${statusPill}</button></td>
+        <td>
+          <select class="method-sel" data-pid="${pl.id}" style="max-width:130px">
+            ${['—','Cash','Bank transfer','Card','Standing order','Other'].map(m=>`<option ${(p.method||'—')===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </td>
+        <td class="num money">${p.status==='paid'?money(f):p.status==='exempt'?'—':`<span class="muted">${money(f)} due</span>`}</td>
+      </tr>`;
+    }).join('');
+    const paidCount = players.filter(pl=>{const p=getPay(currentMonth,pl.id); return p&&p.status==='paid';}).length;
+    $("#subs-table").innerHTML = `
+      <div style="margin-bottom:10px" class="muted">Monthly fee: <strong>${money(f)}</strong> · Collected <strong class="clear">${money(collected)}</strong> · ${paidCount}/${players.length} paid</div>
+      <table><thead><tr><th>Player</th><th>Status</th><th>Method</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function cycleStatus(pid){
+    const k = payKey(currentMonth,pid);
+    const cur = state.payments[k] || {status:'unpaid'};
+    const order = ['unpaid','paid','exempt'];
+    let next = order[(order.indexOf(cur.status)+1)%order.length];
+    if(next==='paid'){ state.payments[k] = {status:'paid', method:cur.method||'Cash', date:todayISO()}; }
+    else if(next==='exempt'){ state.payments[k] = {status:'exempt', method:cur.method||'—'}; }
+    else { delete state.payments[k]; }
+    save(); renderSubs(); renderDashboard();
+  }
+
+  // ---- PLAYERS ----
+  function renderPlayers(){
+    const q = ($("#player-search").value||'').toLowerCase();
+    let list = state.players.filter(p=>!p.archived);
+    if(q) list = list.filter(p=> (p.name+' '+(p.parentName||'')+' '+(p.parentPhone||'')+' '+(p.parentEmail||'')).toLowerCase().includes(q));
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+    if(!state.players.length){ $("#players-table").innerHTML = emptyMsg("🧒","No players yet","Click “+ Add player” to build your squad."); return; }
+    $("#players-table").innerHTML = `<table><thead><tr><th>Player</th><th>Parent / guardian</th><th>Contact</th><th class="num">Balance</th><th></th></tr></thead><tbody>${
+      list.map(p=>{
+        const b = playerBalance(p.id);
+        return `<tr>
+          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
+          <td>${esc(p.parentName||'—')}</td>
+          <td class="muted">${p.parentPhone?esc(p.parentPhone):''}${p.parentPhone&&p.parentEmail?'<br>':''}${p.parentEmail?esc(p.parentEmail):''}${!p.parentPhone&&!p.parentEmail?'—':''}</td>
+          <td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:`<span class="clear">Clear</span>`}</td>
+          <td class="row-actions"><button class="btn btn-sm" data-edit-player="${p.id}">Edit</button></td>
+        </tr>`;
+      }).join('')
+    }</tbody></table>`;
+  }
+
+  function playerForm(p){
+    p = p || {};
+    return `
+      <div class="form-grid">
+        <label class="field"><span>Child's name *</span><input id="pf-name" value="${esc(p.name||'')}"></label>
+        <label class="field"><span>Month joined</span><input id="pf-joined" type="month" value="${esc(p.joined?p.joined.slice(0,7):'')}"></label>
+        <label class="field"><span>Parent / guardian name</span><input id="pf-parent" value="${esc(p.parentName||'')}"></label>
+        <label class="field"><span>Parent phone</span><input id="pf-phone" value="${esc(p.parentPhone||'')}"></label>
+        <label class="field"><span>Parent email</span><input id="pf-email" type="email" value="${esc(p.parentEmail||'')}"></label>
+        <label class="field"><span>Emergency contact</span><input id="pf-emergency" value="${esc(p.emergency||'')}"></label>
+      </div>
+      <label class="field"><span>Medical notes / allergies</span><textarea id="pf-medical" rows="2" placeholder="e.g. asthma — inhaler in kit bag">${esc(p.medical||'')}</textarea></label>
+      <label class="field"><span>Notes</span><textarea id="pf-notes" rows="2">${esc(p.notes||'')}</textarea></label>
+      ${p.id?`<label class="checkline"><input type="checkbox" id="pf-archived" ${p.archived?'checked':''}> Archive (left the team — hide from lists)</label>`:''}`;
+  }
+  function openPlayerModal(id){
+    const p = id ? state.players.find(x=>x.id===id) : null;
+    openModal(p?'Edit Player':'Add Player', playerForm(p), [
+      p ? {label:'Delete', cls:'btn-danger', act:()=>{ if(confirm('Delete '+p.name+'? This removes their payment history too.')){ deletePlayer(p.id); closeModal(); }}} : null,
+      {label:'Cancel', act:closeModal},
+      {label:'Save', cls:'btn-primary', act:()=>{
+        const name = $("#pf-name").value.trim();
+        if(!name){ alert('Please enter a name'); return; }
+        const data = {
+          name, joined: $("#pf-joined").value||'', parentName:$("#pf-parent").value.trim(),
+          parentPhone:$("#pf-phone").value.trim(), parentEmail:$("#pf-email").value.trim(),
+          emergency:$("#pf-emergency").value.trim(), medical:$("#pf-medical").value.trim(),
+          notes:$("#pf-notes").value.trim(), archived: id ? $("#pf-archived").checked : false
+        };
+        if(id){ Object.assign(state.players.find(x=>x.id===id), data); }
+        else { state.players.push(Object.assign({id:uid()}, data)); }
+        save(); closeModal(); renderAll();
+      }}
+    ].filter(Boolean));
+  }
+  function deletePlayer(id){
+    state.players = state.players.filter(p=>p.id!==id);
+    Object.keys(state.payments).forEach(k=>{ if(k.endsWith('|'+id)) delete state.payments[k]; });
+    save(); renderAll();
+  }
+
+  // ---- WhatsApp reminders ----
+  const DEFAULT_CC = '44'; // UK country code for local numbers
+  function normalizePhone(raw){
+    if(!raw) return null;
+    let str = String(raw).trim();
+    const intl = str.charAt(0) === '+';
+    str = str.replace(/\D/g, '');
+    if(!str) return null;
+    if(intl) return str;                 // already had +country code
+    if(str.slice(0,2) === '00') return str.slice(2);
+    if(str.charAt(0) === '0') return DEFAULT_CC + str.slice(1); // UK national -> +44
+    return str;
+  }
+  function waButton(player, message){
+    const num = normalizePhone(player.parentPhone);
+    if(!num) return '<span class="muted" style="font-size:11px" title="No phone number on file for this parent">no number</span>';
+    const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(message);
+    return '<a class="wa-btn" href="' + url + '" target="_blank" rel="noopener" title="Send a WhatsApp reminder">\uD83D\uDCAC WhatsApp</a>';
+  }
+  function teamLabel(){ return (state.settings && state.settings.team) || (teamName(currentTeam)); }
+  function owesMessage(p, b){
+    return "Hi " + (p.parentName || 'there') + ", a friendly reminder from " + teamLabel() + " \u26BD\n\n"
+      + p.name + "'s training subs are outstanding: " + money(b.owed) + " (" + b.monthsBehind.map(fmtMonthShort).join(', ') + "). Subs are " + money(fee()) + "/month.\n\nPlease send it across when you can \u2014 thank you! \uD83D\uDC9A";
+  }
+  function monthMessage(pl){
+    return "Hi " + (pl.parentName || 'there') + ", a friendly reminder from " + teamLabel() + " \u26BD\n\n"
+      + "We've not yet received " + pl.name + "'s subs for " + fmtMonth(currentMonth) + " (" + money(fee(currentMonth)) + ").\n\nPlease send it across when you can \u2014 thank you! \uD83D\uDC9A";
+  }
+  // Step through every unpaid parent, opening a pre-filled WhatsApp message for each.
+  function openRemindAll(){
+    const owing = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed);
+    if(!owing.length){ flash('Nobody owes anything \uD83C\uDF89'); return; }
+    let i = 0;
+    function step(){
+      const x = owing[i];
+      const num = normalizePhone(x.p.parentPhone);
+      const msg = owesMessage(x.p, x.b);
+      const url = num ? ('https://wa.me/' + num + '?text=' + encodeURIComponent(msg)) : null;
+      const last = i + 1 >= owing.length;
+      const body =
+        '<div class="muted" style="font-size:12px;margin-bottom:8px">Parent ' + (i+1) + ' of ' + owing.length + '</div>'
+        + '<div style="font-weight:700;font-size:16px">' + esc(x.p.name) + ' <span class="owe" style="font-size:14px">' + money(x.b.owed) + '</span></div>'
+        + '<div class="muted" style="font-size:13px;margin-bottom:10px">' + esc(x.p.parentName || 'Parent') + (num ? ' \u00b7 ' + esc(x.p.parentPhone) : '') + '</div>'
+        + (num
+            ? '<div style="background:#f4f7f5;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;white-space:pre-wrap">' + esc(msg) + '</div>'
+            : '<div class="hint" style="background:var(--red-bg);color:var(--red)">No phone number on file \u2014 add one on the Players tab to message this parent.</div>');
+      const buttons = [];
+      if(url) buttons.push({ label: '\uD83D\uDCAC Open WhatsApp', cls: 'btn-primary', act: ()=>{ window.open(url, '_blank', 'noopener'); } });
+      buttons.push({ label: last ? 'Finish' : 'Next parent \u203A', act: next });
+      openModal('Remind Unpaid Parents', body, buttons);
+    }
+    function next(){ i++; if(i >= owing.length){ closeModal(); flash('Done \u2014 stepped through ' + owing.length + ' parent' + (owing.length!==1?'s':'')); } else { step(); } }
+    step();
+  }
+
+  // ---- OUTSTANDING ----
+  function renderOutstanding(){
+    const rows = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed);
+    if(!rows.length){ $("#owes-table").innerHTML = emptyMsg("✅","All paid up!","No outstanding subs across the whole squad."); return; }
+    const total = rows.reduce((s,x)=>s+x.b.owed,0);
+    const showWA = true;
+    $("#owes-table").innerHTML = `
+      <div style="margin-bottom:10px"><strong class="owe">${money(total)}</strong> <span class="muted">outstanding across ${rows.length} player${rows.length!==1?'s':''}</span></div>
+      <table><thead><tr><th>Player</th><th>Months owed</th><th>Parent</th><th>Phone</th><th class="num">Owes</th>${showWA?'<th>Remind</th>':''}</tr></thead><tbody>${
+        rows.map(x=>`<tr><td><strong>${esc(x.p.name)}</strong></td><td class="muted">${x.b.monthsBehind.map(fmtMonthShort).join(', ')}</td><td>${esc(x.p.parentName||'—')}</td><td class="muted">${esc(x.p.parentPhone||'—')}</td><td class="num owe">${money(x.b.owed)}</td>${showWA?`<td>${waButton(x.p, owesMessage(x.p, x.b))}</td>`:''}</tr>`).join('')
+      }</tbody></table>`;
+  }
+
+  // ---- EXPENSES ----
+  function renderExpenses(){
+    const {income, expense} = expenseTotals();
+    const subs = totalCollectedSubs();
+    $("#expense-cards").innerHTML = `
+      <div class="stat good"><div class="label">Total income</div><div class="value">${money(subs+income)}</div><div class="sub">Subs ${money(subs)} + other ${money(income)}</div></div>
+      <div class="stat bad"><div class="label">Total expenses</div><div class="value">${money(expense)}</div></div>
+      <div class="stat ${subs+income-expense>=0?'good':'bad'}"><div class="label">Net balance</div><div class="value">${money(subs+income-expense)}</div></div>`;
+    if(!state.expenses.length){ $("#expenses-table").innerHTML = emptyMsg("🧾","No entries yet","Add pitch hire, referee fees, kit purchases, tournament fees or fundraising income."); return; }
+    const list = [...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+    $("#expenses-table").innerHTML = `<table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead><tbody>${
+      list.map(e=>`<tr>
+        <td>${fmtDate(e.date)}</td>
+        <td>${e.type==='income'?'<span class="pill paid">Income</span>':'<span class="pill unpaid">Expense</span>'}</td>
+        <td>${esc(e.category||'—')}</td>
+        <td>${esc(e.desc||'')}</td>
+        <td class="num money ${e.type==='income'?'clear':'owe'}">${e.type==='income'?'+':'−'}${money(e.amount)}</td>
+        <td class="row-actions"><button class="btn btn-sm" data-edit-expense="${e.id}">Edit</button></td>
+      </tr>`).join('')
+    }</tbody></table>`;
+  }
+  function fmtDate(iso){
+    if(!iso) return '';
+    return new Date(iso+"T00:00:00").toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
+  function openExpenseModal(id){
+    const e = id ? state.expenses.find(x=>x.id===id) : {type:'expense', date:todayISO()};
+    const cats = ['Pitch hire','Referee','Kit & equipment','League fees','Tournament','Insurance','First aid','Coaching course','Fundraising','Sponsorship','Other'];
+    openModal(id?'Edit Entry':'Add Entry', `
+      <div class="form-grid">
+        <label class="field"><span>Type</span><select id="ef-type"><option value="expense" ${e.type==='expense'?'selected':''}>Expense (money out)</option><option value="income" ${e.type==='income'?'selected':''}>Income (money in)</option></select></label>
+        <label class="field"><span>Date</span><input id="ef-date" type="date" value="${esc(e.date||todayISO())}"></label>
+        <label class="field"><span>Category</span><select id="ef-cat">${cats.map(c=>`<option ${e.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
+        <label class="field"><span>Amount (£)</span><input id="ef-amount" type="number" min="0" step="0.01" value="${e.amount!=null?e.amount:''}"></label>
+      </div>
+      <label class="field"><span>Description</span><input id="ef-desc" value="${esc(e.desc||'')}" placeholder="e.g. Astro pitch hire — June"></label>
+    `, [
+      id?{label:'Delete', cls:'btn-danger', act:()=>{ state.expenses=state.expenses.filter(x=>x.id!==id); save(); closeModal(); renderExpenses(); renderDashboard(); }}:null,
+      {label:'Cancel', act:closeModal},
+      {label:'Save', cls:'btn-primary', act:()=>{
+        const amount = parseFloat($("#ef-amount").value);
+        if(isNaN(amount)||amount<0){ alert('Enter a valid amount'); return; }
+        const data = { type:$("#ef-type").value, date:$("#ef-date").value||todayISO(), category:$("#ef-cat").value, amount, desc:$("#ef-desc").value.trim() };
+        if(id){ Object.assign(state.expenses.find(x=>x.id===id), data); }
+        else { state.expenses.push(Object.assign({id:uid()}, data)); }
+        save(); closeModal(); renderExpenses(); renderDashboard();
+      }}
+    ].filter(Boolean));
+  }
+
+  // ---- SETTINGS ----
+  function renderSettings(){
+    $("#set-team").value = state.settings.team;
+    $("#set-season").value = state.settings.season;
+    $("#set-fee").value = state.settings.fee;
+    $("#set-currency").value = state.settings.currency;
+    $("#set-start").value = state.settings.startMonth || thisMonth();
+    refreshPushState();
+  }
+
+  // ---------- Modal helpers ----------
+  function openModal(title, bodyHTML, buttons){
+    $("#modal-title").textContent = title;
+    $("#modal-body").innerHTML = bodyHTML;
+    const foot = $("#modal-foot"); foot.innerHTML = '';
+    (buttons||[]).forEach(b=>{
+      const btn = document.createElement('button');
+      btn.textContent = b.label; if(b.cls) btn.className = b.cls;
+      btn.onclick = b.act; foot.appendChild(btn);
+    });
+    $("#modal-backdrop").classList.add('open');
+    const first = $("#modal-body input"); if(first) first.focus();
+  }
+  function closeModal(){ $("#modal-backdrop").classList.remove('open'); }
+
+  // ---------- Export / import ----------
+  function download(filename, text, type){
+    const blob = new Blob([text], {type: type||'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+  // Backup reminder: a calendar file (.ics) with monthly repeats on the 1st and 15th.
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function addToCalendar(){
+    const team = teamLabel();
+    const now = new Date();
+    const y = now.getFullYear(), mm = pad2(now.getMonth()+1);
+    const stamp = now.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const icsEsc = (t)=> String(t).replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');
+    function vevent(day, uid, summary){
+      const start = y+mm+pad2(day)+'T090000', end = y+mm+pad2(day)+'T091500';
+      return ['BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+stamp,'DTSTART:'+start,'DTEND:'+end,
+        'RRULE:FREQ=MONTHLY;BYMONTHDAY='+day,'SUMMARY:'+icsEsc(summary),
+        'DESCRIPTION:'+icsEsc('Open the subs tracker and chase any outstanding payments.'),
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(summary),'TRIGGER:PT0M','END:VALARM',
+        'END:VEVENT'].join('\r\n');
+    }
+    const cal = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Junior Club Hub//Subs Tracker//EN','CALSCALE:GREGORIAN',
+      vevent(1, 'subs-1-'+currentTeam+'@junior-club-hub', 'Check '+team+' subs - chase anyone unpaid'),
+      vevent(15,'subs-15-'+currentTeam+'@junior-club-hub','Mid-month check: '+team+' subs'),
+      'END:VCALENDAR'].join('\r\n');
+    download('subs-reminders-'+currentTeam+'.ics', cal, 'text/calendar');
+    pushStatus('Calendar reminders downloaded \u2014 open the file to add them (repeats on the 1st and 15th of each month).');
+  }
+  function exportCSV(){
+    const rows = [['Month','Player','Status','Method','Amount']];
+    seasonMonths().forEach(m=>{
+      activePlayers().forEach(pl=>{
+        if(!playerMonths(pl.id).includes(m)) return;
+        const p=getPay(m,pl.id);
+        const status=p?p.status:'unpaid';
+        const amt = p&&p.status==='paid'?fee(m):'';
+        rows.push([m, pl.name, status, (p&&p.method)||'', amt]);
+      });
+    });
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    download(`subs-${todayISO()}.csv`, csv, 'text/csv');
+  }
+
+  // ---------- Events ----------
+  const viewRenderers = { dashboard:renderDashboard, subs:renderSubs, players:renderPlayers, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
+  function switchView(name){
+    $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
+    $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+    if(viewRenderers[name]) viewRenderers[name](); // always show fresh data
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.addEventListener('click', e=>{
+    const tab = e.target.closest('.tab'); if(tab){ switchView(tab.dataset.view); return; }
+    const goto = e.target.closest('[data-goto]'); if(goto){ switchView(goto.dataset.goto); return; }
+    const sb = e.target.closest('.status-btn'); if(sb){ cycleStatus(sb.dataset.pid); return; }
+    const ep = e.target.closest('[data-edit-player]'); if(ep){ openPlayerModal(ep.dataset.editPlayer); return; }
+    const ee = e.target.closest('[data-edit-expense]'); if(ee){ openExpenseModal(ee.dataset.editExpense); return; }
+  });
+  $("#modal-x").onclick = closeModal;
+  $("#modal-backdrop").addEventListener('click', e=>{ if(e.target===$("#modal-backdrop")) closeModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+  $("#add-player-btn").onclick = ()=>openPlayerModal();
+  $("#player-search").oninput = renderPlayers;
+  $("#add-expense-btn").onclick = ()=>openExpenseModal();
+  $("#prev-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,-1); renderSubs(); };
+  $("#next-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,1); renderSubs(); };
+
+  document.addEventListener('change', e=>{
+    const ms = e.target.closest('.method-sel');
+    if(ms){
+      const k = payKey(currentMonth, ms.dataset.pid);
+      const p = state.payments[k] || {status:'unpaid'};
+      p.method = ms.value; state.payments[k]=p; save();
+    }
+  });
+
+  $("#mark-all-paid").onclick = ()=>{
+    activePlayers().forEach(pl=>{
+      if(!playerMonths(pl.id).includes(currentMonth)) return;
+      const k=payKey(currentMonth,pl.id); const cur=state.payments[k];
+      if(cur&&cur.status==='exempt') return;
+      state.payments[k]={status:'paid', method:(cur&&cur.method)||'Cash', date:todayISO()};
+    });
+    save(); renderSubs(); renderDashboard();
+  };
+
+  $("#save-settings").onclick = ()=>{
+    state.settings.team = $("#set-team").value.trim()||'Team';
+    state.settings.season = $("#set-season").value.trim();
+    state.settings.fee = parseFloat($("#set-fee").value)||0;
+    state.settings.currency = $("#set-currency").value.trim()||'£';
+    state.settings.startMonth = $("#set-start").value || thisMonth();
+    if(currentMonth < state.settings.startMonth) currentMonth = state.settings.startMonth;
+    save(); renderAll(); flash('Settings saved');
+  };
+  $("#export-json").onclick = ()=>download(`subs-backup-${todayISO()}.json`, JSON.stringify(state,null,2));
+  $("#export-csv").onclick = exportCSV;
+  $("#import-json").onclick = ()=>$("#import-file").click();
+  $("#import-file").onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const r = new FileReader();
+    r.onload = ()=>{ try {
+      const data = JSON.parse(r.result);
+      if(!data.settings||!Array.isArray(data.players)) throw new Error('Not a valid backup');
+      state = Object.assign(defaultState(), data);
+      state.settings = Object.assign(defaultState().settings, data.settings||{});
+      if(confirm('Replace all current data with this backup?')){ save(); currentMonth=state.settings.startMonth||thisMonth(); renderAll(); flash('Backup restored'); }
+    } catch(err){ alert('Could not read backup: '+err.message); } };
+    r.readAsText(file); e.target.value='';
+  };
+  $("#reset-data").onclick = ()=>{ if(confirm('Delete ALL data permanently? Export a backup first if unsure.')){ if(confirm('Really delete everything?')){ state=defaultState(); save(); currentMonth=thisMonth(); renderAll(); flash('All data cleared'); } } };
+
+  $("#copy-chase").onclick = ()=>{
+    const rows = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed);
+    if(!rows.length){ flash('Nobody owes anything 🎉'); return; }
+    const text = `${state.settings.team} — outstanding subs (${fmtDate(todayISO())})\n\n` +
+      rows.map(x=>`• ${x.p.name} — ${money(x.b.owed)} (${x.b.monthsBehind.map(fmtMonthShort).join(', ')})${x.p.parentName?' — '+x.p.parentName:''}`).join('\n') +
+      `\n\nTotal: ${money(rows.reduce((s,x)=>s+x.b.owed,0))}\nMonthly fee is ${money(fee())} per player.`;
+    navigator.clipboard.writeText(text).then(()=>flash('Chase-up list copied'), ()=>flash('Copy failed'));
+  };
+  $("#print-owes").onclick = ()=>window.print();
+  $("#wa-remind-all").onclick = openRemindAll;
+
+  // small toast
+  let toastEl;
+  function flash(msg){
+    if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2a22;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.style.opacity='1';
+    clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.opacity='0', 2200);
+  }
+
+  // ---------- Auth gate (multi-team: password selects the team, data syncs to server) ----------
+  function setupGate(){
+    $("#gate-title").textContent = 'Enter Your Team Password';
+    $("#gate-sub").textContent = CLUB.name + ' \u2014 enter your team\u2019s password to open its subs tracker.';
+    $("#gate-pass2").style.display = 'none';
+    $("#gate-pass").value=''; $("#gate-err").textContent='';
+    $("#gate-btn").textContent = 'Unlock';
+    $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. There is no password reset \u2014 keep a backup export in a safe place.';
+    setTimeout(()=>$("#gate-pass").focus(), 50);
+  }
+  // The current auth for a team is the server's value if set, else the baked default.
+  async function fetchAllRecords(){
+    const records = {}; let online = true;
+    await Promise.all(TEAM_IDS.map(async id=>{
+      try { records[id] = await serverGet(id); }
+      catch(e){ online = false; records[id] = readCache(id); }
+    }));
+    apiAvailable = online;
+    return records;
+  }
+  function effAuth(id, records){
+    return (records && records[id] && records[id].auth) ? records[id].auth : null;
+  }
+  async function tryUnlock(pass){
+    const records = await fetchAllRecords();
+    let matchedId = null, matchedAuth = null;
+    for(const id of TEAM_IDS){
+      const auth = effAuth(id, records); if(!auth) continue;
+      const v = await deriveVerify(pass, ub64(auth.verifySalt));
+      if(v === auth.verifyHash){ matchedId = id; matchedAuth = auth; break; }
+    }
+    if(!matchedId) return false;
+    currentTeam = matchedId;
+    currentAuth = matchedAuth;
+    cryptoKey = await deriveKey(pass, ub64(matchedAuth.encSalt));
+    await loadFromRecord(records[matchedId], pass);
+    return true;
+  }
+  // ---------- First-time setup: give a team its password ----------
+  // A team without a password can't be opened by anyone, so a coach sets one
+  // here, proving who they are with the Coach Admin password.
+  let setupShown = false;
+  async function toggleSetup(e){
+    if(e) e.preventDefault();
+    setupShown = !setupShown;
+    $("#gate-form").style.display = setupShown ? 'none' : '';
+    $("#setup-form").style.display = setupShown ? '' : 'none';
+    $("#setup-toggle").textContent = setupShown ? '\u2190 Back to unlock' : 'Setting up a team for the first time?';
+    $("#gate-title").textContent = setupShown ? 'Set Up a Team' : 'Enter Your Team Password';
+    $("#setup-err").textContent = '';
+    if(!setupShown) return;
+    const sel = $("#setup-team");
+    sel.innerHTML = '<option value="">Loading teams\u2026</option>';
+    const records = await fetchAllRecords();
+    const open = TEAM_IDS.filter(id=>!effAuth(id, records));
+    sel.innerHTML = open.length
+      ? '<option value="">Choose the team\u2026</option>' + open.map(id=>'<option value="'+esc(id)+'">'+esc(teamName(id))+'</option>').join('')
+      : '<option value="">Every team already has a password</option>';
+    sel.disabled = !open.length;
+  }
+  async function setupSubmit(){
+    const id = $("#setup-team").value, pass = $("#setup-pass").value, pass2 = $("#setup-pass2").value, admin = $("#setup-admin").value;
+    const err = $("#setup-err"); err.textContent = '';
+    if(!id){ err.textContent = 'Choose the team first.'; return; }
+    if(pass.length < 8){ err.textContent = 'The team password needs at least 8 characters.'; return; }
+    if(pass !== pass2){ err.textContent = 'The two passwords don\u2019t match.'; return; }
+    if(!admin){ err.textContent = 'Enter the Coach Admin password.'; return; }
+    const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
+    try {
+      const encSalt = crypto.getRandomValues(new Uint8Array(16)), verifySalt = crypto.getRandomValues(new Uint8Array(16));
+      const auth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash: await deriveVerify(pass, verifySalt) };
+      currentTeam = id; currentAuth = auth;
+      cryptoKey = await deriveKey(pass, encSalt);
+      state = defaultState(); state.settings.team = teamName(id);
+      const blob = await encryptState();
+      const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json','x-admin-key':admin}, body: JSON.stringify({ blob, auth }) });
+      if(res.status === 401){ err.textContent = 'That Coach Admin password isn\u2019t right.'; cryptoKey = null; currentTeam = null; return; }
+      if(res.status === 409){ err.textContent = 'This team already has a password \u2014 unlock it instead.'; cryptoKey = null; currentTeam = null; return; }
+      if(!res.ok) throw new Error('PUT ' + res.status);
+      localRev = (await res.json()).rev; apiAvailable = true;
+      writeCache(currentTeam, { blob, rev: localRev });
+      unlockApp();
+      flash('Team set up \u2014 share its password with whoever looks after its subs');
+    } catch(e){ console.error(e); err.textContent = 'Could not set up the team. Check you\u2019re online and try again.'; cryptoKey = null; currentTeam = null; }
+    finally { btn.disabled = false; btn.textContent = 'Set Up Team'; }
+  }
+  async function gateSubmit(){
+    const pass = $("#gate-pass").value;
+    if(!pass) return;
+    $("#gate-err").textContent='';
+    const btn = $("#gate-btn"); const label = btn.textContent; btn.disabled = true; btn.textContent = 'Checking\u2026';
+    let ok=false; try { ok = await tryUnlock(pass); } catch(e){ console.error(e); }
+    btn.disabled = false; btn.textContent = label;
+    if(ok){ unlockApp(); }
+    else { $("#gate-err").textContent = 'Password not recognised.'; $("#gate-pass").select(); }
+  }
+  function applyTeamBranding(){
+    // Banner stays club green for every team; the team is shown by name only.
+    const meta = document.querySelector('meta[name=theme-color]'); if(meta) meta.setAttribute('content', '#1f7a3d');
+    const name = (state.settings && state.settings.team) || teamName(currentTeam);
+    const h1 = $("#app-title"); if(h1) h1.textContent = name;
+    document.title = name + ' \u2014 Subs Tracker';
+  }
+  function unlockApp(){
+    applyTeamBranding();
+    currentMonth = thisMonth();
+    if(currentMonth < (state.settings.startMonth||thisMonth())) currentMonth = state.settings.startMonth;
+    document.body.classList.remove('locked');
+    renderAll();
+    startPolling();
+  }
+  function lock(){ cryptoKey=null; currentTeam=null; stopPolling(); location.reload(); }
+
+  // ---- Pull others' changes periodically and when the tab regains focus ----
+  let pollTimer = null;
+  function startPolling(){ stopPolling(); pollTimer = setInterval(pollRemote, 20000); }
+  function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+  async function pollRemote(){
+    if(!currentTeam || !cryptoKey) return;
+    if($("#modal-backdrop").classList.contains('open')) return; // don't disrupt an open form
+    try {
+      const rec = await serverGet(currentTeam); apiAvailable = true;
+      if(rec && rec.auth && currentAuth && rec.auth.verifyHash !== currentAuth.verifyHash){
+        stopPolling();
+        alert('This team\u2019s password was changed on another device. Please log in again with the new password.');
+        lock();
+        return;
+      }
+      if(rec && rec.blob && (rec.rev||0) > localRev){
+        const parsed = await decryptBlob(rec.blob);
+        applyLoaded(parsed);
+        localRev = rec.rev || 0;
+        writeCache(currentTeam, rec);
+        applyTeamBranding(); renderAll();
+        setSyncStatus('synced');
+        flash('Updated with the latest changes');
+      }
+    } catch(e){ apiAvailable = false; setSyncStatus('offline'); }
+  }
+  window.addEventListener('focus', ()=>{ pollRemote(); });
+
+  $("#gate-form").addEventListener('submit', e=>{ e.preventDefault(); gateSubmit(); });
+  $("#setup-form").addEventListener('submit', e=>{ e.preventDefault(); setupSubmit(); });
+  $("#setup-toggle").addEventListener('click', toggleSetup);
+  $("#lock-btn").onclick = lock;
+  document.addEventListener('click', e=>{
+    if(e.target.closest('#lock-now-btn')) lock();
+    if(e.target.closest('#season-report-btn')) openReport();
+    if(e.target.closest('#report-print')) window.print();
+    if(e.target.closest('#report-close')) closeReport();
+    if(e.target.closest('#refresh-btn')) pollRemote();
+    if(e.target.closest('#change-pass-btn')) openChangePassword();
+    if(e.target.closest('#push-enable-btn')) enablePush();
+    if(e.target.closest('#push-test-btn')) testPush();
+    if(e.target.closest('#push-disable-btn')) disablePush();
+    if(e.target.closest('#cal-add-btn')) addToCalendar();
+  });
+  function openChangePassword(){
+    if(!currentTeam || !currentAuth) return;
+    openModal('Change ' + teamName(currentTeam) + ' Password', `
+      <p class="muted" style="font-size:13px;margin-top:0">This changes the password for the whole team on every device. Everyone will need the new password next time they open the app. You must be online to change it.</p>
+      <label class="field"><span>Current password</span><input id="cp-cur" type="password" autocomplete="current-password"></label>
+      <label class="field"><span>New password</span><input id="cp-new" type="password" autocomplete="new-password"></label>
+      <label class="field"><span>Confirm new password</span><input id="cp-new2" type="password" autocomplete="new-password"></label>
+    `, [
+      {label:'Cancel', act:closeModal},
+      {label:'Change Password', cls:'btn-primary', act: async ()=>{
+        const cur=$("#cp-cur").value, nw=$("#cp-new").value, nw2=$("#cp-new2").value;
+        let v; try { v = await deriveVerify(cur, ub64(currentAuth.verifySalt)); } catch(e){ alert('Something went wrong.'); return; }
+        if(v !== currentAuth.verifyHash){ alert('Current password is incorrect.'); return; }
+        if(nw.length < 8){ alert('New password must be at least 8 characters.'); return; }
+        if(nw !== nw2){ alert('New passwords do not match.'); return; }
+        try { await doChangePassword(nw); closeModal(); flash('Password changed for this team'); }
+        catch(e){ alert('Could not change the password. You need to be online to change it. (' + (e && e.message || e) + ')'); }
+      }}
+    ]);
+  }
+  async function doChangePassword(newPass){
+    const encSalt = crypto.getRandomValues(new Uint8Array(16));
+    const verifySalt = crypto.getRandomValues(new Uint8Array(16));
+    const newKey = await deriveKey(newPass, encSalt);
+    const verifyHash = await deriveVerify(newPass, verifySalt);
+    const newAuth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash };
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, newKey, new TextEncoder().encode(JSON.stringify(state))));
+    const blob = { iv:b64(iv), ct:b64(ct) };
+    const res = await serverPutFull(currentTeam, blob, newAuth); // writes data + auth together
+    cryptoKey = newKey; currentAuth = newAuth; localRev = res.rev;
+    writeCache(currentTeam, { blob, rev: localRev });
+  }
+
+  // ---- Monthly reminder push notifications ----
+    function urlB64ToUint8Array(base64String){
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64); const arr = new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  }
+  async function registerSW(){
+    if(!('serviceWorker' in navigator)) return;
+    try { await navigator.serviceWorker.register('/finance-sw.js', { scope: '/finance' }); } catch(e){ /* e.g. opened as a file */ }
+  }
+  function pushStatus(msg){ const el = $("#push-status"); if(el) el.textContent = msg; }
+  async function enablePush(){
+    if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){
+      pushStatus('Push notifications aren\u2019t supported on this browser. On iPhone, add the app to your Home Screen first.'); return;
+    }
+    if(!VAPID_PUBLIC){ pushStatus('Reminders aren\u2019t set up on this hub yet (it needs its VAPID keys).'); return; }
+    try {
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ pushStatus('Notifications are blocked. Allow them in your browser/phone settings, then try again.'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub){ sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC) }); }
+      const res = await fetch('/api/finance/push', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ subscription: sub.toJSON(), team: currentTeam }) });
+      if(!res.ok) throw new Error('server ' + res.status);
+      pushStatus('\u2713 Monthly reminders are on for this device. You can send a test below.');
+      refreshPushState();
+    } catch(e){ pushStatus('Could not enable reminders: ' + (e && e.message || e)); }
+  }
+  async function testPush(){
+    if(!('serviceWorker' in navigator) || !('Notification' in window)){ pushStatus('Not supported on this browser.'); return; }
+    if(Notification.permission !== 'granted'){ const p = await Notification.requestPermission(); if(p !== 'granted'){ pushStatus('Allow notifications first (tap \u201cTurn on monthly reminder\u201d).'); return; } }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const teamName = (state.settings && state.settings.team) || CLUB.name;
+      await reg.showNotification(teamName + ' \u2014 subs reminder', { body: 'This is a test. Real reminders arrive on the 1st of each month.', icon:'/finance/icon-192.png', badge:'/finance/icon-192.png' });
+      pushStatus('Test notification sent \u2014 check your notifications.');
+    } catch(e){ pushStatus('Could not show a test notification: ' + (e && e.message || e)); }
+  }
+  async function disablePush(){
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub){
+        try { await fetch('/api/finance/push', { method:'DELETE', headers:{'content-type':'application/json'}, body: JSON.stringify({ subscription: sub.toJSON() }) }); } catch(e){}
+        await sub.unsubscribe();
+      }
+      pushStatus('Monthly reminders are off for this device.');
+    } catch(e){ pushStatus('Could not turn off reminders: ' + (e && e.message || e)); }
+    refreshPushState();
+  }
+  // Show the right button (Turn on vs Turn off) based on whether this device is subscribed.
+  async function refreshPushState(){
+    const enBtn = $("#push-enable-btn"), disBtn = $("#push-disable-btn");
+    if(!enBtn || !disBtn) return;
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)){ enBtn.style.display=''; disBtn.style.display='none'; return; }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      const on = !!sub;
+      enBtn.style.display = on ? 'none' : '';
+      disBtn.style.display = on ? '' : 'none';
+    } catch(e){ enBtn.style.display=''; disBtn.style.display='none'; }
+  }
+
+  function boot(){
+    if(!(window.crypto && crypto.subtle)){
+      $("#gate-sub").textContent = 'This browser does not support secure storage. Please use an up-to-date browser.';
+      $("#gate-form").style.display = 'none';
+      return;
+    }
+    if(!(window.fetch)){ /* very old browser */ }
+    loadConfig().then(()=>{ setupGate(); registerSW(); }).catch(e=>{
+      console.error(e);
+      $("#gate-sub").textContent = 'Could not reach the hub. Check your connection and reload.';
+    });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
