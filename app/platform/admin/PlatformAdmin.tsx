@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type AdminClub = { id: string; name: string; email: string; createdAt: string };
+type Backup = { date: string; at: string; keys: number };
 
 const KEY_STORE = "platform-admin-key";
 
@@ -20,6 +21,11 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
   const [typedKey, setTypedKey] = useState("");
   const [clubs, setClubs] = useState<AdminClub[] | null>(null);
   const [emailReady, setEmailReady] = useState(true);
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [separateBackups, setSeparateBackups] = useState(true);
+  const [restoreId, setRestoreId] = useState("");
+  const [restoreDate, setRestoreDate] = useState("");
+  const [restoreConfirm, setRestoreConfirm] = useState("");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -28,7 +34,7 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
   const [confirmText, setConfirmText] = useState("");
 
   const call = useCallback(
-    async (k: string, init?: { action: string; id: string; confirm?: string }) => {
+    async (k: string, init?: { action: string; id: string; confirm?: string; date?: string }) => {
       const res = await fetch("/api/platform-admin", {
         method: init ? "POST" : "GET",
         headers: { "x-platform-key": k, ...(init ? { "Content-Type": "application/json" } : {}) },
@@ -49,6 +55,8 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
         const data = await call(k);
         setClubs(data.clubs);
         setEmailReady(data.emailConfigured);
+        setBackups(data.backups ?? []);
+        setSeparateBackups(data.separateBackups ?? true);
         setKey(k);
         try {
           sessionStorage.setItem(KEY_STORE, k);
@@ -77,17 +85,21 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
     if (saved) void Promise.resolve().then(() => load(saved));
   }, [load]);
 
-  async function act(action: "reset" | "delete", id: string, confirm?: string) {
+  async function act(action: "reset" | "delete" | "restore", id: string, confirm?: string, date?: string) {
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const data = await call(key, { action, id, confirm });
+      const data = await call(key, { action, id, confirm, date });
       setNotice(data.message);
       if (action === "delete") {
         setDeleting(null);
         setConfirmText("");
         setClubs((c) => c?.filter((x) => x.id !== id) ?? null);
+      }
+      if (action === "restore") {
+        setRestoreConfirm("");
+        await load(key);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -251,6 +263,71 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
           ))}
         </ul>
       )}
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-4">
+        <h2 className="font-extrabold text-gray-900">🗄️ Backups</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Everything is backed up every morning and kept for 7 days.
+          {!separateBackups && " They're in the main database for now — add a second Upstash database (BACKUP_KV_REST_API_URL / BACKUP_KV_REST_API_TOKEN) so they'd survive losing it."}
+        </p>
+        {backups.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-500">No backups yet — the first runs at 9am UTC.</p>
+        ) : (
+          <ul className="mt-3 space-y-1 text-sm text-gray-700">
+            {backups.map((b) => (
+              <li key={b.date}>
+                <strong>{day(b.date)}</strong> · {new Date(b.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {b.keys} records
+              </li>
+            ))}
+          </ul>
+        )}
+        {backups.length > 0 && (
+          <div className="mt-4 rounded-xl bg-gray-50 p-3">
+            <p className="text-sm font-bold text-gray-800">Restore a club</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Puts one club back exactly as it was in that backup, replacing what it has now. Works for a deleted club too.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <input
+                value={restoreId}
+                onChange={(e) => setRestoreId(e.target.value.trim().toLowerCase())}
+                placeholder="club address"
+                aria-label="Club address to restore"
+                className="min-w-0 flex-1 basis-32 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none"
+              />
+              <select
+                value={restoreDate}
+                onChange={(e) => setRestoreDate(e.target.value)}
+                aria-label="Backup to restore from"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
+              >
+                <option value="">Which backup…</option>
+                {backups.map((b) => (
+                  <option key={b.date} value={b.date}>{day(b.date)}</option>
+                ))}
+              </select>
+            </div>
+            {restoreId && restoreDate && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  value={restoreConfirm}
+                  onChange={(e) => setRestoreConfirm(e.target.value)}
+                  placeholder={`type ${restoreId} to confirm`}
+                  aria-label="Type the club's address to confirm"
+                  className="min-w-0 flex-1 basis-40 rounded-lg border border-amber-300 bg-white px-3 py-2 text-gray-900 focus:outline-none"
+                />
+                <button
+                  onClick={() => act("restore", restoreId, restoreConfirm, restoreDate)}
+                  disabled={busy || restoreConfirm !== restoreId}
+                  className="rounded-lg bg-amber-600 px-4 py-2 font-bold text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  Restore Club
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       <button
         onClick={() => {

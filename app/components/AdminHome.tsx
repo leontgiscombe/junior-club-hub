@@ -126,6 +126,10 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
     setError(null);
     try {
       const res = await fetch(`/api/admin-auth?key=${encodeURIComponent(pwd)}`);
+      if (res.status === 429) {
+        setError("Too many wrong passwords — try again in 15 minutes");
+        return;
+      }
       if (res.status === 401) {
         setError("Incorrect password");
         return;
