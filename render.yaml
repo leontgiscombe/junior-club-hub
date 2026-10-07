@@ -30,13 +30,13 @@ services:
       - key: CRON_SECRET
         generateValue: true
       # email (password resets, welcome emails) through Resend: an API key, and a
-      # sender on a domain verified there, e.g. Grassroots Club Hub <hello@grassroots-club-hub.co.uk>
+      # no-reply sender on a domain verified there, e.g. Grassroots Club Hub <noreply@grassroots-club-hub.co.uk>
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
         sync: false
       # for the privacy policy and terms: who runs the platform (a person's or
-      # business's legal name) and where privacy questions go
+      # business's legal name) and where questions go (hello@…)
       - key: PLATFORM_OPERATOR
         sync: false
       - key: PLATFORM_CONTACT_EMAIL

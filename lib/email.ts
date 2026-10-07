@@ -1,13 +1,21 @@
 // Sending email, through Resend (resend.com): password resets and welcome
-// emails. Needs RESEND_API_KEY and EMAIL_FROM — a sender on a domain verified
-// in Resend, e.g. "Grassroots Club Hub <hello@grassroots-club-hub.co.uk>".
+// emails. Needs RESEND_API_KEY and EMAIL_FROM — a no-reply sender on a domain
+// verified in Resend, e.g. "Grassroots Club Hub <noreply@grassroots-club-hub.co.uk>".
+// Replies to emails that invite them go to PLATFORM_CONTACT_EMAIL (lib/legal.ts).
 // Without them nothing is sent; the email is written to the server log
 // instead, so it can still be tried out. Server only.
 
 export const emailConfigured = () => !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 
 /** Send an email. Returns false if it couldn't be sent. */
-export async function sendEmail(msg: { to: string; subject: string; text: string; html: string }): Promise<boolean> {
+export async function sendEmail(msg: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  /** where replies go; without it, the email is from the no-reply sender only */
+  replyTo?: string;
+}): Promise<boolean> {
   if (!emailConfigured()) {
     console.log(`[email not set up] To: ${msg.to}\nSubject: ${msg.subject}\n\n${msg.text}`);
     return false;
@@ -16,7 +24,14 @@ export async function sendEmail(msg: { to: string; subject: string; text: string
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [msg.to], subject: msg.subject, text: msg.text, html: msg.html }),
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM,
+        to: [msg.to],
+        subject: msg.subject,
+        text: msg.text,
+        html: msg.html,
+        ...(msg.replyTo ? { reply_to: msg.replyTo } : {}),
+      }),
     });
     if (!res.ok) console.error("Email not sent:", res.status, await res.text().catch(() => ""));
     return res.ok;
