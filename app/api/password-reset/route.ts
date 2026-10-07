@@ -5,11 +5,10 @@
 // The answer to "request" is the same whether or not the email matched, so
 // it can't be used to find out a club's email.
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail, simpleEmail } from "@/lib/email";
 import { rawKv } from "@/lib/kv";
-import { getClub } from "@/lib/settings";
-import { DEFAULT_TENANT, PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
-import { createResetToken, getTenantRecord, redeemResetToken, resetTokenTenant, setTenantPassword } from "@/lib/tenants";
+import { sendResetEmail } from "@/lib/resetEmail";
+import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
+import { getTenantRecord, redeemResetToken, resetTokenTenant, setTenantPassword } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -37,25 +36,7 @@ export async function POST(req: NextRequest) {
     const tries = await kv.incr(`platform:reset-requests:${tenant}`);
     if (tries === 1) await kv.expire(`platform:reset-requests:${tenant}`, 3600);
     if (tries > 5) return NextResponse.json({ message: SENT });
-    if (record.email.toLowerCase() === email) {
-      const token = await createResetToken(tenant);
-      const club = await getClub();
-      const link = tenantUrl(tenant, `/reset-password?token=${encodeURIComponent(token)}`);
-      await sendEmail({
-        to: record.email,
-        subject: `Reset the ${club.name} coach password`,
-        ...simpleEmail({
-          heading: "Reset your coach password",
-          paragraphs: [
-            `Someone asked to reset the coach password for ${club.name} on ${PLATFORM_NAME}.`,
-            "Tap the button to choose a new one. The link works once, for the next hour.",
-            "If it wasn't you, ignore this email and the password stays as it is.",
-          ],
-          button: { label: "Choose a New Password", url: link },
-          footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
-        }),
-      });
-    }
+    if (record.email.toLowerCase() === email) await sendResetEmail(record);
     return NextResponse.json({ message: SENT });
   }
 

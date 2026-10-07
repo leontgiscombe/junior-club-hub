@@ -41,6 +41,9 @@ services:
         sync: false
       - key: PLATFORM_CONTACT_EMAIL
         sync: false
+      # the password for the platform admin page (/platform/admin), 12+ characters
+      - key: PLATFORM_ADMIN_KEY
+        sync: false
       # optional: the owner's password for changing the built-in drill library
       - key: TRAINING_PLANS_OWNER_KEY
         sync: false

@@ -145,3 +145,37 @@ export async function resetTokenTenant(token: string): Promise<string | null> {
   const tenant = await kv.get<string>(resetKey(token));
   return typeof tenant === "string" ? tenant : null;
 }
+
+/** Every club as the platform's admin sees it: no password details. */
+export type AdminTenant = Omit<TenantRecord, "passwordSalt" | "passwordHash">;
+
+export async function listTenantsForAdmin(): Promise<AdminTenant[]> {
+  const kv = await rawKv();
+  if (!kv) return [];
+  const all = (await kv.hgetall<Record<string, TenantRecord | string>>(TENANTS_KEY)) ?? {};
+  return Object.values(all)
+    .map((r) => (typeof r === "string" ? (JSON.parse(r) as TenantRecord) : r))
+    .map(({ id, name, email, createdAt }) => ({ id, name, email, createdAt }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/**
+ * Remove a club and everything stored for it (every key under its prefix).
+ * Returns how many keys were deleted, or null if there's no such club.
+ */
+export async function deleteTenant(id: string): Promise<number | null> {
+  const kv = await rawKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  if (!TENANT_ID.test(id) || !(await getTenantRecord(id))) return null;
+  // take it off the list first, so nothing new is written while its data goes
+  await kv.hdel(TENANTS_KEY, id);
+  known.delete(id);
+  let deleted = 0;
+  let cursor: string | number = 0;
+  do {
+    const [next, keys]: [string | number, string[]] = await kv.scan(cursor, { match: `t:${id}:*`, count: 500 });
+    if (keys.length) deleted += await kv.del(...keys);
+    cursor = next;
+  } while (String(cursor) !== "0");
+  return deleted;
+}
