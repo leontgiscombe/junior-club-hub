@@ -9,6 +9,8 @@ export type Club = {
   fullName: string;
   slogan: string;
   crest: { src: string; alt: string; width: number; height: number };
+  /** The picture of the kit on the home page and kit pages. */
+  kitImage: { src: string; width: number; height: number };
   publicResults: boolean;
   kitSeason: string;
   faClubName: string;
@@ -33,7 +35,22 @@ export type Features = Record<Feature, boolean>;
 
 const ALL_ON = Object.fromEntries(Object.keys(FEATURES).map((f) => [f, true])) as Features;
 
-export const DEFAULT_CLUB: Club = { ...DEFAULTS, crest: { ...DEFAULTS.crest }, features: { ...ALL_ON } };
+export const DEFAULT_KIT_IMAGE = { src: "/kit-generic.jpg", width: 1024, height: 557 };
+
+/**
+ * The shape of the box the kit picture sits in: the picture's own, kept
+ * between square and wide, so a tall photo doesn't fill the page (it's shown
+ * whole inside the box).
+ */
+export const kitAspect = ({ width, height }: { width: number; height: number }) =>
+  `${Math.min(Math.max(width / height, 1), 2.2).toFixed(3)}`;
+
+export const DEFAULT_CLUB: Club = {
+  ...DEFAULTS,
+  crest: { ...DEFAULTS.crest },
+  kitImage: { ...DEFAULT_KIT_IMAGE },
+  features: { ...ALL_ON },
+};
 
 /** What a coach can change on the Settings page, with each field's limit. */
 export const EDITABLE = {
