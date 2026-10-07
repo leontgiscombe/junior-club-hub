@@ -1,5 +1,5 @@
 import TrainingPlans from "../../../components/TrainingPlans";
-import { getClub } from "@/lib/settings";
+import { getClub, requireFeature } from "@/lib/settings";
 
 export async function generateMetadata() {
   const CLUB = await getClub();
@@ -9,6 +9,7 @@ export async function generateMetadata() {
   };
 }
 
-export default function TrainingPlansPage() {
+export default async function TrainingPlansPage() {
+  await requireFeature("trainingPlans", "/admin");
   return <TrainingPlans />;
 }

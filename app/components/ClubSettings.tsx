@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
-import { EDITABLE, slugFor } from "@/lib/clubSettings";
+import { EDITABLE, FEATURES, slugFor, type Feature } from "@/lib/clubSettings";
 
 type Snapshot = {
   club: Club;
@@ -335,23 +335,30 @@ export default function ClubSettings() {
           </div>
         </section>
 
-        {/* Results */}
+        {/* Which parts of the hub the club uses */}
         <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={publicResults}
-              onChange={(e) => setDraft((d) => ({ ...d, publicResults: e.target.checked }))}
-              className="mt-1 h-5 w-5 accent-green-600"
+          <h2 className="font-extrabold text-gray-900">🧩 Parts of the Hub</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Switch off anything the club doesn&apos;t use: it leaves the home page and Coach Admin,
+            and nothing saved in it is lost.
+          </p>
+          <div className="mt-4 flex flex-col divide-y divide-gray-100">
+            <Toggle
+              label="Results for Parents"
+              hint="Scores, league tables and top scorers. Turn off for non-competitive football; coaches still log every game."
+              on={publicResults}
+              onChange={(on) => setDraft((d) => ({ ...d, publicResults: on }))}
             />
-            <span>
-              <span className="block font-extrabold text-gray-900">⚽ Show Results to Parents</span>
-              <span className="mt-0.5 block text-sm text-gray-500">
-                Scores, league tables and top scorers on the home page. Turn it off for
-                non-competitive football; coaches still log every game.
-              </span>
-            </span>
-          </label>
+            {(Object.keys(FEATURES) as Feature[]).map((f) => (
+              <Toggle
+                key={f}
+                label={FEATURES[f].label}
+                hint={FEATURES[f].hint}
+                on={draft.features?.[f] ?? defaults.features[f]}
+                onChange={(on) => setDraft((d) => ({ ...d, features: { ...d.features, [f]: on } }))}
+              />
+            ))}
+          </div>
         </section>
 
         <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
@@ -577,5 +584,32 @@ function TeamsEditor({
         </div>
       )}
     </section>
+  );
+}
+
+// One on/off row in Parts of the Hub.
+function Toggle({
+  label,
+  hint,
+  on,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  on: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 py-3">
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold text-gray-900">{label}</span>
+        <span className="mt-0.5 block text-sm text-gray-500">{hint}</span>
+      </span>
+      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden
+        className="relative mt-1 h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400"
+      />
+    </label>
   );
 }

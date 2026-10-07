@@ -1,6 +1,7 @@
 // The club's settings in the database: the identity changes saved on Coach
 // Admin → Settings, and the uploaded crest. Server only.
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { CLUB } from "@/club.config";
 import {
   DEFAULT_CLUB,
@@ -9,6 +10,7 @@ import {
   cleanTeams,
   type Club,
   type ClubChanges,
+  type Feature,
   type Team,
 } from "./clubSettings";
 
@@ -93,7 +95,12 @@ export type ClubIcons = { icon: string; apple: string; large: string };
 
 export const getClubWithIcons = cache(async (): Promise<{ club: Club; icons: ClubIcons }> => {
   const [changes, crest] = await Promise.all([getClubChanges(), getCrestInfo()]);
-  const club: Club = { ...DEFAULT_CLUB, ...changes, crest: { ...DEFAULT_CLUB.crest } };
+  const club: Club = {
+    ...DEFAULT_CLUB,
+    ...changes,
+    crest: { ...DEFAULT_CLUB.crest },
+    features: { ...DEFAULT_CLUB.features, ...changes.features },
+  };
   if (crest) {
     club.crest = {
       src: `/api/club/crest?v=${encodeURIComponent(crest.updatedAt)}`,
@@ -136,4 +143,9 @@ export async function saveTeams(teams: Team[]): Promise<void> {
   const kv = await getKv();
   if (!kv) throw new Error("Storage isn't set up");
   await kv.set(TEAMS_KEY, clean);
+}
+
+/** Send a visitor away from a part of the hub the club has switched off. */
+export async function requireFeature(feature: Feature, elsewhere = "/"): Promise<void> {
+  if (!(await getClub()).features[feature]) redirect(elsewhere);
 }

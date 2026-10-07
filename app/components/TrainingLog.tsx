@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useTeams } from "./ClubProvider";
+import { useClub, useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
 import {
   DRILL_KINDS,
@@ -168,6 +168,7 @@ function PlanWeekCard({
 
 export default function TrainingLog() {
   const { TEAMS, teamName } = useTeams();
+  const { features } = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -519,7 +520,7 @@ export default function TrainingLog() {
               setPlans((prev) => prev.map((p) => (p.team === saved.team ? saved : p)))
             }
           />
-        ) : (
+        ) : !features.trainingPlans ? null : (
           <p className="mb-4 text-xs text-gray-500">
             {plan?.startDate
               ? `${teamName(team)}'s training plan has no week for the next session.`

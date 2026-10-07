@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSubmissions, saveSubmission } from "@/lib/storage";
-import { isTeam } from "@/lib/settings";
+import { getClub, isTeam } from "@/lib/settings";
 import { squadPlayer } from "@/lib/kitSquad";
 
 export async function POST(request: Request) {
@@ -9,6 +9,9 @@ export async function POST(request: Request) {
     const { team, childName, shirtSize, shortsSize, socksSize } = body;
     const playerId = typeof body.playerId === "string" ? body.playerId : "";
 
+    if (!(await getClub()).features.kitSizes) {
+      return NextResponse.json({ error: "Kit sizes aren't being collected" }, { status: 404 });
+    }
     if (!(await isTeam(team))) {
       return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     }

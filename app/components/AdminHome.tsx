@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
 import { useClub } from "./ClubProvider";
+import type { Feature } from "@/lib/clubSettings";
 
 // the same heavy lettering as the home page and the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
@@ -47,6 +48,8 @@ const TOOLS: {
   title: string;
   body: string;
   badge?: string;
+  /** The Settings switch that hides this tool when it's off. */
+  feature?: Feature;
 }[] = [
   {
     path: "/admin/stats/matches",
@@ -65,12 +68,14 @@ const TOOLS: {
     path: "/admin/stats/player-of-the-month",
     icon: "🌟",
     title: "Player of the Month",
+    feature: "playerOfMonth",
     body: "Each month's winner from the awards, with a poster to share.",
   },
   {
     path: "/admin/training/plans",
     icon: "📝",
     title: "Training Plans",
+    feature: "trainingPlans",
     body: "Each team's weeks of themed sessions, built from a shared drill library.",
   },
   {
@@ -83,12 +88,14 @@ const TOOLS: {
     path: "/admin/camera",
     icon: "🎥",
     title: "Camera Register",
+    feature: "cameraRegister",
     body: "Home-game filming and cloud uploads.",
   },
   {
     path: "/admin/kit",
     icon: "📋",
     title: "Kit Responses",
+    feature: "kitSizes",
     body: "Kit-size submissions by team, with CSV export.",
   },
   {
@@ -232,7 +239,7 @@ export default function AdminHome() {
           Choose a tool
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          {TOOLS.map((tool) => (
+          {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
             <Link
               key={tool.path}
               href={`${tool.path}${suffix}`}

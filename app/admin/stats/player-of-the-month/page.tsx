@@ -1,6 +1,6 @@
 import { Anton, Barlow_Semi_Condensed } from "next/font/google";
 import PlayerOfMonth from "../../../components/PlayerOfMonth";
-import { getClub } from "@/lib/settings";
+import { getClub, requireFeature } from "@/lib/settings";
 
 export async function generateMetadata() {
   const CLUB = await getClub();
@@ -18,6 +18,7 @@ const posterBody = Barlow_Semi_Condensed({
   variable: "--font-poster-body",
 });
 
-export default function PlayerOfMonthPage() {
+export default async function PlayerOfMonthPage() {
+  await requireFeature("playerOfMonth", "/admin");
   return <PlayerOfMonth posterFont={`${posterDisplay.variable} ${posterBody.variable}`} />;
 }

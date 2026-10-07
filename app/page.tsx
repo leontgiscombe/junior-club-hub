@@ -57,63 +57,67 @@ export default async function Home() {
 
       <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-5 pb-10">
         {/* Players' study app: tactics guide, quizzes, skill challenges */}
-        <a
-          href="/training-hub"
-          className="group block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-        >
-          <div className="relative">
-            <PitchPicture />
-            <span className="absolute left-4 top-4 rounded-full bg-[#f9a825] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#1a2e05] shadow">
-              For players
-            </span>
-          </div>
-          <div className="p-6">
-            <h2 className="text-xl font-extrabold text-gray-900">Player Training Hub</h2>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              Learn how we play, test yourself and level up your game between sessions.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">📋 Tactical guide</span>
-              <span className="rounded-full bg-orange-50 px-2.5 py-1 text-orange-800">🧠 Quiz</span>
-              <span className="rounded-full bg-teal-50 px-2.5 py-1 text-teal-800">🎯 Skill challenges</span>
-              <span className="rounded-full bg-purple-50 px-2.5 py-1 text-purple-800">📍 Positions</span>
+        {CLUB.features.trainingHub && (
+          <a
+            href="/training-hub"
+            className="group block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            <div className="relative">
+              <PitchPicture />
+              <span className="absolute left-4 top-4 rounded-full bg-[#f9a825] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#1a2e05] shadow">
+                For players
+              </span>
             </div>
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#e65100] to-[#f9a825] py-3 font-bold text-white shadow-sm transition-opacity group-hover:opacity-90">
-              Start Training
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </span>
-          </div>
-        </a>
+            <div className="p-6">
+              <h2 className="text-xl font-extrabold text-gray-900">Player Training Hub</h2>
+              <p className="mt-1 text-sm leading-relaxed text-gray-500">
+                Learn how we play, test yourself and level up your game between sessions.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">📋 Tactical guide</span>
+                <span className="rounded-full bg-orange-50 px-2.5 py-1 text-orange-800">🧠 Quiz</span>
+                <span className="rounded-full bg-teal-50 px-2.5 py-1 text-teal-800">🎯 Skill challenges</span>
+                <span className="rounded-full bg-purple-50 px-2.5 py-1 text-purple-800">📍 Positions</span>
+              </div>
+              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#e65100] to-[#f9a825] py-3 font-bold text-white shadow-sm transition-opacity group-hover:opacity-90">
+                Start Training
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </div>
+          </a>
+        )}
 
         {/* Kit sizes for parents */}
-        <Link
-          href="/kit"
-          className="group relative mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-        >
-          <div className="relative aspect-[1024/557] w-full bg-[#0b1a0c]">
-            <Image
-              src="/kit-generic.jpg"
-              alt={`The ${CLUB.kitSeason} home and away kits`}
-              fill
-              sizes="(max-width: 672px) 100vw, 672px"
-              className="object-cover"
-            />
-            <span className="absolute left-4 top-4 rounded-full bg-[#3ee04f] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#060906] shadow">
-              New for {CLUB.kitSeason}
-            </span>
-          </div>
-          <div className="p-6">
-            <h2 className="text-xl font-extrabold text-gray-900">Kit Sizes</h2>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              Tell us your child&apos;s shirt, shorts and socks size for the new kit. It takes a
-              minute, and there&apos;s a size guide to help.
-            </p>
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-green-700">
-              Choose Kit Size
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </span>
-          </div>
-        </Link>
+        {CLUB.features.kitSizes && (
+          <Link
+            href="/kit"
+            className="group relative mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            <div className="relative aspect-[1024/557] w-full bg-[#0b1a0c]">
+              <Image
+                src="/kit-generic.jpg"
+                alt={`The ${CLUB.kitSeason} home and away kits`}
+                fill
+                sizes="(max-width: 672px) 100vw, 672px"
+                className="object-cover"
+              />
+              <span className="absolute left-4 top-4 rounded-full bg-[#3ee04f] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#060906] shadow">
+                New for {CLUB.kitSeason}
+              </span>
+            </div>
+            <div className="p-6">
+              <h2 className="text-xl font-extrabold text-gray-900">Kit Sizes</h2>
+              <p className="mt-1 text-sm leading-relaxed text-gray-500">
+                Tell us your child&apos;s shirt, shorts and socks size for the new kit. It takes a
+                minute, and there&apos;s a size guide to help.
+              </p>
+              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-green-700">
+                Choose Kit Size
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </div>
+          </Link>
+        )}
 
         {CLUB.publicResults && (
           <Link
@@ -151,7 +155,7 @@ export default async function Home() {
               {[
                 ["⚽", "Match Log"],
                 ["🏃", "Training Log"],
-                ["🌟", "Player of the Month"],
+                CLUB.features.playerOfMonth ? ["🌟", "Player of the Month"] : ["📝", "Training Plans"],
                 ["📊", "Stats Tracker"],
               ].map(([icon, label]) => (
                 <span
@@ -178,50 +182,52 @@ export default async function Home() {
         </Link>
 
         {/* Team managers' subs and spending, behind each team's own password */}
-        <a
-          href="/finance"
-          className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-        >
-          <div className="relative flex items-center gap-4 overflow-hidden bg-gradient-to-b from-[#1f8f45] to-[#0b3d1d] px-5 pb-5 pt-14">
-            <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-gray-900 shadow">
-              🔒 Finance managers only
-            </span>
-            <Image
-              src="/finance/icon-192.png"
-              alt=""
-              width={96}
-              height={96}
-              className="h-20 w-20 shrink-0 rounded-2xl shadow-lg ring-2 ring-white/20 sm:h-24 sm:w-24"
-            />
-            <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
-              {[
-                ["💷", "Monthly Subs"],
-                ["👥", "Players"],
-                ["🧾", "Expenses"],
-                ["🔔", "Reminders"],
-              ].map(([icon, label]) => (
-                <span
-                  key={label}
-                  className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl bg-white/10 px-1 py-2 text-center text-xs font-bold text-white ring-1 ring-white/20"
-                >
-                  <span className="text-lg leading-none">{icon}</span>
-                  <span className="leading-tight">{label}</span>
-                </span>
-              ))}
+        {CLUB.features.financialAdmin && (
+          <a
+            href="/finance"
+            className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            <div className="relative flex items-center gap-4 overflow-hidden bg-gradient-to-b from-[#1f8f45] to-[#0b3d1d] px-5 pb-5 pt-14">
+              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-gray-900 shadow">
+                🔒 Finance managers only
+              </span>
+              <Image
+                src="/finance/icon-192.png"
+                alt=""
+                width={96}
+                height={96}
+                className="h-20 w-20 shrink-0 rounded-2xl shadow-lg ring-2 ring-white/20 sm:h-24 sm:w-24"
+              />
+              <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+                {[
+                  ["💷", "Monthly Subs"],
+                  ["👥", "Players"],
+                  ["🧾", "Expenses"],
+                  ["🔔", "Reminders"],
+                ].map(([icon, label]) => (
+                  <span
+                    key={label}
+                    className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl bg-white/10 px-1 py-2 text-center text-xs font-bold text-white ring-1 ring-white/20"
+                  >
+                    <span className="text-lg leading-none">{icon}</span>
+                    <span className="leading-tight">{label}</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="p-6">
-            <h2 className="text-xl font-extrabold text-gray-900">Financial Admin</h2>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              Subs, who&apos;s paid and the team&apos;s spending — each team locked with its own
-              password.
-            </p>
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a3d] py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-[#0b3d1d]">
-              Open Financial Admin
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </span>
-          </div>
-        </a>
+            <div className="p-6">
+              <h2 className="text-xl font-extrabold text-gray-900">Financial Admin</h2>
+              <p className="mt-1 text-sm leading-relaxed text-gray-500">
+                Subs, who&apos;s paid and the team&apos;s spending — each team locked with its own
+                password.
+              </p>
+              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a3d] py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-[#0b3d1d]">
+                Open Financial Admin
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </div>
+          </a>
+        )}
       </main>
 
       <footer className="bg-[#060906] px-6 py-8 text-center">
