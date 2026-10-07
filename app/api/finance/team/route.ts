@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isCoach } from "@/lib/adminAuth";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
+import { cleanAuth, type Auth } from "@/lib/financeAuth";
 import {
   financeConfigured,
   financeKeys,
@@ -60,25 +61,9 @@ type Body = {
   auth?: Record<string, unknown>;
 };
 
-/** A team's login record. writeHash is the SHA-256 of the team's write token. */
-type Auth = { encSalt: string; verifySalt: string; verifyHash: string; writeSalt?: string; writeHash?: string };
-
 const sha256 = (s: string) => createHash("sha256").update(s).digest("base64");
 const same = (a: string, b: string) =>
   a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
-
-/** A well-formed login record from a request, or null. */
-function cleanAuth(a: Record<string, unknown> | undefined): Auth | null {
-  if (!a || typeof a.encSalt !== "string" || typeof a.verifySalt !== "string" || typeof a.verifyHash !== "string") {
-    return null;
-  }
-  const out: Auth = { encSalt: a.encSalt, verifySalt: a.verifySalt, verifyHash: a.verifyHash };
-  if (typeof a.writeSalt === "string" && typeof a.writeHash === "string") {
-    out.writeSalt = a.writeSalt;
-    out.writeHash = a.writeHash;
-  }
-  return out;
-}
 
 async function put(req: NextRequest) {
   const keys = financeKeys(await requireTenant());
