@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
+import FinancePasswords from "./FinancePasswords";
 
 type Snapshot = {
   club: Club;
@@ -481,6 +482,10 @@ export default function ClubSettings() {
         </section>
 
         <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
+
+        {snap.club.features.financialAdmin && (
+          <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
+        )}
 
         {snap.account && (
           <AccountSection

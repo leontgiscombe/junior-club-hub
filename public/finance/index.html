@@ -425,9 +425,10 @@
     </div>
     <div class="panel">
       <div class="panel-head"><h3>Security &amp; Sync</h3></div>
-      <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. There is no password reset, so keep a backup export too.</p>
+      <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. If the password is ever forgotten, a coach can reset it in Coach Admin → Settings with the team's recovery code.</p>
       <div class="toolbar">
         <button class="btn" id="change-pass-btn">Change Team Password</button>
+        <button class="btn" id="new-code-btn">New Recovery Code</button>
         <button class="btn" id="refresh-btn">↻ Refresh From Server</button>
         <button class="btn" id="lock-now-btn">🔒 Lock Now</button>
       </div>
@@ -506,6 +507,55 @@
   async function deriveKey(password, salt){ const bk=await baseKey(password); return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:PBKDF2_ITER, hash:'SHA-256'}, bk, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']); }
   async function deriveVerify(password, salt){ const bk=await baseKey(password); const bits=await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:PBKDF2_ITER, hash:'SHA-256'}, bk, 256); return b64(new Uint8Array(bits)); }
 
+  // Envelope: the team's data is encrypted with a random data key, kept in the
+  // team's login record twice — once locked with the team password, once with
+  // its recovery code. Forgetting the password, a coach can reset it from Coach
+  // Admin → Settings with the recovery code, and keep the data. (Teams set up
+  // before this had the data encrypted with the password itself; they're moved
+  // over the next time they're unlocked.)
+  let dataKeyRaw = null;  // the data key's bytes, in memory only while unlocked
+  const REC_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function newRecoveryCode(){
+    const bytes = crypto.getRandomValues(new Uint8Array(20));
+    const chars = Array.from(bytes, b => REC_CHARS[b % REC_CHARS.length]).join('');
+    return chars.match(/.{4}/g).join('-');
+  }
+  const normaliseCode = (c) => String(c||'').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  async function importDataKey(raw){ return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['encrypt','decrypt']); }
+  async function wrapBytes(key, bytes){
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    return { iv:b64(iv), ct:b64(new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, bytes))) };
+  }
+  async function unwrapBytes(key, w){ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv:ub64(w.iv)}, key, ub64(w.ct))); }
+  /** A complete login record for `pass`, keeping the data key `raw` and (if given) the recovery lock. */
+  async function buildAuth(pass, raw, rec){
+    const encSalt = crypto.getRandomValues(new Uint8Array(16)), verifySalt = crypto.getRandomValues(new Uint8Array(16));
+    const w = await newWriteAuth(pass);
+    const auth = {
+      v: 2, encSalt: b64(encSalt), verifySalt: b64(verifySalt), verifyHash: await deriveVerify(pass, verifySalt),
+      writeSalt: w.writeSalt, writeHash: w.writeHash,
+      wrapPass: await wrapBytes(await deriveKey(pass, encSalt), raw),
+    };
+    if(rec){ auth.recSalt = rec.recSalt; auth.wrapRec = rec.wrapRec; }
+    return { auth, token: w.token };
+  }
+  /** A new recovery code locking the data key `raw`. */
+  async function newRecoveryLock(raw){
+    const code = newRecoveryCode();
+    const recSalt = crypto.getRandomValues(new Uint8Array(16));
+    return { code, recSalt: b64(recSalt), wrapRec: await wrapBytes(await deriveKey(normaliseCode(code), recSalt), raw) };
+  }
+  function showRecoveryCode(code, intro){
+    openModal('Your Team\u2019s Recovery Code', `
+      <p class="muted" style="font-size:13px;margin-top:0">${esc(intro)}</p>
+      <p style="font:700 16px/1.4 ui-monospace,Menlo,monospace;white-space:nowrap;overflow-x:auto;text-align:center;background:#f3f4f6;border-radius:12px;padding:14px;margin:12px 0;user-select:all">${esc(code)}</p>
+      <p class="muted" style="font-size:13px">If the team password is ever forgotten, a coach can reset it in <strong>Coach Admin \u2192 Settings</strong> with this code and keep all the data. Keep it somewhere safe and private, like a password manager \u2014 not with the password. It won\u2019t be shown again.</p>
+    `, [
+      {label:'Copy Code', act: ()=>{ try { navigator.clipboard.writeText(code); flash('Recovery code copied'); } catch(e){} }},
+      {label:'I\u2019ve Saved It', cls:'btn-primary', act: closeModal},
+    ]);
+  }
+
   async function encryptState(){
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(JSON.stringify(state))));
@@ -567,13 +617,14 @@
         localRev = record.rev || 0;
         writeCache(currentTeam, record);
         setSyncStatus(apiAvailable ? 'synced' : 'offline');
-        return;
+        return true;
       } catch(e){ /* fall through to empty/migrate */ }
     }
     const migrated = await migrateLocalVault(password);
     if(migrated){ applyLoaded(migrated); await persist(); }
     else { state = defaultState(); state.settings.team = teamName(currentTeam); localRev = (record&&record.rev)||0; }
     setSyncStatus(apiAvailable ? 'saved' : 'offline');
+    return !(record && record.blob);
   }
   function applyLoaded(parsed){
     state = Object.assign(defaultState(), parsed);
@@ -1239,7 +1290,7 @@
     $("#gate-pass2").style.display = 'none';
     $("#gate-pass").value=''; $("#gate-err").textContent='';
     $("#gate-btn").textContent = 'Unlock';
-    $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. There is no password reset \u2014 keep a backup export in a safe place.';
+    $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. Forgotten it? A coach can reset it in Coach Admin \u2192 Settings.';
     setTimeout(()=>$("#gate-pass").focus(), 50);
   }
   // The current auth for a team is the server's value if set, else the baked default.
@@ -1266,11 +1317,35 @@
     if(!matchedId) return false;
     currentTeam = matchedId;
     currentAuth = matchedAuth;
-    cryptoKey = await deriveKey(pass, ub64(matchedAuth.encSalt));
+    const passKey = await deriveKey(pass, ub64(matchedAuth.encSalt));
+    if(matchedAuth.wrapPass){
+      dataKeyRaw = await unwrapBytes(passKey, matchedAuth.wrapPass);
+      cryptoKey = await importDataKey(dataKeyRaw);
+    } else {
+      dataKeyRaw = null; cryptoKey = passKey;
+    }
     writeToken = matchedAuth.writeSalt ? await deriveVerify(pass, ub64(matchedAuth.writeSalt)) : null;
-    await loadFromRecord(records[matchedId], pass);
+    const loaded = await loadFromRecord(records[matchedId], pass);
     if(!matchedAuth.writeSalt) await addWriteToken(pass);
+    // a team from before recovery codes gets its data key and code now —
+    // only once its data has opened properly, so nothing is re-saved wrongly
+    if(!matchedAuth.wrapPass && loaded && apiAvailable) pendingRecoveryUpgrade = pass;
     return true;
+  }
+  let pendingRecoveryUpgrade = null;
+  async function upgradeToRecovery(pass){
+    const raw = crypto.getRandomValues(new Uint8Array(32));
+    const rec = await newRecoveryLock(raw);
+    const built = await buildAuth(pass, raw, rec);
+    const oldKey = cryptoKey;
+    cryptoKey = await importDataKey(raw);
+    try {
+      const blob = await encryptState();
+      const res = await serverPutFull(currentTeam, blob, built.auth); // with the old write token
+      dataKeyRaw = raw; currentAuth = built.auth; writeToken = built.token; localRev = res.rev;
+      writeCache(currentTeam, { blob, rev: localRev });
+      showRecoveryCode(rec.code, 'This team now has a recovery code, so a forgotten password no longer means losing its records.');
+    } catch(e){ cryptoKey = oldKey; console.warn('Could not add a recovery code yet', e); }
   }
   // A team set up before write tokens gets one the first time it's unlocked.
   async function addWriteToken(pass){
@@ -1312,11 +1387,12 @@
     if(!admin){ err.textContent = 'Enter the Coach Admin password.'; return; }
     const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
     try {
-      const encSalt = crypto.getRandomValues(new Uint8Array(16)), verifySalt = crypto.getRandomValues(new Uint8Array(16));
-      const w = await newWriteAuth(pass);
-      const auth = { encSalt:b64(encSalt), verifySalt:b64(verifySalt), verifyHash: await deriveVerify(pass, verifySalt), writeSalt: w.writeSalt, writeHash: w.writeHash };
+      const raw = crypto.getRandomValues(new Uint8Array(32));
+      const rec = await newRecoveryLock(raw);
+      const built = await buildAuth(pass, raw, rec);
+      const auth = built.auth, w = { token: built.token };
       currentTeam = id; currentAuth = auth;
-      cryptoKey = await deriveKey(pass, encSalt);
+      dataKeyRaw = raw; cryptoKey = await importDataKey(raw);
       state = defaultState(); state.settings.team = teamName(id);
       const blob = await encryptState();
       const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json','x-admin-key':admin}, body: JSON.stringify({ blob, auth }) });
@@ -1327,6 +1403,7 @@
       writeCache(currentTeam, { blob, rev: localRev });
       unlockApp();
       flash('Team set up \u2014 share its password with whoever looks after its subs');
+      showRecoveryCode(rec.code, 'The team is set up. Here is its recovery code.');
     } catch(e){ console.error(e); err.textContent = 'Could not set up the team. Check you\u2019re online and try again.'; cryptoKey = null; currentTeam = null; }
     finally { btn.disabled = false; btn.textContent = 'Set Up Team'; }
   }
@@ -1337,7 +1414,10 @@
     const btn = $("#gate-btn"); const label = btn.textContent; btn.disabled = true; btn.textContent = 'Checking\u2026';
     let ok=false; try { ok = await tryUnlock(pass); } catch(e){ console.error(e); }
     btn.disabled = false; btn.textContent = label;
-    if(ok){ unlockApp(); }
+    if(ok){
+      unlockApp();
+      if(pendingRecoveryUpgrade){ const p = pendingRecoveryUpgrade; pendingRecoveryUpgrade = null; await upgradeToRecovery(p); }
+    }
     else { $("#gate-err").textContent = 'Password not recognised.'; $("#gate-pass").select(); }
   }
   function applyTeamBranding(){
@@ -1368,7 +1448,7 @@
       const rec = await serverGet(currentTeam); apiAvailable = true;
       if(rec && rec.auth && currentAuth && rec.auth.verifyHash !== currentAuth.verifyHash){
         stopPolling();
-        alert('This team\u2019s password was changed on another device. Please log in again with the new password.');
+        alert('This team\u2019s login was changed on another device. Please unlock it again (with the new password, if it was changed).');
         lock();
         return;
       }
@@ -1396,6 +1476,7 @@
     if(e.target.closest('#report-close')) closeReport();
     if(e.target.closest('#refresh-btn')) pollRemote();
     if(e.target.closest('#change-pass-btn')) openChangePassword();
+    if(e.target.closest('#new-code-btn')) openNewRecoveryCode();
     if(e.target.closest('#push-enable-btn')) enablePush();
     if(e.target.closest('#push-test-btn')) testPush();
     if(e.target.closest('#push-disable-btn')) disablePush();
@@ -1421,7 +1502,35 @@
       }}
     ]);
   }
+  function openNewRecoveryCode(){
+    if(!currentTeam || !currentAuth) return;
+    openModal('New Recovery Code', `
+      <p class="muted" style="font-size:13px;margin-top:0">Lost the recovery code? Make a new one. The old code stops working straight away. You must be online.</p>
+    `, [
+      {label:'Cancel', act:closeModal},
+      {label:'Make New Code', cls:'btn-primary', act: async ()=>{
+        try {
+          if(!dataKeyRaw){ alert('Lock and unlock the app once first, then try again.'); return; }
+          const rec = await newRecoveryLock(dataKeyRaw);
+          const auth = Object.assign({}, currentAuth, { recSalt: rec.recSalt, wrapRec: rec.wrapRec });
+          const blob = await encryptState();
+          const res = await serverPutFull(currentTeam, blob, auth);
+          currentAuth = auth; localRev = res.rev;
+          writeCache(currentTeam, { blob, rev: localRev });
+          showRecoveryCode(rec.code, 'Here is the team\u2019s new recovery code. The old one no longer works.');
+        } catch(e){ alert('Could not make a new code. You need to be online. (' + (e && e.message || e) + ')'); }
+      }}
+    ]);
+  }
   async function doChangePassword(newPass){
+    if(dataKeyRaw){
+      const built = await buildAuth(newPass, dataKeyRaw, currentAuth.wrapRec ? { recSalt: currentAuth.recSalt, wrapRec: currentAuth.wrapRec } : null);
+      const blob = await encryptState();
+      const res = await serverPutFull(currentTeam, blob, built.auth); // with the old token
+      currentAuth = built.auth; localRev = res.rev; writeToken = built.token;
+      writeCache(currentTeam, { blob, rev: localRev });
+      return;
+    }
     const encSalt = crypto.getRandomValues(new Uint8Array(16));
     const verifySalt = crypto.getRandomValues(new Uint8Array(16));
     const newKey = await deriveKey(newPass, encSalt);
