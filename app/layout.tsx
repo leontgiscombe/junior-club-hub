@@ -3,11 +3,31 @@ import "./globals.css";
 import { getClubWithIcons, getTeams } from "@/lib/settings";
 import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
+import { cookies, headers } from "next/headers";
+import { MEMBER_COOKIE, PATH_HEADER, readAccess, readMember } from "@/lib/access";
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
 export const dynamic = "force-dynamic";
+
+/**
+ * Whether to leave the club's teams out of this page: a private club's pages
+ * that anyone can open (the join page, the legal pages…) don't show its teams
+ * to people who aren't members. Coach Admin keeps them, for the coach tools.
+ */
+async function teamsHidden(tenant: string | null): Promise<boolean> {
+  if (!tenant) return false;
+  const h = await headers();
+  if ((h.get(PATH_HEADER) ?? "").startsWith("/admin")) return false;
+  try {
+    if (!(await readAccess(tenant)).private) return false;
+    const member = await readMember(tenant, (await cookies()).get(MEMBER_COOKIE)?.value ?? "");
+    return member?.status !== "approved";
+  } catch {
+    return true;
+  }
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const { club, icons } = await getClubWithIcons();
@@ -46,7 +66,8 @@ export default async function RootLayout({
       </html>
     );
   }
-  const [{ club }, teams] = await Promise.all([getClubWithIcons(), getTeams()]);
+  const [{ club }, allTeams, hideTeams] = await Promise.all([getClubWithIcons(), getTeams(), teamsHidden(tenant)]);
+  const teams = hideTeams ? [] : allTeams;
   return (
     // the club's colour, laid over the hub's green (lib/palette.ts)
     <html lang="en" className="h-full" style={clubColourVars(club.colour) as React.CSSProperties}>

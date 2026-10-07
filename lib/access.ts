@@ -10,14 +10,30 @@ import { kvCredentials } from "./kvCreds";
 import { DEFAULT_TENANT } from "./tenantHost";
 
 export const MEMBER_COOKIE = "gch_member";
+/** The request's path, as the proxy passes it on to the pages. */
+export const PATH_HEADER = "x-hub-path";
 export const MEMBER_COOKIE_MAX_AGE = 400 * 24 * 3600;
 
 export type Access = { private: boolean; code: string | null };
 export type MemberStatus = "pending" | "approved" | "declined";
+/** Who's asking to join, as they say on the join page. */
+export const RELATIONS = {
+  parent: "Parent or carer",
+  player: "Player",
+  coach: "Coach or volunteer",
+  other: "Other",
+} as const;
+export type Relation = keyof typeof RELATIONS;
+
 export type Member = {
   id: string;
   name: string;
   note?: string;
+  relation?: Relation;
+  /** the team they're with (its name as it was when they asked) */
+  team?: { slug: string; name: string };
+  /** a parent's own child, as they typed it — only coaches see it */
+  child?: string;
   role: "member" | "coach";
   status: MemberStatus;
   createdAt: string;

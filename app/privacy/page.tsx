@@ -80,10 +80,11 @@ export default function PrivacyPage() {
               data we cannot read.
             </>,
             <>
-              <strong>Members (if the club makes its hub private):</strong> the name and short note
-              (e.g. &ldquo;Sam&apos;s mum, U9s&rdquo;) of each person who asks to join, whether a coach
-              approved them, and a cookie on their phone that remembers they&apos;re approved. It&apos;s
-              only used to let them in.
+              <strong>Members (if the club makes its hub private):</strong> the name of each person
+              who asks to join, whether they&apos;re a parent, player or coach, their team, a parent&apos;s
+              own child&apos;s name (as they type it, seen only by the club&apos;s coaches), whether a
+              coach approved them, and a cookie on their phone that remembers they&apos;re approved.
+              It&apos;s only used to let them in.
             </>,
             <>
               <strong>Reminders:</strong> if a coach turns on subs reminders, their browser&apos;s
