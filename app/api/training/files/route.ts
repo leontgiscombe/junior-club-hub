@@ -6,7 +6,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
-import { checkAdminPassword } from "@/lib/adminAuth";
+import { isCoach } from "@/lib/adminAuth";
 import { builtInFile } from "@/lib/builtInDrills";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  if (!checkAdminPassword(searchParams.get("key") ?? "", process.env.ADMIN_KEY)) {
+  if (!(await isCoach(searchParams.get("key") ?? ""))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const file = builtInFile(searchParams.get("name") ?? "");

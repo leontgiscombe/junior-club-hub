@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { getClubWithIcons, getTeams } from "@/lib/settings";
+import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
+import { tenantExists } from "@/lib/tenants";
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
 
@@ -23,6 +25,27 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // an address that isn't a club (yet)
+  const tenant = await getTenant();
+  if (tenant && !(await tenantExists(tenant))) {
+    return (
+      <html lang="en" className="h-full">
+        <body className="flex min-h-full items-center justify-center bg-gray-50 p-6 text-center font-sans antialiased">
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900">There&apos;s no club here</h1>
+            <p className="mt-2 text-gray-500">
+              Check the address, or find your club on {PLATFORM_NAME}.
+            </p>
+            {rootDomain() && (
+              <a href={platformUrl()} className="mt-4 inline-block font-bold text-green-700">
+                Find your club →
+              </a>
+            )}
+          </div>
+        </body>
+      </html>
+    );
+  }
   const [{ club }, teams] = await Promise.all([getClubWithIcons(), getTeams()]);
   return (
     // the club's colour, laid over the hub's green (lib/palette.ts)

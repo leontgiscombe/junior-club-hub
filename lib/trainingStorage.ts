@@ -11,6 +11,7 @@
 // presentation all read one set of totals.
 import { adjustPlayerStat } from "./statsStorage";
 import { getTeams } from "./settings";
+import { getKv } from "./kv";
 
 // Every team trains on a Monday, from the start of the season to the end of
 // July. Move these when the next season's dates are known.
@@ -25,15 +26,6 @@ export interface TrainingSession {
   cancelled: boolean;
 }
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const KEY = "training";
 

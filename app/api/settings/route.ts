@@ -5,7 +5,7 @@
 //   POST   ?key=…  { image, width, height } -> uploads a crest (a data: URL)
 //   DELETE ?key=…                         -> goes back to the default crest
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminPassword } from "@/lib/adminAuth";
+import { isCoach } from "@/lib/adminAuth";
 import { DEFAULT_CLUB, cleanChanges, cleanTeams } from "@/lib/clubSettings";
 import {
   getAllTeams,
@@ -22,8 +22,7 @@ export const dynamic = "force-dynamic";
 const CREST_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_CREST_BYTES = 400 * 1024;
 
-const authorised = (req: NextRequest) =>
-  checkAdminPassword(req.nextUrl.searchParams.get("key") ?? "", process.env.ADMIN_KEY);
+const authorised = (req: NextRequest) => isCoach(req.nextUrl.searchParams.get("key") ?? "");
 const unauthorised = () => NextResponse.json({ error: "Incorrect password" }, { status: 401 });
 const failed = (e: unknown) =>
   NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 500 });
@@ -45,12 +44,12 @@ async function snapshot() {
 }
 
 export async function GET(req: NextRequest) {
-  if (!authorised(req)) return unauthorised();
+  if (!(await authorised(req))) return unauthorised();
   return NextResponse.json(await snapshot());
 }
 
 export async function PUT(req: NextRequest) {
-  if (!authorised(req)) return unauthorised();
+  if (!(await authorised(req))) return unauthorised();
   const body = (await req.json().catch(() => null)) as { changes?: unknown; teams?: unknown } | null;
   try {
     if (body?.teams !== undefined) {
@@ -75,7 +74,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!authorised(req)) return unauthorised();
+  if (!(await authorised(req))) return unauthorised();
   const body = (await req.json().catch(() => null)) as
     | { image?: unknown; width?: unknown; height?: unknown }
     | null;
@@ -105,7 +104,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!authorised(req)) return unauthorised();
+  if (!(await authorised(req))) return unauthorised();
   try {
     await saveCrest(null);
     return NextResponse.json(await snapshot());

@@ -7,7 +7,7 @@ import { CLUB as CONFIG } from "@/club.config";
 import { useClub } from "./ClubProvider";
 import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
-import { defaultSeasonName } from "@/lib/season";
+import { defaultSeasonName } from "@/lib/seasonName";
 import {
   MONTH_AWARD_KINDS,
   decidedByTieBreak,

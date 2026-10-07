@@ -44,7 +44,7 @@ import {
   type MatchDetails,
 } from "@/lib/matchStorage";
 import { listPlayers } from "@/lib/statsStorage";
-import { checkAdminPassword } from "@/lib/adminAuth";
+import { isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
 import { isValidHolder } from "@/lib/cameraHolders";
 import type { FaFixture } from "@/lib/faFullTime";
@@ -57,14 +57,14 @@ const AWARD_ACTIONS: Record<string, AwardField> = {
   "set-most-improved": "mostImprovedId",
 };
 
-function isAuthorised(request: Request): boolean {
+async function isAuthorised(request: Request): Promise<boolean> {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key") ?? "";
-  return checkAdminPassword(key, process.env.ADMIN_KEY);
+  return isCoach(key);
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const matches = await listMatches();
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const body = await request.json();
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const body = await request.json();
@@ -205,7 +205,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);

@@ -3,12 +3,12 @@
 // so a password change reaches every device.
 import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminPassword } from "@/lib/adminAuth";
+import { isCoach } from "@/lib/adminAuth";
 import { getClub, isTeam } from "@/lib/settings";
+import { requireTenant } from "@/lib/tenant";
 import {
-  financeAuthKey,
   financeConfigured,
-  financeDataKey,
+  financeKeys,
   redis,
 } from "@/lib/financeStorage";
 
@@ -31,13 +31,14 @@ async function team(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const keys = financeKeys(await requireTenant());
   const id = await team(req);
   if (!id) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
   try {
     const [val, authVal] = await Promise.all([
-      redis(["GET", financeDataKey(id)]),
-      redis(["GET", financeAuthKey(id)]),
+      redis(["GET", keys.data(id)]),
+      redis(["GET", keys.auth(id)]),
     ]);
     const rec = parse<{ blob?: unknown; rev?: number; updatedAt?: string }>(val) ?? {};
     return NextResponse.json(
@@ -80,6 +81,7 @@ function cleanAuth(a: Record<string, unknown> | undefined): Auth | null {
 }
 
 async function put(req: NextRequest) {
+  const keys = financeKeys(await requireTenant());
   const id = await team(req);
   if (!id) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
@@ -90,12 +92,12 @@ async function put(req: NextRequest) {
   try {
     // A team with no password yet is set up once, by a coach who gives the
     // Coach Admin password; after that it can only be opened with its own.
-    const current = parse<Auth>(await redis(["GET", financeAuthKey(id)]));
+    const current = parse<Auth>(await redis(["GET", keys.auth(id)]));
     const hasAuth = !!current;
     const setupKey = req.headers.get("x-admin-key");
     if (!hasAuth || setupKey !== null) {
       if (hasAuth) return NextResponse.json({ error: "team already set up" }, { status: 409 });
-      if (!body.auth || !checkAdminPassword(setupKey ?? "", process.env.ADMIN_KEY)) {
+      if (!body.auth || !(await isCoach(setupKey ?? ""))) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
     }
@@ -111,16 +113,16 @@ async function put(req: NextRequest) {
       // a password change can't take the protection away
       if (auth && !auth.writeHash) return NextResponse.json({ error: "bad login record" }, { status: 400 });
     }
-    const cur = parse<{ rev?: number }>(await redis(["GET", financeDataKey(id)]));
+    const cur = parse<{ rev?: number }>(await redis(["GET", keys.data(id)]));
     const record = {
       blob: { ct: body.blob.ct, iv: body.blob.iv },
       rev: (cur?.rev ?? 0) + 1,
       updatedAt: new Date().toISOString(),
     };
-    const writes = [redis(["SET", financeDataKey(id), JSON.stringify(record)])];
+    const writes = [redis(["SET", keys.data(id), JSON.stringify(record)])];
     // A password change (or a team's first write token) sends the team's new
     // login record with the data.
-    if (auth) writes.push(redis(["SET", financeAuthKey(id), JSON.stringify(auth)]));
+    if (auth) writes.push(redis(["SET", keys.auth(id), JSON.stringify(auth)]));
     await Promise.all(writes);
     return NextResponse.json({ rev: record.rev });
   } catch (e) {

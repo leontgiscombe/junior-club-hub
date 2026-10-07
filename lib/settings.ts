@@ -1,5 +1,7 @@
 // The club's settings in the database: the identity changes saved on Coach
-// Admin → Settings, and the uploaded crest. Server only.
+// Admin → Settings, the teams and the uploaded crest. Server only. Reads take
+// the club from the request unless one is named (the reminders job goes
+// through every club); on the platform's own site they give the defaults.
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { CLUB } from "@/club.config";
@@ -13,6 +15,9 @@ import {
   type Feature,
   type Team,
 } from "./clubSettings";
+import { getKv } from "./kv";
+import { getTenant } from "./tenant";
+import { tenantExists } from "./tenants";
 
 const CHANGES_KEY = `${CLUB.storagePrefix}:settings:club`;
 const TEAMS_KEY = `${CLUB.storagePrefix}:settings:teams`;
@@ -23,18 +28,15 @@ const CREST_INFO_KEY = `${CLUB.storagePrefix}:settings:crest-info`;
 /** An uploaded crest: the image itself (base64) and its size. */
 export type StoredCrest = { type: string; data: string; width: number; height: number; updatedAt: string };
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
+/** The database for `tenant`, or the request's club; null when there's no club. */
+async function kvFor(tenant?: string) {
+  const t = tenant ?? (await getTenant());
+  return t && (await tenantExists(t)) ? getKv(t) : null;
 }
 
-export async function getClubChanges(): Promise<ClubChanges> {
-  const kv = await getKv();
+
+export async function getClubChanges(tenant?: string): Promise<ClubChanges> {
+  const kv = await kvFor(tenant);
   if (!kv) return {};
   try {
     return cleanChanges(await kv.get(CHANGES_KEY));
@@ -43,14 +45,14 @@ export async function getClubChanges(): Promise<ClubChanges> {
   }
 }
 
-export async function saveClubChanges(changes: ClubChanges): Promise<void> {
-  const kv = await getKv();
+export async function saveClubChanges(changes: ClubChanges, tenant?: string): Promise<void> {
+  const kv = await getKv(tenant);
   if (!kv) throw new Error("Storage isn't set up");
   await kv.set(CHANGES_KEY, cleanChanges(changes));
 }
 
-async function getCrestInfo(): Promise<Omit<StoredCrest, "data"> | null> {
-  const kv = await getKv();
+async function getCrestInfo(tenant?: string): Promise<Omit<StoredCrest, "data"> | null> {
+  const kv = await kvFor(tenant);
   if (!kv) return null;
   try {
     return (await kv.get<Omit<StoredCrest, "data">>(CREST_INFO_KEY)) ?? null;
@@ -60,7 +62,7 @@ async function getCrestInfo(): Promise<Omit<StoredCrest, "data"> | null> {
 }
 
 export async function getCrest(): Promise<StoredCrest | null> {
-  const kv = await getKv();
+  const kv = await kvFor();
   if (!kv) return null;
   try {
     return (await kv.get<StoredCrest>(CREST_KEY)) ?? null;
@@ -93,8 +95,15 @@ export const getClub = cache(async (): Promise<Club> => {
 /** The home-screen icons: made from the uploaded crest, or the defaults in public/. */
 export type ClubIcons = { icon: string; apple: string; large: string };
 
-export const getClubWithIcons = cache(async (): Promise<{ club: Club; icons: ClubIcons }> => {
-  const [changes, crest] = await Promise.all([getClubChanges(), getCrestInfo()]);
+export const getClubWithIcons = cache(() => clubWithIcons());
+
+/** A named club's settings (outside a request for it, like the reminders job). */
+export async function getClubFor(tenant: string): Promise<Club> {
+  return (await clubWithIcons(tenant)).club;
+}
+
+async function clubWithIcons(tenant?: string): Promise<{ club: Club; icons: ClubIcons }> {
+  const [changes, crest] = await Promise.all([getClubChanges(tenant), getCrestInfo(tenant)]);
   const club: Club = {
     ...DEFAULT_CLUB,
     ...changes,
@@ -114,18 +123,21 @@ export const getClubWithIcons = cache(async (): Promise<{ club: Club; icons: Clu
     ? { icon: club.crest.src, apple: `/api/club/icon?size=180&v=${v}`, large: `/api/club/icon?size=512&v=${v}` }
     : { icon: DEFAULT_CLUB.crest.src, apple: "/hub-icon-180.png", large: "/hub-icon-512.png" };
   return { club, icons };
-});
+}
 
 /** Every team, archived ones included: the saved list, or club.config.ts's. */
-export const getAllTeams = cache(async (): Promise<Team[]> => {
-  const kv = await getKv();
+export const getAllTeams = cache(() => getAllTeamsFor());
+
+/** Every team of `tenant` (by default, the request's club), archived ones included. */
+export async function getAllTeamsFor(tenant?: string): Promise<Team[]> {
+  const kv = await kvFor(tenant);
   if (!kv) return DEFAULT_TEAMS;
   try {
     return cleanTeams(await kv.get(TEAMS_KEY)) ?? DEFAULT_TEAMS;
   } catch {
     return DEFAULT_TEAMS;
   }
-});
+}
 
 /** The teams in use: everything except archived ones. */
 export const getTeams = cache(async (): Promise<Team[]> =>

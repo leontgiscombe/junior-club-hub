@@ -50,6 +50,27 @@ Upstash Redis database, set up for a club from one settings file.
 Built-in drills and a season plan are optional and live in `drill-pack/`
 (empty by default; see its README).
 
+## Many clubs in one app
+
+Set `ROOT_DOMAIN` (e.g. `juniorclubhub.app`) and point it and its wildcard
+(`*.juniorclubhub.app`) at the deployment:
+
+- **The root domain** is the platform's own site (`app/platform/`): what the
+  hub does, **find your club**, and **sign up**, where a club picks its name,
+  web address, contact email and coach password.
+- **Each club** lives at its own subdomain (`riverside.juniorclubhub.app`).
+  `proxy.ts` and `lib/tenant.ts` work out the club from the address;
+  `lib/kv.ts` stores everything for it under its own key prefix
+  (`t:riverside:…`), so clubs never see each other's data. Its coach password
+  is kept hashed in the platform's club list (`lib/tenants.ts`).
+- **The default club**: without `ROOT_DOMAIN` (or on any other address, like a
+  preview), the hub runs a single club with `ADMIN_KEY` as its password and its
+  data unprefixed.
+- The monthly subs reminders go to every club.
+
+Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
+`http://localhost:3000` (the platform) and `http://<club>.localhost:3000`.
+
 ## Developing
 
 ```

@@ -18,19 +18,11 @@ import {
   type DrillTopic,
   type TrainingPlan,
 } from "./trainingPlanTypes";
+import { getKv } from "./kv";
 
 export { DRILL_KINDS };
 export type { Drill, DrillKind, PlanWeek, TrainingPlan } from "./trainingPlanTypes";
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const DRILLS_KEY = "drills";
 const PLANS_KEY = "training_plans";

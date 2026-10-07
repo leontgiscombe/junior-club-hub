@@ -8,26 +8,26 @@
 import { NextResponse } from "next/server";
 import { listFixtures, clearFixtures } from "@/lib/cameraStorage";
 import { addMatch } from "@/lib/matchStorage";
-import { checkAdminPassword } from "@/lib/adminAuth";
+import { isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
-function isAuthorised(request: Request): boolean {
+async function isAuthorised(request: Request): Promise<boolean> {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key") ?? "";
-  return checkAdminPassword(key, process.env.ADMIN_KEY);
+  return isCoach(key);
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   return NextResponse.json({ legacy: await listFixtures() });
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
