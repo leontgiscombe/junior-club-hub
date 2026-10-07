@@ -7,6 +7,7 @@
 // is right, and nobody sees the club's players here.
 import { useEffect, useState } from "react";
 import { RELATIONS, type Relation } from "@/lib/access";
+import ChildrenEditor, { type ChildDraft } from "../components/ChildrenEditor";
 import SignInForm from "../components/SignInForm";
 
 type Status = "none" | "pending" | "approved" | "declined";
@@ -28,7 +29,7 @@ export default function JoinForm({
   const [note, setNote] = useState("");
   const [relation, setRelation] = useState<Relation | "">("");
   const [team, setTeam] = useState("");
-  const [child, setChild] = useState("");
+  const [children, setChildren] = useState<ChildDraft[]>([{ name: "", team: "" }]);
   // the teams, once the code has been checked
   const [teams, setTeams] = useState<TeamOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,14 +56,21 @@ export default function JoinForm({
       const res = await fetch("/api/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(teams ? { code, name, relation, team, child, note } : { code }),
+        body: JSON.stringify(
+          teams
+            ? { code, name, relation, team, children: children.filter((c) => c.name.trim()), note }
+            : { code },
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
       if (data.status === "open") window.location.href = "/";
       else if (data.status === "ok") {
         setTeams(data.teams);
-        if (data.teams.length === 1) setTeam(data.teams[0].slug);
+        if (data.teams.length === 1) {
+          setTeam(data.teams[0].slug);
+          setChildren([{ name: "", team: data.teams[0].slug }]);
+        }
       } else {
         setStatus("pending");
         setAskAgain(false);
@@ -175,27 +183,28 @@ export default function JoinForm({
           ))}
         </select>
       </label>
-      {teams.length > 0 && (
-        <label>
-          <span className="text-sm font-bold text-gray-800">Team</span>
-          <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
-            <option value="">Not sure / more than one</option>
-            {teams.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      {relation === "parent" && (
-        <label>
-          <span className="text-sm font-bold text-gray-800">Your child&apos;s name</span>
-          <input value={child} onChange={(e) => setChild(e.target.value)} maxLength={60} placeholder="e.g. Sam B" className={input} />
-          <span className="mt-1 block text-xs text-gray-400">
-            First name and initial is enough. Only the club&apos;s coaches see it, to know who you are.
+      {relation === "parent" ? (
+        <div>
+          <span className="text-sm font-bold text-gray-800">Your child (or children)</span>
+          <span className="mb-2 block text-xs text-gray-400">
+            Their name and team. First name and initial is enough. Only the club&apos;s coaches see them.
           </span>
-        </label>
+          <ChildrenEditor value={children} teams={teams} onChange={setChildren} />
+        </div>
+      ) : (
+        teams.length > 0 && (
+          <label>
+            <span className="text-sm font-bold text-gray-800">Team</span>
+            <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
+              <option value="">Not sure / more than one</option>
+              {teams.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
       )}
       <label>
         <span className="text-sm font-bold text-gray-800">Anything else? (optional)</span>

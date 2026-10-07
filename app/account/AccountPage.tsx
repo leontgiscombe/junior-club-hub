@@ -4,7 +4,14 @@
 // the account (which also takes you out of every club).
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ROLES, type MemberStatus, type Role } from "@/lib/access";
+import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
+import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
+
+type Here = {
+  club: string;
+  person: { status: MemberStatus; relation: Relation | null; team: { slug: string } | null; children: Child[] } | null;
+  teams: { slug: string; name: string }[];
+};
 
 type Account = {
   user: { email: string; name: string };
@@ -17,6 +24,11 @@ export default function AccountPage() {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState("");
+  // this club (on a club's own address): your children, or your team
+  const [here, setHere] = useState<Here | null>(null);
+  const [kids, setKids] = useState<ChildDraft[]>([]);
+  const [myTeam, setMyTeam] = useState("");
+  const [hereMessage, setHereMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/account", { cache: "no-store" }).then(async (res) => {
@@ -27,8 +39,29 @@ export default function AccountPage() {
       const data = (await res.json()) as Account;
       setAccount(data);
       setName(data.user.name);
+      const h = await fetch("/api/me/club", { cache: "no-store" });
+      if (!h.ok) return;
+      const hd = (await h.json()) as Here;
+      if (!hd.person) return;
+      setHere(hd);
+      setKids(hd.person.children.length ? toDrafts(hd.person.children) : [{ name: "", team: "" }]);
+      setMyTeam(hd.person.team?.slug ?? "");
     });
   }, []);
+
+  async function saveHere() {
+    if (!here?.person) return;
+    setBusy(true);
+    setHereMessage(null);
+    const isParent = here.person.relation === "parent" || here.person.children.length > 0;
+    const res = await fetch("/api/me/club", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(isParent ? { children: kids.filter((k) => k.name.trim()) } : { team: myTeam }),
+    });
+    setHereMessage(res.ok ? "Saved — the club's coaches will see it." : "That didn't save — try again");
+    setBusy(false);
+  }
 
   async function saveName() {
     setBusy(true);
@@ -108,6 +141,33 @@ export default function AccountPage() {
             </ul>
           )}
         </section>
+
+        {here?.person && (
+          <section className={card}>
+            <h2 className="font-extrabold text-gray-900">
+              {here.person.relation === "parent" || here.person.children.length ? `Your Children at ${here.club}` : `Your Team at ${here.club}`}
+            </h2>
+            {here.person.relation === "parent" || here.person.children.length ? (
+              <>
+                <p className="mt-1 mb-3 text-sm text-gray-500">
+                  Their name and team. First name and initial is enough. Only the club&apos;s coaches see them.
+                </p>
+                <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} />
+              </>
+            ) : (
+              <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={`${input} mt-3`}>
+                <option value="">Not sure / more than one</option>
+                {here.teams.map((t) => (
+                  <option key={t.slug} value={t.slug}>{t.name}</option>
+                ))}
+              </select>
+            )}
+            <button onClick={saveHere} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40">
+              Save
+            </button>
+            {hereMessage && <p className="mt-2 text-sm text-gray-600">{hereMessage}</p>}
+          </section>
+        )}
 
         <section className={card}>
           <button onClick={signOut} className="w-full rounded-xl border border-gray-200 py-3 font-bold text-gray-700 hover:bg-gray-50">
