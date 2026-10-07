@@ -4,9 +4,15 @@
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { Member } from "@/lib/access";
+import { RELATIONS, type Member } from "@/lib/access";
 
 type Snapshot = { private: boolean; code: string; joinUrl: string; platformJoin: string | null; members: Member[] };
+
+/** "Parent or carer of Sam B · U9s Hawks · new this season" */
+function describe(m: Member): string {
+  const who = m.relation ? `${RELATIONS[m.relation]}${m.child ? ` of ${m.child}` : ""}` : "";
+  return [who, m.team?.name, m.note].filter(Boolean).join(" · ");
+}
 
 const when = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -18,6 +24,7 @@ export default function MembersAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [teamFilter, setTeamFilter] = useState("");
 
   const load = useCallback(async (k: string) => {
     setBusy(true);
@@ -105,9 +112,11 @@ export default function MembersAdmin() {
     );
   }
 
-  const pending = snap.members.filter((m) => m.status === "pending");
-  const approved = snap.members.filter((m) => m.status === "approved");
-  const declined = snap.members.filter((m) => m.status === "declined");
+  const teams = [...new Map(snap.members.filter((m) => m.team).map((m) => [m.team!.slug, m.team!.name])).entries()];
+  const shown = teamFilter ? snap.members.filter((m) => m.team?.slug === teamFilter) : snap.members;
+  const pending = shown.filter((m) => m.status === "pending");
+  const approved = shown.filter((m) => m.status === "approved");
+  const declined = shown.filter((m) => m.status === "declined");
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm";
 
   return (
@@ -183,6 +192,18 @@ export default function MembersAdmin() {
           </label>
         </section>
 
+        {teams.length > 1 && (
+          <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+            Show
+            <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+              <option value="">Every team</option>
+              {teams.map(([slug, name]) => (
+                <option key={slug} value={slug}>{name}</option>
+              ))}
+            </select>
+          </label>
+        )}
+
         {/* Waiting */}
         <section className={card}>
           <div className="flex items-center justify-between">
@@ -199,7 +220,7 @@ export default function MembersAdmin() {
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
                     <span className="block font-bold text-gray-900">{m.name}</span>
-                    <span className="block text-sm text-gray-500">{m.note ? `${m.note} · ` : ""}asked {when(m.createdAt)}</span>
+                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}asked {when(m.createdAt)}</span>
                   </span>
                   <span className="flex gap-2">
                     <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40">
@@ -232,7 +253,7 @@ export default function MembersAdmin() {
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">Coach</span>
                       )}
                     </span>
-                    <span className="block text-sm text-gray-500">{m.note ? `${m.note} · ` : ""}since {when(m.decidedAt ?? m.createdAt)}</span>
+                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}since {when(m.decidedAt ?? m.createdAt)}</span>
                   </span>
                   <button
                     onClick={() => {
@@ -257,7 +278,7 @@ export default function MembersAdmin() {
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
                     <span className="block font-bold text-gray-900">{m.name}</span>
-                    <span className="block text-sm text-gray-500">{m.note ? `${m.note} · ` : ""}asked {when(m.createdAt)}</span>
+                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}asked {when(m.createdAt)}</span>
                   </span>
                   <span className="flex gap-3">
                     <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">

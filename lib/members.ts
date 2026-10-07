@@ -80,13 +80,19 @@ async function save(tenant: string, hash: string, member: Member): Promise<void>
 }
 
 /** A phone asking to join: a new token for its cookie, and the request waiting for a coach. */
-export async function requestToJoin(tenant: string, details: { name: string; note?: string }): Promise<string> {
+export async function requestToJoin(
+  tenant: string,
+  details: Pick<Member, "name" | "note" | "relation" | "team" | "child">,
+): Promise<string> {
   const token = newToken();
   const hash = await hashToken(token);
   await save(tenant, hash, {
     id: idFor(hash),
     name: details.name,
     ...(details.note ? { note: details.note } : {}),
+    ...(details.relation ? { relation: details.relation } : {}),
+    ...(details.team ? { team: details.team } : {}),
+    ...(details.child ? { child: details.child } : {}),
     role: "member",
     status: "pending",
     createdAt: new Date().toISOString(),
