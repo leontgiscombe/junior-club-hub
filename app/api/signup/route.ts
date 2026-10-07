@@ -1,11 +1,13 @@
 // Signing a club up on the platform: its name, web address, the organiser's
-// email and the coach password. Creates the club, gives it its name, and
-// answers with the club's own address.
+// email, the coach password and its first team. Creates the club with its
+// name and that one team (more are added in Settings), and answers with the
+// club's own address.
 //   GET  ?address=riverside -> { ok } or { error } (is the address free?)
-//   POST { name, address, email, password, website } -> { url }
+//   POST { name, address, email, password, team, website } -> { url }
 import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
-import { saveClubChanges } from "@/lib/settings";
+import { slugFor } from "@/lib/clubSettings";
+import { saveClubChanges, saveTeams } from "@/lib/settings";
 import { sendEmail, simpleEmail } from "@/lib/email";
 import { operator } from "@/lib/legal";
 import { PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
   const address = typeof body.address === "string" ? body.address.trim().toLowerCase() : "";
   const email = typeof body.email === "string" ? body.email.trim().slice(0, 120) : "";
   const password = typeof body.password === "string" ? body.password : "";
+  const team = (typeof body.team === "string" ? body.team.trim().slice(0, 30) : "") || "First Team";
   if (!name) return NextResponse.json({ error: "Enter the club's name" }, { status: 400 });
   if (body.agreed !== true) {
     return NextResponse.json({ error: "Please agree to the Terms of Use to sign up" }, { status: 400 });
@@ -58,6 +61,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That address was just taken — try another" }, { status: 409 });
   }
   await saveClubChanges({ name, fullName: name }, address);
+  await saveTeams([{ slug: slugFor(team, []), name: team, accent: "⚽" }], address);
   const contact = operator().email;
   await sendEmail({
     to: email,
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
       heading: `Welcome to ${PLATFORM_NAME}!`,
       paragraphs: [
         `${name}'s hub is ready at ${tenantUrl(address)}.`,
-        "Sign in to Coach Admin with your coach password to add your badge, colours and teams, then share the address with your parents.",
+        "Sign in to Coach Admin with your coach password to add your badge, colours and any more teams, then share the address with your parents.",
         "If you ever forget the coach password, use “Forgot the password?” on the sign-in page and a reset link comes to this email.",
         ...(contact ? [`Any questions, just reply to this email or write to ${contact}.`] : []),
       ],

@@ -167,10 +167,10 @@ export async function isTeam(slug: string): Promise<boolean> {
   return (await getTeams()).some((t) => t.slug === slug);
 }
 
-export async function saveTeams(teams: Team[]): Promise<void> {
+export async function saveTeams(teams: Team[], tenant?: string): Promise<void> {
   const clean = cleanTeams(teams);
   if (!clean) throw new Error("Keep at least one team");
-  const kv = await getKv();
+  const kv = await getKv(tenant);
   if (!kv) throw new Error("Storage isn't set up");
   await kv.set(TEAMS_KEY, clean);
 }
