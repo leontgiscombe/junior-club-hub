@@ -4,12 +4,19 @@
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { RELATIONS, type Member } from "@/lib/access";
+import { RELATIONS, ROLES, SESSION_KEY, type Member, type Person, type Role } from "@/lib/access";
 
-type Snapshot = { private: boolean; code: string; joinUrl: string; platformJoin: string | null; members: Member[] };
+type Snapshot = {
+  private: boolean;
+  code: string;
+  joinUrl: string;
+  platformJoin: string | null;
+  people: Person[];
+  members: Member[];
+};
 
 /** "Parent or carer of Sam B · U9s Hawks · new this season" */
-function describe(m: Member): string {
+function describe(m: Pick<Member, "relation" | "child" | "team" | "note">): string {
   const who = m.relation ? `${RELATIONS[m.relation]}${m.child ? ` of ${m.child}` : ""}` : "";
   return [who, m.team?.name, m.note].filter(Boolean).join(" · ");
 }
@@ -44,12 +51,24 @@ export default function MembersAdmin() {
 
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
-    if (!urlKey) return;
-    const t = setTimeout(() => {
-      setKey(urlKey);
-      load(urlKey);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      if (urlKey) {
+        setKey(urlKey);
+        load(urlKey);
+        return;
+      }
+      // a club admin or coach signed in with their account needs no password
+      const me = await fetch("/api/auth/me", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+      if (!cancelled && me?.canCoach) {
+        setKey(SESSION_KEY);
+        load(SESSION_KEY);
+      }
     }, 0);
-    return () => clearTimeout(t);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [load]);
 
   async function act(body: Record<string, unknown>) {
@@ -112,11 +131,15 @@ export default function MembersAdmin() {
     );
   }
 
-  const teams = [...new Map(snap.members.filter((m) => m.team).map((m) => [m.team!.slug, m.team!.name])).entries()];
-  const shown = teamFilter ? snap.members.filter((m) => m.team?.slug === teamFilter) : snap.members;
-  const pending = shown.filter((m) => m.status === "pending");
-  const approved = shown.filter((m) => m.status === "approved");
-  const declined = shown.filter((m) => m.status === "declined");
+  const everyone = [...snap.people, ...snap.members];
+  const teams = [...new Map(everyone.filter((m) => m.team).map((m) => [m.team!.slug, m.team!.name])).entries()];
+  const onTeam = <T extends { team?: { slug: string } }>(list: T[]) => (teamFilter ? list.filter((m) => m.team?.slug === teamFilter) : list);
+  const people = onTeam(snap.people);
+  const pending = people.filter((p) => p.status === "pending");
+  const approved = people.filter((p) => p.status === "approved");
+  const declined = people.filter((p) => p.status === "declined");
+  // phones approved before accounts (and any still waiting from then)
+  const phones = onTeam(snap.members).filter((m) => m.status !== "declined");
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm";
 
   return (
@@ -127,7 +150,7 @@ export default function MembersAdmin() {
             ← Coach Admin
           </Link>
           <h1 className="mt-2 text-xl font-extrabold">👪 Members</h1>
-          <p className="mt-0.5 text-sm text-green-200">Who can open your club&apos;s hub</p>
+          <p className="mt-0.5 text-sm text-green-200">Who can open your club&apos;s hub, and what they can do</p>
         </div>
       </div>
 
@@ -138,7 +161,8 @@ export default function MembersAdmin() {
         <section className={card}>
           <h2 className="font-extrabold text-gray-900">🔑 Your Club Code</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Give parents and players this code, or send them the join link.
+            Give parents, players and coaches this code, or send them the join link. They sign in with
+            their email and ask to join; you approve them below.
             {snap.platformJoin && (
               <>
                 {" "}They can type the code at <strong>{snap.platformJoin.replace(/^https?:\/\//, "").replace(/\/$/, "")}</strong>.
@@ -174,7 +198,7 @@ export default function MembersAdmin() {
               <span className="block font-extrabold text-gray-900">🔒 Only approved members</span>
               <span className="mt-1 block text-sm text-gray-500">
                 {snap.private
-                  ? "On: only phones a coach has approved can open the hub. Anyone else is asked for the club code and waits for approval."
+                  ? "On: only people you've approved can open the hub. Anyone else is asked for the club code, signs in and waits for approval."
                   : "Off: anyone with the hub's address can open it. Turn on so only people you approve can see it."}
               </span>
             </span>
@@ -184,7 +208,7 @@ export default function MembersAdmin() {
               disabled={busy}
               onChange={(e) => {
                 const on = e.target.checked;
-                if (on && !confirm("Turn on? Everyone apart from coaches who sign in will need to ask to join with the club code, and you'll approve them here.")) return;
+                if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them here.")) return;
                 act({ action: "private", value: on });
               }}
               className="mt-1 h-6 w-6 shrink-0 accent-green-600"
@@ -216,21 +240,8 @@ export default function MembersAdmin() {
             <p className="mt-2 text-sm text-gray-500">No one is waiting.</p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
-              {pending.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <span className="min-w-0">
-                    <span className="block font-bold text-gray-900">{m.name}</span>
-                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}asked {when(m.createdAt)}</span>
-                  </span>
-                  <span className="flex gap-2">
-                    <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40">
-                      Approve
-                    </button>
-                    <button onClick={() => act({ action: "decline", id: m.id })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                      Decline
-                    </button>
-                  </span>
-                </li>
+              {pending.map((p) => (
+                <PendingPerson key={p.userId} person={p} busy={busy} onDecide={act} />
               ))}
             </ul>
           )}
@@ -239,31 +250,35 @@ export default function MembersAdmin() {
         {/* Approved */}
         <section className={card}>
           <h2 className="font-extrabold text-gray-900">✅ Members ({approved.length})</h2>
-          <p className="mt-1 text-sm text-gray-500">Each is one phone or computer. Coaches&apos; phones are added when they sign in to Coach Admin.</p>
+          <p className="mt-1 text-sm text-gray-500">
+            Tap a role to give or take it away. Club admins and coaches can use Coach Admin.
+          </p>
           {approved.length === 0 ? (
             <p className="mt-2 text-sm text-gray-500">No members yet.</p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
-              {approved.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <span className="min-w-0">
-                    <span className="block font-bold text-gray-900">
-                      {m.name}
-                      {m.role === "coach" && (
-                        <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">Coach</span>
-                      )}
+              {approved.map((p) => (
+                <li key={p.userId} className="py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="block font-bold text-gray-900">{p.name}</span>
+                      <span className="block truncate text-sm text-gray-500">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
                     </span>
-                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}since {when(m.decidedAt ?? m.createdAt)}</span>
-                  </span>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Remove ${m.name}? Their phone won't be able to open the hub until they ask again.`)) act({ action: "remove", id: m.id });
-                    }}
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove ${p.name}? They won't be able to open the hub until they ask again.`)) act({ action: "removePerson", userId: p.userId });
+                      }}
+                      disabled={busy}
+                      className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <RoleChips
+                    roles={p.roles}
                     disabled={busy}
-                    className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
-                  >
-                    Remove
-                  </button>
+                    onChange={(roles) => roles.length && act({ action: "personRoles", userId: p.userId, roles })}
+                  />
                 </li>
               ))}
             </ul>
@@ -274,16 +289,43 @@ export default function MembersAdmin() {
           <section className={card}>
             <h2 className="font-extrabold text-gray-900">Declined ({declined.length})</h2>
             <ul className="mt-3 divide-y divide-gray-100">
-              {declined.map((m) => (
+              {declined.map((p) => (
+                <li key={p.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <span className="min-w-0">
+                    <span className="block font-bold text-gray-900">{p.name}</span>
+                    <span className="block text-sm text-gray-500">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  <button onClick={() => act({ action: "removePerson", userId: p.userId })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {phones.length > 0 && (
+          <section className={card}>
+            <h2 className="font-extrabold text-gray-900">📱 Phones Approved Before Accounts ({phones.length})</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              These still work. Ask each person to sign in and join with an account, then remove their phone here.
+            </p>
+            <ul className="mt-3 divide-y divide-gray-100">
+              {phones.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
-                    <span className="block font-bold text-gray-900">{m.name}</span>
-                    <span className="block text-sm text-gray-500">{describe(m) ? `${describe(m)} · ` : ""}asked {when(m.createdAt)}</span>
+                    <span className="block font-bold text-gray-900">
+                      {m.name}
+                      {m.role === "coach" && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">Coach</span>}
+                    </span>
+                    <span className="block text-sm text-gray-500">{describe(m) || (m.status === "pending" ? "waiting" : "")}</span>
                   </span>
                   <span className="flex gap-3">
-                    <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
-                      Approve
-                    </button>
+                    {m.status === "pending" && (
+                      <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
+                        Approve
+                      </button>
+                    )}
                     <button onClick={() => act({ action: "remove", id: m.id })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
                       Remove
                     </button>
@@ -295,5 +337,58 @@ export default function MembersAdmin() {
         )}
       </div>
     </main>
+  );
+}
+
+const ALL_ROLES = Object.keys(ROLES) as Role[];
+
+/** A person's roles as chips to tap on and off. */
+function RoleChips({ roles, disabled, onChange }: { roles: Role[]; disabled: boolean; onChange: (roles: Role[]) => void }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {ALL_ROLES.map((r) => {
+        const on = roles.includes(r);
+        return (
+          <button
+            key={r}
+            type="button"
+            disabled={disabled}
+            aria-pressed={on}
+            onClick={() => onChange(on ? roles.filter((x) => x !== r) : [...roles, r])}
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-colors disabled:opacity-50 ${
+              on ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {ROLES[r]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Someone waiting: choose their role(s), then approve or decline. */
+function PendingPerson({ person, busy, onDecide }: { person: Person; busy: boolean; onDecide: (body: Record<string, unknown>) => void }) {
+  const first: Role = person.relation === "player" ? "player" : person.relation === "coach" ? "coach" : "parent";
+  const [roles, setRoles] = useState<Role[]>([first]);
+  return (
+    <li className="py-3">
+      <span className="block font-bold text-gray-900">{person.name}</span>
+      <span className="block text-sm text-gray-500">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
+      <p className="mt-2 text-xs font-semibold text-gray-500">Approve as:</p>
+      <RoleChips roles={roles} disabled={busy} onChange={setRoles} />
+      <div className="mt-2 flex gap-2">
+        <button
+          onClick={() => onDecide({ action: "approvePerson", userId: person.userId, roles })}
+          disabled={busy || !roles.length}
+          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
+        >
+          Approve
+        </button>
+        <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+          Decline
+        </button>
+      </div>
+    </li>
   );
 }

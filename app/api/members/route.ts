@@ -1,25 +1,29 @@
 // Coach Admin → Members: the club's join code, whether the hub is private, and
 // the people who've asked to join. Behind the coach password.
-//   GET  ?key=…                                   -> { private, code, joinUrl, platformJoin, members }
-//   POST ?key=… { action: "approve" | "decline" | "remove", id }
+//   GET  ?key=…                                   -> { private, code, joinUrl, platformJoin, people, members }
+//   POST ?key=… { action: "approvePerson" | "personRoles", userId, roles }  (people with accounts)
+//   POST ?key=… { action: "declinePerson" | "removePerson", userId }
+//   POST ?key=… { action: "approve" | "decline" | "remove", id }        (phones approved before accounts)
 //   POST ?key=… { action: "newCode" }             -> a new join code (the old one stops working)
 //   POST ?key=… { action: "private", value }      -> only approved members can open the hub (or anyone)
 import { NextRequest, NextResponse } from "next/server";
 import { showCode } from "@/lib/access";
 import { isCoach } from "@/lib/adminAuth";
 import { decide, getAccess, listMembers, renewCode, setPrivate } from "@/lib/members";
+import { decidePerson, isRole, listPeople } from "@/lib/people";
 import { DEFAULT_TENANT, platformUrl, requireTenant, rootDomain, tenantUrl } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 async function snapshot(tenant: string) {
-  const [access, members] = await Promise.all([getAccess(tenant), listMembers(tenant)]);
+  const [access, members, people] = await Promise.all([getAccess(tenant), listMembers(tenant), listPeople(tenant)]);
   return {
     private: access.private,
     code: showCode(access.code),
     joinUrl: tenantUrl(tenant, `/join?code=${access.code}`),
     // the platform's "join your club" box only finds clubs with their own address
     platformJoin: tenant !== DEFAULT_TENANT && rootDomain() ? platformUrl("/") : null,
+    people,
     members,
   };
 }
@@ -38,7 +42,16 @@ export async function POST(req: NextRequest) {
   const tenant = await requireTenant();
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const action = body?.action;
-  if (action === "approve" || action === "decline" || action === "remove") {
+  if (action === "approvePerson" || action === "personRoles" || action === "declinePerson" || action === "removePerson") {
+    const roles = Array.isArray(body?.roles) ? body.roles.filter(isRole) : [];
+    if ((action === "approvePerson" || action === "personRoles") && !roles.length) {
+      return NextResponse.json({ error: "Choose at least one role" }, { status: 400 });
+    }
+    const verb = action === "approvePerson" ? "approve" : action === "personRoles" ? "roles" : action === "declinePerson" ? "decline" : "remove";
+    if (!(await decidePerson(tenant, String(body?.userId ?? ""), verb, roles))) {
+      return NextResponse.json({ error: "That person isn't on the list any more" }, { status: 404 });
+    }
+  } else if (action === "approve" || action === "decline" || action === "remove") {
     if (!(await decide(tenant, String(body?.id ?? ""), action))) {
       return NextResponse.json({ error: "That person isn't on the list any more" }, { status: 404 });
     }

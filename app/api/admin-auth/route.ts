@@ -2,7 +2,7 @@
 // otherwise 401. Used by the /admin landing page to gate access with a single
 // login before showing the tools.
 import { NextRequest, NextResponse } from "next/server";
-import { MEMBER_COOKIE, MEMBER_COOKIE_MAX_AGE } from "@/lib/access";
+import { MEMBER_COOKIE, MEMBER_COOKIE_MAX_AGE, SESSION_KEY } from "@/lib/access";
 import { coachLockedOut, isCoach } from "@/lib/adminAuth";
 import { approveCoachPhone } from "@/lib/members";
 import { getTenant } from "@/lib/tenant";
@@ -19,9 +19,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   // a coach's phone can always open the club's hub, even when it's private
+  // (someone signed in with an account is let in by their account instead)
   const res = NextResponse.json({ ok: true });
   const tenant = await getTenant();
-  if (tenant) {
+  if (tenant && key !== SESSION_KEY) {
     try {
       const token = await approveCoachPhone(tenant, request.cookies.get(MEMBER_COOKIE)?.value);
       res.cookies.set(MEMBER_COOKIE, token, {

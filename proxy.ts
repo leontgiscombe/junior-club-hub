@@ -4,21 +4,30 @@
 // own address never shows the platform pages.
 //
 // A club that has made its hub private (Coach Admin → Members) only opens for
-// phones a coach has approved (lib/access.ts); anyone else is sent to its join
-// page. Coach Admin stays open, as it has its own password, and so do the
+// people a coach has approved — signed in with an account, or (from before
+// accounts) on a phone that was approved (lib/access.ts); anyone else is sent
+// to its join page. Coach Admin stays open, as it has its own password, and so do the
 // coaches' APIs (every one checks the coach password itself).
 import { NextResponse, type NextRequest } from "next/server";
-import { MEMBER_COOKIE, PATH_HEADER, cachedAccess, isApprovedMember } from "./lib/access";
+import {
+  MEMBER_COOKIE,
+  PATH_HEADER,
+  SESSION_COOKIE,
+  cachedAccess,
+  isApprovedMember,
+  isApprovedPerson,
+} from "./lib/access";
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
 
 // what a private club's hub shows people who aren't members yet: the join
 // page, Coach Admin, password resets, the legal pages, pictures and files —
 // and every API except the few that serve the club's own pages to anyone
 const OPEN_TO_ALL = [
   /^\/join$/,
+  /^\/(signin|account)(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/reset-password$/,
   /^\/(privacy|terms)$/,
@@ -48,6 +57,7 @@ export async function proxy(req: NextRequest) {
   try {
     if (!(await cachedAccess(tenant)).private) return pass();
     if (await isApprovedMember(tenant, req.cookies.get(MEMBER_COOKIE)?.value ?? "")) return pass();
+    if (await isApprovedPerson(tenant, req.cookies.get(SESSION_COOKIE)?.value ?? "")) return pass();
   } catch {
     // the database can't be reached: the page itself will say so
     return pass();

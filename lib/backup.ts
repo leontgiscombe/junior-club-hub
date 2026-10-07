@@ -13,7 +13,8 @@ type Cmd = (string | number)[];
 const KEEP_DAYS = 7;
 const EXPIRE_SECONDS = (KEEP_DAYS + 1) * 24 * 3600;
 // what isn't worth keeping: older backups and short-lived counters and links
-const SKIP = /^(backup:|platform:(reset:|reset-requests:|signup-ip:|lookup-ip:|admin-fail:|coach-fail:))/;
+const SKIP =
+  /^(backup:|platform:(reset:|reset-requests:|signup-ip:|lookup-ip:|admin-fail:|coach-fail:|join-ip:|join-email:|signin-ip:|signin-email:|login:|login-email:|session:))/;
 // keep each request well under Upstash's size limit
 const MAX_BATCH_BYTES = 700 * 1024;
 

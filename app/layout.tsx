@@ -4,7 +4,7 @@ import { getClubWithIcons, getTeams } from "@/lib/settings";
 import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
 import { cookies, headers } from "next/headers";
-import { MEMBER_COOKIE, PATH_HEADER, readAccess, readMember } from "@/lib/access";
+import { MEMBER_COOKIE, PATH_HEADER, SESSION_COOKIE, isApprovedPerson, readAccess, readMember } from "@/lib/access";
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
 
@@ -22,8 +22,9 @@ async function teamsHidden(tenant: string | null): Promise<boolean> {
   if ((h.get(PATH_HEADER) ?? "").startsWith("/admin")) return false;
   try {
     if (!(await readAccess(tenant)).private) return false;
-    const member = await readMember(tenant, (await cookies()).get(MEMBER_COOKIE)?.value ?? "");
-    return member?.status !== "approved";
+    const jar = await cookies();
+    if ((await readMember(tenant, jar.get(MEMBER_COOKIE)?.value ?? ""))?.status === "approved") return false;
+    return !(await isApprovedPerson(tenant, jar.get(SESSION_COOKIE)?.value ?? ""));
   } catch {
     return true;
   }
