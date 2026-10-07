@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { TEAMS, teamName } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
 import FaSync from "./FaSync";
-import { opponentsFor } from "@/lib/opponents";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 
@@ -90,9 +89,6 @@ const AWARDS: {
   },
 ];
 
-function teamAccent(slug: string) {
-  return TEAMS.find((t) => t.slug === slug)?.accent ?? "⚽";
-}
 
 function formatDate(date: string) {
   const d = new Date(`${date}T00:00`);
@@ -101,6 +97,7 @@ function formatDate(date: string) {
 }
 
 export default function MatchLog() {
+  const { TEAMS, teamName, teamAccent, findTeam } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -329,7 +326,7 @@ export default function MatchLog() {
     );
   }
 
-  const leagueOpponents = opponentsFor(team);
+  const leagueOpponents = findTeam(team)?.opponents ?? [];
   // While editing a league fixture, offer this team's league sides — plus
   // whoever the game is currently against if they are not on that list, so
   // switching a cup tie back to a league game never loses the opponent.
@@ -553,7 +550,7 @@ export default function MatchLog() {
                 type="text"
                 value={opponent}
                 onChange={(e) => setOpponent(e.target.value)}
-                placeholder="Opponent, e.g. Farsley Celtic"
+                placeholder="Opponent, e.g. City Juniors"
                 aria-label="Opponent"
                 className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
               />

@@ -95,7 +95,7 @@ const TOOLS: {
     path: "/admin/settings",
     icon: "⚙️",
     title: "Settings",
-    body: "The club's name, crest, slogan and season, everywhere in the hub.",
+    body: "The club's name, crest, slogan and season, and its teams.",
   },
   {
     path: "/admin/help",

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSubmissions, deleteSubmission } from "@/lib/storage";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
   const { searchParams } = new URL(request.url);
   const team = searchParams.get("team") ?? "";
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   const [submissions, players] = await Promise.all([getSubmissions(team), listPlayers()]);
@@ -40,7 +40,7 @@ export async function DELETE(request: Request) {
   }
   const { searchParams } = new URL(request.url);
   const team = searchParams.get("team") ?? "";
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   const id = searchParams.get("id");

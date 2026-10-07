@@ -1,20 +1,53 @@
 "use client";
 
-// Coach Admin → Settings: the club's name, initials, slogan, season, crest and
-// whether results are public. Saved to the database and shown on every page
-// straight away; an empty box goes back to the default in club.config.ts.
+// Coach Admin → Settings: the club's name, initials, slogan, season, crest,
+// whether results are public, and its teams. Saved to the database and shown on
+// every page straight away; an empty box goes back to the default in
+// club.config.ts.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import type { Club, ClubChanges, EditableText } from "@/lib/clubSettings";
-import { EDITABLE } from "@/lib/clubSettings";
+import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
+import { EDITABLE, slugFor } from "@/lib/clubSettings";
 
 type Snapshot = {
   club: Club;
   defaults: Club;
   changes: ClubChanges;
   crest: { width: number; height: number; updatedAt: string } | null;
+  teams: Team[];
 };
+
+/** A team being edited: its opponents as one per line, and no slug until it's first saved. */
+type TeamDraft = Omit<Team, "opponents"> & { opponentsText: string };
+
+const toDraft = (t: Team): TeamDraft => {
+  const { opponents, ...rest } = t;
+  return { ...rest, opponentsText: (opponents ?? []).join("\n") };
+};
+
+/** The drafts as teams to save, giving each new team a slug from its name. */
+function fromDrafts(drafts: TeamDraft[]): Team[] {
+  const out: Team[] = [];
+  for (const d of drafts) {
+    const { opponentsText, ...rest } = d;
+    const team: Team = {
+      ...rest,
+      name: d.name.trim(),
+      accent: d.accent.trim() || "⚽",
+      squadName: d.squadName?.trim() || undefined,
+      faSnippet: d.faSnippet?.trim() || undefined,
+      opponents: opponentsText.split("\n").map((o) => o.trim()).filter(Boolean),
+    };
+    if (!team.opponents?.length) delete team.opponents;
+    if (!team.squadName) delete team.squadName;
+    if (!team.faSnippet) delete team.faSnippet;
+    if (!team.archived) delete team.archived;
+    if (!team.slug) team.slug = slugFor(team.name, [...drafts.filter((x) => x.slug) as Team[], ...out]);
+    out.push(team);
+  }
+  return out;
+}
 
 const FIELDS: { field: EditableText; label: string; hint: string }[] = [
   { field: "name", label: "Club name", hint: "The short name, in headers and page titles." },
@@ -58,10 +91,12 @@ export default function ClubSettings() {
   const [draft, setDraft] = useState<ClubChanges>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [teams, setTeams] = useState<TeamDraft[]>([]);
 
   const take = useCallback((data: Snapshot) => {
     setSnap(data);
     setDraft(data.changes);
+    setTeams(data.teams.map(toDraft));
   }, []);
 
   const load = useCallback(
@@ -114,9 +149,18 @@ export default function ClubSettings() {
   }
 
   async function save() {
+    const unnamed = teams.find((t) => !t.name.trim());
+    if (unnamed) {
+      setError("Give every team a name before saving.");
+      return;
+    }
     setSaving(true);
     try {
-      await send("PUT", { changes: draft }, "Saved — every page now shows the new details.");
+      await send(
+        "PUT",
+        { changes: draft, teams: fromDrafts(teams) },
+        "Saved — every page now shows the new details.",
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't save");
     } finally {
@@ -185,7 +229,9 @@ export default function ClubSettings() {
   const value = (f: EditableText) => draft[f] ?? "";
   const shown = (f: EditableText) => (draft[f]?.trim() ? draft[f]!.trim() : defaults[f]);
   const publicResults = draft.publicResults ?? defaults.publicResults;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(snap.changes);
+  const dirty =
+    JSON.stringify(draft) !== JSON.stringify(snap.changes) ||
+    JSON.stringify(fromDrafts(teams)) !== JSON.stringify(fromDrafts(snap.teams.map(toDraft)));
 
   return (
     <main className="min-h-screen bg-gray-50 pb-16">
@@ -308,6 +354,8 @@ export default function ClubSettings() {
           </label>
         </section>
 
+        <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
+
         <div className="sticky bottom-4 mt-6">
           <button
             onClick={save}
@@ -319,5 +367,215 @@ export default function ClubSettings() {
         </div>
       </div>
     </main>
+  );
+}
+
+// The teams: each one's name, emoji, poster name, FA Full-Time code and league
+// opponents. A team can be archived (hidden everywhere, its data kept) and
+// brought back, but never deleted.
+function TeamsEditor({
+  teams,
+  setTeams,
+  initials,
+}: {
+  teams: TeamDraft[];
+  setTeams: (update: (teams: TeamDraft[]) => TeamDraft[]) => void;
+  initials: string;
+}) {
+  const [open, setOpen] = useState<number | null>(null);
+  const active = teams.map((t, i) => ({ t, i })).filter(({ t }) => !t.archived);
+  const archived = teams.map((t, i) => ({ t, i })).filter(({ t }) => t.archived);
+
+  const change = (i: number, patch: Partial<TeamDraft>) =>
+    setTeams((all) => all.map((t, n) => (n === i ? { ...t, ...patch } : t)));
+  const move = (i: number, by: number) =>
+    setTeams((all) => {
+      const order = all.map((t, n) => ({ t, n })).filter(({ t }) => !t.archived).map(({ n }) => n);
+      const at = order.indexOf(i);
+      const other = order[at + by];
+      if (other === undefined) return all;
+      const next = [...all];
+      [next[i], next[other]] = [next[other], next[i]];
+      return next;
+    });
+  const add = () => {
+    setTeams((all) => [...all, { slug: "", name: "", accent: "⚽", opponentsText: "" }]);
+    setOpen(teams.length);
+  };
+
+  const input =
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+
+  return (
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 className="font-extrabold text-gray-900">👥 Teams</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        Each team gets its own kit form, stats, match and training logs, training plan and subs.
+        Archiving a team hides it everywhere but keeps all its data.
+      </p>
+
+      <div className="mt-4 flex flex-col gap-3">
+        {active.map(({ t, i }, pos) => (
+          <div key={t.slug || `new-${i}`} className="rounded-2xl border border-gray-200">
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              <span className="text-2xl">{t.accent || "⚽"}</span>
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="min-w-0 flex-1 cursor-pointer truncate text-left font-bold text-gray-900"
+              >
+                {t.name.trim() || "New team"}
+                {!t.slug && (
+                  <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">
+                    New
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => move(i, -1)}
+                disabled={pos === 0}
+                aria-label={`Move ${t.name} up`}
+                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+              >
+                ↑
+              </button>
+              <button
+                onClick={() => move(i, 1)}
+                disabled={pos === active.length - 1}
+                aria-label={`Move ${t.name} down`}
+                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+              >
+                ↓
+              </button>
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="cursor-pointer rounded-lg px-2 py-1 text-sm font-semibold text-green-700 hover:bg-green-50"
+              >
+                {open === i ? "Done" : "Edit"}
+              </button>
+            </div>
+
+            {open === i && (
+              <div className="flex flex-col gap-3 border-t border-gray-100 px-3 pb-4 pt-3">
+                <div className="flex gap-3">
+                  <label className="w-20 shrink-0">
+                    <span className="text-xs font-bold text-gray-700">Emoji</span>
+                    <input
+                      value={t.accent}
+                      maxLength={8}
+                      onChange={(e) => change(i, { accent: e.target.value })}
+                      className={`${input} text-center text-xl`}
+                    />
+                  </label>
+                  <label className="min-w-0 flex-1">
+                    <span className="text-xs font-bold text-gray-700">Team name</span>
+                    <input
+                      value={t.name}
+                      maxLength={30}
+                      placeholder="e.g. Under 9s Reds"
+                      onChange={(e) => change(i, { name: e.target.value })}
+                      className={input}
+                    />
+                  </label>
+                </div>
+                <label>
+                  <span className="text-xs font-bold text-gray-700">Name on posters</span>
+                  <input
+                    value={t.squadName ?? ""}
+                    maxLength={30}
+                    placeholder={t.name || "e.g. U9s Reds"}
+                    onChange={(e) => change(i, { squadName: e.target.value })}
+                    className={input}
+                  />
+                  <span className="mt-1 block text-xs text-gray-400">
+                    Shown after the initials: “{initials} {t.squadName?.trim() || t.name.trim() || "U9s Reds"}”.
+                  </span>
+                </label>
+                <label>
+                  <span className="text-xs font-bold text-gray-700">FA Full-Time code (optional)</span>
+                  <input
+                    value={t.faSnippet ?? ""}
+                    inputMode="numeric"
+                    maxLength={15}
+                    placeholder="e.g. 460765991"
+                    onChange={(e) => change(i, { faSnippet: e.target.value.replace(/\D/g, "") })}
+                    className={input}
+                  />
+                  <span className="mt-1 block text-xs text-gray-400">
+                    From Full-Time admin → Media → Code Snippets → team fixtures: the number in
+                    <code className="mx-1">lrcode</code>. Fixtures then arrive in the Match Log by themselves.
+                  </span>
+                </label>
+                <label>
+                  <span className="text-xs font-bold text-gray-700">League opponents (optional)</span>
+                  <textarea
+                    value={t.opponentsText}
+                    rows={4}
+                    placeholder={"One team per line, exactly as Full-Time names them"}
+                    onChange={(e) => change(i, { opponentsText: e.target.value })}
+                    className={input}
+                  />
+                  <span className="mt-1 block text-xs text-gray-400">
+                    So fixtures can be picked from a list. Leave empty for a free-text box.
+                  </span>
+                </label>
+                <div className="flex justify-end">
+                  {t.slug ? (
+                    <button
+                      onClick={() => {
+                        if (active.length === 1) return alert("Keep at least one team.");
+                        if (confirm(`Archive ${t.name}? It disappears from every page, but its data is kept and you can bring it back.`)) {
+                          change(i, { archived: true });
+                          setOpen(null);
+                        }
+                      }}
+                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600"
+                    >
+                      Archive Team
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setTeams((all) => all.filter((_, n) => n !== i));
+                        setOpen(null);
+                      }}
+                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={add}
+        className="mt-3 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700"
+      >
+        + Add Team
+      </button>
+
+      {archived.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Archived</p>
+          <div className="mt-2 flex flex-col gap-2">
+            {archived.map(({ t, i }) => (
+              <div key={t.slug} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                <span className="text-xl opacity-60">{t.accent}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-500">{t.name}</span>
+                <button
+                  onClick={() => change(i, { archived: false })}
+                  className="cursor-pointer text-sm font-semibold text-green-700 hover:text-green-800"
+                >
+                  Bring Back
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

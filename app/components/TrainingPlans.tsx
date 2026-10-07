@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } from "react";
-import { TEAMS, teamName, type TeamSlug } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
+import type { TeamSlug } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import {
   DRILL_KINDS,
@@ -122,6 +123,7 @@ function move<T>(items: T[], from: number, to: number): T[] {
 }
 
 export default function TrainingPlans() {
+  const { TEAMS, teamName } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);

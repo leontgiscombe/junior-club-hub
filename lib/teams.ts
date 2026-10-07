@@ -1,16 +1,20 @@
-// The club's teams, as set in club.config.ts. Each gets its own kit-size page
-// and store of responses, stats, logs and training plan; the /kit landing page,
-// the /kit/[team] form and every team selector pick them up automatically.
-import { TEAMS as CLUB_TEAMS } from "@/club.config";
+// Team helpers that work on a list of teams. The list itself is the club's
+// saved teams (Coach Admin → Settings): server code reads it with getTeams()
+// from lib/settings.ts, and pages in the browser with useTeams() from
+// app/components/ClubProvider.tsx.
+import type { Team } from "./clubSettings";
 
-export const TEAMS = CLUB_TEAMS.map(({ slug, name, accent }) => ({ slug, name, accent }));
+export type { Team };
+export type TeamSlug = string;
 
-export type TeamSlug = (typeof CLUB_TEAMS)[number]["slug"];
-
-export function isValidTeam(slug: string): slug is TeamSlug {
-  return TEAMS.some((t) => t.slug === slug);
+export function findTeam(teams: readonly Team[], slug: string): Team | undefined {
+  return teams.find((t) => t.slug === slug);
 }
 
-export function teamName(slug: string): string {
-  return TEAMS.find((t) => t.slug === slug)?.name ?? slug;
+export function nameOf(teams: readonly Team[], slug: string): string {
+  return findTeam(teams, slug)?.name ?? slug;
+}
+
+export function accentOf(teams: readonly Team[], slug: string): string {
+  return findTeam(teams, slug)?.accent ?? "⚽";
 }

@@ -5,15 +5,17 @@
 // to the server, and a private window or cleared site data just falls back to
 // the first team.
 import { useCallback, useEffect, useState } from "react";
-import { TEAMS, isValidTeam, type TeamSlug } from "./teams";
+import type { TeamSlug } from "./teams";
+import { useTeams } from "@/app/components/ClubProvider";
 import { CLUB } from "@/club.config";
 
 const STORAGE_KEY = `${CLUB.storagePrefix}:my-team`;
 
-export function getMyTeam(): TeamSlug | null {
+/** This device's remembered team, if it's still one of `valid`. */
+export function getMyTeam(valid: (slug: string) => boolean): TeamSlug | null {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY) ?? "";
-    return isValidTeam(saved) ? saved : null;
+    return valid(saved) ? saved : null;
   } catch {
     return null;
   }
@@ -32,15 +34,16 @@ export function setMyTeam(team: TeamSlug) {
  * `chooseTeam` is for a coach's own pick, which also becomes the new default.
  */
 export function useMyTeam() {
+  const { TEAMS, isValidTeam } = useTeams();
   const [team, setTeam] = useState<TeamSlug>(TEAMS[0].slug);
 
   // Read after mount, so the server-rendered page and the first client render
   // agree; the setState here runs once.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const saved = getMyTeam();
+    const saved = getMyTeam(isValidTeam);
     if (saved) setTeam(saved);
-  }, []);
+  }, [isValidTeam]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const chooseTeam = useCallback((slug: TeamSlug) => {

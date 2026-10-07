@@ -13,7 +13,7 @@ import {
 } from "@/lib/statsStorage";
 import { getCurrentSeason, listArchives } from "@/lib/season";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const team = String(body.team ?? "");
   const name = String(body.name ?? "").trim();
 
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   if (!name) {

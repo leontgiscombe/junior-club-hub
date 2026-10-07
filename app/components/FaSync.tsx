@@ -6,7 +6,8 @@
 // match log to add or update. It runs by itself when a team's match log is
 // opened — at most once an hour per team on each device — and on "Sync now".
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FA_SNIPPETS, parseSnippet, type FaFixture } from "@/lib/faFullTime";
+import { parseSnippet, type FaFixture } from "@/lib/faFullTime";
+import { useTeams } from "./ClubProvider";
 import { CLUB } from "@/club.config";
 
 interface SyncResult {
@@ -87,7 +88,7 @@ export default function FaSync<M>({
   adminKey: string;
   onMatches: (matches: M[]) => void;
 }) {
-  const code = FA_SNIPPETS[team];
+  const code = useTeams().findTeam(team)?.faSnippet;
   const [result, setResult] = useState<SyncResult | null>(null);
   const [syncing, setSyncing] = useState(false);
   const running = useRef(false);

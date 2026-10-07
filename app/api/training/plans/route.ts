@@ -25,7 +25,7 @@ import {
   tickDrill,
 } from "@/lib/trainingPlans";
 import { checkAdminPassword, checkPlansOwnerKey, isPlansOwnerKeySet } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 import { isTrainingDate } from "@/lib/trainingStorage";
 import { SEASON_PLAN } from "@/lib/builtInDrills";
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
   if (body.action === "tick-drill") {
     const team = String(body.team ?? "");
-    if (!isValidTeam(team)) {
+    if (!(await isTeam(team))) {
       return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     }
     const plan = await tickDrill(
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
   if (body.action === "save-plan") {
     const team = String(body.team ?? "");
-    if (!isValidTeam(team)) {
+    if (!(await isTeam(team))) {
       return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     }
     const startDate = String(body.plan?.startDate ?? "");

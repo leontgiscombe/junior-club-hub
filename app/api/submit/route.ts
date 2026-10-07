@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSubmissions, saveSubmission } from "@/lib/storage";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 import { squadPlayer } from "@/lib/kitSquad";
 
 export async function POST(request: Request) {
@@ -9,12 +9,12 @@ export async function POST(request: Request) {
     const { team, childName, shirtSize, shortsSize, socksSize } = body;
     const playerId = typeof body.playerId === "string" ? body.playerId : "";
 
-    if (!isValidTeam(team)) {
+    if (!(await isTeam(team))) {
       return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     }
 
     // A child picked from the squad is saved under their full name, looked up
-    // here — the public form only ever shows "Alfie M."
+    // here — the public form only ever shows "Jamie S."
     let name = typeof childName === "string" ? childName.trim() : "";
     if (playerId) {
       const player = await squadPlayer(team, playerId);

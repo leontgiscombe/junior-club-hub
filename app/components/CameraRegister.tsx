@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { TEAMS, teamName, type TeamSlug } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
+import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
 
 // Home games come from the match log now, so a fixture is only entered once.
@@ -18,9 +19,6 @@ interface Match {
   footageUploaded: boolean;
 }
 
-function teamAccent(slug: string) {
-  return TEAMS.find((t) => t.slug === slug)?.accent ?? "⚽";
-}
 
 function formatWhen(date: string, time: string) {
   const d = new Date(`${date}T${time || "00:00"}`);
@@ -34,6 +32,7 @@ function formatWhen(date: string, time: string) {
 }
 
 export default function CameraRegister() {
+  const { TEAMS, teamName, teamAccent } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -1,14 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
-import { TEAMS } from "@/club.config";
-import { getClub } from "@/lib/settings";
+import { getClub, getTeams } from "@/lib/settings";
 
 // the same heavy lettering as the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
 export default async function Home() {
-  const CLUB = await getClub();
+  const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Banner: the poster's dry-brush paint strokes under a green wash */}

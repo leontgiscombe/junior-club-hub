@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { TEAMS, teamName } from "@/lib/teams";
+import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
 import {
   DRILL_KINDS,
@@ -167,6 +167,7 @@ function PlanWeekCard({
 }
 
 export default function TrainingLog() {
+  const { TEAMS, teamName } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -15,7 +15,7 @@ import {
 } from "@/lib/trainingStorage";
 import { listPlayers } from "@/lib/statsStorage";
 import { checkAdminPassword } from "@/lib/adminAuth";
-import { isValidTeam } from "@/lib/teams";
+import { isTeam } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -40,7 +40,7 @@ export async function PATCH(request: Request) {
   const body = await request.json().catch(() => ({}));
   const team = String(body.team ?? "");
   const date = String(body.date ?? "");
-  if (!isValidTeam(team)) {
+  if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
   if (!isTrainingDate(date)) {

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import KitForm from "../../components/KitForm";
 import KitHeader, { KitFooter } from "../../components/KitHeader";
-import { isValidTeam, teamName } from "@/lib/teams";
 import { kitSquad } from "@/lib/kitSquad";
-import { getClub } from "@/lib/settings";
+import { getClub, getTeams } from "@/lib/settings";
+import { findTeam } from "@/lib/teams";
 
 // the squad list comes from the stats tracker, so read it fresh each visit
 export const dynamic = "force-dynamic";
@@ -14,14 +14,15 @@ export default async function KitTeamPage({
   params: Promise<{ team: string }>;
 }) {
   const { team } = await params;
-  if (!isValidTeam(team)) notFound();
+  const found = findTeam(await getTeams(), team);
+  if (!found) notFound();
   const [squad, CLUB] = await Promise.all([kitSquad(team), getClub()]);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <KitHeader
         back={{ href: "/kit", label: "Teams" }}
-        title={`${teamName(team)} kit`}
+        title={`${found.name} Kit`}
         subtitle={CLUB.fullName}
       />
 

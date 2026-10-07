@@ -3,8 +3,8 @@
 // so a password change reaches every device.
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminPassword } from "@/lib/adminAuth";
+import { isTeam } from "@/lib/settings";
 import {
-  FINANCE_TEAMS,
   financeAuthKey,
   financeConfigured,
   financeDataKey,
@@ -22,13 +22,13 @@ const parse = <T,>(v: unknown): T | null => {
   }
 };
 
-function team(req: NextRequest) {
+async function team(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
-  return FINANCE_TEAMS.includes(id) ? id : null;
+  return (await isTeam(id)) ? id : null;
 }
 
 export async function GET(req: NextRequest) {
-  const id = team(req);
+  const id = await team(req);
   if (!id) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
   try {
@@ -57,7 +57,7 @@ type Body = {
 };
 
 async function put(req: NextRequest) {
-  const id = team(req);
+  const id = await team(req);
   if (!id) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
   const body = (await req.json().catch(() => null)) as Body | null;

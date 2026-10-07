@@ -2,9 +2,18 @@
 // Admin → Settings, and the uploaded crest. Server only.
 import { cache } from "react";
 import { CLUB } from "@/club.config";
-import { DEFAULT_CLUB, cleanChanges, type Club, type ClubChanges } from "./clubSettings";
+import {
+  DEFAULT_CLUB,
+  DEFAULT_TEAMS,
+  cleanChanges,
+  cleanTeams,
+  type Club,
+  type ClubChanges,
+  type Team,
+} from "./clubSettings";
 
 const CHANGES_KEY = `${CLUB.storagePrefix}:settings:club`;
+const TEAMS_KEY = `${CLUB.storagePrefix}:settings:teams`;
 const CREST_KEY = `${CLUB.storagePrefix}:settings:crest`;
 // the crest's size and date without the image, for building each page
 const CREST_INFO_KEY = `${CLUB.storagePrefix}:settings:crest-info`;
@@ -99,3 +108,32 @@ export const getClubWithIcons = cache(async (): Promise<{ club: Club; icons: Clu
     : { icon: DEFAULT_CLUB.crest.src, apple: "/hub-icon-180.png", large: "/hub-icon-512.png" };
   return { club, icons };
 });
+
+/** Every team, archived ones included: the saved list, or club.config.ts's. */
+export const getAllTeams = cache(async (): Promise<Team[]> => {
+  const kv = await getKv();
+  if (!kv) return DEFAULT_TEAMS;
+  try {
+    return cleanTeams(await kv.get(TEAMS_KEY)) ?? DEFAULT_TEAMS;
+  } catch {
+    return DEFAULT_TEAMS;
+  }
+});
+
+/** The teams in use: everything except archived ones. */
+export const getTeams = cache(async (): Promise<Team[]> =>
+  (await getAllTeams()).filter((t) => !t.archived),
+);
+
+/** Whether `slug` is a team in use — for checking a team named in a request. */
+export async function isTeam(slug: string): Promise<boolean> {
+  return (await getTeams()).some((t) => t.slug === slug);
+}
+
+export async function saveTeams(teams: Team[]): Promise<void> {
+  const clean = cleanTeams(teams);
+  if (!clean) throw new Error("Keep at least one team");
+  const kv = await getKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  await kv.set(TEAMS_KEY, clean);
+}
