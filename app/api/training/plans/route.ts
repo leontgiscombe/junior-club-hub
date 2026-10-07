@@ -1,12 +1,12 @@
-// GET  /api/training/plans?key=...  -> { drills, plans, ownerKeySet, seasonPlan, seasonPlanTitle }
+// GET  /api/training/plans?key=...  -> { drills, plans, ownerKeySet, coachesEditDrills, seasonPlan, seasonPlanTitle }
 //        seasonPlan: the drill pack's season plan — [{ topic, drillIds }] in week order
 //        seasonPlanTitle: the title it gives a plan
 // POST /api/training/plans?key=...  -> { action, ownerKey, ... }
 //
-// Any coach can read and change their team's plan with the admin password,
-// but the drill library — what each drill says — is the owner's: adding,
-// editing or deleting a drill also needs the owner's password
-// (TRAINING_PLANS_OWNER_KEY).
+// Any coach can read and change their team's plan with the coach password.
+// The drill library — what each drill says — is the club's coaches' too,
+// except on a single-club hub with TRAINING_PLANS_OWNER_KEY set: there adding,
+// editing or deleting a drill also needs the owner's password.
 //        action "check-owner"                  — just checks the owner password
 //        action "save-drill"   { drill }       — add, or update by id
 //        action "delete-drill" { id }          — also takes it out of every plan
@@ -24,7 +24,7 @@ import {
   savePlan,
   tickDrill,
 } from "@/lib/trainingPlans";
-import { checkPlansOwnerKey, isCoach, isPlansOwnerKeySet } from "@/lib/adminAuth";
+import { checkPlansOwnerKey, drillsNeedOwnerKey, isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
 import { isTrainingDate } from "@/lib/trainingStorage";
 import { SEASON_PLAN } from "@/lib/builtInDrills";
@@ -41,11 +41,13 @@ export async function GET(request: Request) {
   if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
-  const [drills, plans] = await Promise.all([listDrills(), listPlans()]);
+  const [drills, plans, needOwner] = await Promise.all([listDrills(), listPlans(), drillsNeedOwnerKey()]);
   return NextResponse.json({
     drills,
     plans,
-    ownerKeySet: isPlansOwnerKeySet(),
+    ownerKeySet: needOwner,
+    // with no owner password in play, the club's coaches edit the drills
+    coachesEditDrills: !needOwner,
     seasonPlan: SEASON_PLAN.weeks,
     seasonPlanTitle: SEASON_PLAN.title,
   });
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
   }
   const body = await request.json().catch(() => ({}));
   const ownerOnly = ["check-owner", "save-drill", "delete-drill"].includes(body.action);
-  if (ownerOnly && !checkPlansOwnerKey(String(body.ownerKey ?? ""))) {
+  if (ownerOnly && (await drillsNeedOwnerKey()) && !checkPlansOwnerKey(String(body.ownerKey ?? ""))) {
     return NextResponse.json(
       { error: "Only the owner can change the drill library" },
       { status: 403 }

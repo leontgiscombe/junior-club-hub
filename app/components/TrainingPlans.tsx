@@ -149,6 +149,8 @@ export default function TrainingPlans() {
   // Only the owner changes plans: their password, once checked, unlocks editing.
   const [ownerKey, setOwnerKey] = useState("");
   const [ownerKeySet, setOwnerKeySet] = useState(true);
+  // no owner password in play: the club's coaches edit the drills themselves
+  const [coachesEditDrills, setCoachesEditDrills] = useState(false);
   // the drill pack's season plan (if any), to fill a team's plan from in one go
   const [seasonPlan, setSeasonPlan] = useState<{ topic: DrillTopic; drillIds: string[] }[]>([]);
   const [seasonPlanTitle, setSeasonPlanTitle] = useState("");
@@ -175,6 +177,7 @@ export default function TrainingPlans() {
       setDrills(data.drills ?? []);
       setPlans(data.plans ?? []);
       setOwnerKeySet(data.ownerKeySet ?? false);
+      setCoachesEditDrills(data.coachesEditDrills ?? false);
       setSeasonPlan(data.seasonPlan ?? []);
       setSeasonPlanTitle(data.seasonPlanTitle ?? "");
       setSessions((await trainingRes.json()).sessions ?? []);
@@ -433,8 +436,8 @@ export default function TrainingPlans() {
     );
   }
 
-  // plans are every coach's to edit; the drill library only the owner's
-  const canEdit = !!ownerKey;
+  // plans are every coach's to edit; so is the drill library, unless an owner password guards it
+  const canEdit = coachesEditDrills || !!ownerKey;
   const drillById = new Map(drills.map((d) => [d.id, d]));
   const matchesSearch = (d: Drill) =>
     !search.trim() || d.title.toLowerCase().includes(search.trim().toLowerCase());
@@ -1171,7 +1174,7 @@ export default function TrainingPlans() {
         )}
 
         {/* The library is the owner's: they unlock editing it with their own password */}
-        {view === "library" && (
+        {view === "library" && !coachesEditDrills && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs text-gray-500 shadow-sm">
             {canEdit ? (
               <>

@@ -31,6 +31,15 @@ export function checkPlansOwnerKey(supplied: string): boolean {
 export const isPlansOwnerKeySet = () => !!process.env.TRAINING_PLANS_OWNER_KEY;
 
 /**
+ * Whether changing the drill library needs the owner's password. Only on a
+ * single-club hub with TRAINING_PLANS_OWNER_KEY set (a drill pack the owner
+ * looks after); everywhere else a club's coaches manage their own library.
+ */
+export async function drillsNeedOwnerKey(): Promise<boolean> {
+  return isPlansOwnerKeySet() && (await getTenant()) === DEFAULT_TENANT;
+}
+
+/**
  * Returns true if `supplied` matches the admin password (the ADMIN_KEY
  * environment variable, passed in as `envOverride`). With no password set,
  * nothing matches.
