@@ -6,6 +6,9 @@
 // environment variable, set in the hosting dashboard; while it isn't set,
 // nobody can sign in. Neither is ever stored in the repo.
 import crypto from "crypto";
+import { headers } from "next/headers";
+import { clientIp } from "./clientIp";
+import { rawKv } from "./kv";
 import { DEFAULT_TENANT, getTenant } from "./tenant";
 import { checkTenantPassword, getTenantRecord } from "./tenants";
 
@@ -49,11 +52,50 @@ export function checkAdminPassword(supplied: string, envOverride?: string): bool
   return safeEqual(String(supplied || ""), envOverride);
 }
 
+// Wrong coach passwords are counted per club and IP address; after too many,
+// that address can't sign in for a while, so a club's password can't be
+// guessed. (A screen can send two requests per attempt, hence the allowance.)
+const MAX_WRONG = 20;
+const LOCKOUT_SECONDS = 15 * 60;
+
+async function failKey(tenant: string): Promise<string> {
+  const ip = clientIp(await headers());
+  return `platform:coach-fail:${tenant}:${ip}`;
+}
+
+/** Whether this address has had too many wrong coach passwords for this club lately. */
+export async function coachLockedOut(): Promise<boolean> {
+  const tenant = await getTenant();
+  const kv = await rawKv();
+  if (!tenant || !kv) return false;
+  try {
+    return Number((await kv.get(await failKey(tenant))) ?? 0) >= MAX_WRONG;
+  } catch {
+    return false;
+  }
+}
+
 /** Whether `supplied` is the coach password of the club this request is for. */
 export async function isCoach(supplied: string): Promise<boolean> {
   const tenant = await getTenant();
   if (!tenant) return false;
-  if (tenant === DEFAULT_TENANT) return checkAdminPassword(supplied, process.env.ADMIN_KEY);
-  const record = await getTenantRecord(tenant);
-  return record ? checkTenantPassword(record, String(supplied || "")) : false;
+  // no password given isn't a guess (public pages ask without one)
+  if (!supplied) return false;
+  if (await coachLockedOut()) return false;
+  let ok: boolean;
+  if (tenant === DEFAULT_TENANT) ok = checkAdminPassword(supplied, process.env.ADMIN_KEY);
+  else {
+    const record = await getTenantRecord(tenant);
+    ok = record ? await checkTenantPassword(record, String(supplied)) : false;
+  }
+  if (!ok) {
+    const kv = await rawKv();
+    if (kv) {
+      try {
+        const key = await failKey(tenant);
+        if ((await kv.incr(key)) === 1) await kv.expire(key, LOCKOUT_SECONDS);
+      } catch {}
+    }
+  }
+  return ok;
 }

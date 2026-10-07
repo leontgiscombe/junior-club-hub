@@ -12,6 +12,7 @@ import { sendEmail, simpleEmail } from "@/lib/email";
 import { operator } from "@/lib/legal";
 import { PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
 import { addressProblem, createTenant } from "@/lib/tenants";
+import { clientIp } from "@/lib/clientIp";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   // a few sign-ups an hour from one place, at most
   const kv = await rawKv();
   if (!kv) return NextResponse.json({ error: "Storage isn't set up" }, { status: 503 });
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const ip = clientIp(req.headers);
   const tries = await kv.incr(`platform:signup-ip:${ip}`);
   if (tries === 1) await kv.expire(`platform:signup-ip:${ip}`, 3600);
   if (tries > 5) return NextResponse.json({ error: "Too many sign-ups — try again later" }, { status: 429 });

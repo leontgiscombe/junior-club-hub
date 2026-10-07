@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
 import { TENANT_ID, getTenant, tenantUrl } from "@/lib/tenant";
 import { getTenantRecord } from "@/lib/tenants";
+import { clientIp } from "@/lib/clientIp";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   const address = (req.nextUrl.searchParams.get("address") ?? "").trim().toLowerCase();
   const kv = await rawKv();
   if (!kv) return NextResponse.json({ error: "Storage isn't set up" }, { status: 503 });
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const ip = clientIp(req.headers);
   const tries = await kv.incr(`platform:lookup-ip:${ip}`);
   if (tries === 1) await kv.expire(`platform:lookup-ip:${ip}`, 3600);
   if (tries > MAX_LOOKUPS) {

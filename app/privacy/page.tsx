@@ -140,6 +140,10 @@ export default function PrivacyPage() {
               <strong>Resend</strong> — sends our emails (password resets, welcome emails).
             </>,
             <>
+              <strong>Sentry</strong> — tells us when something in the hub goes wrong. Its reports
+              have passwords and personal details removed before they&apos;re sent.
+            </>,
+            <>
               <strong>Cloudflare</strong> — part of our host&apos;s network, protecting the site and
               delivering it quickly.
             </>,

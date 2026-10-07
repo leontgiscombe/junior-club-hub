@@ -44,17 +44,27 @@ services:
       # the password for the platform admin page (/platform/admin), 12+ characters
       - key: PLATFORM_ADMIN_KEY
         sync: false
+      # optional, recommended: a second Upstash database for the nightly backups
+      # (its REST URL and token); without them, backups go in the main database
+      - key: BACKUP_KV_REST_API_URL
+        sync: false
+      - key: BACKUP_KV_REST_API_TOKEN
+        sync: false
+      # optional: error reports to Sentry (the project's DSN, from sentry.io)
+      - key: SENTRY_DSN
+        sync: false
       # optional: the owner's password for changing the built-in drill library
       - key: TRAINING_PLANS_OWNER_KEY
         sync: false
 
-  # Subs reminders on the 1st and 15th of each month, 9am UTC
+  # Every day at 9am UTC: the nightly backup, plus the subs reminders on the
+  # 1st and 15th of each month (scripts/run-reminders.mjs)
   - type: cron
     name: junior-club-hub-reminders
     runtime: node
     region: frankfurt
     plan: starter
-    schedule: "0 9 1,15 * *"
+    schedule: "0 9 * * *"
     buildCommand: echo "nothing to build"
     startCommand: node scripts/run-reminders.mjs
     envVars:

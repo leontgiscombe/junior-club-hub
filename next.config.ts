@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Error reporting in the browser (instrumentation-client.ts) needs Sentry's
+  // address at build time; it's the same SENTRY_DSN the server uses, and isn't
+  // a secret.
+  env: { NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN?.trim() ?? "" },
   // The drill pack's session-plan files are read from disk by this route.
   outputFileTracingIncludes: {
     "/api/training/files": ["./drill-pack/files/**/*"],

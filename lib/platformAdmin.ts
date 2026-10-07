@@ -4,6 +4,7 @@
 import { createHash, timingSafeEqual } from "crypto";
 import type { NextRequest } from "next/server";
 import { rawKv } from "./kv";
+import { clientIp } from "./clientIp";
 
 const MAX_FAILURES = 10; // an hour, per IP address
 
@@ -18,7 +19,7 @@ export async function platformAdminProblem(req: NextRequest): Promise<{ error: s
   }
   const kv = await rawKv();
   if (!kv) return { error: "Storage isn't set up", status: 503 };
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const ip = clientIp(req.headers);
   const failKey = `platform:admin-fail:${ip}`;
   const failures = Number((await kv.get(failKey)) ?? 0);
   if (failures >= MAX_FAILURES) return { error: "Too many wrong keys — try again in an hour", status: 429 };
