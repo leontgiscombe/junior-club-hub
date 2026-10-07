@@ -436,6 +436,13 @@ export default function HelpManual() {
             Phones that already saved the hub to their home screen keep the old icon until it&apos;s
             removed and added again.
           </p>
+          <H3>Club Colour</H3>
+          <p>
+            Under <B>🎨 Club Colour</B>, pick one of the ready-made colours or <B>Your own</B>. The
+            Settings page shows it straight away; once you tap <B>Save Changes</B>, every
+            page&apos;s buttons, banners and highlights take it. <B>Hub green</B> goes back to the
+            original look.
+          </p>
           <H3>Parts of the Hub</H3>
           <p>
             Under <B>🧩 Parts of the Hub</B>, switch off anything the club doesn&apos;t use: results

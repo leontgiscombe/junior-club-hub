@@ -18,10 +18,11 @@ export default async function KitHeader({
 }) {
   const CLUB = await getClub();
   return (
-    <header className="relative overflow-hidden bg-[#060906] px-6 pb-14 pt-6 text-center text-white">
+    <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-14 pt-6 text-center text-white">
       <Image
         src="/poster/brush-background.jpg"
         alt=""
+        style={{ filter: "var(--club-brush-filter)" }}
         fill
         priority
         sizes="100vw"
@@ -48,7 +49,7 @@ export default async function KitHeader({
         >
           {title}
         </h1>
-        <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[#3ee04f]`}>
+        <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
           {subtitle}
         </p>
         <p className="mx-auto mt-3 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
@@ -62,8 +63,8 @@ export default async function KitHeader({
 export async function KitFooter() {
   const CLUB = await getClub();
   return (
-    <footer className="mt-10 bg-[#060906] px-6 py-8 text-center">
-      <p className={`${display.className} text-lg uppercase tracking-wide text-[#3ee04f]`}>
+    <footer className="mt-10 bg-[var(--club-night)] px-6 py-8 text-center">
+      <p className={`${display.className} text-lg uppercase tracking-wide text-[var(--club-bright)]`}>
         {CLUB.slogan}
       </p>
       <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>

@@ -612,8 +612,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
 // Drawn at full size (1080 × 1600) and scaled down to preview; the image is
 // taken from this element.
 
-const NEON = "#3ee04f";
-const INK = "#060906";
+const NEON = "var(--club-bright)";
+const INK = "var(--club-night)";
 const GOLD = "#f8cc2c";
 
 function Poster({
@@ -679,7 +679,7 @@ function Poster({
       <img
         src="/poster/brush-background.jpg"
         alt=""
-        style={{ position: "absolute", inset: 0, width: POSTER_W, height: POSTER_H }}
+        style={{ position: "absolute", inset: 0, width: POSTER_W, height: POSTER_H, filter: "var(--club-brush-filter)" }}
       />
 
       {/* header */}
@@ -688,7 +688,7 @@ function Poster({
           <div style={{ ...display, fontSize: month.length > 7 ? 120 : 140, color: "white", textShadow: "6px 6px 0 #000" }}>
             📰 {month}
           </div>
-          <div style={{ ...display, fontSize: 140, color: NEON, textShadow: `6px 6px 0 #000, 0 0 40px rgba(62,224,79,0.55)` }}>
+          <div style={{ ...display, fontSize: 140, color: NEON, textShadow: `6px 6px 0 #000, 0 0 40px color-mix(in oklch, var(--club-bright) 55%, transparent)` }}>
             Team News
           </div>
         </div>
@@ -715,7 +715,7 @@ function Poster({
             "polygon(0 8%, 4% 0, 30% 5%, 60% 0, 97% 4%, 100% 40%, 98% 100%, 60% 94%, 25% 100%, 2% 95%)",
         }}
       >
-        <div style={{ fontSize: 46, fontWeight: 800, color: "#178a2a", lineHeight: 1.05 }}>
+        <div style={{ fontSize: 46, fontWeight: 800, color: "var(--color-green-700)", lineHeight: 1.05 }}>
           {squadLabel} – {monthName}
         </div>
         <div style={{ ...display, fontSize: 64, color: "#111", lineHeight: 1.05, fontStyle: "italic" }}>
@@ -761,7 +761,7 @@ function Poster({
             border: `5px solid ${GOLD}`,
             boxShadow: `0 0 40px rgba(248,204,44,0.45)`,
             overflow: "hidden",
-            background: "#0a2610",
+            background: "var(--color-green-950)",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -815,7 +815,7 @@ function Poster({
             height: 450,
             borderRadius: 24,
             border: `5px solid ${GOLD}`,
-            background: "radial-gradient(circle at 50% 30%, #1d6b29 0%, #0a2610 60%, #050b06 100%)",
+            background: "radial-gradient(circle at 50% 30%, var(--color-green-800) 0%, var(--color-green-950) 60%, var(--club-night) 100%)",
             boxShadow: `0 0 40px rgba(248,204,44,0.45)`,
             overflow: "hidden",
             padding: "22px 22px 18px",
@@ -944,7 +944,7 @@ function Poster({
           left: 800,
           width: 120,
           height: 34,
-          background: "rgba(62,224,79,0.75)",
+          background: "color-mix(in oklch, var(--club-bright) 75%, transparent)",
           transform: "rotate(-4deg)",
           boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
         }}

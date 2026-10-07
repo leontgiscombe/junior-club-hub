@@ -15,6 +15,8 @@ export type Club = {
   storagePrefix: string;
   /** Which parts of the hub the club uses (results have their own switch). */
   features: Features;
+  /** The club's main colour (#rrggbb); none keeps the hub green. */
+  colour?: string;
 };
 
 /** The parts of the hub a club can switch off on Coach Admin → Settings. */
@@ -47,6 +49,7 @@ export type EditableText = keyof typeof EDITABLE;
 export type ClubChanges = Partial<Record<EditableText, string>> & {
   publicResults?: boolean;
   features?: Partial<Features>;
+  colour?: string;
 };
 
 /** Keep only well-formed, trimmed fields within their limits. */
@@ -59,6 +62,7 @@ export function cleanChanges(input: unknown): ClubChanges {
     if (typeof v === "string" && v.trim()) out[field] = v.trim().slice(0, EDITABLE[field]);
   }
   if (typeof src.publicResults === "boolean") out.publicResults = src.publicResults;
+  if (typeof src.colour === "string" && /^#[0-9a-f]{6}$/i.test(src.colour)) out.colour = src.colour.toLowerCase();
   if (src.features && typeof src.features === "object") {
     const features: Partial<Features> = {};
     for (const f of Object.keys(FEATURES) as Feature[]) {

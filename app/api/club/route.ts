@@ -2,6 +2,7 @@
 // Training Hub): name, crest, slogan, teams and the public key for reminders.
 import { NextResponse } from "next/server";
 import { getClub, getTeams } from "@/lib/settings";
+import { clubColourVars } from "@/lib/palette";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,6 @@ export async function GET() {
       name: `${CLUB.name} ${t.squadName ?? t.name}`,
     })),
     vapidPublicKey: process.env.VAPID_PUBLIC_KEY || null,
+    colourVars: clubColourVars(CLUB.colour),
   });
 }

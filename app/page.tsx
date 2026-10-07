@@ -11,10 +11,11 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Banner: the poster's dry-brush paint strokes under a green wash */}
-      <header className="relative overflow-hidden bg-[#060906] px-6 pb-12 pt-12 text-center text-white">
+      <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-12 pt-12 text-center text-white">
         <Image
           src="/poster/brush-background.jpg"
           alt=""
+          style={{ filter: "var(--club-brush-filter)" }}
           fill
           priority
           sizes="100vw"
@@ -36,7 +37,7 @@ export default async function Home() {
           >
             {CLUB.name}
           </h1>
-          <p className={`${display.className} mt-2 text-2xl uppercase tracking-wider text-[#3ee04f]`}>
+          <p className={`${display.className} mt-2 text-2xl uppercase tracking-wider text-[var(--club-bright)]`}>
             Team Hub
           </p>
           <p className="mx-auto mt-4 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
@@ -93,7 +94,7 @@ export default async function Home() {
             href="/kit"
             className="group relative mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
           >
-            <div className="relative aspect-[1024/557] w-full bg-[#0b1a0c]">
+            <div className="relative aspect-[1024/557] w-full bg-[var(--club-night)]">
               <Image
                 src="/kit-generic.jpg"
                 alt={`The ${CLUB.kitSeason} home and away kits`}
@@ -101,7 +102,7 @@ export default async function Home() {
                 sizes="(max-width: 672px) 100vw, 672px"
                 className="object-cover"
               />
-              <span className="absolute left-4 top-4 rounded-full bg-[#3ee04f] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[#060906] shadow">
+              <span className="absolute left-4 top-4 rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-[var(--club-night)] shadow">
                 New for {CLUB.kitSeason}
               </span>
             </div>
@@ -140,10 +141,11 @@ export default async function Home() {
           href="/admin"
           className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
         >
-          <div className="relative overflow-hidden bg-[#060906] px-5 pb-5 pt-12">
+          <div className="relative overflow-hidden bg-[var(--club-night)] px-5 pb-5 pt-12">
             <Image
               src="/poster/brush-background.jpg"
               alt=""
+              style={{ filter: "var(--club-brush-filter)" }}
               fill
               sizes="(max-width: 672px) 100vw, 672px"
               className="object-cover object-center opacity-60"
@@ -187,7 +189,7 @@ export default async function Home() {
             href="/finance"
             className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
           >
-            <div className="relative flex items-center gap-4 overflow-hidden bg-gradient-to-b from-[#1f8f45] to-[#0b3d1d] px-5 pb-5 pt-14">
+            <div className="relative flex items-center gap-4 overflow-hidden bg-gradient-to-b from-green-700 to-green-950 px-5 pb-5 pt-14">
               <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-gray-900 shadow">
                 🔒 Finance managers only
               </span>
@@ -221,7 +223,7 @@ export default async function Home() {
                 Subs, who&apos;s paid and the team&apos;s spending — each team locked with its own
                 password.
               </p>
-              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f7a3d] py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-[#0b3d1d]">
+              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-green-800 py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-green-950">
                 Open Financial Admin
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </span>
@@ -230,8 +232,8 @@ export default async function Home() {
         )}
       </main>
 
-      <footer className="bg-[#060906] px-6 py-8 text-center">
-        <p className={`${display.className} text-lg uppercase tracking-wide text-[#3ee04f]`}>
+      <footer className="bg-[var(--club-night)] px-6 py-8 text-center">
+        <p className={`${display.className} text-lg uppercase tracking-wide text-[var(--club-bright)]`}>
           {CLUB.slogan}
         </p>
         <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>
@@ -285,7 +287,7 @@ function PitchPicture() {
       ))}
       {us.map(([x, y, label]) => (
         <g key={`${x}-${y}`}>
-          <circle cx={x} cy={y} r="20" fill={label ? "#f9a825" : "#14532d"} stroke="white" strokeWidth="4" />
+          <circle cx={x} cy={y} r="20" fill={label ? "#f9a825" : "var(--color-green-900)"} stroke="white" strokeWidth="4" />
           {label && (
             <text x={x} y={y + 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="#1a2e05">
               {label}
