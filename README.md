@@ -1,6 +1,6 @@
 # Grassroots Club Hub
 
-A team hub for junior football clubs: one Next.js app on Vercel with an
+A team hub for junior football clubs: one Next.js app (hosted on Render) with an
 Upstash Redis database, set up for a club from one settings file.
 
 ## What's in it
