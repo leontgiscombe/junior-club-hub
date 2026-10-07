@@ -5,7 +5,7 @@
 import { randomBytes } from "crypto";
 import { COACH_ROLES, MAX_CHILDREN, ROLES, childrenOf, kvCall, peopleKey, readPerson, type Child, type Person, type Role } from "./access";
 import { getTeams } from "./settings";
-import { addPlayer, listPlayers, setPlayerTeam } from "./statsStorage";
+import { addPlayer, deletePlayer, listPlayers, setPlayerTeam } from "./statsStorage";
 import { currentUser, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
@@ -219,6 +219,18 @@ export async function addChildrenToSquad(tenant: string, userId: string, links: 
   const next: Person = { ...person, children: out };
   delete next.child;
   await save(tenant, next);
+}
+
+/** Take a player out of the squad, and off their parents' lists of children. */
+export async function deleteSquadPlayer(tenant: string, playerId: string): Promise<void> {
+  await deletePlayer(playerId);
+  for (const person of await listPeople(tenant)) {
+    const kids = childrenOf(person);
+    if (!kids.some((c) => c.playerId === playerId)) continue;
+    const next: Person = { ...person, children: kids.filter((c) => c.playerId !== playerId) };
+    delete next.child;
+    await save(tenant, next);
+  }
 }
 
 /** Put a squad player in a team (the club's decision), and update the parent's record to match. */

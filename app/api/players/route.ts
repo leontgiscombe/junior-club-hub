@@ -1,18 +1,19 @@
 // Coach Admin → Players: the club's squad, team by team, with the parents of
 // each player (from their accounts). The club decides each player's team.
-//   GET  ?key=…                         -> { teams, players: [{ id, name, team, parents, requestedTeam? }] }
+//   GET  ?key=…                         -> { teams, players: [...], canDelete }
 //   POST ?key=… { id, team }            -> puts a player in a team ("" for no team yet)
+//   DELETE ?key=…&id=…                  -> takes a player out of the squad (club admins only)
 import { NextRequest, NextResponse } from "next/server";
 import { childrenOf } from "@/lib/access";
-import { isCoach } from "@/lib/adminAuth";
-import { assignPlayerTeam, listPeople } from "@/lib/people";
+import { isClubAdmin, isCoach } from "@/lib/adminAuth";
+import { assignPlayerTeam, deleteSquadPlayer, listPeople } from "@/lib/people";
 import { getTeams } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
 import { requireTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
-async function snapshot(tenant: string) {
+async function snapshot(tenant: string, key: string) {
   const [teams, players, people] = await Promise.all([getTeams(), listPlayers(), listPeople(tenant)]);
   const parents = new Map<string, { name: string; email: string }[]>();
   const requested = new Map<string, { slug: string; name: string }>();
@@ -25,6 +26,7 @@ async function snapshot(tenant: string) {
     }
   }
   return {
+    canDelete: await isClubAdmin(key),
     teams: teams.map((t) => ({ slug: t.slug, name: t.name })),
     players: players
       .map((p) => ({
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
   if (!(await isCoach(req.nextUrl.searchParams.get("key") ?? ""))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
-  return NextResponse.json(await snapshot(await requireTenant()));
+  return NextResponse.json(await snapshot(await requireTenant(), req.nextUrl.searchParams.get("key") ?? ""));
 }
 
 export async function POST(req: NextRequest) {
@@ -54,5 +56,15 @@ export async function POST(req: NextRequest) {
   if (!(await assignPlayerTeam(tenant, String(body?.id ?? ""), String(body?.team ?? "")))) {
     return NextResponse.json({ error: "Couldn't move that player — refresh and try again" }, { status: 400 });
   }
-  return NextResponse.json(await snapshot(tenant));
+  return NextResponse.json(await snapshot(tenant, req.nextUrl.searchParams.get("key") ?? ""));
+}
+
+export async function DELETE(req: NextRequest) {
+  const key = req.nextUrl.searchParams.get("key") ?? "";
+  if (!(await isClubAdmin(key))) {
+    return NextResponse.json({ error: "Only a club admin can delete players" }, { status: 403 });
+  }
+  const tenant = await requireTenant();
+  await deleteSquadPlayer(tenant, req.nextUrl.searchParams.get("id") ?? "");
+  return NextResponse.json(await snapshot(tenant, key));
 }
