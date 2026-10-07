@@ -1,3 +1,4 @@
+import { getKv } from "./kv";
 // The old standalone camera register (Redis hash `camera_fixtures`). Home
 // fixtures, who filmed them and whether the footage was uploaded now live on
 // the matches themselves, so this only remains to read those old fixtures once
@@ -13,15 +14,6 @@ export interface Fixture {
   createdAt: string;
 }
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const KEY = "camera_fixtures";
 

@@ -1,3 +1,4 @@
+import { getKv } from "./kv";
 // Storage for the per-team player stats tracker.
 // Tracks, per player, a running season tally of appearances, goals, assists,
 // clean sheets, player of the match, most improved and best trainer. Kept in the one shared
@@ -48,15 +49,6 @@ export interface Player {
   createdAt: string;
 }
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const KEY = "player_stats";
 

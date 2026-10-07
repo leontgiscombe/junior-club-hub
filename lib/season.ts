@@ -20,6 +20,7 @@ import {
   writeTraining,
   type TrainingSession,
 } from "./trainingStorage";
+import { getKv } from "./kv";
 
 export interface ArchivedSeason {
   id: string;
@@ -36,15 +37,6 @@ export type SeasonSummary = Omit<ArchivedSeason, "players" | "matches" | "traini
   matchCount: number;
 };
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const SEASONS_KEY = "stats_seasons";
 const CURRENT_SEASON_KEY = "stats_season_current";
@@ -64,15 +56,8 @@ function parseArchive(value: unknown): ArchivedSeason {
   };
 }
 
-/**
- * The default label for a season, e.g. "2026/27". The football season runs
- * roughly August–May, so July onwards counts as the start of the new one.
- */
-export function defaultSeasonName(now: Date = new Date()): string {
-  const year = now.getFullYear();
-  const start = now.getMonth() >= 6 ? year : year - 1;
-  return `${start}/${String((start + 1) % 100).padStart(2, "0")}`;
-}
+export { defaultSeasonName } from "./seasonName";
+import { defaultSeasonName } from "./seasonName";
 
 export async function getCurrentSeason(): Promise<string> {
   const kv = await getKv();

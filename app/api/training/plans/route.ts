@@ -24,21 +24,21 @@ import {
   savePlan,
   tickDrill,
 } from "@/lib/trainingPlans";
-import { checkAdminPassword, checkPlansOwnerKey, isPlansOwnerKeySet } from "@/lib/adminAuth";
+import { checkPlansOwnerKey, isCoach, isPlansOwnerKeySet } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
 import { isTrainingDate } from "@/lib/trainingStorage";
 import { SEASON_PLAN } from "@/lib/builtInDrills";
 
 export const runtime = "nodejs";
 
-function isAuthorised(request: Request): boolean {
+async function isAuthorised(request: Request): Promise<boolean> {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key") ?? "";
-  return checkAdminPassword(key, process.env.ADMIN_KEY);
+  return isCoach(key);
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const [drills, plans] = await Promise.all([listDrills(), listPlans()]);
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const body = await request.json().catch(() => ({}));

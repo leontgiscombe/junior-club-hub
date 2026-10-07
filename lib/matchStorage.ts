@@ -9,6 +9,7 @@
 // match log adds the per-game detail on top.
 import { adjustPlayerStat } from "./statsStorage";
 import type { FaFixture } from "./faFullTime";
+import { getKv } from "./kv";
 
 export interface GoalEvent {
   id: string;
@@ -59,15 +60,6 @@ export const AWARD_STAT = {
 
 export type AwardField = keyof typeof AWARD_STAT;
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 const KEY = "matches";
 

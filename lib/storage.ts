@@ -1,3 +1,4 @@
+import { getKv } from "./kv";
 export interface Submission {
   id: string;
   childName: string;
@@ -10,15 +11,6 @@ export interface Submission {
   submittedAt: string;
 }
 
-async function getKv() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return null;
-  try {
-    const { kv } = await import("@vercel/kv");
-    return kv;
-  } catch {
-    return null;
-  }
-}
 
 // Each team's submissions live under their own Redis list key in the one shared
 // store, e.g. "kit_submissions:lions". This keeps the teams fully isolated

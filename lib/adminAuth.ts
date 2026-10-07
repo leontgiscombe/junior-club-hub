@@ -1,10 +1,13 @@
 // Admin-password check for the protected areas (the /admin landing page, the
 // kit admin, and the camera register all share one password).
 //
-// The password is the ADMIN_KEY environment variable, set in the hosting
-// dashboard. It is never stored in the repo; while it isn't set, nobody can
-// sign in.
+// Each club signed up on the platform has its own coach password (hashed in
+// lib/tenants.ts). A single-club hub (the default club) uses the ADMIN_KEY
+// environment variable, set in the hosting dashboard; while it isn't set,
+// nobody can sign in. Neither is ever stored in the repo.
 import crypto from "crypto";
+import { DEFAULT_TENANT, getTenant } from "./tenant";
+import { checkTenantPassword, getTenantRecord } from "./tenants";
 
 function safeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(String(a));
@@ -35,4 +38,13 @@ export const isPlansOwnerKeySet = () => !!process.env.TRAINING_PLANS_OWNER_KEY;
 export function checkAdminPassword(supplied: string, envOverride?: string): boolean {
   if (!envOverride) return false;
   return safeEqual(String(supplied || ""), envOverride);
+}
+
+/** Whether `supplied` is the coach password of the club this request is for. */
+export async function isCoach(supplied: string): Promise<boolean> {
+  const tenant = await getTenant();
+  if (!tenant) return false;
+  if (tenant === DEFAULT_TENANT) return checkAdminPassword(supplied, process.env.ADMIN_KEY);
+  const record = await getTenantRecord(tenant);
+  return record ? checkTenantPassword(record, String(supplied || "")) : false;
 }

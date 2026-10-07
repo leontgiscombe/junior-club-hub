@@ -3,10 +3,14 @@
 import { NextResponse } from "next/server";
 import { getClub, getTeams } from "@/lib/settings";
 import { clubColourVars } from "@/lib/palette";
+import { getTenant } from "@/lib/tenant";
+import { tenantExists } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const tenant = await getTenant();
+  if (!tenant || !(await tenantExists(tenant))) return NextResponse.json({ error: "No club here" }, { status: 404 });
   const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   return NextResponse.json({
     club: {

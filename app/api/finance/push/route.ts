@@ -1,14 +1,15 @@
 // Saves or removes a browser's push subscription for the monthly subs
 // reminder. A subscription is only a push endpoint — no personal details.
 import { NextRequest, NextResponse } from "next/server";
-import { PUSH_SUBS_KEY, financeConfigured, redis } from "@/lib/financeStorage";
+import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
+import { requireTenant } from "@/lib/tenant";
 import { isTeam } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 type Sub = { endpoint?: string; keys?: unknown };
 
-async function removeEndpoint(endpoint: string) {
+async function removeEndpoint(PUSH_SUBS_KEY: string, endpoint: string) {
   const members = ((await redis(["SMEMBERS", PUSH_SUBS_KEY])) as string[] | null) ?? [];
   for (const m of members) {
     try {
@@ -18,13 +19,14 @@ async function removeEndpoint(endpoint: string) {
 }
 
 async function handle(req: NextRequest, add: boolean) {
+  const PUSH_SUBS_KEY = financeKeys(await requireTenant()).pushSubs;
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
   const body = (await req.json().catch(() => null)) as { subscription?: Sub; team?: string } | null;
   const sub = body?.subscription;
   if (!sub?.endpoint) return NextResponse.json({ error: "missing subscription" }, { status: 400 });
   try {
     // Drop any earlier record for this browser, then add the fresh one.
-    await removeEndpoint(sub.endpoint);
+    await removeEndpoint(PUSH_SUBS_KEY, sub.endpoint);
     if (add) {
       const team = body?.team && (await isTeam(body.team)) ? body.team : "";
       const record = { endpoint: sub.endpoint, keys: sub.keys, team, addedAt: new Date().toISOString() };
