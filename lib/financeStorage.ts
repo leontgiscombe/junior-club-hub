@@ -5,12 +5,9 @@
 // own key prefix (lib/kv.ts). The data is encrypted in the browser with the
 // team's password; the server only sees the blob.
 import { CLUB } from "@/club.config";
-import { keyPrefix } from "./kv";
+import { keyPrefix, kvCredentials } from "./kv";
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-
-export const financeConfigured = () => !!(REDIS_URL && REDIS_TOKEN);
+export const financeConfigured = () => !!kvCredentials();
 
 /** Where a club's Financial Admin data is kept. */
 export function financeKeys(tenant: string) {
@@ -23,9 +20,11 @@ export function financeKeys(tenant: string) {
 }
 
 export async function redis(cmd: (string | number)[]): Promise<unknown> {
-  const r = await fetch(REDIS_URL!, {
+  const creds = kvCredentials();
+  if (!creds) throw new Error("storage not configured");
+  const r = await fetch(creds.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, "content-type": "application/json" },
+    headers: { Authorization: `Bearer ${creds.token}`, "content-type": "application/json" },
     body: JSON.stringify(cmd),
     cache: "no-store",
   });

@@ -1,4 +1,4 @@
-import { getKv } from "./kv";
+import { getKv, kvCredentials } from "./kv";
 export interface Submission {
   id: string;
   childName: string;
@@ -53,5 +53,4 @@ export async function deleteSubmission(team: string, id: string): Promise<void> 
   if (target) await kv.lrem(key, 1, JSON.stringify(target));
 }
 
-export const isKvConfigured = () =>
-  !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+export const isKvConfigured = () => !!kvCredentials();

@@ -13,7 +13,18 @@ export const TENANT_ID = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 /** Web addresses no club can have. */
 export const RESERVED = new Set(["www", "app", "api", "admin", "default", "mail", "help", "support", "status", "blog"]);
 
-export const rootDomain = () => (process.env.ROOT_DOMAIN ?? "").toLowerCase().replace(/^\.+|\.+$/g, "");
+/**
+ * The platform's domain from ROOT_DOMAIN, forgiving the usual slips when it's
+ * typed in: "https://", "www.", a path or trailing "/", spaces, capitals.
+ */
+export const rootDomain = () =>
+  (process.env.ROOT_DOMAIN ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z]+:\/\//, "")
+    .replace(/\/.*$/, "")
+    .replace(/^www\./, "")
+    .replace(/^\.+|\.+$/g, "");
 
 /**
  * The club for a host name: its id, null for the platform's own site, or the
