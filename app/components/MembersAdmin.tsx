@@ -17,7 +17,21 @@ type Snapshot = {
   people: Person[];
   members: Member[];
   teams: TeamOption[];
+  players: SquadPlayer[];
 };
+type SquadPlayer = { id: string; name: string; team: string };
+
+/** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
+function likelyPlayer(child: { name: string; team?: { slug: string } }, players: SquadPlayer[]): string {
+  const [first, ...rest] = child.name.trim().toLowerCase().split(/\s+/);
+  const initial = rest.length ? rest[rest.length - 1][0] : "";
+  const match = players.find((p) => {
+    if (child.team && p.team !== child.team.slug) return false;
+    const [pf, ...pr] = p.name.trim().toLowerCase().split(/\s+/);
+    return pf === first && (!initial || (pr.length > 0 && pr[pr.length - 1][0] === initial));
+  });
+  return match?.id ?? "new";
+}
 
 /** "Parent or carer of Sam B (Hawks), Max B (Owls) · new this season" */
 function describe(m: Pick<Person, "relation" | "child" | "children" | "team" | "note">, inTeam?: string): string {
@@ -241,7 +255,7 @@ export default function MembersAdmin() {
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
               {pending.map((p) => (
-                <PendingPerson key={p.userId} person={p} busy={busy} onDecide={act} />
+                <PendingPerson key={p.userId} person={p} players={snap.players} busy={busy} onDecide={act} />
               ))}
             </ul>
           )}
@@ -351,7 +365,22 @@ function RoleChips({ roles, disabled, onChange }: { roles: Role[]; disabled: boo
 }
 
 /** Someone waiting: choose their role(s), then approve or decline. */
-function PendingPerson({ person, busy, onDecide }: { person: Person; busy: boolean; onDecide: (body: Record<string, unknown>) => void }) {
+function PendingPerson({
+  person,
+  players,
+  busy,
+  onDecide,
+}: {
+  person: Person;
+  players: SquadPlayer[];
+  busy: boolean;
+  onDecide: (body: Record<string, unknown>) => void;
+}) {
+  const kids = childrenOf(person);
+  // each child: an existing squad player, or a new one
+  const [links, setLinks] = useState<Record<string, string>>(() =>
+    Object.fromEntries(kids.map((c) => [c.id, likelyPlayer(c, players)])),
+  );
   // someone saying they're a coach starts as a Parent: Coach (which opens
   // Coach Admin) is only given when a coach ticks it on purpose
   const first: Role = person.relation === "player" ? "player" : "parent";
@@ -365,11 +394,39 @@ function PendingPerson({ person, busy, onDecide }: { person: Person; busy: boole
           ⚠️ Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
         </p>
       )}
+      {kids.length > 0 && (
+        <div className="mt-2 rounded-lg bg-gray-50 p-2">
+          <p className="text-xs font-semibold text-gray-500">Their children in your squad:</p>
+          {kids.map((c) => (
+            <label key={c.id} className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-800">
+              <span className="min-w-0 flex-1 font-semibold">
+                {c.name}
+                {c.team && <span className="font-normal text-gray-500"> · {c.team.name}</span>}
+              </span>
+              <select
+                value={links[c.id] ?? "new"}
+                onChange={(e) => setLinks({ ...links, [c.id]: e.target.value })}
+                aria-label={`Squad player for ${c.name}`}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm"
+              >
+                <option value="new">Add as a new player</option>
+                {players
+                  .filter((pl) => !c.team || pl.team === c.team.slug)
+                  .map((pl) => (
+                    <option key={pl.id} value={pl.id}>
+                      Is {pl.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      )}
       <p className="mt-2 text-xs font-semibold text-gray-500">Approve as:</p>
       <RoleChips roles={roles} disabled={busy} onChange={setRoles} />
       <div className="mt-2 flex gap-2">
         <button
-          onClick={() => onDecide({ action: "approvePerson", userId: person.userId, roles })}
+          onClick={() => onDecide({ action: "approvePerson", userId: person.userId, roles, links })}
           disabled={busy || !roles.length}
           className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
         >

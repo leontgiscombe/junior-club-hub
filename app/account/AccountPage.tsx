@@ -152,7 +152,7 @@ export default function AccountPage() {
                 <p className="mt-1 mb-3 text-sm text-gray-500">
                   Their name and team. First name and initial is enough. Only the club&apos;s coaches see them.
                 </p>
-                <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} />
+                <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} clubDecidesTeams />
               </>
             ) : (
               <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={`${input} mt-3`}>

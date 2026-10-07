@@ -4,20 +4,44 @@
 // join page, the parent's account page, and when a coach fixes them in Members.
 import { MAX_CHILDREN, type Child } from "@/lib/access";
 
-export type ChildDraft = { id?: string; name: string; team: string };
+export type ChildDraft = {
+  id?: string;
+  name: string;
+  team: string;
+  /** a squad player already: the club decides their team (shown, not chosen, for parents) */
+  linked?: boolean;
+  teamLabel?: string;
+};
 type TeamOption = { slug: string; name: string };
 
 export const toDrafts = (children: Child[]): ChildDraft[] =>
-  children.map((c) => ({ id: c.id === "legacy" ? undefined : c.id, name: c.name, team: c.team?.slug ?? "" }));
+  children.map((c) => ({
+    id: c.id === "legacy" ? undefined : c.id,
+    name: c.name,
+    team: c.team?.slug ?? "",
+    ...(c.playerId
+      ? {
+          linked: true,
+          teamLabel: c.team
+            ? `${c.team.name} (set by the club)`
+            : c.requestedTeam
+              ? `Asked for ${c.requestedTeam.name} — the club will choose`
+              : "The club will choose a team",
+        }
+      : {}),
+  }));
 
 export default function ChildrenEditor({
   value,
   teams,
   onChange,
+  clubDecidesTeams = false,
 }: {
   value: ChildDraft[];
   teams: TeamOption[];
   onChange: (next: ChildDraft[]) => void;
+  /** a parent's view: squad players' teams are shown, not chosen */
+  clubDecidesTeams?: boolean;
 }) {
   const set = (i: number, change: Partial<ChildDraft>) => onChange(value.map((c, j) => (j === i ? { ...c, ...change } : c)));
   const field =
@@ -34,7 +58,9 @@ export default function ChildrenEditor({
             aria-label={`Child ${i + 1}'s name`}
             className={`${field} min-w-0 flex-1 basis-32`}
           />
-          {teams.length > 0 && (
+          {clubDecidesTeams && c.linked ? (
+            <span className="flex basis-32 items-center text-sm text-gray-500">{c.teamLabel}</span>
+          ) : teams.length > 0 && (
             <select value={c.team} onChange={(e) => set(i, { team: e.target.value })} aria-label={`Child ${i + 1}'s team`} className={`${field} basis-32`}>
               <option value="">Team…</option>
               {teams.map((t) => (

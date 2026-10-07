@@ -30,8 +30,19 @@ export const ROLES = {
 export type Role = keyof typeof ROLES;
 export const COACH_ROLES: Role[] = ["admin", "coach"];
 
-/** A child a parent has added (they have no account): what the coaches see. */
-export type Child = { id: string; name: string; team?: { slug: string; name: string } };
+/**
+ * A child a parent has added (they have no account): what the coaches see.
+ * Once the parent is approved, each child is a player in the club's squad
+ * (playerId), and the club decides their team; a child added after that waits
+ * in "no team yet", with the team the parent asked for.
+ */
+export type Child = {
+  id: string;
+  name: string;
+  team?: { slug: string; name: string };
+  playerId?: string;
+  requestedTeam?: { slug: string; name: string };
+};
 export const MAX_CHILDREN = 8;
 
 /** Someone with an account, at one club: who they are, their roles, and whether they're approved. */
