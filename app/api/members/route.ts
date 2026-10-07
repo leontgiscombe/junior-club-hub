@@ -3,6 +3,7 @@
 //   GET  ?key=…                                   -> { private, code, joinUrl, platformJoin, people, members }
 //   POST ?key=… { action: "approvePerson" | "personRoles", userId, roles }  (people with accounts)
 //   POST ?key=… { action: "declinePerson" | "removePerson", userId }
+//   POST ?key=… { action: "editPerson", userId, team?, children? }      (fix someone's team or children)
 //   POST ?key=… { action: "approve" | "decline" | "remove", id }        (phones approved before accounts)
 //   POST ?key=… { action: "newCode" }             -> a new join code (the old one stops working)
 //   POST ?key=… { action: "private", value }      -> only approved members can open the hub (or anyone)
@@ -10,13 +11,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { showCode } from "@/lib/access";
 import { isCoach } from "@/lib/adminAuth";
 import { decide, getAccess, listMembers, renewCode, setPrivate } from "@/lib/members";
-import { decidePerson, isRole, listPeople } from "@/lib/people";
+import { cleanChildren, decidePerson, isRole, listPeople, pickTeam, updatePerson } from "@/lib/people";
+import { getTeams } from "@/lib/settings";
 import { DEFAULT_TENANT, platformUrl, requireTenant, rootDomain, tenantUrl } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 async function snapshot(tenant: string) {
-  const [access, members, people] = await Promise.all([getAccess(tenant), listMembers(tenant), listPeople(tenant)]);
+  const [access, members, people, teams] = await Promise.all([getAccess(tenant), listMembers(tenant), listPeople(tenant), getTeams()]);
   return {
     private: access.private,
     code: showCode(access.code),
@@ -25,6 +27,7 @@ async function snapshot(tenant: string) {
     platformJoin: tenant !== DEFAULT_TENANT && rootDomain() ? platformUrl("/") : null,
     people,
     members,
+    teams: teams.map((t) => ({ slug: t.slug, name: t.name })),
   };
 }
 
@@ -42,7 +45,14 @@ export async function POST(req: NextRequest) {
   const tenant = await requireTenant();
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const action = body?.action;
-  if (action === "approvePerson" || action === "personRoles" || action === "declinePerson" || action === "removePerson") {
+  if (action === "editPerson") {
+    const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
+    const done = await updatePerson(tenant, String(body?.userId ?? ""), {
+      ...(body && "team" in body ? { team: pickTeam(body.team, teams) ?? null } : {}),
+      ...(body && "children" in body ? { children: cleanChildren(body.children, teams) } : {}),
+    });
+    if (!done) return NextResponse.json({ error: "That person isn't on the list any more" }, { status: 404 });
+  } else if (action === "approvePerson" || action === "personRoles" || action === "declinePerson" || action === "removePerson") {
     const roles = Array.isArray(body?.roles) ? body.roles.filter(isRole) : [];
     if ((action === "approvePerson" || action === "personRoles") && !roles.length) {
       return NextResponse.json({ error: "Choose at least one role" }, { status: 400 });

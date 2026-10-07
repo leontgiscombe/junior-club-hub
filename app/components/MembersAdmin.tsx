@@ -4,7 +4,10 @@
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { RELATIONS, ROLES, SESSION_KEY, type Member, type Person, type Role } from "@/lib/access";
+import { RELATIONS, ROLES, SESSION_KEY, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
+import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
+
+type TeamOption = { slug: string; name: string };
 
 type Snapshot = {
   private: boolean;
@@ -13,12 +16,20 @@ type Snapshot = {
   platformJoin: string | null;
   people: Person[];
   members: Member[];
+  teams: TeamOption[];
 };
 
-/** "Parent or carer of Sam B · U9s Hawks · new this season" */
-function describe(m: Pick<Member, "relation" | "child" | "team" | "note">): string {
-  const who = m.relation ? `${RELATIONS[m.relation]}${m.child ? ` of ${m.child}` : ""}` : "";
-  return [who, m.team?.name, m.note].filter(Boolean).join(" · ");
+/** "Parent or carer of Sam B (Hawks), Max B (Owls) · new this season" */
+function describe(m: Pick<Person, "relation" | "child" | "children" | "team" | "note">, inTeam?: string): string {
+  // under one team's heading, a parent shows just their children in that team
+  const kids = childrenOf(m).filter((c) => !inTeam || c.team?.slug === inTeam);
+  if (kids.length) {
+    const who = `${m.relation ? RELATIONS[m.relation] : "Parent or carer"} of ${kids
+      .map((c) => (c.team ? `${c.name} (${c.team.name})` : c.name))
+      .join(", ")}`;
+    return [who, m.note].filter(Boolean).join(" · ");
+  }
+  return [m.relation ? RELATIONS[m.relation] : "", m.team?.name, m.note].filter(Boolean).join(" · ");
 }
 
 const when = (iso: string) =>
@@ -31,7 +42,6 @@ export default function MembersAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [teamFilter, setTeamFilter] = useState("");
 
   const load = useCallback(async (k: string) => {
     setBusy(true);
@@ -131,15 +141,17 @@ export default function MembersAdmin() {
     );
   }
 
-  const everyone = [...snap.people, ...snap.members];
-  const teams = [...new Map(everyone.filter((m) => m.team).map((m) => [m.team!.slug, m.team!.name])).entries()];
-  const onTeam = <T extends { team?: { slug: string } }>(list: T[]) => (teamFilter ? list.filter((m) => m.team?.slug === teamFilter) : list);
-  const people = onTeam(snap.people);
+  const people = snap.people;
   const pending = people.filter((p) => p.status === "pending");
   const approved = people.filter((p) => p.status === "approved");
   const declined = people.filter((p) => p.status === "declined");
+  // approved members by team (a parent is under each of their children's teams)
+  const groups = [
+    ...snap.teams.map((t) => ({ key: t.slug, title: t.name, people: approved.filter((p) => teamsOf(p).includes(t.slug)) })),
+    { key: "", title: "No team yet", people: approved.filter((p) => teamsOf(p).length === 0) },
+  ].filter((g) => g.people.length);
   // phones approved before accounts (and any still waiting from then)
-  const phones = onTeam(snap.members).filter((m) => m.status !== "declined");
+  const phones = snap.members.filter((m) => m.status !== "declined");
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm";
 
   return (
@@ -216,18 +228,6 @@ export default function MembersAdmin() {
           </label>
         </section>
 
-        {teams.length > 1 && (
-          <label className="mt-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
-            Show
-            <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-              <option value="">Every team</option>
-              {teams.map(([slug, name]) => (
-                <option key={slug} value={slug}>{name}</option>
-              ))}
-            </select>
-          </label>
-        )}
-
         {/* Waiting */}
         <section className={card}>
           <div className="flex items-center justify-between">
@@ -247,42 +247,25 @@ export default function MembersAdmin() {
           )}
         </section>
 
-        {/* Approved */}
+        {/* Approved, by team */}
         <section className={card}>
           <h2 className="font-extrabold text-gray-900">✅ Members ({approved.length})</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Tap a role to give or take it away. Club admins and coaches can use Coach Admin.
+            By team. Tap a role to give or take it away — club admins and coaches can use Coach Admin.
           </p>
-          {approved.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-500">No members yet.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-gray-100">
-              {approved.map((p) => (
-                <li key={p.userId} className="py-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <span className="min-w-0">
-                      <span className="block font-bold text-gray-900">{p.name}</span>
-                      <span className="block truncate text-sm text-gray-500">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
-                    </span>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Remove ${p.name}? They won't be able to open the hub until they ask again.`)) act({ action: "removePerson", userId: p.userId });
-                      }}
-                      disabled={busy}
-                      className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <RoleChips
-                    roles={p.roles}
-                    disabled={busy}
-                    onChange={(roles) => roles.length && act({ action: "personRoles", userId: p.userId, roles })}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+          {approved.length === 0 && <p className="mt-2 text-sm text-gray-500">No members yet.</p>}
+          {groups.map((g) => (
+            <details key={g.key || "none"} open className="mt-4 rounded-xl border border-gray-100">
+              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800">
+                {g.title} <span className="font-semibold text-gray-500">({g.people.length})</span>
+              </summary>
+              <ul className="divide-y divide-gray-100 px-4">
+                {g.people.map((p) => (
+                  <MemberRow key={p.userId} person={p} inTeam={g.key || undefined} teams={snap.teams} busy={busy} onAct={act} />
+                ))}
+              </ul>
+            </details>
+          ))}
         </section>
 
         {declined.length > 0 && (
@@ -396,6 +379,89 @@ function PendingPerson({ person, busy, onDecide }: { person: Person; busy: boole
           Decline
         </button>
       </div>
+    </li>
+  );
+}
+
+/** An approved member: their details and roles, and fixing their team (or their children's). */
+function MemberRow({
+  person,
+  inTeam,
+  teams,
+  busy,
+  onAct,
+}: {
+  person: Person;
+  inTeam?: string;
+  teams: TeamOption[];
+  busy: boolean;
+  onAct: (body: Record<string, unknown>) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const isParent = person.relation === "parent" || childrenOf(person).length > 0;
+  const [kids, setKids] = useState<ChildDraft[]>(() => {
+    const now = toDrafts(childrenOf(person));
+    return now.length ? now : [{ name: "", team: "" }];
+  });
+  const [team, setTeam] = useState(person.team?.slug ?? "");
+
+  return (
+    <li className="py-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-gray-900">{person.name}</span>
+          <span className="block text-sm text-gray-500">{[person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
+        </span>
+        <span className="flex gap-3">
+          <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
+            {editing ? "Close" : "Edit"}
+          </button>
+          <button
+            onClick={() => {
+              if (confirm(`Remove ${person.name}? They won't be able to open the hub until they ask again.`)) onAct({ action: "removePerson", userId: person.userId });
+            }}
+            disabled={busy}
+            className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+          >
+            Remove
+          </button>
+        </span>
+      </div>
+      <RoleChips roles={person.roles} disabled={busy} onChange={(roles) => roles.length && onAct({ action: "personRoles", userId: person.userId, roles })} />
+      {editing && (
+        <div className="mt-3 rounded-xl bg-gray-50 p-3">
+          {isParent ? (
+            <>
+              <p className="mb-2 text-xs font-semibold text-gray-600">Their children and teams</p>
+              <ChildrenEditor value={kids} teams={teams} onChange={setKids} />
+            </>
+          ) : (
+            <label className="block text-xs font-semibold text-gray-600">
+              Team
+              <select value={team} onChange={(e) => setTeam(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900">
+                <option value="">No team</option>
+                {teams.map((t) => (
+                  <option key={t.slug} value={t.slug}>{t.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button
+            onClick={() => {
+              onAct(
+                isParent
+                  ? { action: "editPerson", userId: person.userId, children: kids.filter((k) => k.name.trim()) }
+                  : { action: "editPerson", userId: person.userId, team },
+              );
+              setEditing(false);
+            }}
+            disabled={busy}
+            className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+      )}
     </li>
   );
 }

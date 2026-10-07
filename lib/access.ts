@@ -30,6 +30,10 @@ export const ROLES = {
 export type Role = keyof typeof ROLES;
 export const COACH_ROLES: Role[] = ["admin", "coach"];
 
+/** A child a parent has added (they have no account): what the coaches see. */
+export type Child = { id: string; name: string; team?: { slug: string; name: string } };
+export const MAX_CHILDREN = 8;
+
 /** Someone with an account, at one club: who they are, their roles, and whether they're approved. */
 export type Person = {
   userId: string;
@@ -38,12 +42,28 @@ export type Person = {
   roles: Role[];
   status: MemberStatus;
   relation?: Relation;
+  /** their own team (a coach's or player's); a parent's teams are their children's */
   team?: { slug: string; name: string };
+  /** the children a parent has added — only the club's coaches see them */
+  children?: Child[];
+  /** (from before children were listed) a parent's child, as they typed it */
   child?: string;
   note?: string;
   createdAt: string;
   decidedAt?: string;
 };
+
+/** A person's children, including one typed before children were listed. */
+export function childrenOf(p: Pick<Person, "children" | "child" | "team" | "relation">): Child[] {
+  if (p.children?.length) return p.children;
+  return p.child ? [{ id: "legacy", name: p.child, ...(p.team ? { team: p.team } : {}) }] : [];
+}
+
+/** Every team a person belongs to: their own, and their children's. */
+export function teamsOf(p: Pick<Person, "children" | "child" | "team" | "relation">): string[] {
+  const own = p.relation === "parent" && childrenOf(p).length ? [] : p.team ? [p.team.slug] : [];
+  return [...new Set([...own, ...childrenOf(p).flatMap((c) => (c.team ? [c.team.slug] : []))])];
+}
 
 export type Access = { private: boolean; code: string | null };
 export type MemberStatus = "pending" | "approved" | "declined";

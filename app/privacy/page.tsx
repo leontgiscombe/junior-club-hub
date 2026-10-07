@@ -87,9 +87,10 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong>Members (if the club makes its hub private):</strong> the name of each person
-              who asks to join, whether they&apos;re a parent, player or coach, their team, a parent&apos;s
-              own child&apos;s name (as they type it, seen only by the club&apos;s coaches), whether a
-              coach approved them, and a cookie on their phone that remembers they&apos;re approved.
+              who asks to join, whether they&apos;re a parent, player or coach, their team, the names and
+              teams of a parent&apos;s children (added by the parent — children don&apos;t have
+              accounts — and seen only by the club&apos;s coaches; the parent can change or remove them
+              at any time), whether a coach approved them, and a cookie on their phone that remembers they&apos;re approved.
               It&apos;s only used to let them in.
             </>,
             <>

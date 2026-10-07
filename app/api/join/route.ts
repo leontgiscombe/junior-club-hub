@@ -2,11 +2,11 @@
 //   GET                          -> { private, status: "none" | "pending" | "approved" | "declined" }
 //   POST { code }                -> checks the club code: { status: "open" } if the hub is open to
 //                                   all, otherwise { status: "ok", teams } for the rest of the form
-//   POST { code, name, relation, team?, child?, note? }   (signed in)
+//   POST { code, name, relation, team?, children?: [{ name, team }], note? }   (signed in)
 //                                -> { status: "pending" }; the club's email hears there's someone
 //                                   to approve
 // The teams are only shown once the code is right, and a parent types their
-// own child's name: nobody who isn't approved sees the club's players.
+// own children's names: nobody who isn't approved sees the club's players.
 import { NextRequest, NextResponse } from "next/server";
 import { MEMBER_COOKIE, RELATIONS, normaliseCode, readMember, type Relation } from "@/lib/access";
 import { currentUser, setUserName } from "@/lib/auth";
@@ -14,7 +14,7 @@ import { clientIp } from "@/lib/clientIp";
 import { sendEmail, simpleEmail } from "@/lib/email";
 import { rawKv } from "@/lib/kv";
 import { getAccess } from "@/lib/members";
-import { currentPerson, requestToJoinAsPerson } from "@/lib/people";
+import { cleanChildren, currentPerson, pickTeam, requestToJoinAsPerson } from "@/lib/people";
 import { getClub, getTeams } from "@/lib/settings";
 import { DEFAULT_TENANT, PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
 import { getTenantRecord, tenantExists } from "@/lib/tenants";
@@ -68,8 +68,9 @@ export async function POST(req: NextRequest) {
 
   const name = text(body.name, 60);
   const relation = (Object.keys(RELATIONS) as Relation[]).find((r) => r === body.relation);
-  const team = teams.find((t) => t.slug === body.team);
-  const child = relation === "parent" ? text(body.child, 60) : "";
+  // a parent's teams are their children's; anyone else picks their own
+  const children = relation === "parent" ? cleanChildren(body.children, teams) : [];
+  const team = relation === "parent" ? undefined : pickTeam(body.team, teams);
   const note = text(body.note, 120);
   if (!name) return NextResponse.json({ error: "Enter your name, so the coaches know who you are" }, { status: 400 });
   if (!relation) return NextResponse.json({ error: "Choose who you are" }, { status: 400 });
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
   if (!user.name) await setUserName(user.id, name);
 
-  const person = await requestToJoinAsPerson(tenant, user, { name, relation, team, child, note });
+  const person = await requestToJoinAsPerson(tenant, user, { name, relation, team, children, note });
   const res = NextResponse.json({ status: person.status });
   if (person.status === "approved") return res;
 
@@ -86,7 +87,8 @@ export async function POST(req: NextRequest) {
     const record = await getTenantRecord(tenant);
     const clubInfo = await getClub();
     if (record) {
-      const who = [RELATIONS[relation].toLowerCase(), team?.name].filter(Boolean).join(", ");
+      const teamNames = [...new Set([team?.name, ...children.map((c) => c.team?.name)].filter(Boolean))];
+      const who = [RELATIONS[relation].toLowerCase(), ...teamNames].join(", ");
       await sendEmail({
         to: record.email,
         subject: `Someone wants to join ${clubInfo.name}`,
