@@ -1,6 +1,6 @@
 "use client";
 
-// Your account: your name, your clubs and roles, passkeys, a club admin's or
+// Your account: your photo and name, your clubs and roles, passkeys, a club admin's or
 // coach's join request alerts, signing out, and deleting
 // the account (which also takes you out of every club).
 import Link from "next/link";
@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import { AlertsSettings } from "../components/JoinAlerts";
+import ProfilePhoto from "./ProfilePhoto";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
@@ -140,6 +141,12 @@ export default function AccountPage() {
         </div>
       </div>
       <div className="mx-auto max-w-2xl px-4">
+        <section className={card}>
+          <ProfilePhoto
+            initials={(account.user.name || account.user.email).split(/\s+/).filter(Boolean).map((w) => w[0]!.toUpperCase()).slice(0, 2).join("")}
+          />
+        </section>
+
         <section className={card}>
           <label className="block">
             <span className="text-sm font-bold text-gray-800">Your name</span>

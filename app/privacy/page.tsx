@@ -86,7 +86,9 @@ export default function PrivacyPage() {
               <strong>Your account (if you have one):</strong> your email address and name, the clubs
               you belong to and your role at each (e.g. coach, parent), and a cookie that keeps you
               signed in on your device. There&apos;s no password — you sign in with a code we email
-              you. You can delete your account at any time from its page.
+              you. If you add a profile photo, we keep a small copy that only you can see; you can
+              remove it at any time. You can delete your account (and its photo) at any time from
+              its page.
             </>,
             <>
               <strong>Members (if the club makes its hub private):</strong> the name of each person
