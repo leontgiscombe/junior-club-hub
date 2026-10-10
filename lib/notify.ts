@@ -9,6 +9,7 @@ import { sendEmail, simpleEmail } from "./email";
 import { rawKv } from "./kv";
 import { listPeople } from "./people";
 import { getTenantRecord } from "./tenants";
+import { setUpVapid, vapidKeys } from "./vapid";
 import { DEFAULT_TENANT, PLATFORM_NAME, tenantUrl } from "./tenant";
 
 const REPEAT_GAP_SECONDS = 1800; // someone sending the form again within half an hour isn't news
@@ -16,7 +17,7 @@ const REPEAT_GAP_SECONDS = 1800; // someone sending the form again within half a
 /** A phone's alert subscription, kept by its endpoint. */
 type Alert = { userId: string; endpoint: string; keys: { p256dh: string; auth: string }; addedAt: string };
 
-export const pushConfigured = () => !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+export const pushConfigured = async () => !!(await vapidKeys());
 
 /** Whether `person` should hear about a request for `teams` (no teams: every coach). */
 function wantsToHear(person: Person, teams: string[]): boolean {
@@ -81,15 +82,10 @@ export async function notifyJoinRequest(
     );
 
     // phone alerts
-    if (!pushConfigured()) return;
     const ids = new Set(people.map((p) => p.userId));
     const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
     if (!alerts.length) return;
-    webpush.setVapidDetails(
-      process.env.VAPID_SUBJECT || tenantUrl(tenant),
-      process.env.VAPID_PUBLIC_KEY!,
-      process.env.VAPID_PRIVATE_KEY!,
-    );
+    if (!(await setUpVapid(tenantUrl(tenant)))) return;
     const payload = JSON.stringify({ title: "New request to join", body: `${line} Tap to approve or decline.`, url: "/admin/members" });
     await Promise.all(
       alerts.map(async (a) => {

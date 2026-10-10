@@ -5,6 +5,7 @@ import { getClub, getTeams } from "@/lib/settings";
 import { clubColourVars } from "@/lib/palette";
 import { getTenant } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
+import { vapidKeys } from "@/lib/vapid";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function GET() {
       id: t.slug,
       name: `${CLUB.name} ${t.squadName ?? t.name}`,
     })),
-    vapidPublicKey: process.env.VAPID_PUBLIC_KEY || null,
+    vapidPublicKey: (await vapidKeys())?.publicKey ?? null,
     colourVars: clubColourVars(CLUB.colour),
   });
 }

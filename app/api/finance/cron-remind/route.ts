@@ -6,11 +6,12 @@ import webpush from "web-push";
 import { getAllTeamsFor, getClubFor } from "@/lib/settings";
 import { allTenantIds } from "@/lib/tenants";
 import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
+import { setUpVapid } from "@/lib/vapid";
 
 export const dynamic = "force-dynamic";
 
-// Reminders need a VAPID key pair: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in
-// the environment (the page gets the public one from /api/club).
+// Reminders are sent with the hub's VAPID key pair (lib/vapid.ts); the page
+// gets the public one from /api/club.
 
 export async function GET(req: NextRequest) {
   // With CRON_SECRET set, only Vercel Cron (which sends it) may trigger this.
@@ -19,21 +20,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
-  const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
-  const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
-    return NextResponse.json({ error: "VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY not set" }, { status: 503 });
+  const subject = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://example.com";
+  if (!(await setUpVapid(subject))) {
+    return NextResponse.json({ error: "No keys for phone alerts (the database isn't set up)" }, { status: 503 });
   }
-
-  webpush.setVapidDetails(
-    // Push services (Apple especially) want a real contact: the hub's address.
-    process.env.VAPID_SUBJECT ||
-      (process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "https://example.com"),
-    VAPID_PUBLIC,
-    VAPID_PRIVATE,
-  );
 
   const monthName = new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const body =
