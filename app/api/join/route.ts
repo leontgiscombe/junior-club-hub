@@ -3,21 +3,21 @@
 //   POST { code }                -> checks the club code: { status: "open" } if the hub is open to
 //                                   all, otherwise { status: "ok", teams } for the rest of the form
 //   POST { code, name, relation, team?, children?: [{ name, team }], note? }   (signed in)
-//                                -> { status: "pending" }; the club's email hears there's someone
-//                                   to approve
+//                                -> { status: "pending" }; the club's admins and coaches hear
+//                                   there's someone to approve (lib/notify.ts)
 // The teams are only shown once the code is right, and a parent types their
 // own children's names: nobody who isn't approved sees the club's players.
 import { NextRequest, NextResponse } from "next/server";
 import { MEMBER_COOKIE, RELATIONS, normaliseCode, readMember, type Relation } from "@/lib/access";
 import { currentUser, setUserName } from "@/lib/auth";
 import { clientIp } from "@/lib/clientIp";
-import { sendEmail, simpleEmail } from "@/lib/email";
 import { rawKv } from "@/lib/kv";
 import { getAccess } from "@/lib/members";
+import { notifyJoinRequest } from "@/lib/notify";
 import { cleanChildren, currentPerson, pickTeam, requestToJoinAsPerson } from "@/lib/people";
 import { getClub, getTeams } from "@/lib/settings";
-import { DEFAULT_TENANT, PLATFORM_NAME, getTenant, tenantUrl } from "@/lib/tenant";
-import { getTenantRecord, tenantExists } from "@/lib/tenants";
+import { getTenant } from "@/lib/tenant";
+import { tenantExists } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -82,27 +82,15 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ status: person.status });
   if (person.status === "approved") return res;
 
-  // let the club know — at most one email every half hour (it has no children's names in it)
-  if (tenant !== DEFAULT_TENANT && (await kv.set(`platform:join-email:${tenant}`, 1, { nx: true, ex: 1800 }))) {
-    const record = await getTenantRecord(tenant);
-    const clubInfo = await getClub();
-    if (record) {
-      const teamNames = [...new Set([team?.name, ...children.map((c) => c.team?.name)].filter(Boolean))];
-      const who = [RELATIONS[relation].toLowerCase(), ...teamNames].join(", ");
-      await sendEmail({
-        to: record.email,
-        subject: `Someone wants to join ${clubInfo.name}`,
-        ...simpleEmail({
-          heading: "A new request to join",
-          paragraphs: [
-            `${name} (${who}) has asked to join ${clubInfo.name}'s hub.`,
-            "Approve or decline them in Coach Admin → Members.",
-          ],
-          button: { label: "Open Members", url: tenantUrl(tenant, "/admin/members") },
-          footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
-        }),
-      }).catch(() => false);
-    }
-  }
+  // let the club's admins and coaches know (lib/notify.ts) — no children's names
+  const teamRefs = [team, ...children.map((c) => c.team)].filter((t): t is { slug: string; name: string } => !!t);
+  const teamNames = [...new Set(teamRefs.map((t) => t.name))];
+  await notifyJoinRequest(tenant, {
+    userId: user.id,
+    name,
+    who: [RELATIONS[relation].toLowerCase(), ...teamNames].join(", "),
+    teams: [...new Set(teamRefs.map((t) => t.slug))],
+    clubName: (await getClub()).name,
+  });
   return res;
 }

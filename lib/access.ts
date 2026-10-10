@@ -111,6 +111,8 @@ export const accessKey = (tenant: string) => `${prefix(tenant)}:settings:access`
 export const membersKey = (tenant: string) => `${prefix(tenant)}:members`;
 export const peopleKey = (tenant: string) => `${prefix(tenant)}:people`;
 export const invitesKey = (tenant: string) => `${prefix(tenant)}:invites`;
+/** Phones of club admins and coaches that get an alert when someone asks to join (lib/notify.ts). */
+export const joinAlertsKey = (tenant: string) => `${prefix(tenant)}:join-alerts`;
 export const sessionKey = (hash: string) => `platform:session:${hash}`;
 export const JOIN_CODES_KEY = "platform:join-codes";
 
