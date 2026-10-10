@@ -40,6 +40,7 @@ import {
 import { getClub } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
 import { getTeams } from "@/lib/settings";
+import { getTenantRecord } from "@/lib/tenants";
 import { DEFAULT_TENANT, PLATFORM_NAME, platformUrl, requireTenant, rootDomain, tenantUrl } from "@/lib/tenant";
 
 /** Roles only a club admin can give or take away. */
@@ -64,6 +65,8 @@ async function snapshot(tenant: string, key: string) {
   return {
     canAdmin,
     passwordOff: !!access.passwordOff,
+    // a club signed up without a coach password has none to switch on
+    sharedPassword: !(tenant !== DEFAULT_TENANT && (await getTenantRecord(tenant))?.noPassword),
     // switching the password off needs a club admin signed in with an account, so they can't lock themselves out
     accountAdmin: key === SESSION_KEY && !!me?.person?.roles.includes("admin"),
     invites,
@@ -175,6 +178,9 @@ export async function POST(req: NextRequest) {
     const me = await currentPerson(tenant).catch(() => null);
     if (key !== SESSION_KEY || !me?.person?.roles.includes("admin")) {
       return NextResponse.json({ error: "Sign in with your own club admin account to change this" }, { status: 403 });
+    }
+    if (body?.off !== true && tenant !== DEFAULT_TENANT && (await getTenantRecord(tenant))?.noPassword) {
+      return NextResponse.json({ error: "This club has no coach password" }, { status: 400 });
     }
     await setPasswordOff(tenant, body?.off === true);
   } else {

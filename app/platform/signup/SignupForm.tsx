@@ -1,8 +1,11 @@
 "use client";
 
 // Sign a club up: its name, its web address (suggested from the name), its
-// first team, the organiser's email and the coach password.
+// first team and the organiser's email. Then they sign in with the code we
+// email them (they're the club's admin), and can add a passkey for next time.
 import { useEffect, useState } from "react";
+import SignInForm from "../../components/SignInForm";
+import { addPasskey, cancelled, supportsPasskeys } from "../../components/passkey";
 
 const toAddress = (name: string) =>
   name
@@ -19,13 +22,14 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
   const [addressError, setAddressError] = useState<string | null>(null);
   const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
   const [website, setWebsite] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  // after signing up: type the emailed code, then (maybe) add a passkey
+  const [step, setStep] = useState<"code" | "passkey">("code");
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   const shownAddress = addressTouched ? address : toAddress(name);
 
@@ -42,16 +46,17 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (password !== password2) return setError("The two passwords don't match.");
     setBusy(true);
     try {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address: shownAddress, team, email, password, website, agreed }),
+        body: JSON.stringify({ name, address: shownAddress, team, email, website, agreed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
+      // a sign-in code, so they can go straight in as the club's admin
+      await fetch("/api/auth/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       setDone(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -60,19 +65,48 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
     }
   }
 
+  async function passkeyThenGo() {
+    setBusy(true);
+    setPasskeyError(null);
+    try {
+      await addPasskey();
+      window.location.href = done!;
+    } catch (err) {
+      if (!cancelled(err)) setPasskeyError(err instanceof Error ? err.message : "That didn't work");
+      setBusy(false);
+    }
+  }
+
   if (done) {
     return (
-      <div className="text-center">
-        <div className="text-5xl">🎉</div>
-        <h2 className="mt-3 text-2xl font-extrabold text-gray-900">{name} is set up!</h2>
-        <p className="mt-2 text-gray-500">
-          Your hub is at <span className="font-bold text-gray-900">{shownAddress}.{rootDomain}</span>.
-          Sign in to Coach Admin with your coach password to add your badge, colours and any
-          more teams.
-        </p>
-        <a href={done} className="mt-5 inline-block rounded-2xl bg-green-600 px-6 py-3.5 font-bold text-white hover:bg-green-700">
-          Go to Your Hub →
-        </a>
+      <div>
+        <div className="text-center">
+          <div className="text-5xl">🎉</div>
+          <h2 className="mt-3 text-2xl font-extrabold text-gray-900">{name} is set up!</h2>
+          <p className="mt-2 text-gray-500">
+            Your hub is at <span className="font-bold text-gray-900">{shownAddress}.{rootDomain}</span>.
+          </p>
+        </div>
+        {step === "code" ? (
+          <div className="mt-5">
+            <p className="mb-3 text-sm font-bold text-gray-800">Now sign in — you&apos;re the club&apos;s admin, no password needed.</p>
+            <SignInForm sentTo={email} onSignedIn={() => (supportsPasskeys() ? setStep("passkey") : (window.location.href = done))} />
+          </div>
+        ) : (
+          <div className="mt-5 text-center">
+            <p className="text-sm text-gray-600">
+              Next time, sign in with Face ID, your fingerprint or your phone&apos;s screen lock instead of waiting for a code. It also opens
+              Financial Admin.
+            </p>
+            {passkeyError && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{passkeyError}</p>}
+            <button onClick={passkeyThenGo} disabled={busy} className="mt-4 w-full rounded-2xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
+              Add a Passkey
+            </button>
+            <a href={done} className="mt-3 inline-block text-sm font-semibold text-gray-500 hover:text-gray-800">
+              Not now — go to your hub →
+            </a>
+          </div>
+        )}
       </div>
     );
   }
@@ -110,16 +144,9 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       <label>
         <span className="text-sm font-bold text-gray-800">Your email</span>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={input} placeholder="you@example.com" />
-        <span className="mt-1 block text-xs text-gray-400">So we can reach you about your club. Never shown to anyone.</span>
-      </label>
-      <label>
-        <span className="text-sm font-bold text-gray-800">Coach password</span>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required autoComplete="new-password" className={input} />
-        <span className="mt-1 block text-xs text-gray-400">At least 8 characters. Your coaches use it to sign in to Coach Admin.</span>
-      </label>
-      <label>
-        <span className="text-sm font-bold text-gray-800">Coach password again</span>
-        <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} required autoComplete="new-password" className={input} />
+        <span className="mt-1 block text-xs text-gray-400">
+          You sign in with it — no password. We&apos;ll email you a code next. Never shown to anyone.
+        </span>
       </label>
       <label className="flex cursor-pointer items-start gap-3 text-sm text-gray-600">
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} required className="mt-0.5 h-5 w-5 shrink-0 accent-green-600" />

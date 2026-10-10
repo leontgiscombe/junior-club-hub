@@ -23,6 +23,8 @@ type Snapshot = {
   /** a club admin: can give the Club admin, Coach and Treasurer roles, change the code, etc. */
   canAdmin: boolean;
   passwordOff: boolean;
+  /** whether the club has a shared coach password at all (clubs signed up with accounts don't) */
+  sharedPassword: boolean;
   /** a club admin signed in with their own account (who alone can switch the password off) */
   accountAdmin: boolean;
 };
@@ -254,7 +256,7 @@ export default function MembersAdmin() {
           </label>
         </section>
 
-        {snap.canAdmin && <PasswordSection snap={snap} busy={busy} onAct={act} />}
+        {snap.canAdmin && snap.sharedPassword && <PasswordSection snap={snap} busy={busy} onAct={act} />}
 
         {/* Waiting */}
         <section className={card}>

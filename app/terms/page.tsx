@@ -28,7 +28,7 @@ export default function TermsPage() {
           items={[
             "You must be 18 or over and allowed to act for the club.",
             "Keep the club's email up to date — it's where password resets go.",
-            "Keep the coach password safe and share it only with the club's coaches. If you think someone else knows it, change it in Settings.",
+            "Keep access to your club safe: only give the Coach, Treasurer and Club admin roles to people you trust, and remove people who leave. If your club still uses a shared coach password, share it only with the club's coaches, and change it in Settings if you think someone else knows it.",
           ]}
         />
       </Part>
