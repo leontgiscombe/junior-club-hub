@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getClubWithIcons, getTeams } from "@/lib/settings";
 import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
@@ -7,6 +7,8 @@ import { cookies, headers } from "next/headers";
 import { MEMBER_COOKIE, PATH_HEADER, SESSION_COOKIE, isApprovedPerson, readAccess, readMember } from "@/lib/access";
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
+import { SIGNED_OUT, getViewer } from "@/lib/viewer";
+import TabBar from "./components/TabBar";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
 export const dynamic = "force-dynamic";
@@ -29,6 +31,9 @@ async function teamsHidden(tenant: string | null): Promise<boolean> {
     return true;
   }
 }
+
+// edge to edge on phones, so the tab bar can sit above the home indicator
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const { club, icons } = await getClubWithIcons();
@@ -67,13 +72,22 @@ export default async function RootLayout({
       </html>
     );
   }
-  const [{ club }, allTeams, hideTeams] = await Promise.all([getClubWithIcons(), getTeams(), teamsHidden(tenant)]);
+  const [{ club }, allTeams, hideTeams, viewer] = await Promise.all([
+    getClubWithIcons(),
+    getTeams(),
+    teamsHidden(tenant),
+    getViewer(tenant).catch(() => SIGNED_OUT),
+  ]);
   const teams = hideTeams ? [] : allTeams;
   return (
     // the club's colour, laid over the hub's green (lib/palette.ts)
     <html lang="en" className="h-full" style={clubColourVars(club.colour) as React.CSSProperties}>
       <body className="min-h-full bg-gray-50 font-sans antialiased">
-        <ClubProvider club={club} teams={teams}>{children}</ClubProvider>
+        <ClubProvider club={club} teams={teams}>
+          {children}
+          {/* the app's tab bar — not for someone a private club hasn't let in yet */}
+          {!hideTeams && <TabBar viewer={viewer} />}
+        </ClubProvider>
       </body>
     </html>
   );

@@ -3,12 +3,22 @@ import Image from "next/image";
 import { kitAspect } from "@/lib/clubSettings";
 import { Anton } from "next/font/google";
 import { getClub, getTeams } from "@/lib/settings";
+import { getTenant } from "@/lib/tenant";
+import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 
 // the same heavy lettering as the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
 export default async function Home() {
-  const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
+  const [CLUB, TEAMS, viewer] = await Promise.all([
+    getClub(),
+    getTeams(),
+    getTenant().then(getViewer).catch(() => SIGNED_OUT),
+  ]);
+  // signed in, people see only the tools that are theirs; signed out (or with
+  // the shared coach password) we can't tell who they are, so both show
+  const showCoach = !viewer.signedIn || viewer.canCoach;
+  const showFinance = CLUB.features.financialAdmin && (!viewer.signedIn || viewer.canFinance);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Banner: the poster's dry-brush paint strokes under a green wash */}
@@ -23,6 +33,21 @@ export default async function Home() {
           className="object-cover object-top opacity-70"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
+        {/* profile badge, top left: your account (or signing in) */}
+        <Link
+          href={viewer.signedIn ? "/account" : "/signin"}
+          aria-label={viewer.signedIn ? "Your account" : "Sign in"}
+          className="absolute left-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-sm font-extrabold text-white ring-1 ring-white/30 backdrop-blur-sm hover:bg-white/25"
+        >
+          {viewer.signedIn ? (
+            viewer.initials
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+              <circle cx="12" cy="8.5" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" strokeLinecap="round" />
+            </svg>
+          )}
+        </Link>
         <div className="relative">
           <Image
             src={CLUB.crest.src}
@@ -142,54 +167,56 @@ export default async function Home() {
         )}
 
         {/* Coaches */}
-        <Link
-          href="/admin"
-          className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-        >
-          <div className="relative overflow-hidden bg-[var(--club-night)] px-5 pb-5 pt-12">
-            <Image
-              src="/poster/brush-background.jpg"
-              alt=""
-              style={{ filter: "var(--club-brush-filter)" }}
-              fill
-              sizes="(max-width: 672px) 100vw, 672px"
-              className="object-cover object-center opacity-60"
-            />
-            <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-gray-900 shadow">
-              🔒 Coaches only
-            </span>
-            <div className="relative grid grid-cols-2 gap-2">
-              {[
-                ["⚽", "Match Log"],
-                ["🏃", "Training Log"],
-                CLUB.features.playerOfMonth ? ["🌟", "Player of the Month"] : ["📝", "Training Plans"],
-                ["📊", "Stats Tracker"],
-              ].map(([icon, label]) => (
-                <span
-                  key={label}
-                  className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur-sm"
-                >
-                  <span className="text-lg">{icon}</span>
-                  <span className="min-w-0 leading-tight">{label}</span>
-                </span>
-              ))}
+        {showCoach && (
+          <Link
+            href="/admin"
+            className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            <div className="relative overflow-hidden bg-[var(--club-night)] px-5 pb-5 pt-12">
+              <Image
+                src="/poster/brush-background.jpg"
+                alt=""
+                style={{ filter: "var(--club-brush-filter)" }}
+                fill
+                sizes="(max-width: 672px) 100vw, 672px"
+                className="object-cover object-center opacity-60"
+              />
+              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-gray-900 shadow">
+                🔒 Coaches only
+              </span>
+              <div className="relative grid grid-cols-2 gap-2">
+                {[
+                  ["⚽", "Match Log"],
+                  ["🏃", "Training Log"],
+                  CLUB.features.playerOfMonth ? ["🌟", "Player of the Month"] : ["📝", "Training Plans"],
+                  ["📊", "Stats Tracker"],
+                ].map(([icon, label]) => (
+                  <span
+                    key={label}
+                    className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur-sm"
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span className="min-w-0 leading-tight">{label}</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="p-6">
-            <h2 className="text-xl font-extrabold text-gray-900">Coach Admin</h2>
-            <p className="mt-1 text-sm leading-relaxed text-gray-500">
-              Matches, training plans, stats, posters and kit responses — everything for running
-              the teams, behind the coaches&apos; password.
-            </p>
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-black">
-              Open Coach Admin
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </span>
-          </div>
-        </Link>
+            <div className="p-6">
+              <h2 className="text-xl font-extrabold text-gray-900">Coach Admin</h2>
+              <p className="mt-1 text-sm leading-relaxed text-gray-500">
+                Matches, training plans, stats, posters and kit responses — everything for running
+                the teams, behind the coaches&apos; password.
+              </p>
+              <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-bold text-white shadow-sm transition-colors group-hover:bg-black">
+                Open Coach Admin
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </div>
+          </Link>
+        )}
 
         {/* Team managers' subs and spending, behind each team's own password */}
-        {CLUB.features.financialAdmin && (
+        {showFinance && (
           <a
             href="/finance"
             className="group mt-5 block overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
