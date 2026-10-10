@@ -3,7 +3,7 @@
 // Sign in with your email: we send a 6-digit code (and a link). Type the code
 // here — handy when the email opens in a different app — or tap the link.
 import { useEffect, useState } from "react";
-import { cancelled, signInWithPasskey, supportsPasskeys } from "./passkey";
+import { cancelled, hasPasskeyHint, signInWithPasskey, supportsPasskeys } from "./passkey";
 
 export default function SignInForm({
   next = "/",
@@ -20,9 +20,12 @@ export default function SignInForm({
   const [sent, setSent] = useState(!!sentTo);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [passkeys, setPasskeys] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- only known in the browser
-  useEffect(() => setPasskeys(supportsPasskeys()), []);
+  // passkeys: none (this browser can't), "first" (used on this device before) or "also" (a small link)
+  const [passkeys, setPasskeys] = useState<"none" | "first" | "also">("none");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- only known in the browser
+    setPasskeys(!supportsPasskeys() ? "none" : hasPasskeyHint() ? "first" : "also");
+  }, []);
 
   async function post(url: string, body: unknown) {
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -52,7 +55,8 @@ export default function SignInForm({
     try {
       const data = await post("/api/auth/code", { email, code });
       if (onSignedIn) onSignedIn();
-      else window.location.href = data.next || next;
+      // by way of the offer to add a passkey
+      else window.location.href = `/signin/passkey?next=${encodeURIComponent(data.next || next)}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setBusy(false);
@@ -77,7 +81,7 @@ export default function SignInForm({
   if (!sent) {
     return (
       <form onSubmit={send} className="flex flex-col gap-4">
-        {passkeys && (
+        {passkeys === "first" && (
           <>
             <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
               Sign In with a Passkey
@@ -97,6 +101,11 @@ export default function SignInForm({
         <button disabled={busy} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Sending…" : "Email Me a Code"}
         </button>
+        {passkeys === "also" && (
+          <button type="button" onClick={withPasskey} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-50">
+            Added a passkey? Sign in with it
+          </button>
+        )}
       </form>
     );
   }
