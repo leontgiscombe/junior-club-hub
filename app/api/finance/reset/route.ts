@@ -12,6 +12,7 @@ import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
 import { cleanAuth, type Auth } from "@/lib/financeAuth";
+import { clearDevices } from "@/lib/financeDevices";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
     } else {
       await redis(["DEL", keys.data(id)]);
       await redis(["SET", keys.auth(id), JSON.stringify(auth)]);
+      // a fresh start has a new data key, so devices that held the old one can't open it
+      await clearDevices(await requireTenant(), id);
     }
     return NextResponse.json({ ok: true });
   } catch (e) {

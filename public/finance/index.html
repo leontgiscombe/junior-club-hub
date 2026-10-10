@@ -274,6 +274,12 @@
     <p class="gate-kicker">Financial Admin</p>
     <h2 id="gate-title">Enter Password</h2>
     <p class="gate-sub" id="gate-sub">This tracker is password protected.</p>
+    <div id="account-box" style="display:none;margin-bottom:14px">
+      <p class="gate-sub" id="account-who" style="margin-bottom:10px"></p>
+      <div id="account-teams"></div>
+      <div class="gate-err" id="account-err"></div>
+      <p class="muted" id="account-or" style="font-size:12px;text-align:center;margin:10px 0 0;display:none">or use a team password</p>
+    </div>
     <form id="gate-form">
       <input type="password" id="gate-pass" placeholder="Password" autocomplete="current-password">
       <input type="password" id="gate-pass2" placeholder="Confirm password" autocomplete="new-password" style="display:none">
@@ -433,6 +439,11 @@
         <button class="btn" id="lock-now-btn">🔒 Lock Now</button>
       </div>
     </div>
+    <div class="panel" id="devices-panel" style="display:none">
+      <div class="panel-head"><h3>Devices</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Phones and computers that open this team with a treasurer&rsquo;s or club admin&rsquo;s account, without the team password. Each has its own key, so the records stay encrypted. Approve a waiting device here (you must have this team open), or remove one that&rsquo;s lost or no longer used.</p>
+      <div id="devices-list"></div>
+    </div>
     <div class="panel">
       <div class="panel-head"><h3>About &amp; Privacy</h3></div>
       <p class="muted" style="font-size:13px">This tracker holds children's and parents' personal details. It is encrypted with your admin password and stays only on this device/browser. Keep the device secure, only record what you need, and delete a player's record when they leave the team. Share backups securely.</p>
@@ -579,6 +590,8 @@
   function writeHeaders(){
     const h = {'content-type':'application/json'};
     if(writeToken) h['x-write-token'] = writeToken;
+    // opened with an account (no team password): the signed-in treasurer or admin saves
+    else if(accountWrites) h['x-finance-account'] = '1';
     return h;
   }
   async function sha256b64(text){ return b64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))); }
@@ -1404,6 +1417,7 @@
       unlockApp();
       flash('Team set up \u2014 share its password with whoever looks after its subs');
       showRecoveryCode(rec.code, 'The team is set up. Here is its recovery code.');
+      if(account) rememberThisDevice();
     } catch(e){ console.error(e); err.textContent = 'Could not set up the team. Check you\u2019re online and try again.'; cryptoKey = null; currentTeam = null; }
     finally { btn.disabled = false; btn.textContent = 'Set Up Team'; }
   }
@@ -1417,6 +1431,7 @@
     if(ok){
       unlockApp();
       if(pendingRecoveryUpgrade){ const p = pendingRecoveryUpgrade; pendingRecoveryUpgrade = null; await upgradeToRecovery(p); }
+      if(account && dataKeyRaw) rememberThisDevice();
     }
     else { $("#gate-err").textContent = 'Password not recognised.'; $("#gate-pass").select(); }
   }
@@ -1434,6 +1449,7 @@
     document.body.classList.remove('locked');
     renderAll();
     startPolling();
+    if(account) renderDevices();
   }
   function lock(){ cryptoKey=null; currentTeam=null; stopPolling(); location.reload(); }
 
@@ -1611,6 +1627,170 @@
     } catch(e){ enBtn.style.display=''; disBtn.style.display='none'; }
   }
 
+  // ---------- Opening with an account (treasurers and club admins) ----------
+  // Each device makes its own key pair (the private key can't be read out of
+  // the browser). Unlocking a team with its password here — or another
+  // treasurer or club admin approving the device — gives the device its own
+  // copy of the team's data key, locked to its public key. From then on it
+  // opens the team with the account alone. The server only keeps locked copies.
+  let account = null;        // { name } when signed in as a treasurer or club admin
+  let accountWrites = false; // this team was opened with the account, not its password
+  const ECDH = { name:'ECDH', namedCurve:'P-256' };
+  function idb(){
+    return new Promise((res, rej)=>{
+      const r = indexedDB.open('gch-finance-device', 1);
+      r.onupgradeneeded = ()=> r.result.createObjectStore('kv');
+      r.onsuccess = ()=> res(r.result); r.onerror = ()=> rej(r.error);
+    });
+  }
+  async function idbGet(k){ const db = await idb(); return new Promise((res, rej)=>{ const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = ()=> res(q.result); q.onerror = ()=> rej(q.error); }); }
+  async function idbSet(k, v){ const db = await idb(); return new Promise((res, rej)=>{ const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = ()=> res(); t.onerror = ()=> rej(t.error); }); }
+  /** This device's key pair, made the first time it's needed. */
+  async function deviceKeys(){
+    let d = await idbGet('device');
+    if(!d){
+      const kp = await crypto.subtle.generateKey(ECDH, false, ['deriveKey']);
+      const jwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
+      d = { id: b64(crypto.getRandomValues(new Uint8Array(12))).replace(/[^A-Za-z0-9]/g,'').slice(0,16) + Date.now().toString(36), privateKey: kp.privateKey, publicJwk: { kty:'EC', crv:'P-256', x: jwk.x, y: jwk.y } };
+      await idbSet('device', d);
+    }
+    return d;
+  }
+  function deviceLabel(){
+    const ua = navigator.userAgent;
+    const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'Computer';
+    const br = /Edg\//.test(ua) ? 'Edge' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'browser';
+    return os + ' \u00b7 ' + br;
+  }
+  /** The team's data key, locked so only the device with `pubJwk`'s private key can open it. */
+  async function wrapForDevice(pubJwk, raw){
+    const eph = await crypto.subtle.generateKey(ECDH, true, ['deriveKey']);
+    const pub = await crypto.subtle.importKey('jwk', pubJwk, ECDH, false, []);
+    const key = await crypto.subtle.deriveKey({ name:'ECDH', public: pub }, eph.privateKey, { name:'AES-GCM', length:256 }, false, ['encrypt']);
+    const w = await wrapBytes(key, raw);
+    const epk = await crypto.subtle.exportKey('jwk', eph.publicKey);
+    return { epk: { kty:'EC', crv:'P-256', x: epk.x, y: epk.y }, iv: w.iv, ct: w.ct };
+  }
+  async function unwrapOnDevice(dev, w){
+    const epk = await crypto.subtle.importKey('jwk', w.epk, ECDH, false, []);
+    const key = await crypto.subtle.deriveKey({ name:'ECDH', public: epk }, dev.privateKey, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+    return unwrapBytes(key, w);
+  }
+  async function devicesOf(team){
+    const r = await fetch('/api/finance/devices?team=' + encodeURIComponent(team), { cache:'no-store' });
+    if(!r.ok) throw new Error('devices ' + r.status);
+    return r.json();
+  }
+  async function postDevices(body){
+    const r = await fetch('/api/finance/devices', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const d = await r.json().catch(()=> ({}));
+    if(!r.ok) throw new Error(d.error || ('devices ' + r.status));
+    return d;
+  }
+
+  /** The "open with your account" part of the gate. */
+  async function setupAccountGate(){
+    const box = $("#account-box");
+    let me = null;
+    try { me = await (await fetch('/api/auth/me', { cache:'no-store' })).json(); } catch(e){}
+    if(!me || !me.user){
+      box.style.display = '';
+      $("#account-who").innerHTML = 'Treasurer or club admin? <a href="/signin?next=/finance" style="color:var(--green);font-weight:700">Sign in with your email</a> to open your team without its password.';
+      return;
+    }
+    const roles = (me.person && me.person.status === 'approved' && me.person.roles) || [];
+    if(!roles.includes('treasurer') && !roles.includes('admin')) return;
+    account = { name: me.user.name || me.user.email };
+    box.style.display = ''; $("#account-or").style.display = '';
+    $("#account-who").textContent = 'Signed in as ' + account.name + '.';
+    await renderAccountTeams();
+  }
+  async function renderAccountTeams(){
+    const dev = await deviceKeys();
+    const rows = await Promise.all(TEAM_IDS.map(async id=>{
+      try { const d = await devicesOf(id); return { id, mine: d.devices.find(x=> x.id === dev.id) || null }; }
+      catch(e){ return { id, mine: null, err: true }; }
+    }));
+    $("#account-teams").innerHTML = rows.map(r=>{
+      const name = esc(teamName(r.id));
+      if(r.mine && r.mine.wrapped) return '<button class="btn btn-primary" data-open-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+'</button>';
+      if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px">'+name+': waiting for another treasurer or club admin to approve this device (Financial Admin \u2192 Settings \u2192 Devices) \u2014 or unlock it once with the team password below. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a></p>';
+      return '<button class="btn" data-ask-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Use This Device for '+name+'</button>';
+    }).join('');
+  }
+  async function openWithAccount(id){
+    $("#account-err").textContent = '';
+    const dev = await deviceKeys();
+    const [d, rec] = await Promise.all([devicesOf(id), serverGet(id)]);
+    const mine = d.devices.find(x=> x.id === dev.id);
+    if(!mine || !mine.wrapped) throw new Error('This device isn\u2019t approved for this team yet.');
+    let raw;
+    try { raw = await unwrapOnDevice(dev, mine.wrapped); }
+    catch(e){ throw new Error('This device\u2019s key doesn\u2019t open the team any more \u2014 unlock it once with the team password.'); }
+    currentTeam = id; currentAuth = rec.auth; dataKeyRaw = raw;
+    cryptoKey = await importDataKey(raw); writeToken = null; accountWrites = true;
+    const loaded = await loadFromRecord(rec, null);
+    if(!loaded){ cryptoKey = null; currentTeam = null; dataKeyRaw = null; accountWrites = false; throw new Error('This device\u2019s key doesn\u2019t open the team any more \u2014 unlock it once with the team password.'); }
+    unlockApp();
+  }
+  /** After unlocking with the team password: this device opens the team with the account from now on. */
+  async function rememberThisDevice(){
+    try {
+      const dev = await deviceKeys();
+      await postDevices({ action:'register', team: currentTeam, id: dev.id, publicKey: dev.publicJwk, label: deviceLabel(), wrapped: await wrapForDevice(dev.publicJwk, dataKeyRaw) });
+      flash('This device will open ' + teamName(currentTeam) + ' with your account from now on');
+      renderDevices();
+    } catch(e){ console.warn('Could not remember this device', e); }
+  }
+  async function renderDevices(){
+    const panel = $("#devices-panel"), list = $("#devices-list");
+    if(!account || !currentTeam){ panel.style.display = 'none'; return; }
+    panel.style.display = '';
+    try {
+      const dev = await deviceKeys();
+      const d = await devicesOf(currentTeam);
+      if(!d.devices.length){ list.innerHTML = '<p class="muted" style="font-size:13px">No devices yet.</p>'; return; }
+      const when = (iso)=> iso ? new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) : '';
+      list.innerHTML = d.devices.map(x=>{
+        const me = x.id === dev.id ? ' <strong>(this device)</strong>' : '';
+        const status = x.wrapped ? 'approved ' + when(x.approvedAt) + (x.approvedBy ? ' by ' + esc(x.approvedBy) : '') : '<span style="color:#b45309;font-weight:700">waiting for approval</span>';
+        const approve = !x.wrapped && dataKeyRaw ? '<button class="btn btn-primary" data-approve-device="'+esc(x.id)+'">Approve</button> ' : '';
+        return '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee"><span style="font-size:14px"><strong>'+esc(x.userName)+'</strong> \u00b7 '+esc(x.label)+me+'<br><span class="muted" style="font-size:12px">'+status+'</span></span><span>'+approve+'<button class="btn" data-remove-device="'+esc(x.id)+'">Remove</button></span></div>';
+      }).join('');
+    } catch(e){ list.innerHTML = '<p class="muted" style="font-size:13px">Couldn\u2019t load the devices.</p>'; }
+  }
+  document.addEventListener('click', async (e)=>{
+    const open = e.target.closest('[data-open-team]');
+    const ask = e.target.closest('[data-ask-team]');
+    const approve = e.target.closest('[data-approve-device]');
+    const remove = e.target.closest('[data-remove-device]');
+    if(e.target.closest('[data-recheck]')){ e.preventDefault(); renderAccountTeams(); return; }
+    try {
+      if(open){ open.disabled = true; open.textContent = 'Opening\u2026'; await openWithAccount(open.dataset.openTeam); }
+      else if(ask){
+        const dev = await deviceKeys();
+        await postDevices({ action:'register', team: ask.dataset.askTeam, id: dev.id, publicKey: dev.publicJwk, label: deviceLabel() });
+        await renderAccountTeams();
+      }
+      else if(approve){
+        const d = await devicesOf(currentTeam);
+        const x = d.devices.find(v=> v.id === approve.dataset.approveDevice);
+        if(!x || !dataKeyRaw) return;
+        await postDevices({ action:'approve', team: currentTeam, id: x.id, wrapped: await wrapForDevice(x.publicKey, dataKeyRaw) });
+        flash('Approved ' + x.userName + '\u2019s ' + x.label);
+        renderDevices();
+      }
+      else if(remove){
+        if(!confirm('Remove this device? It won\u2019t be able to open the team with an account any more.')) return;
+        await postDevices({ action:'remove', team: currentTeam, id: remove.dataset.removeDevice });
+        renderDevices();
+      }
+    } catch(err){
+      if(open){ open.disabled = false; open.textContent = 'Open ' + teamName(open.dataset.openTeam); $("#account-err").textContent = err.message || String(err); }
+      else alert(err.message || String(err));
+    }
+  });
+
   function boot(){
     if(!(window.crypto && crypto.subtle)){
       $("#gate-sub").textContent = 'This browser does not support secure storage. Please use an up-to-date browser.';
@@ -1629,6 +1809,7 @@
         return;
       }
       setupGate(); registerSW();
+      setupAccountGate().catch(e=> console.warn('account sign-in', e));
     }).catch(e=>{
       console.error(e);
       $("#gate-sub").textContent = 'Could not reach the hub. Check your connection and reload.';

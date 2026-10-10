@@ -15,6 +15,8 @@ export function financeKeys(tenant: string) {
   return {
     data: (team: string) => `${p}:v1:${team}`,
     auth: (team: string) => `${p}:v1:auth:${team}`,
+    // devices that can open the team without its password (lib/financeDevices.ts)
+    devices: (team: string) => `${p}:v1:devices:${team}`,
     pushSubs: `${p}:push:subs`,
   };
 }
