@@ -6,7 +6,7 @@
 //   POST { action: "signin", response, next? }   -> { next } with the session cookie set
 //   DELETE ?id=                                  -> removes one of yours
 import { NextRequest, NextResponse } from "next/server";
-import { createSession, currentUser, getUser, setSessionCookie } from "@/lib/auth";
+import { createSession, currentUser, getUser, setPasskeyHint, setSessionCookie } from "@/lib/auth";
 import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
 import {
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
     }
     const res = NextResponse.json({ next: safeNext(body?.next) });
     setSessionCookie(res, await createSession(user), req);
+    setPasskeyHint(res, req, true);
     return res;
   }
 
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest) {
     const label = typeof body?.label === "string" ? body.label : "";
     const key = await finishRegistration(req, user, body?.response as never, label);
     if (!key) return NextResponse.json({ error: "That passkey couldn't be added — try again" }, { status: 400 });
-    return NextResponse.json({ passkey: shown(key) });
+    const res = NextResponse.json({ passkey: shown(key) });
+    setPasskeyHint(res, req, true);
+    return res;
   }
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }
@@ -79,5 +82,8 @@ export async function DELETE(req: NextRequest) {
   if (!user) return notSignedIn();
   const id = req.nextUrl.searchParams.get("id") ?? "";
   if (id) await removePasskey(user.id, id);
-  return NextResponse.json({ passkeys: (await listPasskeys(user.id)).map(shown) });
+  const keys = await listPasskeys(user.id);
+  const res = NextResponse.json({ passkeys: keys.map(shown) });
+  if (!keys.length) setPasskeyHint(res, req, false);
+  return res;
 }

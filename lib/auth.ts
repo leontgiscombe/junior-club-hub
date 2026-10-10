@@ -147,6 +147,19 @@ export function setSessionCookie(res: NextResponse, token: string, req: { header
   res.cookies.set(SESSION_COOKIE, token, sessionCookie(req.headers.get("host") ?? "", secure));
 }
 
+/**
+ * A marker that this browser's person has a passkey (no secret in it — the
+ * page can read it), so sign-in offers the passkey first here, and doesn't
+ * nag them to add one. Shared across the platform's addresses like the session.
+ */
+export const PASSKEY_HINT_COOKIE = "gch_pk";
+
+export function setPasskeyHint(res: NextResponse, req: { headers: Headers; nextUrl: URL }, on: boolean) {
+  const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
+  const opts = { ...sessionCookie(req.headers.get("host") ?? "", secure), httpOnly: false, maxAge: on ? 400 * 86400 : 0 };
+  res.cookies.set(PASSKEY_HINT_COOKIE, on ? "1" : "", opts);
+}
+
 export function clearSessionCookie(res: NextResponse, req: { headers: Headers; nextUrl: URL }) {
   const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
   res.cookies.set(SESSION_COOKIE, "", { ...sessionCookie(req.headers.get("host") ?? "", secure), maxAge: 0 });

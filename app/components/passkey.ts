@@ -4,6 +4,27 @@ import { browserSupportsWebAuthn, startAuthentication, startRegistration } from 
 
 export const supportsPasskeys = () => typeof window !== "undefined" && browserSupportsWebAuthn();
 
+/** Whether this browser's person has used or added a passkey (the gch_pk cookie the server sets). */
+export const hasPasskeyHint = () => typeof document !== "undefined" && /(?:^|;\s*)gch_pk=1/.test(document.cookie);
+
+/** "No thanks" to adding a passkey, remembered on this device. */
+const NO_THANKS = "gch_pk_no_thanks";
+export function saidNoThanks(): boolean {
+  try {
+    return localStorage.getItem(NO_THANKS) === "1";
+  } catch {
+    return false;
+  }
+}
+export function sayNoThanks() {
+  try {
+    localStorage.setItem(NO_THANKS, "1");
+  } catch {}
+}
+
+/** The browser already has a passkey for this account (it refused to make another). */
+export const alreadyHasOne = (e: unknown) => e instanceof Error && e.name === "InvalidStateError";
+
 /** e.g. "iPhone · Safari", so you can tell your passkeys apart. */
 export function deviceLabel(): string {
   const ua = navigator.userAgent;
