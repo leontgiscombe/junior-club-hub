@@ -5,21 +5,32 @@
 // already unlocked — it gets its own copy of the team's data key, locked to
 // its public key. The server only ever holds those locked copies, so it still
 // can't read a team's records. Treasurers and club admins can use this.
+//
+// A passkey (lib/passkeys.ts) can hold a copy too: the browser asks the
+// passkey for a secret only it can produce (the WebAuthn "prf" extension) and
+// locks the team's key with it, so the same passkey opens the team on any of
+// the person's devices — a new phone included — with Face ID.
 // Server only.
+import { createHash } from "crypto";
 import { financeKeys, redis } from "./financeStorage";
 import { currentPerson } from "./people";
 import type { User } from "./auth";
 
 export type Wrapped = { epk: JsonWebKey; iv: string; ct: string };
+/** the data key locked with a passkey's secret */
+export type PasskeyWrapped = { iv: string; ct: string };
 export type FinanceDevice = {
   id: string;
   userId: string;
   userName: string;
   /** e.g. "iPhone · Safari" */
   label: string;
-  publicKey: JsonWebKey;
+  /** a passkey rather than one browser: the account's passkey's id */
+  kind?: "passkey";
+  credId?: string;
+  publicKey?: JsonWebKey;
   /** the team's data key, locked to this device; none yet = waiting for approval */
-  wrapped?: Wrapped;
+  wrapped?: Wrapped | PasskeyWrapped;
   createdAt: string;
   approvedAt?: string;
   approvedBy?: string;
@@ -72,6 +83,17 @@ const isJwk = (v: unknown): v is JsonWebKey =>
 export function cleanPublicKey(v: unknown): JsonWebKey | null {
   if (!isJwk(v) || v.crv !== "P-256") return null;
   return { kty: "EC", crv: "P-256", x: v.x, y: v.y };
+}
+
+/** The entry id for a passkey's copy (credential ids can be long). */
+export const passkeyEntryId = (credId: string) => `pk-${createHash("sha256").update(credId).digest("base64url").slice(0, 24)}`;
+
+/** A data key locked with a passkey's secret, from a request. */
+export function cleanPasskeyWrapped(v: unknown): PasskeyWrapped | null {
+  if (!v || typeof v !== "object") return null;
+  const w = v as Record<string, unknown>;
+  if (typeof w.iv !== "string" || w.iv.length > 40 || typeof w.ct !== "string" || w.ct.length > 500) return null;
+  return { iv: w.iv, ct: w.ct };
 }
 
 /** A locked data key from a request. */
