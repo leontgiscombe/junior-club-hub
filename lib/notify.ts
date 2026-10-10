@@ -102,3 +102,25 @@ export async function notifyJoinRequest(
     console.error("Join request alerts not sent:", e);
   }
 }
+
+/** A test alert to one of `userId`'s own phones. Returns why it failed, or null if the push service took it. */
+export async function sendTestAlert(tenant: string, userId: string, endpoint: string): Promise<string | null> {
+  const alert = (await listAlerts(tenant)).find((a) => a.endpoint === endpoint && a.userId === userId);
+  if (!alert) return "This phone's alerts aren't on — turn them off and on again";
+  if (!(await setUpVapid(tenantUrl(tenant)))) return "Phone alerts aren't set up on this hub";
+  try {
+    await webpush.sendNotification(
+      { endpoint: alert.endpoint, keys: alert.keys },
+      JSON.stringify({ title: "Test alert", body: "Join request alerts are working on this phone.", url: "/account#alerts" }),
+    );
+    return null;
+  } catch (err) {
+    const code = (err as { statusCode?: number })?.statusCode;
+    if (code === 403 || code === 404 || code === 410) {
+      await removeJoinAlert(tenant, alert.endpoint).catch(() => {});
+      return "This phone's subscription has expired — turn alerts off and on again";
+    }
+    console.error("Test alert not sent:", err);
+    return `The alert service refused it${code ? ` (${code})` : ""}`;
+  }
+}

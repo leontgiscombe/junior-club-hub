@@ -2,13 +2,14 @@
 // Coach Admin and on the home page), and turning this phone's alerts on or off.
 //   GET    ?key=…&endpoint=…  -> { pending, alerts, pushAvailable }   (alerts: whether this phone has them on)
 //   POST   { subscription }   -> turn alerts on for this phone   (signed in as a club admin or coach)
+//   POST   { test, endpoint } -> send a test alert to this phone
 //   DELETE { endpoint }       -> turn them off
 // With no key, the signed-in account is used.
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_KEY } from "@/lib/access";
 import { isCoach } from "@/lib/adminAuth";
 import { listMembers } from "@/lib/members";
-import { addJoinAlert, hasJoinAlert, pushConfigured, removeJoinAlert } from "@/lib/notify";
+import { addJoinAlert, hasJoinAlert, pushConfigured, removeJoinAlert, sendTestAlert } from "@/lib/notify";
 import { canCoach, currentPerson, listPeople } from "@/lib/people";
 import { requireTenant } from "@/lib/tenant";
 
@@ -43,8 +44,15 @@ export async function POST(req: NextRequest) {
   if (!me) return unauthorised();
   if (!(await pushConfigured())) return NextResponse.json({ error: "Phone alerts aren't set up on this hub" }, { status: 503 });
   const body = (await req.json().catch(() => null)) as {
+    test?: boolean;
+    endpoint?: unknown;
     subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
   } | null;
+  if (body?.test) {
+    if (typeof body.endpoint !== "string") return NextResponse.json({ error: "missing endpoint" }, { status: 400 });
+    const error = await sendTestAlert(me.tenant, me.userId, body.endpoint);
+    return error ? NextResponse.json({ error }, { status: 502 }) : NextResponse.json({ ok: true });
+  }
   const sub = body?.subscription;
   if (
     typeof sub?.endpoint !== "string" ||
