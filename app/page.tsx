@@ -37,9 +37,12 @@ export default async function Home() {
         <Link
           href={viewer.signedIn ? "/account" : "/signin"}
           aria-label={viewer.signedIn ? "Your account" : "Sign in"}
-          className="absolute left-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-sm font-extrabold text-white ring-1 ring-white/30 backdrop-blur-sm hover:bg-white/25"
+          className="absolute left-4 top-4 z-10 grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-white/15 p-1 text-sm font-extrabold text-white shadow-lg ring-1 ring-white/30 backdrop-blur-md hover:bg-white/25"
         >
-          {viewer.signedIn ? (
+          {viewer.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- your own photo, private to you
+            <img src={viewer.photo} alt="" className="h-full w-full rounded-full object-cover" />
+          ) : viewer.signedIn ? (
             viewer.initials
           ) : (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">

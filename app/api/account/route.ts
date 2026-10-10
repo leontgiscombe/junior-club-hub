@@ -1,13 +1,14 @@
 // The signed-in person's own account.
 //   GET     -> { user, clubs: [{ id, name, url, roles, status }] }
 //   PATCH   { name } -> changes their name (and at each of their clubs)
-//   DELETE  -> deletes the account, signs out everywhere and leaves every club
+//   DELETE  -> deletes the account (and its photo), signs out everywhere and leaves every club
 import { NextRequest, NextResponse } from "next/server";
 import { kvCall, peopleKey, readPerson } from "@/lib/access";
 import { clearSessionCookie, currentUser, deleteUser, setUserName, userClubsKey } from "@/lib/auth";
 import { leaveClub } from "@/lib/people";
 import { getClubFor } from "@/lib/settings";
 import { tenantUrl } from "@/lib/tenant";
+import { deletePhoto } from "@/lib/userPhoto";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await currentUser();
   if (!user) return notSignedIn();
+  await deletePhoto(user.id);
   await deleteUser(user, leaveClub);
   const res = NextResponse.json({ ok: true });
   clearSessionCookie(res, req);
