@@ -7,6 +7,7 @@ import { isCoach } from "@/lib/adminAuth";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
 import { cleanAuth, type Auth } from "@/lib/financeAuth";
+import { financeUser } from "@/lib/financeDevices";
 import {
   financeConfigured,
   financeKeys,
@@ -92,7 +93,13 @@ async function put(req: NextRequest) {
     const auth = cleanAuth(body.auth);
     if (current?.writeHash) {
       const token = req.headers.get("x-write-token") ?? "";
-      if (!token || !same(sha256(token), current.writeHash)) {
+      const tokenOk = !!token && same(sha256(token), current.writeHash);
+      // A device opened with an account (lib/financeDevices.ts) has no team
+      // password to work the token out from: a signed-in treasurer or club
+      // admin can save the team's records instead — but not change its login.
+      const accountOk =
+        !tokenOk && !body.auth && req.headers.get("x-finance-account") === "1" && !!(await financeUser(await requireTenant()));
+      if (!tokenOk && !accountOk) {
         return NextResponse.json({ error: "not allowed" }, { status: 403 });
       }
       // a password change can't take the protection away
