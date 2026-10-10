@@ -73,30 +73,34 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full bg-green-700 text-xl font-extrabold text-white ring-2 ring-white shadow">
-        {/* eslint-disable-next-line @next/next/no-img-element -- your own photo, private to you */}
-        {src ? <img src={src} alt="Your profile photo" className="h-full w-full object-cover" /> : initials}
-      </span>
-      <div className="min-w-0">
-        <span className="block text-sm font-bold text-gray-800">Profile photo</span>
-        <div className="mt-1 flex flex-wrap gap-2">
-          <button
-            onClick={() => input.current?.click()}
-            disabled={busy}
-            className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-bold text-white hover:bg-black disabled:opacity-40"
-          >
-            {busy ? "…" : src ? "Change" : "Add a Photo"}
-          </button>
-          {src && (
-            <button onClick={remove} disabled={busy} className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-              Remove
-            </button>
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <span className="grid h-36 w-36 place-items-center overflow-hidden rounded-3xl bg-green-700 text-5xl font-semibold text-white shadow-lg">
+          {/* eslint-disable-next-line @next/next/no-img-element -- your own photo, private to you */}
+          {src ? <img src={src} alt="Your profile photo" className="h-full w-full object-cover" /> : initials}
+        </span>
+        <button
+          onClick={() => input.current?.click()}
+          disabled={busy}
+          aria-label={src ? "Change your photo" : "Add a photo"}
+          className="absolute -right-3 -top-3 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-lg ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-50"
+        >
+          {busy ? (
+            <span className="text-sm font-bold">…</span>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
           )}
-        </div>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        <p className="mt-1 text-xs text-gray-400">Only you see it, in the badge at the top of the home page.</p>
+        </button>
       </div>
+      {src && (
+        <button onClick={remove} disabled={busy} className="mt-2 text-xs font-semibold text-gray-400 hover:text-gray-600">
+          Remove photo
+        </button>
+      )}
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       <input ref={input} type="file" accept="image/*" className="hidden" onChange={(e) => choose(e.target.files?.[0])} />
     </div>
   );

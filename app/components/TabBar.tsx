@@ -3,7 +3,8 @@
 // The app's bottom tab bar — a floating glass bar like iOS's: the club's main
 // pages, plus Coach Admin for coaches or Financial Admin for treasurers. It
 // shows on the main pages only (TAB_PAGES); the coach tools keep their own
-// back links and bottom buttons.
+// back links and bottom buttons, and Your Account is a screen you go into and
+// come back from, with its own back button.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Viewer } from "@/lib/viewer";
@@ -11,7 +12,7 @@ import { useClub } from "./ClubProvider";
 import { useJoinRequests } from "./JoinAlerts";
 
 /** The pages the bar shows on. */
-export const TAB_PAGES = [/^\/$/, /^\/results$/, /^\/kit(\/|$)/, /^\/admin$/, /^\/account$/];
+export const TAB_PAGES = [/^\/$/, /^\/results$/, /^\/kit(\/|$)/, /^\/admin$/];
 
 type Tab = {
   href: string;
