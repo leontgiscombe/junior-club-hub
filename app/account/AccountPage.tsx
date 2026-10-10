@@ -1,11 +1,13 @@
 "use client";
 
-// Your account: your name, your clubs and roles, signing out, and deleting
+// Your account: your name, your clubs and roles, passkeys, a club admin's or
+// coach's join request alerts, signing out, and deleting
 // the account (which also takes you out of every club).
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
+import { AlertsSettings } from "../components/JoinAlerts";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
@@ -242,6 +244,8 @@ export default function AccountPage() {
             )}
           </section>
         )}
+
+        <AlertsSettings className={card} />
 
         <section className={card}>
           <button onClick={signOut} className="w-full rounded-xl border border-gray-200 py-3 font-bold text-gray-700 hover:bg-gray-50">

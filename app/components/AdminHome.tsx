@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { keyQuery } from "./coachKey";
 import { useClub } from "./ClubProvider";
-import { AlertsSwitch, useJoinRequests } from "./JoinAlerts";
+import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
 
 // the same heavy lettering as the home page and the player of the month poster
@@ -324,7 +324,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
           </p>
         )}
-        <AlertsSwitch status={joins} refresh={refreshJoins} signedIn={!!account?.canCoach && key === SESSION_KEY} />
+        {account?.canCoach && key === SESSION_KEY && <AlertsPrompt status={joins} refresh={refreshJoins} />}
         <div className="grid gap-4 sm:grid-cols-2">
           {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
             <Link
