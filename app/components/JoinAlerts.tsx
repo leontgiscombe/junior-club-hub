@@ -25,6 +25,12 @@ function b64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+function sameBytes(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
+  if (!a || a.byteLength !== b.length) return false;
+  const x = new Uint8Array(a);
+  return x.every((v, i) => v === b[i]);
+}
+
 /** How many are waiting, and whether this phone has alerts on; null until known, or for someone who isn't a coach. */
 export function useJoinRequests(key: string = SESSION_KEY, enabled = true) {
   const [status, setStatus] = useState<Status | null>(null);
@@ -90,9 +96,14 @@ function useAlertSwitch(refresh: () => void) {
       if (!club?.vapidPublicKey) throw new Error("Alerts aren't set up on this hub");
       const reg = await hubWorker();
       await navigator.serviceWorker.ready;
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(club.vapidPublicKey) }));
+      const serverKey = b64ToBytes(club.vapidPublicKey);
+      let sub = await reg.pushManager.getSubscription();
+      // a subscription made with the hub's earlier key can't be sent to: start again
+      if (sub && !sameBytes(sub.options.applicationServerKey, serverKey)) {
+        await sub.unsubscribe();
+        sub = null;
+      }
+      sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: serverKey });
       const res = await fetch("/api/members/alerts", {
         method: "POST",
         headers: { "content-type": "application/json" },

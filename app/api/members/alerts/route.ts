@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   ]);
   const pending =
     people.filter((p) => p.status === "pending").length + members.filter((m) => m.status === "pending").length;
-  return NextResponse.json({ pending, alerts, pushAvailable: pushConfigured() }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ pending, alerts, pushAvailable: await pushConfigured() }, { headers: { "cache-control": "no-store" } });
 }
 
 /** Alerts belong to a person, so turning them on needs an account, not the shared password. */
@@ -41,7 +41,7 @@ async function signedInCoach() {
 export async function POST(req: NextRequest) {
   const me = await signedInCoach();
   if (!me) return unauthorised();
-  if (!pushConfigured()) return NextResponse.json({ error: "Phone alerts aren't set up on this hub" }, { status: 503 });
+  if (!(await pushConfigured())) return NextResponse.json({ error: "Phone alerts aren't set up on this hub" }, { status: 503 });
   const body = (await req.json().catch(() => null)) as {
     subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
   } | null;
