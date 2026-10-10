@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { safeNext } from "@/lib/safeNext";
 import { getClub } from "@/lib/settings";
 import { PLATFORM_NAME, getTenant } from "@/lib/tenant";
+import BackButton from "../components/BackButton";
 import SignInForm from "../components/SignInForm";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const tenant = await getTenant();
   const club = tenant ? await getClub() : null;
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-20">
+      <BackButton href="/" label="Home" className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl">
         <div className="mb-6 text-center">
           {club ? (

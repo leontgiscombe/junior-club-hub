@@ -17,6 +17,7 @@ import { cleanSheetCount, playedCount } from "@/lib/cleanSheets";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 type StatField =
   | "appearances"
@@ -664,12 +665,7 @@ export default function StatsTracker() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
-        <Link
-          href={`/admin${keyQuery(key)}`}
-          className="text-sm font-medium text-green-200 hover:text-white"
-        >
-          ← Coach Admin
-        </Link>
+        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">📊 Stats Tracker</h1>
         <p className="text-green-200 text-sm mt-0.5">
           {`${season ? `${season} season` : "Season"} · team record & clean sheets, ` +

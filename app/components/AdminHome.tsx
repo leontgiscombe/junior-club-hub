@@ -289,11 +289,6 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
       <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-14 pt-8 text-center text-white">
         <BrushBackdrop />
         <div className="relative">
-          <div className="mx-auto w-full max-w-2xl text-left">
-            <Link href="/" className="text-sm font-medium text-green-100 hover:text-white">
-              ← Team Hub
-            </Link>
-          </div>
           <Image
             src={CLUB.crest.src}
             unoptimized

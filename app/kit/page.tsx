@@ -14,7 +14,7 @@ export default async function KitTeamPicker() {
   const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <KitHeader back={{ href: "/", label: "Team Hub" }} title="Kit Sizes" subtitle={CLUB.fullName} />
+      <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
 
       <main className="relative mx-auto -mt-8 w-full max-w-md flex-1 px-4">
         {/* the new kits, without any team's sponsor */}

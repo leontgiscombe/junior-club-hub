@@ -1,7 +1,7 @@
-import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
 import { getClub } from "@/lib/settings";
+import BackButton from "./BackButton";
 
 // the same heavy lettering as the home page and the posters
 const display = Anton({ weight: "400", subsets: ["latin"] });
@@ -12,7 +12,8 @@ export default async function KitHeader({
   title,
   subtitle,
 }: {
-  back: { href: string; label: string };
+  /** where the back button goes; none on the Kit tab's own page */
+  back?: { href: string; label: string };
   title: string;
   subtitle: string;
 }) {
@@ -31,9 +32,7 @@ export default async function KitHeader({
       <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
       <div className="relative">
         <div className="mx-auto w-full max-w-md text-left">
-          <Link href={back.href} className="text-sm font-medium text-green-100 hover:text-white">
-            ← {back.label}
-          </Link>
+          {back && <BackButton href={back.href} label={back.label} />}
         </div>
         <Image
           src={CLUB.crest.src}

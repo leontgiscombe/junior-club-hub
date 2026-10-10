@@ -12,6 +12,7 @@ import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/club
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 type Snapshot = {
   club: Club;
@@ -281,12 +282,7 @@ export default function ClubSettings() {
     >
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
-          <Link
-            href={`/admin${keyQuery(key)}`}
-            className="text-sm font-medium text-green-200 hover:text-white"
-          >
-            ← Coach Admin
-          </Link>
+          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
           <h1 className="mt-2 text-xl font-extrabold">⚙️ Settings</h1>
           <p className="mt-0.5 text-sm text-green-200">
             Your club&apos;s name, crest and slogan, everywhere in the hub

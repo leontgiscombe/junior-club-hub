@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 type TeamOption = { slug: string; name: string };
 type SquadPlayer = {
@@ -148,9 +149,7 @@ export default function PlayersAdmin() {
     <main className="min-h-screen bg-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
-          <Link href={`/admin${keyQuery(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
-            ← Coach Admin
-          </Link>
+          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
           <h1 className="mt-2 text-xl font-extrabold">🧒 Players</h1>
           <p className="mt-0.5 text-sm text-green-200">The club&apos;s squad, and which team each player is in</p>
         </div>
