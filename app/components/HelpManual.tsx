@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -150,12 +151,7 @@ export default function HelpManual() {
   return (
     <main className="min-h-screen bg-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
-        <Link
-          href={`/admin${keyQuery(key)}`}
-          className="text-sm font-medium text-green-100 hover:text-white"
-        >
-          ← Coach Admin
-        </Link>
+        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">❓ Help — how to use the Team Hub</h1>
         <p className="text-green-100 text-sm mt-0.5">
           Everything for the {CLUB.name} teams in one place. Start with Getting started, then
@@ -202,7 +198,7 @@ export default function HelpManual() {
             The tools are the <B>Match Log</B> (marked <em>Start here</em>), <B>Training Log</B>,{" "}
             <B>Player of the Month</B>, <B>Training Plans</B>, <B>Stats Tracker</B>,{" "}
             <B>Camera Register</B>, <B>Kit Responses</B>, <B>Settings</B> and this <B>Help</B>. Each has a{" "}
-            <B>← Coach Admin</B> link at the top to get back.
+            round <B>back arrow</B> at the top left to get back.
           </p>
           <H3>Picking Your Team</H3>
           <p>

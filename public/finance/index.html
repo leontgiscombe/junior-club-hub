@@ -46,6 +46,9 @@
     color: #fff;
     padding: 18px 20px;
   }
+  /* the round back arrow, like the hub's */
+  .hub-back { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); box-shadow: 0 4px 14px rgba(0,0,0,.25); color: #fff; text-decoration: none; }
+  .hub-back::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
   .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .badge {
     width: 50px; height: 50px; border-radius: 12px;
@@ -301,6 +304,7 @@
 </div>
 <header class="app">
   <div class="header-inner">
+    <a class="hub-link hub-back" href="/" aria-label="Back to Team Hub"></a>
     <div class="badge"><img id="club-badge" src="" alt=""></div>
     <div class="header-titles">
       <h1 id="app-title">Financial Admin</h1>
@@ -308,7 +312,6 @@
     </div>
     <div class="header-spacer"></div>
     <span id="sync-status" title="Sync status" style="color:#fff;font-size:12px;font-weight:600;opacity:.9;margin-right:4px;white-space:nowrap"></span>
-    <a class="btn btn-sm hub-link" href="/" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff;text-decoration:none">&#x1F3E0; Team Hub</a>
     <button class="btn btn-sm" id="lock-btn" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff">🔒 Lock</button>
   </div>
 </header>

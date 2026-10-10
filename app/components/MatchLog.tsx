@@ -8,6 +8,7 @@ import FaSync from "./FaSync";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 interface Player {
   id: string;
@@ -398,12 +399,7 @@ export default function MatchLog() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
-        <Link
-          href={`/admin/stats${keyQuery(key)}`}
-          className="text-sm font-medium text-green-200 hover:text-white"
-        >
-          ← Stats Tracker
-        </Link>
+        <BackButton href={`/admin/stats${keyQuery(key)}`} label="Stats Tracker" />
         <h1 className="text-xl font-extrabold mt-2">⚽ Match Log</h1>
         <p className="text-green-200 text-sm mt-0.5">
           Log each game&apos;s goals and who assisted — season totals update automatically

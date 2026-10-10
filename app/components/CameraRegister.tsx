@@ -6,6 +6,7 @@ import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 // Home games come from the match log now, so a fixture is only entered once.
 // This page is the filming view of those same games.
@@ -169,12 +170,7 @@ export default function CameraRegister() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
-        <Link
-          href={`/admin${keyQuery(key)}`}
-          className="text-sm font-medium text-green-200 hover:text-white"
-        >
-          ← Coach Admin
-        </Link>
+        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">🎥 Camera Register</h1>
         <p className="text-green-200 text-sm mt-0.5">
           Home games from the match log · tick when uploaded to the cloud

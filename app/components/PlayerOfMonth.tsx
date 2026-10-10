@@ -22,6 +22,7 @@ import {
   type MonthStanding,
 } from "@/lib/playerOfMonth";
 import { accountKey, keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 interface Player {
   id: string;
@@ -345,12 +346,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
   return (
     <main className="min-h-screen bg-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
-        <Link
-          href={`/admin${keyQuery(key)}`}
-          className="text-sm font-medium text-green-100 hover:text-white"
-        >
-          ← Coach Admin
-        </Link>
+        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">🌟 Player of the Month</h1>
         <p className="text-green-100 text-sm mt-0.5">
           Worked out from the month&apos;s best trainer, most improved and player of the match

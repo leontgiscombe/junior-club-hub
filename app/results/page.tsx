@@ -6,6 +6,7 @@
 // private (lib/names.ts). Nothing from the kit or camera side appears here.
 import Image from "next/image";
 import Link from "next/link";
+import BackButton from "../components/BackButton";
 import { redirect } from "next/navigation";
 import { listPlayers, type Player } from "@/lib/statsStorage";
 import { listMatches, type Match } from "@/lib/matchStorage";
@@ -97,7 +98,8 @@ export default async function ResultsPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="bg-gradient-to-br from-green-900 to-green-500 px-6 pb-8 pt-10 text-center text-white">
+      <header className="relative bg-gradient-to-br from-green-900 to-green-500 px-6 pb-8 pt-10 text-center text-white">
+        <BackButton href="/" label="Team Hub" className="absolute left-4 top-4" />
         <Image
           src={CLUB.crest.src}
           unoptimized
@@ -301,12 +303,6 @@ export default async function ResultsPage({
 
       <footer className="py-6 text-center text-sm text-gray-500">
         <p>{CLUB.fullName}</p>
-        <Link
-          href="/"
-          className="mt-1 inline-block font-semibold text-green-700 hover:underline"
-        >
-          ← Team Hub
-        </Link>
       </footer>
     </div>
   );

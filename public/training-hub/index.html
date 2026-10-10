@@ -33,7 +33,9 @@ body { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI'
 #app-guide { display:none; min-height:100vh; background:#e8f5e9; }
 .guide-topbar { position:sticky; top:0; z-index:100; background:linear-gradient(135deg,#1a5c2a 0%,#2d8a45 100%); padding:10px 16px; display:flex; align-items:center; gap:12px; border-bottom:4px solid #f9a825; }
 .guide-topbar-title { font-family:'Nunito',sans-serif; font-weight:900; font-size:16px; color:white; flex:1; text-align:center; }
-.back-btn { background:rgba(255,255,255,0.15); border:1.5px solid rgba(255,255,255,0.4); border-radius:50px; padding:6px 14px; color:white; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
+/* round back arrows, like the hub's: the button keeps its words for screen readers, and shows an arrow */
+.back-btn { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.35); border-radius:50%; width:44px; height:44px; padding:0; display:grid; place-items:center; flex-shrink:0; color:white; font-size:0; cursor:pointer; font-family:inherit; box-shadow:0 4px 14px rgba(0,0,0,.25); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+.back-btn::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
 .back-btn:hover { background:rgba(255,255,255,0.25); }
 :root { --green-dark:#1a5c2a; --green-mid:#2d8a45; --accent:#f9a825; }
 .guide-hero { background:linear-gradient(135deg,var(--green-dark) 0%,var(--green-mid) 100%); padding:28px 20px 22px; text-align:center; border-bottom:5px solid var(--accent); }
@@ -215,7 +217,8 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .home-hero::before{content:"";position:absolute;inset:0;background:url(/poster/brush-background.jpg) center top/cover;opacity:.7;filter:var(--club-brush-filter,none)}
 .home-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in oklch,var(--color-green-950,#052e16) 35%,transparent),transparent 40%,color-mix(in oklch,var(--color-green-950,#052e16) 85%,transparent))}
 .home-hero>*{position:relative;z-index:1}
-.home-back{align-self:flex-start;color:rgba(255,255,255,.85);font-weight:700;font-size:13px;text-decoration:none;margin-bottom:10px}
+.home-back{align-self:flex-start;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);box-shadow:0 4px 14px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:0;text-decoration:none;margin-bottom:10px}
+.home-back::before{content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px}
 .home-hero .main-badge{width:116px;margin:4px auto 14px}
 .home-title{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;font-size:44px;line-height:1;letter-spacing:.5px;text-shadow:4px 4px 0 rgba(0,0,0,.8)}
 .home-title2{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:26px;letter-spacing:1px;color:#f9a825;margin-top:4px}
@@ -254,7 +257,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 <!-- ===== APP HOME ===== -->
 <div id="app-home">
   <div class="home-hero">
-    <a class="home-back" href="/">&larr; Team Hub</a>
+    <a class="home-back" href="/" aria-label="Back to Team Hub">&larr; Team Hub</a>
     <img class="main-badge" src="/club-crest.png" alt="">
     <h1 class="home-title"><span data-club="name">Your Club</span></h1>
     <p class="home-title2">Training Hub</p>
@@ -311,7 +314,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
   <div class="guide-topbar">
     <button class="back-btn" onclick="showAppHome()">&larr; Home</button>
     <span class="guide-topbar-title">Tactical Guide</span>
-    <div style="width:64px"></div>
+    <div style="width:44px"></div>
   </div>
   <div id="guide-cat-home">
   <div class="guide-hero">
@@ -2338,7 +2341,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
   <div class="skills-topbar">
     <button class="back-btn" onclick="showAppHome()">&larr; Home</button>
     <span class="skills-topbar-title">Skill Challenges</span>
-    <div style="width:64px"></div>
+    <div style="width:44px"></div>
   </div>
   <div class="skills-hero">
     <h2>&#x1F3AF; Weekly Challenges</h2>
@@ -2354,7 +2357,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
   <div class="pos-learn-topbar">
     <button class="back-btn" onclick="showAppHome()">&larr; Home</button>
     <span class="pos-learn-topbar-title">Learning Positions</span>
-    <div style="width:64px"></div>
+    <div style="width:44px"></div>
   </div>
   <div class="pos-learn-hero">
     <div class="pos-learn-badge">7v7 &middot; 2-3-1 Formation</div>

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RELATIONS, ROLES, SESSION_KEY, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
 import { keyQuery } from "./coachKey";
+import BackButton from "./BackButton";
 
 type TeamOption = { slug: string; name: string };
 
@@ -184,9 +185,7 @@ export default function MembersAdmin() {
     <main className="min-h-screen bg-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
-          <Link href={`/admin${keyQuery(key)}`} className="text-sm font-medium text-green-200 hover:text-white">
-            ← Coach Admin
-          </Link>
+          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
           <h1 className="mt-2 text-xl font-extrabold">👪 Members</h1>
           <p className="mt-0.5 text-sm text-green-200">Who can open your club&apos;s hub, and what they can do</p>
         </div>
