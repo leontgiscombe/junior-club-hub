@@ -5,10 +5,19 @@
 import { useEffect, useState } from "react";
 import { cancelled, signInWithPasskey, supportsPasskeys } from "./passkey";
 
-export default function SignInForm({ next = "/", onSignedIn }: { next?: string; onSignedIn?: () => void }) {
-  const [email, setEmail] = useState("");
+export default function SignInForm({
+  next = "/",
+  onSignedIn,
+  sentTo,
+}: {
+  next?: string;
+  onSignedIn?: () => void;
+  /** a code was already emailed here (e.g. just after signing a club up): start at typing it */
+  sentTo?: string;
+}) {
+  const [email, setEmail] = useState(sentTo ?? "");
   const [code, setCode] = useState("");
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState(!!sentTo);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passkeys, setPasskeys] = useState(false);
@@ -113,9 +122,13 @@ export default function SignInForm({ next = "/", onSignedIn }: { next?: string; 
         {busy ? "Checking…" : "Sign In"}
       </button>
       <div className="flex justify-between text-sm font-semibold">
-        <button type="button" onClick={() => { setSent(false); setCode(""); setError(null); }} className="text-gray-500 hover:text-gray-800">
-          ← Different email
-        </button>
+        {sentTo ? (
+          <span />
+        ) : (
+          <button type="button" onClick={() => { setSent(false); setCode(""); setError(null); }} className="text-gray-500 hover:text-gray-800">
+            ← Different email
+          </button>
+        )}
         <button type="button" onClick={() => send()} disabled={busy} className="text-green-700 hover:underline disabled:opacity-50">
           Send a new code
         </button>

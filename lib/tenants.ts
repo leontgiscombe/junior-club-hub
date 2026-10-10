@@ -17,6 +17,8 @@ export type TenantRecord = {
   createdAt: string;
   passwordSalt: string;
   passwordHash: string;
+  /** signed up with accounts only: the club never had a coach password anyone knows */
+  noPassword?: true;
 };
 
 /** A club as the public can see it (find-your-club): no email or password. */
@@ -54,7 +56,7 @@ export async function addressProblem(id: string): Promise<string | null> {
 }
 
 /** Add a club. Returns false if its address was taken meanwhile. */
-export async function createTenant(input: { id: string; name: string; email: string; password: string }): Promise<boolean> {
+export async function createTenant(input: { id: string; name: string; email: string; password?: string }): Promise<boolean> {
   const kv = await rawKv();
   if (!kv) throw new Error("Storage isn't set up");
   const salt = randomBytes(16);
@@ -64,7 +66,9 @@ export async function createTenant(input: { id: string; name: string; email: str
     email: input.email,
     createdAt: new Date().toISOString(),
     passwordSalt: salt.toString("base64"),
-    passwordHash: await hash(input.password, salt),
+    // clubs signed up with accounts have no coach password: a random one nobody knows
+    passwordHash: await hash(input.password || randomBytes(24).toString("base64url"), salt),
+    ...(input.password ? {} : { noPassword: true as const }),
   };
   const added = (await kv.hsetnx(TENANTS_KEY, input.id, JSON.stringify(record))) === 1;
   if (added) known.delete(input.id);

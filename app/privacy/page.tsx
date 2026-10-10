@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           items={[
             <>
               <strong>Clubs&apos; accounts</strong> — the club&apos;s name, web address, contact email
-              and coach password. We decide how this is used, so for this information we are the{" "}
+              and (if the club uses one) its coach password. We decide how this is used, so for this information we are the{" "}
               <strong>controller</strong>.
             </>,
             <>

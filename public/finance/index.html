@@ -1398,7 +1398,8 @@
     if(!id){ err.textContent = 'Choose the team first.'; return; }
     if(pass.length < 8){ err.textContent = 'The team password needs at least 8 characters.'; return; }
     if(pass !== pass2){ err.textContent = 'The two passwords don\u2019t match.'; return; }
-    if(!admin){ err.textContent = 'Enter the Coach Admin password.'; return; }
+    // signed in as a treasurer or club admin, the account is enough
+    if(!admin && !account){ err.textContent = 'Enter the Coach Admin password \u2014 or sign in as a treasurer or club admin.'; return; }
     const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
     try {
       const raw = crypto.getRandomValues(new Uint8Array(32));
@@ -1409,8 +1410,10 @@
       dataKeyRaw = raw; cryptoKey = await importDataKey(raw);
       state = defaultState(); state.settings.team = teamName(id);
       const blob = await encryptState();
-      const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers:{'content-type':'application/json','x-admin-key':admin}, body: JSON.stringify({ blob, auth }) });
-      if(res.status === 401){ err.textContent = 'That Coach Admin password isn\u2019t right.'; cryptoKey = null; currentTeam = null; return; }
+      const headers = {'content-type':'application/json'};
+      if(admin) headers['x-admin-key'] = admin;
+      const res = await fetch(API_BASE + "?id=" + id, { method:'PUT', headers, body: JSON.stringify({ blob, auth }) });
+      if(res.status === 401){ err.textContent = admin ? 'That Coach Admin password isn\u2019t right.' : 'Only treasurers and club admins can set up a team.'; cryptoKey = null; currentTeam = null; return; }
       if(res.status === 409){ err.textContent = 'This team already has a password \u2014 unlock it instead.'; cryptoKey = null; currentTeam = null; return; }
       if(!res.ok) throw new Error('PUT ' + res.status);
       localRev = (await res.json()).rev; apiAvailable = true; writeToken = w.token;
@@ -1728,6 +1731,8 @@
     const roles = (me.person && me.person.status === 'approved' && me.person.roles) || [];
     if(!roles.includes('treasurer') && !roles.includes('admin')) return;
     account = { name: me.user.name || me.user.email };
+    // setting a team up needs no Coach Admin password when signed in like this
+    $("#setup-admin").style.display = 'none';
     box.style.display = ''; $("#account-or").style.display = '';
     $("#account-who").textContent = 'Signed in as ' + account.name + '.';
     await renderAccountTeams();

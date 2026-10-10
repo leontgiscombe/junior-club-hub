@@ -76,14 +76,16 @@ async function put(req: NextRequest) {
     return NextResponse.json({ error: "bad body" }, { status: 400 });
   }
   try {
-    // A team with no password yet is set up once, by a coach who gives the
-    // Coach Admin password; after that it can only be opened with its own.
+    // A team with no password yet is set up once — by a signed-in treasurer or
+    // club admin, or a coach who gives the Coach Admin password; after that it
+    // can only be opened with its own.
     const current = parse<Auth>(await redis(["GET", keys.auth(id)]));
     const hasAuth = !!current;
     const setupKey = req.headers.get("x-admin-key");
     if (!hasAuth || setupKey !== null) {
       if (hasAuth) return NextResponse.json({ error: "team already set up" }, { status: 409 });
-      if (!body.auth || !(await isCoach(setupKey ?? ""))) {
+      const allowed = setupKey ? await isCoach(setupKey) : !!(await financeUser(await requireTenant()));
+      if (!body.auth || !allowed) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
     }
