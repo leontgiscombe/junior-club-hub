@@ -58,7 +58,10 @@ export async function notifyJoinRequest(
 ): Promise<void> {
   try {
     const kv = await rawKv();
-    if (kv && !(await kv.set(`platform:join-alert:${tenant}:${request.userId}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) return;
+    if (kv && !(await kv.set(`platform:join-alert:${tenant}:${request.userId}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) {
+      console.log(`Join request alerts (${tenant}): skipped — the same person asked again within 30 minutes`);
+      return;
+    }
     const people = (await listPeople(tenant)).filter((p) => wantsToHear(p, request.teams));
     const line = `${request.name} (${request.who}) has asked to join ${request.clubName}'s hub.`;
     const membersUrl = tenantUrl(tenant, "/admin/members");
@@ -84,20 +87,32 @@ export async function notifyJoinRequest(
     // phone alerts
     const ids = new Set(people.map((p) => p.userId));
     const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
-    if (!alerts.length) return;
-    if (!(await setUpVapid(tenantUrl(tenant)))) return;
+    // counts only — no names or addresses in the log
+    const summary = `${people.length} admins/coaches, ${emails.size} emails, ${alerts.length} phones`;
+    if (!alerts.length) {
+      console.log(`Join request alerts (${tenant}): ${summary}`);
+      return;
+    }
+    if (!(await setUpVapid(tenantUrl(tenant)))) {
+      console.log(`Join request alerts (${tenant}): ${summary} — no keys to send phone alerts with`);
+      return;
+    }
+    let sent = 0;
     const payload = JSON.stringify({ title: "New request to join", body: `${line} Tap to approve or decline.`, url: "/admin/members" });
     await Promise.all(
       alerts.map(async (a) => {
         try {
           await webpush.sendNotification({ endpoint: a.endpoint, keys: a.keys }, payload);
+          sent++;
         } catch (err) {
           // a phone that's turned alerts off, or a browser that's gone
           const code = (err as { statusCode?: number })?.statusCode;
+          console.log(`Join request alert to a phone refused (${code ?? "no status"})`);
           if (code === 403 || code === 404 || code === 410) await removeJoinAlert(tenant, a.endpoint).catch(() => {});
         }
       }),
     );
+    console.log(`Join request alerts (${tenant}): ${summary}, ${sent} phone alerts sent`);
   } catch (e) {
     console.error("Join request alerts not sent:", e);
   }
