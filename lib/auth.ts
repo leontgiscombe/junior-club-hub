@@ -13,6 +13,7 @@ import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
 import type { NextResponse } from "next/server";
 import { SESSION_COOKIE, kvCall, sessionKey, hashToken, sessionUserId } from "./access";
+import { forgetPasskeys } from "./passkeys";
 import { rootDomain } from "./tenantHost";
 
 export type User = { id: string; email: string; name: string; createdAt: string };
@@ -168,13 +169,14 @@ export async function endSession(): Promise<void> {
   if (userId) await kvCall(["SREM", userSessionsKey(userId), hash]);
 }
 
-/** Delete an account: every session, its record, and (through `leaveClub`) its place in each club. */
+/** Delete an account: every session, its passkeys, its record, and (through `leaveClub`) its place in each club. */
 export async function deleteUser(user: User, leaveClub: (tenant: string, userId: string) => Promise<void>): Promise<void> {
   const [sessions, clubs] = await Promise.all([
     kvCall<string[]>(["SMEMBERS", userSessionsKey(user.id)]),
     kvCall<string[]>(["SMEMBERS", userClubsKey(user.id)]),
   ]);
   for (const tenant of clubs ?? []) await leaveClub(tenant, user.id);
+  await forgetPasskeys(user.id);
   const keys = (sessions ?? []).map(sessionKey);
   if (keys.length) await kvCall(["DEL", ...keys]);
   await kvCall(["DEL", userKey(user.id), userSessionsKey(user.id), userClubsKey(user.id)]);

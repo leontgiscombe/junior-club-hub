@@ -440,8 +440,9 @@
       </div>
     </div>
     <div class="panel" id="devices-panel" style="display:none">
-      <div class="panel-head"><h3>Devices</h3></div>
-      <p class="muted" style="font-size:13px;margin-top:0">Phones and computers that open this team with a treasurer&rsquo;s or club admin&rsquo;s account, without the team password. Each has its own key, so the records stay encrypted. Approve a waiting device here (you must have this team open), or remove one that&rsquo;s lost or no longer used.</p>
+      <div class="panel-head"><h3>Devices &amp; Passkeys</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Phones, computers and passkeys that open this team with a treasurer&rsquo;s or club admin&rsquo;s account, without the team password. Each has its own key, so the records stay encrypted. Approve a waiting device here (you must have this team open), or remove one that&rsquo;s lost or no longer used.</p>
+      <div id="passkey-offer"></div>
       <div id="devices-list"></div>
     </div>
     <div class="panel">
@@ -1676,6 +1677,32 @@
     const key = await crypto.subtle.deriveKey({ name:'ECDH', public: epk }, dev.privateKey, { name:'AES-GCM', length:256 }, false, ['decrypt']);
     return unwrapBytes(key, w);
   }
+  // ----- Passkeys: Face ID / fingerprint opens the team on any of your devices -----
+  // The passkey gives this page a secret only it can make (WebAuthn "prf"),
+  // different for each club and team; that secret locks a copy of the data key.
+  function b64u(bytes){ return b64(new Uint8Array(bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function unb64u(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length % 4) s += '='; return ub64(s); }
+  const canPasskey = ()=> !!(window.PublicKeyCredential && navigator.credentials);
+  /** Ask one of `credIds` (base64url) for its secret for `team`: { credId, key }. */
+  async function passkeySecret(rpId, credIds, team){
+    const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('gch-finance-v1:' + location.hostname + ':' + team)));
+    const cred = await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rpId,
+      allowCredentials: credIds.map(id=> ({ type:'public-key', id: unb64u(id) })),
+      userVerification: 'required',
+      extensions: { prf: { eval: { first: salt } } },
+    } });
+    const prf = cred.getClientExtensionResults().prf;
+    if(!prf || !prf.results || !prf.results.first) throw new Error('This browser can\u2019t use your passkey to open Financial Admin \u2014 try Safari or Chrome, or use the team password.');
+    const material = await crypto.subtle.importKey('raw', prf.results.first, 'HKDF', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name:'HKDF', hash:'SHA-256', salt: new Uint8Array(0), info: new TextEncoder().encode('gch-finance-passkey') }, material, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+    return { credId: b64u(cred.rawId), key };
+  }
+  const passkeyCancelled = (e)=> e && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+  /** Your passkeys' copies for a team (from devicesOf). */
+  const myPasskeyCopies = (d)=> d.devices.filter(x=> x.kind === 'passkey' && x.userId === d.me.id && x.wrapped);
+
   async function devicesOf(team){
     const r = await fetch('/api/finance/devices?team=' + encodeURIComponent(team), { cache:'no-store' });
     if(!r.ok) throw new Error('devices ' + r.status);
@@ -1695,7 +1722,7 @@
     try { me = await (await fetch('/api/auth/me', { cache:'no-store' })).json(); } catch(e){}
     if(!me || !me.user){
       box.style.display = '';
-      $("#account-who").innerHTML = 'Treasurer or club admin? <a href="/signin?next=/finance" style="color:var(--green);font-weight:700">Sign in with your email</a> to open your team without its password.';
+      $("#account-who").innerHTML = 'Treasurer or club admin? <a href="/signin?next=/finance" style="color:var(--green);font-weight:700">Sign in</a> to open your team without its password.';
       return;
     }
     const roles = (me.person && me.person.status === 'approved' && me.person.roles) || [];
@@ -1707,16 +1734,22 @@
   }
   async function renderAccountTeams(){
     const dev = await deviceKeys();
+    let anyPasskey = false;
     const rows = await Promise.all(TEAM_IDS.map(async id=>{
-      try { const d = await devicesOf(id); return { id, mine: d.devices.find(x=> x.id === dev.id) || null }; }
+      try {
+        const d = await devicesOf(id);
+        if(d.passkeys && d.passkeys.length) anyPasskey = true;
+        return { id, mine: d.devices.find(x=> x.id === dev.id) || null, pk: canPasskey() && myPasskeyCopies(d).length > 0 };
+      }
       catch(e){ return { id, mine: null, err: true }; }
     }));
     $("#account-teams").innerHTML = rows.map(r=>{
       const name = esc(teamName(r.id));
       if(r.mine && r.mine.wrapped) return '<button class="btn btn-primary" data-open-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+'</button>';
+      if(r.pk) return '<button class="btn btn-primary" data-pk-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+' with Your Passkey</button>';
       if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px">'+name+': waiting for another treasurer or club admin to approve this device (Financial Admin \u2192 Settings \u2192 Devices) \u2014 or unlock it once with the team password below. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a></p>';
       return '<button class="btn" data-ask-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Use This Device for '+name+'</button>';
-    }).join('');
+    }).join('') + (!anyPasskey && canPasskey() ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#passkeys" style="color:var(--green);font-weight:700">add a passkey</a> to your account, then open your teams with Face ID or a fingerprint on any of your devices.</p>' : '');
   }
   async function openWithAccount(id){
     $("#account-err").textContent = '';
@@ -1732,6 +1765,34 @@
     const loaded = await loadFromRecord(rec, null);
     if(!loaded){ cryptoKey = null; currentTeam = null; dataKeyRaw = null; accountWrites = false; throw new Error('This device\u2019s key doesn\u2019t open the team any more \u2014 unlock it once with the team password.'); }
     unlockApp();
+  }
+  /** Open a team with one of your passkeys. */
+  async function openWithPasskey(id){
+    $("#account-err").textContent = '';
+    const [d, rec] = await Promise.all([devicesOf(id), serverGet(id)]);
+    const copies = myPasskeyCopies(d);
+    if(!copies.length) throw new Error('Your passkey can\u2019t open this team yet.');
+    const { credId, key } = await passkeySecret(d.rpId, copies.map(x=> x.credId), id);
+    const copy = copies.find(x=> x.credId === credId);
+    let raw;
+    try { raw = await unwrapBytes(key, copy.wrapped); }
+    catch(e){ throw new Error('That passkey doesn\u2019t open the team any more \u2014 unlock it once with the team password.'); }
+    currentTeam = id; currentAuth = rec.auth; dataKeyRaw = raw;
+    cryptoKey = await importDataKey(raw); writeToken = null; accountWrites = true;
+    const loaded = await loadFromRecord(rec, null);
+    if(!loaded){ cryptoKey = null; currentTeam = null; dataKeyRaw = null; accountWrites = false; throw new Error('That passkey doesn\u2019t open the team any more \u2014 unlock it once with the team password.'); }
+    unlockApp();
+  }
+  /** Let one of your passkeys open the open team, on any of your devices. */
+  async function addPasskeyToTeam(){
+    if(!dataKeyRaw || !currentTeam) return;
+    const d = await devicesOf(currentTeam);
+    const usable = (d.passkeys || []).filter(k=> k.prf !== false);
+    if(!usable.length) throw new Error('Add a passkey to your account first.');
+    const { credId, key } = await passkeySecret(d.rpId, usable.map(k=> k.id), currentTeam);
+    await postDevices({ action:'passkey', team: currentTeam, credId, wrapped: await wrapBytes(key, dataKeyRaw) });
+    flash('Your passkey opens ' + teamName(currentTeam) + ' now');
+    renderDevices();
   }
   /** After unlocking with the team password: this device opens the team with the account from now on. */
   async function rememberThisDevice(){
@@ -1749,12 +1810,18 @@
     try {
       const dev = await deviceKeys();
       const d = await devicesOf(currentTeam);
+      const offer = $("#passkey-offer");
+      const usable = (d.passkeys || []).filter(k=> k.prf !== false);
+      if(!canPasskey()) offer.innerHTML = '';
+      else if(!(d.passkeys || []).length) offer.innerHTML = '<p class="muted" style="font-size:13px"><a href="/account#passkeys" style="color:var(--green);font-weight:700">Add a passkey</a> to your account to open this team with Face ID or a fingerprint on any of your devices.</p>';
+      else if(usable.length && !myPasskeyCopies(d).length && dataKeyRaw) offer.innerHTML = '<button class="btn btn-primary" data-pk-add style="margin-bottom:8px">Open This Team with My Passkey</button><p class="muted" style="font-size:12px;margin:0 0 8px">Then Face ID or your fingerprint opens it on any of your devices \u2014 a new phone too.</p>';
+      else offer.innerHTML = '';
       if(!d.devices.length){ list.innerHTML = '<p class="muted" style="font-size:13px">No devices yet.</p>'; return; }
       const when = (iso)=> iso ? new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) : '';
       list.innerHTML = d.devices.map(x=>{
         const me = x.id === dev.id ? ' <strong>(this device)</strong>' : '';
         const status = x.wrapped ? 'approved ' + when(x.approvedAt) + (x.approvedBy ? ' by ' + esc(x.approvedBy) : '') : '<span style="color:#b45309;font-weight:700">waiting for approval</span>';
-        const approve = !x.wrapped && dataKeyRaw ? '<button class="btn btn-primary" data-approve-device="'+esc(x.id)+'">Approve</button> ' : '';
+        const approve = !x.wrapped && x.kind !== 'passkey' && dataKeyRaw ? '<button class="btn btn-primary" data-approve-device="'+esc(x.id)+'">Approve</button> ' : '';
         return '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee"><span style="font-size:14px"><strong>'+esc(x.userName)+'</strong> \u00b7 '+esc(x.label)+me+'<br><span class="muted" style="font-size:12px">'+status+'</span></span><span>'+approve+'<button class="btn" data-remove-device="'+esc(x.id)+'">Remove</button></span></div>';
       }).join('');
     } catch(e){ list.innerHTML = '<p class="muted" style="font-size:13px">Couldn\u2019t load the devices.</p>'; }
@@ -1764,9 +1831,17 @@
     const ask = e.target.closest('[data-ask-team]');
     const approve = e.target.closest('[data-approve-device]');
     const remove = e.target.closest('[data-remove-device]');
+    const pkOpen = e.target.closest('[data-pk-team]');
+    const pkAdd = e.target.closest('[data-pk-add]');
     if(e.target.closest('[data-recheck]')){ e.preventDefault(); renderAccountTeams(); return; }
     try {
       if(open){ open.disabled = true; open.textContent = 'Opening\u2026'; await openWithAccount(open.dataset.openTeam); }
+      else if(pkOpen){
+        pkOpen.disabled = true;
+        try { await openWithPasskey(pkOpen.dataset.pkTeam); }
+        finally { pkOpen.disabled = false; }
+      }
+      else if(pkAdd){ pkAdd.disabled = true; try { await addPasskeyToTeam(); } finally { pkAdd.disabled = false; } }
       else if(ask){
         const dev = await deviceKeys();
         await postDevices({ action:'register', team: ask.dataset.askTeam, id: dev.id, publicKey: dev.publicJwk, label: deviceLabel() });
@@ -1781,11 +1856,13 @@
         renderDevices();
       }
       else if(remove){
-        if(!confirm('Remove this device? It won\u2019t be able to open the team with an account any more.')) return;
+        if(!confirm('Remove this? It won\u2019t be able to open the team with an account any more.')) return;
         await postDevices({ action:'remove', team: currentTeam, id: remove.dataset.removeDevice });
         renderDevices();
       }
     } catch(err){
+      if(passkeyCancelled(err)) return;
+      if(pkOpen){ $("#account-err").textContent = err.message || String(err); return; }
       if(open){ open.disabled = false; open.textContent = 'Open ' + teamName(open.dataset.openTeam); $("#account-err").textContent = err.message || String(err); }
       else alert(err.message || String(err));
     }

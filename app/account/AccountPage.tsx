@@ -6,6 +6,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
+import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
+
+type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
 
 type Here = {
   club: string;
@@ -29,6 +32,9 @@ export default function AccountPage() {
   const [kids, setKids] = useState<ChildDraft[]>([]);
   const [myTeam, setMyTeam] = useState("");
   const [hereMessage, setHereMessage] = useState<string | null>(null);
+  const [passkeys, setPasskeys] = useState<PasskeyRow[] | null>(null);
+  const [canPasskey, setCanPasskey] = useState(false);
+  const [passkeyMessage, setPasskeyMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/account", { cache: "no-store" }).then(async (res) => {
@@ -39,6 +45,10 @@ export default function AccountPage() {
       const data = (await res.json()) as Account;
       setAccount(data);
       setName(data.user.name);
+      setCanPasskey(supportsPasskeys());
+      fetch("/api/auth/passkey", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : { passkeys: [] }))
+        .then((d) => setPasskeys(d.passkeys));
       const h = await fetch("/api/me/club", { cache: "no-store" });
       if (!h.ok) return;
       const hd = (await h.json()) as Here;
@@ -70,6 +80,32 @@ export default function AccountPage() {
     const data = await res.json().catch(() => ({}));
     setMessage(res.ok ? { ok: true, text: "Name saved." } : { ok: false, text: data.error ?? "That didn't save" });
     setBusy(false);
+  }
+
+  async function newPasskey() {
+    setBusy(true);
+    setPasskeyMessage(null);
+    try {
+      const key = (await addPasskey()) as PasskeyRow;
+      setPasskeys((list) => [key, ...(list ?? [])]);
+      setPasskeyMessage({
+        ok: true,
+        text:
+          key.prf === false
+            ? "Passkey added — use it to sign in. This browser can't use it to open Financial Admin, so that still needs this device approved."
+            : "Passkey added — next time, sign in with it instead of an emailed code.",
+      });
+    } catch (err) {
+      if (!cancelled(err)) setPasskeyMessage({ ok: false, text: err instanceof Error ? err.message : "That didn't work" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deletePasskey(id: string) {
+    if (!confirm("Remove this passkey? You won't be able to sign in with it any more (your email still works).")) return;
+    const res = await fetch(`/api/auth/passkey?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (res.ok) setPasskeys((await res.json()).passkeys);
   }
 
   async function signOut() {
@@ -166,6 +202,44 @@ export default function AccountPage() {
               Save
             </button>
             {hereMessage && <p className="mt-2 text-sm text-gray-600">{hereMessage}</p>}
+          </section>
+        )}
+
+        {passkeys && (
+          <section className={card} id="passkeys">
+            <h2 className="font-extrabold text-gray-900">Passkeys</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Sign in with Face ID, your fingerprint or your phone&apos;s screen lock instead of an emailed code. Your phone keeps the passkey
+              (Apple and Google sync it to your other devices). Treasurers and club admins can open Financial Admin with it too.
+            </p>
+            {passkeys.length > 0 && (
+              <ul className="mt-3 divide-y divide-gray-100">
+                {passkeys.map((k) => (
+                  <li key={k.id} className="flex items-center justify-between gap-3 py-3">
+                    <span>
+                      <span className="block font-bold text-gray-900">{k.label}</span>
+                      <span className="block text-xs text-gray-500">
+                        Added {new Date(k.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        {k.lastUsedAt && ` · last used ${new Date(k.lastUsedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+                      </span>
+                    </span>
+                    <button onClick={() => deletePasskey(k.id)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-bold text-gray-600 hover:bg-gray-50">
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canPasskey ? (
+              <button onClick={newPasskey} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40">
+                {passkeys.length ? "Add Another Passkey" : "Add a Passkey"}
+              </button>
+            ) : (
+              <p className="mt-3 text-sm text-gray-500">This browser can&apos;t use passkeys — try Safari or Chrome.</p>
+            )}
+            {passkeyMessage && (
+              <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${passkeyMessage.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>{passkeyMessage.text}</p>
+            )}
           </section>
         )}
 

@@ -2,7 +2,8 @@
 
 // Sign in with your email: we send a 6-digit code (and a link). Type the code
 // here — handy when the email opens in a different app — or tap the link.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { cancelled, signInWithPasskey, supportsPasskeys } from "./passkey";
 
 export default function SignInForm({ next = "/", onSignedIn }: { next?: string; onSignedIn?: () => void }) {
   const [email, setEmail] = useState("");
@@ -10,6 +11,9 @@ export default function SignInForm({ next = "/", onSignedIn }: { next?: string; 
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passkeys, setPasskeys] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- only known in the browser
+  useEffect(() => setPasskeys(supportsPasskeys()), []);
 
   async function post(url: string, body: unknown) {
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -46,11 +50,35 @@ export default function SignInForm({ next = "/", onSignedIn }: { next?: string; 
     }
   }
 
+  async function withPasskey() {
+    setBusy(true);
+    setError(null);
+    try {
+      const to = await signInWithPasskey(next);
+      if (onSignedIn) onSignedIn();
+      else window.location.href = to || next;
+    } catch (err) {
+      if (!cancelled(err)) setError(err instanceof Error ? err.message : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
   if (!sent) {
     return (
       <form onSubmit={send} className="flex flex-col gap-4">
+        {passkeys && (
+          <>
+            <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
+              Sign In with a Passkey
+            </button>
+            <p className="-mt-2 text-center text-xs text-gray-400">Face ID, fingerprint or your screen lock — if you&apos;ve added one</p>
+            <div className="flex items-center gap-3 text-xs font-semibold text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />or<span className="h-px flex-1 bg-gray-200" />
+            </div>
+          </>
+        )}
         <label>
           <span className="text-sm font-bold text-gray-800">Your email</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={input} placeholder="you@example.com" />
