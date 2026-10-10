@@ -1,6 +1,6 @@
 "use client";
 
-// The app's bottom tab bar, like an iPhone or Android app's: the club's main
+// The app's bottom tab bar — a floating glass bar like iOS's: the club's main
 // pages, plus Coach Admin for coaches or Financial Admin for treasurers. It
 // shows on the main pages only (TAB_PAGES); the coach tools keep their own
 // back links and bottom buttons.
@@ -8,11 +8,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Viewer } from "@/lib/viewer";
 import { useClub } from "./ClubProvider";
+import { useJoinRequests } from "./JoinAlerts";
 
 /** The pages the bar shows on. */
 export const TAB_PAGES = [/^\/$/, /^\/results$/, /^\/kit(\/|$)/, /^\/admin$/, /^\/account$/];
 
-type Tab = { href: string; label: string; icon: React.ReactNode; match: (path: string) => boolean; external?: boolean };
+type Tab = {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  match: (path: string) => boolean;
+  external?: boolean;
+  /** a red count on the icon (people waiting to join, on Coach) */
+  badge?: number;
+};
 
 const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 const Icon = ({ children }: { children: React.ReactNode }) => (
@@ -32,13 +41,18 @@ const ACCOUNT = <Icon><circle cx="12" cy="8.5" r="4" /><path d="M4 21a8 8 0 0 1 
 export default function TabBar({ viewer }: { viewer: Viewer }) {
   const club = useClub();
   const path = usePathname() ?? "/";
-  if (!TAB_PAGES.some((p) => p.test(path))) return null;
+  const onTabPage = TAB_PAGES.some((p) => p.test(path));
+  // people waiting for approval, for the Coach tab's badge
+  const { status: joins } = useJoinRequests(undefined, viewer.canCoach && onTabPage);
+  if (!onTabPage) return null;
 
   const tabs: Tab[] = [{ href: "/", label: "Home", icon: HOME, match: (p) => p === "/" }];
   if (club.features.trainingHub) tabs.push({ href: "/training-hub", label: "Training", icon: TRAINING, match: () => false, external: true });
   tabs.push({ href: "/results", label: "Results", icon: RESULTS, match: (p) => p === "/results" });
   if (club.features.kitSizes) tabs.push({ href: "/kit", label: "Kit", icon: KIT, match: (p) => p.startsWith("/kit") });
-  if (viewer.canCoach) tabs.push({ href: "/admin", label: "Coach", icon: COACH, match: (p) => p.startsWith("/admin") });
+  if (viewer.canCoach) {
+    tabs.push({ href: "/admin", label: "Coach", icon: COACH, match: (p) => p.startsWith("/admin"), badge: joins?.pending });
+  }
   else if (viewer.canFinance && club.features.financialAdmin) {
     tabs.push({ href: "/finance", label: "Finance", icon: FINANCE, match: () => false, external: true });
   }
@@ -48,29 +62,41 @@ export default function TabBar({ viewer }: { viewer: Viewer }) {
   return (
     <>
       {/* room for the bar, so it never covers the end of the page */}
-      <div aria-hidden="true" className="h-[calc(4.25rem+env(safe-area-inset-bottom))]" />
+      <div aria-hidden="true" className="h-[calc(6rem+env(safe-area-inset-bottom))]" />
+      {/* a floating glass bar, set in from the edges, like iOS's */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
-        <ul className="mx-auto flex max-w-2xl">
+        <ul className="mx-auto flex max-w-xl gap-1 rounded-full bg-gray-900/85 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.35)] ring-1 ring-white/15 backdrop-blur-xl backdrop-saturate-150">
           {tabs.map((t) => {
             const active = t.match(path);
-            const className = `flex h-[4.25rem] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${
-              active ? "text-green-700" : "text-gray-500 hover:text-gray-900"
+            const className = `relative flex h-[3.75rem] flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-semibold transition-colors ${
+              active ? "bg-white/15 text-[var(--club-bright)]" : "text-gray-200 hover:bg-white/10 hover:text-white"
             }`;
+            const inner = (
+              <>
+                <span className="relative">
+                  {t.icon}
+                  {!!t.badge && (
+                    <span className="absolute -right-3 -top-2 min-w-[1.25rem] rounded-full bg-red-500 px-1.5 text-center text-[11px] font-bold leading-5 text-white ring-2 ring-gray-900">
+                      {t.badge > 99 ? "99+" : t.badge}
+                    </span>
+                  )}
+                </span>
+                {t.label}
+              </>
+            );
             return (
               <li key={t.href} className="flex-1">
                 {t.external ? (
                   // plain pages outside the app's own routes (public/)
                   <a href={t.href} className={className}>
-                    {t.icon}
-                    {t.label}
+                    {inner}
                   </a>
                 ) : (
                   <Link href={t.href} className={className} aria-current={active ? "page" : undefined}>
-                    {t.icon}
-                    {t.label}
+                    {inner}
                   </Link>
                 )}
               </li>
