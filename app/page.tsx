@@ -3,6 +3,7 @@ import Image from "next/image";
 import { kitAspect } from "@/lib/clubSettings";
 import { Anton } from "next/font/google";
 import { getClub, getTeams } from "@/lib/settings";
+import { PendingBanner } from "./components/JoinAlerts";
 
 // the same heavy lettering as the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
@@ -58,6 +59,8 @@ export default async function Home() {
       </header>
 
       <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-5 pb-10">
+        {/* club admins and coaches signed in: anyone waiting for approval */}
+        <PendingBanner />
         {/* Players' study app: tactics guide, quizzes, skill challenges */}
         {CLUB.features.trainingHub && (
           <a

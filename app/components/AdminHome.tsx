@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { keyQuery } from "./coachKey";
 import { useClub } from "./ClubProvider";
+import { AlertsSwitch, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
 
 // the same heavy lettering as the home page and the player of the month poster
@@ -168,6 +169,9 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
   // the club has switched its shared password off: accounts only
   const [passwordOff, setPasswordOff] = useState(false);
 
+  // people waiting to join: a badge on Members, and this phone's alerts
+  const { status: joins, refresh: refreshJoins } = useJoinRequests(key, authed);
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
@@ -320,6 +324,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
           </p>
         )}
+        <AlertsSwitch status={joins} refresh={refreshJoins} signedIn={!!account?.canCoach && key === SESSION_KEY} />
         <div className="grid gap-4 sm:grid-cols-2">
           {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
             <Link
@@ -335,6 +340,11 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
                 >
                   {tool.icon}
                 </span>
+                {tool.path === "/admin/members" && !!joins?.pending && (
+                  <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+                    {joins.pending} waiting
+                  </span>
+                )}
                 {tool.badge && (
                   <span className="rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--club-night)]">
                     {tool.badge}
