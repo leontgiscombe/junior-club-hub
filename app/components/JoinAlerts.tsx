@@ -1,7 +1,7 @@
 "use client";
 
 // Join requests for club admins and coaches: the count waiting (a badge on
-// Coach Admin's Members tile and a banner on the home page), and the switch for
+// Coach Admin's Members tile), and the switch for
 // this phone's alerts (a prompt in Coach Admin until they're on; the switch in
 // Your Account). The alerts come through public/hub-sw.js.
 import Link from "next/link";
@@ -55,24 +55,6 @@ export function useJoinRequests(key: string = SESSION_KEY, enabled = true) {
     return () => window.removeEventListener("focus", refresh);
   }, [refresh]);
   return { status, refresh };
-}
-
-/** The home page's banner, for a club admin or coach signed in, when someone's waiting. */
-export function PendingBanner() {
-  const { status } = useJoinRequests();
-  if (!status?.pending) return null;
-  return (
-    <Link
-      href="/admin/members"
-      className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-sm hover:bg-amber-100"
-    >
-      <span className="text-xl">⏳</span>
-      <span className="flex-1">
-        {status.pending} {status.pending === 1 ? "person is" : "people are"} waiting for approval
-      </span>
-      <span>→</span>
-    </Link>
-  );
 }
 
 /** Turning this phone's alerts on and off, for someone signed in as a club admin or coach. */
@@ -140,7 +122,29 @@ function useAlertSwitch(refresh: () => void) {
     }
   };
 
-  return { busy, note, turnOn, turnOff };
+  const test = async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration("/");
+      const sub = await reg?.pushManager.getSubscription();
+      if (!sub) throw new Error("This phone has no alerts set up — turn them on first");
+      const res = await fetch("/api/members/alerts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ test: true, endpoint: sub.endpoint }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "The test alert wasn't sent");
+      setNote("Test alert sent — it should appear in a few seconds. If it doesn't, turn alerts off and on again.");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "The test alert wasn't sent");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { busy, note, turnOn, turnOff, test };
 }
 
 /**
@@ -185,7 +189,7 @@ export function AlertsPrompt({ status, refresh }: { status: Status | null; refre
 /** Your Account's section for this phone's alerts — only for club admins and coaches, on a club's own address. */
 export function AlertsSettings({ className }: { className: string }) {
   const { status, refresh } = useJoinRequests();
-  const { busy, note, turnOn, turnOff } = useAlertSwitch(refresh);
+  const { busy, note, turnOn, turnOff, test } = useAlertSwitch(refresh);
   if (!status?.pushAvailable) return null;
   return (
     <section className={className} id="alerts">
@@ -204,6 +208,15 @@ export function AlertsSettings({ className }: { className: string }) {
       >
         {busy ? "…" : status.alerts ? "Turn Off on This Phone" : "Turn On for This Phone"}
       </button>
+      {status.alerts && (
+        <button
+          onClick={test}
+          disabled={busy}
+          className="mt-3 ml-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+        >
+          Send a Test Alert
+        </button>
+      )}
       {note && <p className="mt-2 text-sm text-gray-600">{note}</p>}
     </section>
   );
