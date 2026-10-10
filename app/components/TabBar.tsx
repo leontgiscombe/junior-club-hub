@@ -1,7 +1,7 @@
 "use client";
 
 // The app's bottom tab bar — a floating glass bar like iOS's: the club's main
-// pages, plus Coach Admin for coaches or Financial Admin for treasurers. It
+// pages, Finances for treasurers and club admins, and Coach Admin for coaches. It
 // shows on the main pages only (TAB_PAGES); the coach tools keep their own
 // back links and bottom buttons, and Your Account is a screen you go into and
 // come back from, with its own back button.
@@ -33,7 +33,6 @@ const Icon = ({ children }: { children: React.ReactNode }) => (
 
 const HOME = <Icon><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V20h5v-6h4v6h5V9.5" /></Icon>;
 const TRAINING = <Icon><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /><path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" /></Icon>;
-const RESULTS = <Icon><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4" /><path d="M12 13v4M8 20h8M10 17h4v3h-4z" /></Icon>;
 const KIT = <Icon><path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /></Icon>;
 const COACH = <Icon><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></Icon>;
 const FINANCE = <Icon><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></Icon>;
@@ -49,13 +48,13 @@ export default function TabBar({ viewer }: { viewer: Viewer }) {
 
   const tabs: Tab[] = [{ href: "/", label: "Home", icon: HOME, match: (p) => p === "/" }];
   if (club.features.trainingHub) tabs.push({ href: "/training-hub", label: "Training", icon: TRAINING, match: () => false, external: true });
-  tabs.push({ href: "/results", label: "Results", icon: RESULTS, match: (p) => p === "/results" });
+  // Finances for whoever can open it (signed out we can't tell, so it shows); Results is on the home page
+  if (club.features.financialAdmin && (viewer.canFinance || !viewer.signedIn)) {
+    tabs.push({ href: "/finance", label: "Finances", icon: FINANCE, match: () => false, external: true });
+  }
   if (club.features.kitSizes) tabs.push({ href: "/kit", label: "Kit", icon: KIT, match: (p) => p.startsWith("/kit") });
   if (viewer.canCoach) {
     tabs.push({ href: "/admin", label: "Coach", icon: COACH, match: (p) => p.startsWith("/admin"), badge: joins?.pending });
-  }
-  else if (viewer.canFinance && club.features.financialAdmin) {
-    tabs.push({ href: "/finance", label: "Finance", icon: FINANCE, match: () => false, external: true });
   }
   if (!viewer.signedIn) tabs.push({ href: "/signin", label: "Sign In", icon: ACCOUNT, match: () => false });
   else if (tabs.length < 5) tabs.push({ href: "/account", label: "Account", icon: ACCOUNT, match: (p) => p === "/account" });
