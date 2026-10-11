@@ -3,8 +3,13 @@ import { getSubmissions, saveSubmission } from "@/lib/storage";
 import { getClub, isTeam } from "@/lib/settings";
 import { squadPlayer } from "@/lib/kitSquad";
 import type { KitExtra } from "@/lib/clubSettings";
+import { overLimit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  // the form is open to anyone with the club's link: a family sends a few, a script many
+  if (await overLimit("kit-submit", 30, 3600)) {
+    return NextResponse.json({ error: "That's a lot of kit forms — please try again later" }, { status: 429 });
+  }
   try {
     const body = await request.json();
     const { team, childName, shirtSize, shortsSize, socksSize } = body;

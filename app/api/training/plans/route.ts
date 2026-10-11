@@ -26,6 +26,7 @@ import {
 } from "@/lib/trainingPlans";
 import { checkPlansOwnerKey, drillsNeedOwnerKey, isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
+import { atLimit, overLimit } from "@/lib/rateLimit";
 import { isTrainingDate } from "@/lib/trainingStorage";
 import { SEASON_PLAN } from "@/lib/builtInDrills";
 
@@ -59,11 +60,18 @@ export async function POST(request: Request) {
   }
   const body = await request.json().catch(() => ({}));
   const ownerOnly = ["check-owner", "save-drill", "delete-drill"].includes(body.action);
-  if (ownerOnly && (await drillsNeedOwnerKey()) && !checkPlansOwnerKey(String(body.ownerKey ?? ""))) {
-    return NextResponse.json(
-      { error: "Only the owner can change the drill library" },
-      { status: 403 }
-    );
+  if (ownerOnly && (await drillsNeedOwnerKey())) {
+    // wrong owner passwords are counted, so it can't be guessed
+    if (await atLimit("drill-owner", 10)) {
+      return NextResponse.json({ error: "Too many wrong passwords — try again in an hour" }, { status: 429 });
+    }
+    if (!checkPlansOwnerKey(String(body.ownerKey ?? ""))) {
+      await overLimit("drill-owner", 10, 3600);
+      return NextResponse.json(
+        { error: "Only the owner can change the drill library" },
+        { status: 403 }
+      );
+    }
   }
   if (body.action === "check-owner") return NextResponse.json({ success: true });
 
