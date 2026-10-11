@@ -9,7 +9,7 @@ import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
-import { KIT_EXTRAS, type KitExtra } from "@/lib/clubSettings";
+import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
 
 interface Submission {
@@ -49,29 +49,98 @@ function formatDate(iso: string) {
   });
 }
 
+/** One CSV cell: quoted, with any quotes doubled, so commas and quotes in names are safe. */
+const cell = (v: string | number | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+const csv = (rows: (string | number | undefined)[][]) => rows.map((r) => r.map(cell).join(",")).join("\n");
+
 function toCSV(rows: Submission[], extras: KitExtra[]): string {
-  const header = ["Name", "Shirt", "Shorts", "Socks", ...extras.map((e) => KIT_EXTRAS[e].label), "Submitted"].join(",");
-  const lines = rows.map((r) =>
-    [
-      `"${r.childName}"`,
-      r.shirtSize,
-      r.shortsSize,
-      r.socksSize,
-      ...extras.map((e) => r.extras?.[e] ?? ""),
-      `"${formatDate(r.submittedAt)}"`,
-    ].join(",")
-  );
-  return [header, ...lines].join("\n");
+  return csv([
+    ["Name", "Shirt", "Shorts", "Socks", ...extras.map((e) => KIT_EXTRAS[e].label), "Submitted"],
+    ...rows.map((r) => [r.childName, r.shirtSize, r.shortsSize, r.socksSize, ...extras.map((e) => r.extras?.[e] ?? ""), formatDate(r.submittedAt)]),
+  ]);
 }
 
-function downloadCSV(rows: Submission[], team: string, extras: KitExtra[]) {
-  const blob = new Blob([toCSV(rows, extras)], { type: "text/csv" });
+/** A file to save: a CSV, opened by Excel or Numbers. */
+function download(text: string, filename: string) {
+  // the byte-order mark tells Excel it's UTF-8 (names with accents, the × sign)
+  const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kit-sizes-${team}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadCSV(rows: Submission[], team: string, extras: KitExtra[]) {
+  download(toCSV(rows, extras), `kit-sizes-${team}.csv`);
+}
+
+/** Sizes in their own order (4XS … S, XS … M), not alphabetical; anything else last. */
+const SIZE_ORDER = ["4XS", "3XS", "XXS", "XS", "S", "M", "L", "XL"];
+const bySize = (a: string, b: string) =>
+  (SIZE_ORDER.indexOf(a) + 1 || 99) - (SIZE_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b);
+
+/** How many of each item in each size the kit forms asked for — what to order. */
+function downloadSizeTotals(rows: Submission[], team: string, extras: KitExtra[]) {
+  const items: [string, (r: Submission) => string | undefined][] = [
+    ["Shirt", (r) => r.shirtSize],
+    ["Shorts", (r) => r.shortsSize],
+    ["Socks", (r) => r.socksSize],
+    ...extras.map((e) => [KIT_EXTRAS[e].label, (r: Submission) => r.extras?.[e]] as [string, (r: Submission) => string | undefined]),
+  ];
+  const out: (string | number)[][] = [["Item", "Size", "Quantity"]];
+  for (const [label, sizeOf] of items) {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const size = sizeOf(r);
+      if (size && size !== NOT_NEEDED) counts.set(size, (counts.get(size) ?? 0) + 1);
+    }
+    for (const size of [...counts.keys()].sort(bySize)) out.push([label, size, counts.get(size)!]);
+  }
+  download(csv(out), `kit-size-totals-${team}.csv`);
+}
+
+/** Every kit request, one row per item. */
+function downloadRequests(rows: KitRequest[], team: string) {
+  download(
+    csv([
+      ["Player", "Item", "Size", "Quantity", "Note", "Asked By", "Asked On", "Status"],
+      ...rows.map((r) => [
+        r.childName,
+        KIT_ITEMS[r.item]?.label ?? r.item,
+        r.size,
+        r.quantity,
+        r.note,
+        r.requestedBy,
+        formatDate(r.createdAt),
+        r.doneAt ? `Done ${formatDate(r.doneAt)}` : "Waiting",
+      ]),
+    ]),
+    `kit-requests-${team}.csv`,
+  );
+}
+
+/** What's still to order from kit requests: each item and size, how many, and for whom. */
+function downloadOrderTotals(rows: KitRequest[], team: string) {
+  const lines = new Map<string, { item: KitItem; size: string; quantity: number; players: string[] }>();
+  for (const r of rows.filter((x) => !x.doneAt)) {
+    const k = `${r.item}|${r.size}`;
+    const line = lines.get(k) ?? { item: r.item, size: r.size, quantity: 0, players: [] };
+    line.quantity += r.quantity;
+    line.players.push(r.quantity > 1 ? `${r.childName} (${r.quantity})` : r.childName);
+    lines.set(k, line);
+  }
+  const itemOrder = Object.keys(KIT_ITEMS) as KitItem[];
+  download(
+    csv([
+      ["Item", "Size", "Quantity", "For"],
+      ...[...lines.values()]
+        .sort((a, b) => itemOrder.indexOf(a.item) - itemOrder.indexOf(b.item) || bySize(a.size, b.size))
+        .map((l) => [KIT_ITEMS[l.item]?.label ?? l.item, l.size, l.quantity, l.players.join(", ")]),
+    ]),
+    `kit-order-totals-${team}.csv`,
+  );
 }
 
 // When `lockedTeam` is set the view is fixed to that one team (no tab switcher)
@@ -389,6 +458,22 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                 );
               })}
             </div>
+            {/* for ordering: everything asked for, and the totals still to order */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => downloadOrderTotals(requests, team)}
+                disabled={!requests.some((r) => !r.doneAt)}
+                className="cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 disabled:opacity-40"
+              >
+                ⬇ Order Totals CSV
+              </button>
+              <button
+                onClick={() => downloadRequests(requests, team)}
+                className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-200 dark:hover:bg-white/5"
+              >
+                ⬇ All Requests CSV
+              </button>
+            </div>
             {requests.some((r) => r.doneAt) && (
               <button
                 onClick={() => setShowDone((v) => !v)}
@@ -423,7 +508,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 mb-5">
+        <div className="flex flex-wrap gap-3 mb-5">
           <button
             onClick={() => load(key, team)}
             className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
@@ -436,6 +521,13 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 shadow-sm disabled:opacity-40 cursor-pointer"
           >
             ⬇ Export CSV
+          </button>
+          <button
+            onClick={() => downloadSizeTotals(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
+            disabled={submissions.length === 0}
+            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm disabled:opacity-40 cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+          >
+            ⬇ Size Totals CSV
           </button>
         </div>
 
