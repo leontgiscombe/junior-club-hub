@@ -9,6 +9,7 @@ import { isClubAdmin, isCoach } from "@/lib/adminAuth";
 import { assignPlayerTeam, deleteSquadPlayer, listPeople } from "@/lib/people";
 import { getTeams } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
+import { deletePlayerPhoto } from "@/lib/playerPhoto";
 import { requireTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +66,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Only a club admin can delete players" }, { status: 403 });
   }
   const tenant = await requireTenant();
-  await deleteSquadPlayer(tenant, req.nextUrl.searchParams.get("id") ?? "");
+  const id = req.nextUrl.searchParams.get("id") ?? "";
+  await deleteSquadPlayer(tenant, id);
+  await deletePlayerPhoto(id).catch(() => {});
   return NextResponse.json(await snapshot(tenant, key));
 }

@@ -3,7 +3,9 @@
 // Coach Admin → Members: the club's join code and link, whether only approved
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { squarePhoto } from "../account/ProfilePhoto";
 import { RELATIONS, ROLES, childrenOf, hasOwnTeam, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -33,7 +35,7 @@ type Snapshot = {
 
 /** The roles only a club admin can give or take away. */
 const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
-type SquadPlayer = { id: string; name: string; team: string };
+type SquadPlayer = { id: string; name: string; team: string; /** their photo's version, if they have one */ photo?: string };
 
 /** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
 function likelyPlayer(child: { name: string; team?: { slug: string } }, players: SquadPlayer[]): string {
@@ -99,6 +101,8 @@ export default function MembersAdmin() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  // the player whose profile is open
+  const [profile, setProfile] = useState<string | null>(null);
 
   const load = useCallback(async (k: string) => {
     setBusy(true);
@@ -242,6 +246,7 @@ export default function MembersAdmin() {
       ),
     }))
     .filter((g) => g.staff.length || g.squad.length || g.others.length);
+  const openPlayer = profile ? snap.players.find((pl) => pl.id === profile) ?? null : null;
   /** What a coach or staff member does, and whose guardian they are. */
   const staffLine = (p: Person) => {
     const role = p.roles.includes("admin") ? "Club admin" : p.roles.includes("coach") ? "Coach" : p.roles.includes("treasurer") ? "Treasurer" : p.roles.includes("player") ? "Player" : "";
@@ -449,15 +454,7 @@ export default function MembersAdmin() {
                     <p className="mt-3 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Players</p>
                     <ul className="divide-y divide-gray-100 dark:divide-white/10">
                       {g.squad.map((pl) => (
-                        <PlayerRow
-                          key={pl.id}
-                          player={pl}
-                          guardians={guardiansOf.get(pl.id) ?? []}
-                          snap={snap}
-                          busy={busy}
-                          onAct={act}
-                          onPlayer={playerAction}
-                        />
+                        <PlayerRow key={pl.id} player={pl} guardians={guardiansOf.get(pl.id) ?? []} adminKey={key} onOpen={() => setProfile(pl.id)} />
                       ))}
                     </ul>
                   </>
@@ -475,6 +472,19 @@ export default function MembersAdmin() {
               </div>
             </details>
           ))}
+          {openPlayer && (
+            <PlayerProfile
+              player={openPlayer}
+              guardians={guardiansOf.get(openPlayer.id) ?? []}
+              snap={snap}
+              adminKey={key}
+              busy={busy}
+              onAct={act}
+              onPlayer={playerAction}
+              onPhoto={() => load(key)}
+              onClose={() => setProfile(null)}
+            />
+          )}
           {q && !teamGroups.length && !clubWide.length && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No one matches “{search.trim()}”.</p>}
         </section>
 
@@ -651,42 +661,155 @@ function PendingPerson({
   );
 }
 
-/** A squad player: their team (to move them) and, under them, their parents or carers (guardians). */
-function PlayerRow({
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase())
+    .slice(0, 2)
+    .join("");
+
+/** A player's photo (only coaches and their own guardians can load it), or their initials. */
+function PlayerPhoto({ player, adminKey, size }: { player: SquadPlayer; adminKey: string; size: "row" | "big" }) {
+  const box = size === "big" ? "h-32 w-32 rounded-[2rem] text-4xl" : "h-11 w-11 rounded-full text-sm";
+  return (
+    <span className={`grid shrink-0 place-items-center overflow-hidden bg-green-100 font-bold text-green-800 dark:bg-green-400/15 dark:text-green-300 ${box}`}>
+      {player.photo ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a child's photo, private to the club's coaches and their family
+        <img
+          src={`/api/players/photo?id=${encodeURIComponent(player.id)}&key=${encodeURIComponent(adminKey)}&v=${player.photo}`}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initialsOf(player.name)
+      )}
+    </span>
+  );
+}
+
+/** A squad player: their photo, name and guardians — tap for their profile. */
+function PlayerRow({ player, guardians, adminKey, onOpen }: { player: SquadPlayer; guardians: Person[]; adminKey: string; onOpen: () => void }) {
+  return (
+    <li>
+      <button onClick={onOpen} className="press flex w-full items-center gap-3 py-2.5 text-left">
+        <PlayerPhoto player={player} adminKey={adminKey} size="row" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-bold text-gray-900 dark:text-gray-50">{player.name}</span>
+          <span className="block truncate text-sm text-gray-500 dark:text-gray-400">
+            {guardians.length ? `Guardian: ${guardians.map((g) => g.name).join(", ")}` : "No parent or carer account yet"}
+          </span>
+        </span>
+        <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      </button>
+    </li>
+  );
+}
+
+/** A player's profile, as a sheet: photo, name, team, and their guardians (tap one for their roles). */
+function PlayerProfile({
   player,
   guardians,
   snap,
+  adminKey,
   busy,
   onAct,
   onPlayer,
+  onPhoto,
+  onClose,
 }: {
   player: SquadPlayer;
   guardians: Person[];
   snap: Snapshot;
+  adminKey: string;
   busy: boolean;
   onAct: (body: Record<string, unknown>) => void;
   onPlayer: (change: { id: string; team: string } | { remove: string }) => void;
+  onPhoto: () => void;
+  onClose: () => void;
 }) {
-  return (
-    <li className="py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-400/15 dark:text-green-300">
-            {player.name
-              .split(/\s+/)
-              .filter(Boolean)
-              .map((w) => w[0]!.toUpperCase())
-              .slice(0, 2)
-              .join("")}
-          </span>
-          <span className="min-w-0">
-            <span className="block font-bold text-gray-900 dark:text-gray-50">{player.name}</span>
+  const [open, setOpen] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const teamName = snap.teams.find((t) => t.slug === player.team)?.name;
+
+  // the page behind stays still while it's open
+  useEffect(() => {
+    const html = document.documentElement;
+    const before = [html.style.overflow, document.body.style.overflow];
+    html.style.overflow = document.body.style.overflow = "hidden";
+    return () => {
+      [html.style.overflow, document.body.style.overflow] = before;
+    };
+  }, []);
+
+  async function photo(file: File | null) {
+    setPhotoBusy(true);
+    setPhotoError(null);
+    try {
+      const res = file
+        ? await fetch(`/api/players/photo?key=${encodeURIComponent(adminKey)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: player.id, image: await squarePhoto(file) }),
+          })
+        : await fetch(`/api/players/photo?id=${encodeURIComponent(player.id)}&key=${encodeURIComponent(adminKey)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Couldn't save the photo");
+      onPhoto();
+    } catch (e) {
+      setPhotoError(e instanceof Error ? e.message : "Couldn't save the photo");
+    } finally {
+      setPhotoBusy(false);
+      if (input.current) input.current.value = "";
+    }
+  }
+
+  // on the page's body, so it sits above the tab bar
+  return createPortal(
+    <div className="themed fixed inset-0 z-50 flex items-end justify-center overscroll-contain bg-black/40 sm:items-center" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={player.name}
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[90dvh] w-full max-w-md flex-col rounded-t-3xl bg-[#f2f2f7] pb-[max(1rem,env(safe-area-inset-bottom))] text-gray-900 shadow-2xl dark:bg-[#1c1c1e] dark:text-gray-50 sm:rounded-3xl"
+      >
+        <div className="flex justify-end px-4 pt-3">
+          <button onClick={onClose} className="text-[15px] font-bold text-green-700 dark:text-green-400">
+            Done
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2">
+          {/* photo, name and team */}
+          <div className="flex flex-col items-center text-center">
+            <PlayerPhoto player={player} adminKey={adminKey} size="big" />
+            <div className="mt-2 flex gap-4 text-sm font-semibold">
+              <button onClick={() => input.current?.click()} disabled={photoBusy} className="text-green-700 disabled:opacity-40 dark:text-green-400">
+                {photoBusy ? "Saving…" : player.photo ? "Change Photo" : "Add Photo"}
+              </button>
+              {player.photo && (
+                <button onClick={() => photo(null)} disabled={photoBusy} className="text-gray-500 disabled:opacity-40 dark:text-gray-400">
+                  Remove
+                </button>
+              )}
+              <input ref={input} type="file" accept="image/*" className="hidden" onChange={(e) => photo(e.target.files?.[0] ?? null)} />
+            </div>
+            {photoError && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{photoError}</p>}
+            <h2 className="mt-3 text-2xl font-extrabold">{player.name}</h2>
+            <p className="text-[15px] text-gray-500 dark:text-gray-400">{teamName ?? "No team yet"}</p>
+          </div>
+
+          <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Team</p>
+          <div className="rounded-2xl bg-white px-4 py-3 dark:bg-black/40">
             <select
-            value={snap.teams.some((t) => t.slug === player.team) ? player.team : ""}
-            onChange={(e) => onPlayer({ id: player.id, team: e.target.value })}
-            disabled={busy}
-            aria-label={`${player.name}'s team`}
-            className="mt-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+              value={teamName ? player.team : ""}
+              onChange={(e) => onPlayer({ id: player.id, team: e.target.value })}
+              disabled={busy}
+              aria-label={`${player.name}'s team`}
+              className="w-full bg-transparent text-[16px] font-semibold focus:outline-none"
             >
               <option value="">No team yet</option>
               {snap.teams.map((t) => (
@@ -695,9 +818,44 @@ function PlayerRow({
                 </option>
               ))}
             </select>
-          </span>
-        </span>
-        <span className="flex items-center gap-2">
+          </div>
+
+          <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Parents & Carers
+          </p>
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white dark:divide-white/10 dark:bg-black/40">
+            {guardians.length === 0 && <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No parent or carer account yet.</p>}
+            {guardians.map((g) => {
+              const others = childrenOf(g).filter((c) => c.playerId !== player.id);
+              const extra = [
+                g.relation && g.relation !== "parent" ? RELATIONS[g.relation] : "",
+                g.roles.includes("coach") && hasOwnTeam(g) && g.team ? `Coaches ${g.team.name}` : g.roles.includes("admin") ? "Club admin" : "",
+                others.length ? `Also guardian of ${others.map((c) => c.name).join(", ")}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <div key={g.userId} className="px-4">
+                  <button onClick={() => setOpen(open === g.userId ? null : g.userId)} className="flex w-full items-center gap-3 py-3 text-left">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-200 text-xs font-bold text-gray-700 dark:bg-white/10 dark:text-gray-200">
+                      {initialsOf(g.name)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">{g.name}</span>
+                      <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{[g.email, extra].filter(Boolean).join(" · ")}</span>
+                    </span>
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">{open === g.userId ? "Close" : "Manage"}</span>
+                  </button>
+                  {open === g.userId && (
+                    <ul className="pb-2">
+                      <MemberRow person={g} guardian note="Their roles, team and children" teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={onAct} />
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           {snap.canAdmin && (
             <button
               onClick={() => {
@@ -705,51 +863,21 @@ function PlayerRow({
                   confirm(
                     `Delete ${player.name} from the squad? Their season stats go too${guardians.length ? `, and they come off ${guardians.map((g) => g.name).join(" and ")}'s list of children` : ""}. This can't be undone (except from a backup).`,
                   )
-                )
+                ) {
                   onPlayer({ remove: player.id });
+                  onClose();
+                }
               }}
               disabled={busy}
-              aria-label={`Delete ${player.name}`}
-              className="h-8 w-8 rounded-lg text-gray-300 hover:text-red-500 disabled:opacity-40"
+              className="mt-5 w-full rounded-2xl bg-white py-3 text-[16px] font-semibold text-red-600 disabled:opacity-40 dark:bg-black/40 dark:text-red-400"
             >
-              ✕
+              Delete From Squad
             </button>
           )}
-        </span>
+        </div>
       </div>
-      {/* their guardians, each with their own roles and settings */}
-      <div className="ml-4 mt-2 border-l-2 border-gray-100 pl-3 dark:border-white/10">
-        {guardians.length ? (
-          <ul className="divide-y divide-gray-100 dark:divide-white/10">
-            {guardians.map((g) => {
-              const others = childrenOf(g).filter((c) => c.playerId !== player.id);
-              const staff = g.roles.includes("coach") && hasOwnTeam(g) && g.team ? `also coaches ${g.team.name}` : g.roles.includes("admin") ? "also a club admin" : "";
-              return (
-                <MemberRow
-                  key={g.userId}
-                  person={g}
-                  guardian
-                  note={[
-                    g.email,
-                    g.relation && g.relation !== "parent" ? RELATIONS[g.relation] : "Guardian",
-                    others.length ? `also guardian of ${others.map((c) => c.name).join(", ")}` : "",
-                    staff,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  teams={snap.teams}
-                  canAdmin={snap.canAdmin}
-                  busy={busy}
-                  onAct={onAct}
-                />
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="py-1 text-xs text-gray-400">No parent or carer account yet</p>
-        )}
-      </div>
-    </li>
+    </div>,
+    document.body,
   );
 }
 

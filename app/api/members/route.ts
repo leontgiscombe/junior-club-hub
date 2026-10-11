@@ -39,6 +39,7 @@ import {
 } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
+import { playerPhotoVersions } from "@/lib/playerPhoto";
 import { getTeams } from "@/lib/settings";
 import { getTenantRecord } from "@/lib/tenants";
 import { DEFAULT_TENANT, PLATFORM_NAME, platformUrl, requireTenant, rootDomain, tenantUrl } from "@/lib/tenant";
@@ -52,7 +53,7 @@ const adminsOnly = () =>
 export const dynamic = "force-dynamic";
 
 async function snapshot(tenant: string, key: string) {
-  const [access, members, people, teams, players, invites, canAdmin, me] = await Promise.all([
+  const [access, members, people, teams, players, invites, canAdmin, me, photos] = await Promise.all([
     getAccess(tenant),
     listMembers(tenant),
     listPeople(tenant),
@@ -61,6 +62,7 @@ async function snapshot(tenant: string, key: string) {
     listInvites(tenant),
     isClubAdmin(key),
     currentPerson(tenant).catch(() => null),
+    playerPhotoVersions().catch(() => ({}) as Record<string, string>),
   ]);
   return {
     canAdmin,
@@ -79,7 +81,10 @@ async function snapshot(tenant: string, key: string) {
     members,
     teams: teams.map((t) => ({ slug: t.slug, name: t.name })),
     // the squad, for linking a new parent's children to players already there
-    players: players.map((p) => ({ id: p.id, name: p.name, team: p.team })).sort((a, b) => a.name.localeCompare(b.name)),
+    // (and each player's photo version, for their profile picture)
+    players: players
+      .map((p) => ({ id: p.id, name: p.name, team: p.team, ...(photos[p.id] ? { photo: photos[p.id] } : {}) }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
   };
 }
 
