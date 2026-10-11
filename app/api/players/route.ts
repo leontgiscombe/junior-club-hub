@@ -2,13 +2,14 @@
 // each player (from their accounts). The club decides each player's team.
 //   GET  ?key=…                         -> { teams, players: [...], canDelete }
 //   POST ?key=… { id, team }            -> puts a player in a team ("" for no team yet)
+//   PATCH ?key=… { id, name?, position? } -> renames a player (on their parents' lists too) or sets their position
 //   DELETE ?key=…&id=…                  -> takes a player out of the squad (club admins only)
 import { NextRequest, NextResponse } from "next/server";
 import { childrenOf } from "@/lib/access";
 import { isClubAdmin, isCoach } from "@/lib/adminAuth";
-import { assignPlayerTeam, deleteSquadPlayer, listPeople } from "@/lib/people";
+import { assignPlayerTeam, deleteSquadPlayer, editSquadPlayer, listPeople } from "@/lib/people";
 import { getTeams } from "@/lib/settings";
-import { listPlayers } from "@/lib/statsStorage";
+import { isPosition, listPlayers } from "@/lib/statsStorage";
 import { deletePlayerPhoto } from "@/lib/playerPhoto";
 import { requireTenant } from "@/lib/tenant";
 
@@ -57,6 +58,25 @@ export async function POST(req: NextRequest) {
   if (!(await assignPlayerTeam(tenant, String(body?.id ?? ""), String(body?.team ?? "")))) {
     return NextResponse.json({ error: "Couldn't move that player — refresh and try again" }, { status: 400 });
   }
+  return NextResponse.json(await snapshot(tenant, req.nextUrl.searchParams.get("key") ?? ""));
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!(await isCoach(req.nextUrl.searchParams.get("key") ?? ""))) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  }
+  const tenant = await requireTenant();
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const name = typeof body?.name === "string" ? body.name.trim() : undefined;
+  if (name !== undefined && !name) return NextResponse.json({ error: "Give them a name" }, { status: 400 });
+  if (body && "position" in body && !isPosition(body.position)) {
+    return NextResponse.json({ error: "Unknown position" }, { status: 400 });
+  }
+  const ok = await editSquadPlayer(tenant, String(body?.id ?? ""), {
+    ...(name ? { name } : {}),
+    ...(isPosition(body?.position) ? { position: body.position } : {}),
+  });
+  if (!ok) return NextResponse.json({ error: "Couldn't change that player — refresh and try again" }, { status: 400 });
   return NextResponse.json(await snapshot(tenant, req.nextUrl.searchParams.get("key") ?? ""));
 }
 
