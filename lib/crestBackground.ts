@@ -4,11 +4,20 @@
 // made see-through (so white inside the badge's outline stays), its fringe is
 // softened, and the empty margin is trimmed. A photo, or a crest that's
 // already see-through, is left alone (null).
+//
+// With `shaded` (the kit picture), the background can also shade gradually —
+// lighter towards the middle, say: a pixel joins it when it's close to the one
+// beside it already counted, as long as it stays near the edge's colour overall.
 
 /** How far (0–441, RGB distance) a pixel can be from the background and still count as it. */
 const TOLERANCE = 48;
 
-export function removeBackground(source: HTMLCanvasElement): HTMLCanvasElement | null {
+/** How close (RGB distance) a shaded background's next pixel must be to its neighbour. */
+const STEP = 14;
+/** …and how far a shaded background can drift from the edge's colour in all. */
+const DRIFT = 110;
+
+export function removeBackground(source: HTMLCanvasElement, { shaded = false } = {}): HTMLCanvasElement | null {
   const w = source.width;
   const h = source.height;
   if (w < 8 || h < 8) return null;
@@ -41,7 +50,11 @@ export function removeBackground(source: HTMLCanvasElement): HTMLCanvasElement |
   // most of the edge has to be that colour, or it isn't a plain background
   if (edge.filter(isBg).length < edge.length * 0.6) return null;
 
-  // everything of that colour joined to the edge
+  // everything of that colour joined to the edge (or, shaded, shading on from it)
+  const step = (a: number, b: number) =>
+    Math.hypot(d[a * 4] - d[b * 4], d[a * 4 + 1] - d[b * 4 + 1], d[a * 4 + 2] - d[b * 4 + 2]);
+  const joins = (n: number, from: number) =>
+    isBg(n) || (shaded && dist(n) <= DRIFT && !clear(n) && step(n, from) <= STEP);
   const gone = new Uint8Array(w * h);
   const stack = edge.filter(isBg);
   for (const p of stack) gone[p] = 1;
@@ -49,7 +62,7 @@ export function removeBackground(source: HTMLCanvasElement): HTMLCanvasElement |
     const p = stack.pop()!;
     const x = p % w;
     for (const n of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w]) {
-      if (n < 0 || n >= w * h || gone[n] || !isBg(n)) continue;
+      if (n < 0 || n >= w * h || gone[n] || !joins(n, p)) continue;
       gone[n] = 1;
       stack.push(n);
     }
@@ -64,11 +77,14 @@ export function removeBackground(source: HTMLCanvasElement): HTMLCanvasElement |
       continue;
     }
     // the badge's own edge, blended into the background: fade it rather than leave a halo
+    // (measured against the background right beside it, which may be shaded)
     const x = p % w;
-    const touching =
-      (x > 0 && gone[p - 1]) || (x < w - 1 && gone[p + 1]) || (p >= w && gone[p - w]) || (p + w < w * h && gone[p + w]);
-    if (touching) {
-      const t = Math.min(1, Math.max(0, (dist(p) - TOLERANCE) / TOLERANCE));
+    const near = [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p >= w ? p - w : -1, p + w < w * h ? p + w : -1].filter(
+      (n) => n >= 0 && gone[n],
+    );
+    if (near.length) {
+      const closest = Math.min(...near.map((n) => step(p, n)));
+      const t = Math.min(1, Math.max(0, (closest - TOLERANCE) / TOLERANCE));
       d[p * 4 + 3] = Math.round(d[p * 4 + 3] * (0.35 + 0.65 * t));
     }
   }
