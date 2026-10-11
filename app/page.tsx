@@ -239,7 +239,7 @@ export default async function Home() {
             <h2 className="wp-text px-1 text-xl font-bold">Last result</h2>
             <div className={`${card} overflow-hidden`}>
               <NextRow link={viewer.canCoach} href={CLUB.publicResults ? "/results" : "/admin/stats/matches"}>
-                <span className="grid h-12 min-w-12 shrink-0 place-items-center rounded-xl bg-green-50 px-2 text-xl font-extrabold dark:bg-green-400/10">
+                <span className={`grid h-12 min-w-14 shrink-0 place-items-center rounded-xl px-2 text-xl font-extrabold text-white ${RESULT[outcome(lastResult)].badge}`}>
                   {lastResult.goals.length}–{lastResult.opponentGoals}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -247,8 +247,9 @@ export default async function Home() {
                     {many ? `${teamName(lastResult.team)} ` : ""}vs {lastResult.opponent || "TBC"}
                   </span>
                   <span className={`block text-sm ${sub}`}>
+                    <span className={`font-bold ${RESULT[outcome(lastResult)].text}`}>{RESULT[outcome(lastResult)].label}</span>
+                    {" · "}
                     {day(lastResult.date, { weekday: "long", day: "numeric", month: "short" })}
-                    {viewer.canCoach ? ` · ${{ W: "Won", D: "Drew", L: "Lost" }[outcome(lastResult)]}` : ""}
                   </span>
                 </span>
               </NextRow>
@@ -339,6 +340,13 @@ function NextRow({ link, href, children }: { link: boolean; href: string; childr
     <div className="flex items-center gap-4 px-4 py-3.5">{children}</div>
   );
 }
+
+/** How a result looks: green for a win, amber for a draw, red for a loss. */
+const RESULT = {
+  W: { label: "Won", badge: "bg-green-600", text: "text-green-700 dark:text-green-400" },
+  D: { label: "Drew", badge: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
+  L: { label: "Lost", badge: "bg-red-600", text: "text-red-600 dark:text-red-400" },
+} as const;
 
 function DateBadge({ date }: { date: string }) {
   return (
