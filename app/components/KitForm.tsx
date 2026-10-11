@@ -57,7 +57,7 @@ function SizeSelector<T extends string>({ step, label, emoji, value, onChange, s
   notNeeded?: boolean;
 }) {
   return (
-    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 dark:bg-white/5 dark:border-white/10">
+    <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
       <p className="text-sm font-bold text-gray-700 mb-3 dark:text-gray-200">
         <Step n={step} done={!!value} />
         {emoji} {label}
@@ -266,7 +266,7 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-8">
-      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 dark:bg-white/5 dark:border-white/10">
+      <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
         <label htmlFor="kit-child" className="block text-sm font-bold text-gray-700 mb-2 dark:text-gray-200">
           <Step n={1} done={hasChild} />
           👶 Your Child
@@ -294,7 +294,7 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
             id={squad.length ? undefined : "kit-child"}
             type="text" value={childName} onChange={(e) => setChildName(e.target.value)}
             placeholder="Your child's full name, e.g. Jamie Smith" required
-            className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 text-base ${
+            className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 text-base dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15 ${
               squad.length ? "mt-2" : ""
             }`}
           />

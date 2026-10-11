@@ -358,7 +358,7 @@ export default function ClubSettings() {
   return (
     // the page previews the colour being picked, before it's saved
     <main
-      className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16"
+      className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16"
       style={(draft.colour ? clubColourVars(draft.colour) : DEFAULT_COLOUR_VARS) as React.CSSProperties}
     >
       {screen && SCREENS[screen] ? (

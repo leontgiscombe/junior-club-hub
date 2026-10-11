@@ -72,7 +72,7 @@ export default function SearchView({
   const waiting = searchData && query.length >= 2 && (loading || data.q !== query);
 
   return (
-    <main className="themed min-h-screen bg-gray-100 pb-16 dark:bg-black dark:text-gray-50">
+    <main className="themed min-h-screen bg-[#f2f2f7] pb-16 dark:bg-black dark:text-gray-50">
       <TopBar title="Search" href="/" />
       <div className="mx-auto max-w-xl px-4">
         <label className="relative mt-2 block">

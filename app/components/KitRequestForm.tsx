@@ -16,7 +16,7 @@ type Mine = {
   doneAt?: string;
 };
 
-const box = "rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5";
+const box = "block rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
 const heading = "mb-3 text-sm font-bold text-gray-700 dark:text-gray-200";
 const choice = (on: boolean) =>
   `cursor-pointer rounded-xl border-2 px-2 py-3 text-sm font-extrabold transition-all ${
@@ -94,8 +94,8 @@ export default function KitRequestForm({
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
-          <p className="px-1 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col gap-3">
+          <p className="px-1 text-center text-[15px] text-gray-500 dark:text-gray-400">
             Need something during the season — a bigger shirt, a lost jacket? Ask here and your child&apos;s
             coaches get an alert.
           </p>

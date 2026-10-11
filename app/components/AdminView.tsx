@@ -237,7 +237,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   );
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title={<>{teamName(team)} – Kit Responses</>} href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">

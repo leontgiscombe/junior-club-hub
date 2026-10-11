@@ -60,7 +60,7 @@ export default function FaSnippetTest() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title="FA Full-Time Test" href="/admin" />
 
       <div className="mx-auto max-w-3xl px-4 py-6">

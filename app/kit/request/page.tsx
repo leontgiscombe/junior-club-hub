@@ -29,7 +29,7 @@ export default async function KitRequestPage() {
 
   const panel = "rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]";
   return (
-    <div className="themed flex min-h-screen flex-col bg-gray-100 dark:bg-black dark:text-gray-50">
+    <div className="themed flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <KitHeader back={{ href: "/kit", label: "Kit" }} title="Request Kit" subtitle={CLUB.fullName} />
       <main className="relative mx-auto mt-3 w-full max-w-md flex-1 px-4">
         {!me ? (

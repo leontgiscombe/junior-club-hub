@@ -157,7 +157,7 @@ export default function HelpManual() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-12">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-12">
       <TopBar title="Help" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
