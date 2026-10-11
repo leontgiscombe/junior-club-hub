@@ -2,7 +2,7 @@
 
 // Your account, laid out like a phone's settings: your photo and name at the
 // top, then grouped rows that each open their own screen (#details, #clubs,
-// #here, #security, #appearance, #alerts, #delete) — your name, your clubs and roles, your
+// #here, #security, #appearance, #tabs, #alerts, #delete) — your name, your clubs and roles, your
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
 import { useCallback, useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/Childre
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
 import ProfilePhoto from "./ProfilePhoto";
 import AppearancePicker, { themeLabel } from "./AppearancePicker";
+import TabBarPicker from "./TabBarPicker";
 import { Group, ICONS, Row, TopBar, useScreens } from "../components/SettingsUI";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
@@ -157,6 +158,7 @@ export default function AccountPage() {
     security: "Sign-In & Security",
     alerts: "Notifications",
     appearance: "Appearance",
+    tabs: "Tab Bar",
     delete: "Delete Account",
   };
   if (screen && titles[screen]) {
@@ -276,6 +278,8 @@ export default function AccountPage() {
 
           {screen === "appearance" && <AppearancePicker />}
 
+          {screen === "tabs" && <TabBarPicker />}
+
           {screen === "alerts" && <AlertsSettings className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]" />}
 
           {screen === "delete" && (
@@ -324,6 +328,7 @@ export default function AccountPage() {
 
         <Group>
           <Row icon={ICONS.moon} label="Appearance" detail={themeLabel()} onClick={() => open("appearance")} />
+          <Row icon={ICONS.grid} label="Tab Bar" onClick={() => open("tabs")} />
           {alerts?.pushAvailable && (
             <Row icon={ICONS.bell} label="Notifications" detail={alerts.alerts ? "On" : "Off"} onClick={() => open("alerts")} />
           )}
