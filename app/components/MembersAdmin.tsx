@@ -98,6 +98,7 @@ export default function MembersAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async (k: string) => {
     setBusy(true);
@@ -117,6 +118,10 @@ export default function MembersAdmin() {
 
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
+    // opened from Search (or the old Players page): start filtered to what was found
+    const urlQuery = new URLSearchParams(window.location.search).get("q");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address is only known in the browser
+    if (urlQuery) setSearch(urlQuery);
     let cancelled = false;
     const t = setTimeout(async () => {
       if (urlKey) {
@@ -204,11 +209,73 @@ export default function MembersAdmin() {
   const pending = people.filter((p) => p.status === "pending");
   const approved = people.filter((p) => p.status === "approved");
   const declined = people.filter((p) => p.status === "declined");
-  // approved members by team (a parent is under each of their children's teams)
-  const groups = [
-    ...snap.teams.map((t) => ({ key: t.slug, title: t.name, people: approved.filter((p) => teamsOf(p).includes(t.slug)) })),
-    { key: "", title: "No team yet", people: approved.filter((p) => teamsOf(p).length === 0) },
-  ].filter((g) => g.people.length);
+  // like Spond: a child is the member, with their parents (guardians) under them; coaches and
+  // staff are listed in their own right — so a parent who coaches is a coach in one place and a
+  // guardian in another, never two "people"
+  const q = search.trim().toLowerCase();
+  const hit = (...texts: (string | undefined)[]) => !q || texts.some((t) => t?.toLowerCase().includes(q));
+  const guardiansOf = new Map<string, Person[]>();
+  const unmatched: { person: Person; child: ReturnType<typeof childrenOf>[number] }[] = [];
+  for (const p of approved) {
+    for (const c of childrenOf(p)) {
+      if (c.playerId) guardiansOf.set(c.playerId, [...(guardiansOf.get(c.playerId) ?? []), p]);
+      else unmatched.push({ person: p, child: c });
+    }
+  }
+  const isStaff = (p: Person) => p.roles.some((r) => ADMIN_ROLES.includes(r));
+  const ownTeamSlug = (p: Person) => (hasOwnTeam(p) && p.team && snap.teams.some((t) => t.slug === p.team!.slug) ? p.team.slug : "");
+  const personHit = (p: Person) => hit(p.name, p.email);
+  const clubWide = approved.filter((p) => isStaff(p) && !ownTeamSlug(p) && personHit(p));
+  const teamGroups = [...snap.teams, { slug: "", name: "No Team Yet" }]
+    .map((t) => ({
+      ...t,
+      staff: t.slug ? approved.filter((p) => isStaff(p) && ownTeamSlug(p) === t.slug && personHit(p)) : [],
+      squad: snap.players
+        .filter((pl) => (snap.teams.some((x) => x.slug === pl.team) ? pl.team : "") === t.slug)
+        .filter((pl) => hit(pl.name, ...(guardiansOf.get(pl.id) ?? []).flatMap((g) => [g.name, g.email]))),
+      // anyone else with this as their own team (a player's own account), or — under No Team Yet — with no team at all
+      others: approved.filter(
+        (p) =>
+          !isStaff(p) &&
+          personHit(p) &&
+          (t.slug ? ownTeamSlug(p) === t.slug : teamsOf(p).length === 0 && !childrenOf(p).length),
+      ),
+    }))
+    .filter((g) => g.staff.length || g.squad.length || g.others.length);
+  /** What a coach or staff member does, and whose guardian they are. */
+  const staffLine = (p: Person) => {
+    const role = p.roles.includes("admin") ? "Club admin" : p.roles.includes("coach") ? "Coach" : p.roles.includes("treasurer") ? "Treasurer" : p.roles.includes("player") ? "Player" : "";
+    const kids = childrenOf(p);
+    return [
+      p.email,
+      [role, ownTeamSlug(p) ? p.team!.name : ""].filter(Boolean).join(" · "),
+      kids.length ? `Guardian of ${kids.map((c) => (c.team ? `${c.name} (${c.team.name})` : c.name)).join(", ")}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  };
+
+  // moving a player to another team, or taking them out of the squad (the Players API)
+  async function playerAction(change: { id: string; team: string } | { remove: string }) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res =
+        "remove" in change
+          ? await fetch(`/api/players?key=${encodeURIComponent(key)}&id=${encodeURIComponent(change.remove)}`, { method: "DELETE" })
+          : await fetch(`/api/players?key=${encodeURIComponent(key)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(change),
+            });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "That didn't work");
+      await load(key);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That didn't work");
+      setBusy(false);
+    }
+  }
   // phones approved before accounts (and any still waiting from then)
   const phones = snap.members.filter((m) => m.status !== "declined");
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10";
@@ -302,25 +369,113 @@ export default function MembersAdmin() {
           )}
         </section>
 
-        {/* Approved, by team */}
+        {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
         <section className={card}>
-          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✅ Members ({approved.length})</h2>
+          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✅ Members</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            By team. Tap a role to give or take it away — club admins and coaches can use Coach Admin.
+            Each team&apos;s coaches and staff, then its players with their parents or carers (guardians). Tap a role to give
+            or take it away — club admins and coaches can use Coach Admin.
           </p>
-          {approved.length === 0 && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No members yet.</p>}
-          {groups.map((g) => (
-            <details key={g.key || "none"} open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search players, parents or coaches"
+            className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
+          />
+          {approved.length === 0 && snap.players.length === 0 && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No members yet.</p>}
+
+          {/* children not yet in the squad */}
+          {unmatched.length > 0 && !q && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-400/30 dark:bg-amber-400/10">
+              <p className="font-bold text-amber-900 dark:text-amber-200">To Add to the Squad ({unmatched.length})</p>
+              <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">Children of approved parents who aren&apos;t a squad player yet.</p>
+              <ul className="mt-2 divide-y divide-amber-200/60 dark:divide-amber-400/20">
+                {unmatched.map(({ person, child }) => (
+                  <li key={`${person.userId}:${child.id}`} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <span className="min-w-0 text-sm text-amber-900 dark:text-amber-100">
+                      <span className="font-bold">{child.name}</span>
+                      {child.team ? ` · ${child.team.name}` : " · no team yet"} · child of {person.name}
+                    </span>
+                    <button
+                      onClick={() => act({ action: "editPerson", userId: person.userId, children: toDrafts(childrenOf(person)).map((d) => ({ id: d.id, name: d.name, team: d.team })) })}
+                      disabled={busy}
+                      className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-40"
+                    >
+                      Add to Squad
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* club-wide: admins and coaches with no one team */}
+          {clubWide.length > 0 && (
+            <details open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
               <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
-                {g.title} <span className="font-semibold text-gray-500 dark:text-gray-400">({g.people.length})</span>
+                Club-Wide Staff <span className="font-semibold text-gray-500 dark:text-gray-400">({clubWide.length})</span>
               </summary>
               <ul className="divide-y divide-gray-100 px-4 dark:divide-white/10">
-                {g.people.map((p) => (
-                  <MemberRow key={p.userId} person={p} inTeam={g.key || undefined} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
+                {clubWide.map((p) => (
+                  <MemberRow key={p.userId} person={p} note={staffLine(p)} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
                 ))}
               </ul>
             </details>
+          )}
+
+          {teamGroups.map((g) => (
+            <details key={g.slug || "none"} open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
+              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
+                {g.name}{" "}
+                <span className="font-semibold text-gray-500 dark:text-gray-400">
+                  ({g.squad.length} player{g.squad.length === 1 ? "" : "s"}
+                  {g.staff.length ? `, ${g.staff.length} staff` : ""})
+                </span>
+              </summary>
+              <div className="px-4 pb-2">
+                {g.staff.length > 0 && (
+                  <>
+                    <p className="mt-3 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Coaches & Staff</p>
+                    <ul className="divide-y divide-gray-100 dark:divide-white/10">
+                      {g.staff.map((p) => (
+                        <MemberRow key={p.userId} person={p} note={staffLine(p)} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {g.squad.length > 0 && (
+                  <>
+                    <p className="mt-3 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Players</p>
+                    <ul className="divide-y divide-gray-100 dark:divide-white/10">
+                      {g.squad.map((pl) => (
+                        <PlayerRow
+                          key={pl.id}
+                          player={pl}
+                          guardians={guardiansOf.get(pl.id) ?? []}
+                          snap={snap}
+                          busy={busy}
+                          onAct={act}
+                          onPlayer={playerAction}
+                        />
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {g.others.length > 0 && (
+                  <>
+                    <p className="mt-3 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Other Members</p>
+                    <ul className="divide-y divide-gray-100 dark:divide-white/10">
+                      {g.others.map((p) => (
+                        <MemberRow key={p.userId} person={p} note={staffLine(p)} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </details>
           ))}
+          {q && !teamGroups.length && !clubWide.length && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No one matches “{search.trim()}”.</p>}
         </section>
 
         {declined.length > 0 && (
@@ -496,10 +651,114 @@ function PendingPerson({
   );
 }
 
+/** A squad player: their team (to move them) and, under them, their parents or carers (guardians). */
+function PlayerRow({
+  player,
+  guardians,
+  snap,
+  busy,
+  onAct,
+  onPlayer,
+}: {
+  player: SquadPlayer;
+  guardians: Person[];
+  snap: Snapshot;
+  busy: boolean;
+  onAct: (body: Record<string, unknown>) => void;
+  onPlayer: (change: { id: string; team: string } | { remove: string }) => void;
+}) {
+  return (
+    <li className="py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-green-100 text-sm font-bold text-green-800 dark:bg-green-400/15 dark:text-green-300">
+            {player.name
+              .split(/\s+/)
+              .filter(Boolean)
+              .map((w) => w[0]!.toUpperCase())
+              .slice(0, 2)
+              .join("")}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-bold text-gray-900 dark:text-gray-50">{player.name}</span>
+            <select
+            value={snap.teams.some((t) => t.slug === player.team) ? player.team : ""}
+            onChange={(e) => onPlayer({ id: player.id, team: e.target.value })}
+            disabled={busy}
+            aria-label={`${player.name}'s team`}
+            className="mt-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+            >
+              <option value="">No team yet</option>
+              {snap.teams.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          {snap.canAdmin && (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    `Delete ${player.name} from the squad? Their season stats go too${guardians.length ? `, and they come off ${guardians.map((g) => g.name).join(" and ")}'s list of children` : ""}. This can't be undone (except from a backup).`,
+                  )
+                )
+                  onPlayer({ remove: player.id });
+              }}
+              disabled={busy}
+              aria-label={`Delete ${player.name}`}
+              className="h-8 w-8 rounded-lg text-gray-300 hover:text-red-500 disabled:opacity-40"
+            >
+              ✕
+            </button>
+          )}
+        </span>
+      </div>
+      {/* their guardians, each with their own roles and settings */}
+      <div className="ml-4 mt-2 border-l-2 border-gray-100 pl-3 dark:border-white/10">
+        {guardians.length ? (
+          <ul className="divide-y divide-gray-100 dark:divide-white/10">
+            {guardians.map((g) => {
+              const others = childrenOf(g).filter((c) => c.playerId !== player.id);
+              const staff = g.roles.includes("coach") && hasOwnTeam(g) && g.team ? `also coaches ${g.team.name}` : g.roles.includes("admin") ? "also a club admin" : "";
+              return (
+                <MemberRow
+                  key={g.userId}
+                  person={g}
+                  guardian
+                  note={[
+                    g.email,
+                    g.relation && g.relation !== "parent" ? RELATIONS[g.relation] : "Guardian",
+                    others.length ? `also guardian of ${others.map((c) => c.name).join(", ")}` : "",
+                    staff,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  teams={snap.teams}
+                  canAdmin={snap.canAdmin}
+                  busy={busy}
+                  onAct={onAct}
+                />
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="py-1 text-xs text-gray-400">No parent or carer account yet</p>
+        )}
+      </div>
+    </li>
+  );
+}
+
 /** An approved member: their details and roles, and fixing their team (or their children's). */
 function MemberRow({
   person,
   inTeam,
+  note,
+  guardian = false,
   teams,
   canAdmin,
   busy,
@@ -507,6 +766,10 @@ function MemberRow({
 }: {
   person: Person;
   inTeam?: string;
+  /** what to say under their name, in place of the usual description */
+  note?: string;
+  /** shown under a player, as one of their guardians */
+  guardian?: boolean;
   teams: TeamOption[];
   canAdmin: boolean;
   busy: boolean;
@@ -523,11 +786,11 @@ function MemberRow({
   const [team, setTeam] = useState(person.team?.slug ?? "");
 
   return (
-    <li className="py-3">
+    <li className={guardian ? "py-2" : "py-3"}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <span className="min-w-0 flex-1">
-          <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
-          <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
+          <span className={`block font-bold text-gray-900 dark:text-gray-50 ${guardian ? "text-sm" : ""}`}>{person.name}</span>
+          <span className="block text-sm text-gray-500 dark:text-gray-400">{note ?? [person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
         </span>
         <span className="flex gap-3">
           <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">

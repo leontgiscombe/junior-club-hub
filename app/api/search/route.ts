@@ -64,7 +64,7 @@ export async function GET(request: Request) {
         kind: "Players",
         title: p.name,
         sub: [teamName(p.team) || "No team yet", p.position].filter(Boolean).join(" · "),
-        href: `/admin/players?q=${encodeURIComponent(p.name)}`,
+        href: `/admin/members?q=${encodeURIComponent(p.name)}`,
         score: score(q, p.name),
       })),
     );

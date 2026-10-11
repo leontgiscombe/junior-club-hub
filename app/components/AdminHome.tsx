@@ -27,7 +27,6 @@ const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
   "/admin/stats": { colour: "bg-indigo-600", icon: <path d="M5 20V10M12 20V4M19 20v-7" /> },
   "/admin/camera": { colour: "bg-rose-700", icon: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></> },
   "/admin/kit": { colour: "bg-orange-700", icon: <path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /> },
-  "/admin/players": { colour: "bg-lime-700", icon: <><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /></> },
   "/admin/members": { colour: "bg-emerald-700", icon: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></> },
   "/admin/settings": { colour: "bg-gray-600", icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></> },
   "/admin/help": { colour: "bg-slate-700", icon: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></> },
@@ -114,16 +113,10 @@ const TOOLS: {
     body: "Kit-size submissions by team, with CSV export.",
   },
   {
-    path: "/admin/players",
-    icon: "🧒",
-    title: "Players",
-    body: "The club's squad, and which team each player is in.",
-  },
-  {
     path: "/admin/members",
     icon: "👪",
     title: "Members",
-    body: "The club code for parents, and approving who can open the hub.",
+    body: "Each team's coaches and players, with their parents; the club code, and approving who can open the hub.",
   },
   {
     path: "/admin/settings",
