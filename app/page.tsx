@@ -6,13 +6,15 @@
 //            their own (or their children's) team, and the last game's
 //            score, to look at only;
 //   treasurers who aren't coaches: Financial Admin;
-//   parents and players: the Training Hub and kit sizes, nothing else;
+//   parents and players: a reminder to send kit sizes, only while some are
+//            still to send (the tab bar has the Training Hub and Kit);
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
 // Light or dark (Your Account → Appearance): the page is "themed".
 import Link from "next/link";
 import Image from "next/image";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
+import { getSubmissions } from "@/lib/storage";
 import { listMembers } from "@/lib/members";
 import { currentPerson, listPeople } from "@/lib/people";
 import { outcome } from "@/lib/record";
@@ -85,6 +87,25 @@ export default async function Home() {
   ]
     .filter(Boolean)
     .join(" · ");
+
+  // ---- a parent's or player's kit reminder: whose sizes haven't been sent yet ----
+  let kitDue: string[] = [];
+  if (isParentView && tenant && person && CLUB.features.kitSizes) {
+    const who = kids.length
+      ? kids.flatMap((k) => (k.team ? [{ name: k.name, team: k.team.slug, playerId: k.playerId }] : []))
+      : person.team
+        ? [{ name: person.name, team: person.team.slug, playerId: undefined }]
+        : [];
+    const sent = new Map(
+      await Promise.all(
+        [...new Set(who.map((w) => w.team))].map(async (t) => [t, await getSubmissions(t).catch(() => [])] as const),
+      ),
+    );
+    const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+    kitDue = who
+      .filter((w) => !(sent.get(w.team) ?? []).some((s) => (w.playerId && s.playerId === w.playerId) || same(s.childName, w.name)))
+      .map((w) => w.name.split(" ")[0]);
+  }
 
   // ---- what's next, and the coaches' cards ----
   // a parent or player only sees their own (or their children's) team's
@@ -275,10 +296,11 @@ export default async function Home() {
         {/* coaches: shortcuts to the tools */}
         {viewer.canCoach && <HomeShortcuts available={available} defaults={defaults} />}
 
-        {/* parents, players and anyone signed out: the Training Hub and kit sizes */}
+        {/* signed out: the Training Hub and kit sizes (signed in, they're on the tab bar);
+            parents and players: a kit reminder while sizes are still to send */}
         {(isParentView || !viewer.signedIn) && (
           <>
-            {CLUB.features.trainingHub && (
+            {CLUB.features.trainingHub && !viewer.signedIn && (
               <a href="/training-hub" className={`press ${card} block overflow-hidden`}>
                 <Pitch />
                 <span className="block px-5 pb-5 pt-4">
@@ -287,13 +309,17 @@ export default async function Home() {
                 </span>
               </a>
             )}
-            {CLUB.features.kitSizes && (
+            {CLUB.features.kitSizes && (!viewer.signedIn || kitDue.length > 0) && (
               <Link href="/kit" className={`press ${card} flex items-center gap-4 p-4`}>
                 <Tile colour="bg-orange-700">{ICON.shirt}</Tile>
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-extrabold">Kit Sizes</span>
                   <span className={`block text-sm ${sub}`}>
-                    {kids.length ? `Send ${kids.map((k) => k.name.split(" ")[0]).join(" and ")}'s sizes for the new kit` : "Send your child's sizes for the new kit"}
+                    {!viewer.signedIn
+                      ? "Send your child's sizes for the new kit"
+                      : kids.length
+                        ? `Send ${kitDue.join(" and ")}'s sizes for the new kit`
+                        : "Send your sizes for the new kit"}
                   </span>
                 </span>
                 <Chevron />
