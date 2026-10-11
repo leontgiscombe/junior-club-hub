@@ -127,7 +127,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
 
   async function changeRequest(id: string, change: { done: boolean } | { remove: true }) {
     if ("remove" in change && !confirm("Remove this request?")) return;
-    const res = await fetch(`/api/responses${keyQuery(key)}`, {
+    const res = await fetch(`/api/responses?key=${encodeURIComponent(key)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId: id, ...change }),
@@ -141,10 +141,15 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     if (!confirm("Remove this submission?")) return;
     setDeleting(id);
     try {
-      await fetch(
-        `/api/responses${keyQuery(key, `team=${team}`)}&id=${id}`,
+      // the key goes in as it is, even an account's (keyQuery leaves that out of links, not API calls)
+      const res = await fetch(
+        `/api/responses?key=${encodeURIComponent(key)}&team=${team}&id=${encodeURIComponent(id)}`,
         { method: "DELETE" }
       );
+      if (!res.ok) {
+        alert("That didn't delete — please try again.");
+        return;
+      }
       setSubmissions((prev) => prev.filter((s) => s.id !== id));
       // a removed answer can put its child back on the still-to-send list
       load(key, team);
