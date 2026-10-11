@@ -164,7 +164,7 @@ export default async function Home() {
       {/* the wallpaper chosen on this phone, if any (Your Account → Appearance) */}
       <HomeWallpaper />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        {/* header: your photo (Your Account), the club's crest */}
+        {/* header: your photo (Your Account), Search, the club's crest */}
         <div className="flex items-center justify-between pt-2">
           <Link
             href={viewer.signedIn ? "/account" : "/signin"}
@@ -182,7 +182,20 @@ export default async function Home() {
               </svg>
             )}
           </Link>
-          <Image src={CLUB.crest.src} unoptimized alt={CLUB.crest.alt} width={CLUB.crest.width} height={CLUB.crest.height} className="h-11 w-auto" priority />
+          <span className="flex items-center gap-3">
+            {/* Search: pages, settings and (for those allowed) the club's own data */}
+            <Link
+              href="/search"
+              aria-label="Search"
+              className="press grid h-11 w-11 place-items-center rounded-full bg-white/85 text-gray-700 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:bg-[#1c1c1e]/85 dark:text-gray-200 dark:ring-white/10"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+            </Link>
+            <Image src={CLUB.crest.src} unoptimized alt={CLUB.crest.alt} width={CLUB.crest.width} height={CLUB.crest.height} className="h-11 w-auto" priority />
+          </span>
         </div>
 
         <div>
