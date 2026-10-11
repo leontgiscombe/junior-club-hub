@@ -13,6 +13,7 @@ import ProfilePhoto from "./ProfilePhoto";
 import AppearancePicker, { themeLabel } from "./AppearancePicker";
 import TabBarPicker from "./TabBarPicker";
 import { Group, ICONS, Row, TopBar, useScreens } from "../components/SettingsUI";
+import { canGoBack } from "@/lib/back";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
@@ -134,7 +135,7 @@ export default function AccountPage() {
   const { screen, open, close: closeScreen } = useScreens("/account");
   const leave = useCallback(() => {
     // back where you came from in the hub, or home
-    if (document.referrer.startsWith(window.location.origin) && window.history.length > 1) window.history.back();
+    if (canGoBack()) window.history.back();
     else window.location.href = "/";
   }, []);
   const { status: alerts } = useJoinRequests();

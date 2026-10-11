@@ -1,8 +1,11 @@
+"use client";
+
 // The round back button at the top left of every page that isn't one of the
-// tab bar's main pages, like a phone app's. It goes up to the page this one
-// belongs to (Coach Admin, the Stats Tracker, the Team Hub…), so it always
-// lands somewhere sensible, however the page was opened.
+// tab bar's main pages, like a phone app's. It goes back to the page you came
+// from, or — opened from a link, with nowhere to go back to — up to the page
+// this one belongs to (lib/back.ts).
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 
 export default function BackButton({
   href,
@@ -20,6 +23,7 @@ export default function BackButton({
   return (
     <Link
       href={href}
+      onClick={backOr}
       aria-label={`Back to ${label}`}
       title={label}
       className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
