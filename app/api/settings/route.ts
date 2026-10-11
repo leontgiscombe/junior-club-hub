@@ -8,7 +8,7 @@
 //   DELETE ?key=…[&slot=kit]              -> goes back to the default crest (or kit picture)
 import { NextRequest, NextResponse } from "next/server";
 import { isClubAdmin, isCoach } from "@/lib/adminAuth";
-import { DEFAULT_CLUB, cleanChanges, cleanTeams } from "@/lib/clubSettings";
+import { DEFAULT_CLUB, cleanChanges, cleanTeams, withTrainingHistory } from "@/lib/clubSettings";
 import {
   getAllTeams,
   getClub,
@@ -101,14 +101,17 @@ export async function PUT(req: NextRequest) {
       if (!teams) return NextResponse.json({ error: "Keep at least one team" }, { status: 400 });
       // A team is never dropped, only archived, so its kit sizes, stats,
       // logs and subs stay put and it can be brought back.
-      const missing = (await getAllTeams()).filter((t) => !teams.some((n) => n.slug === t.slug));
+      const before = await getAllTeams();
+      const missing = before.filter((t) => !teams.some((n) => n.slug === t.slug));
       if (missing.length) {
         return NextResponse.json(
           { error: `Archive ${missing.map((t) => t.name).join(", ")} instead of removing it` },
           { status: 400 },
         );
       }
-      await saveTeams(teams);
+      // a change of training days applies from today, so past sessions stay as they were
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+      await saveTeams(withTrainingHistory(teams, before, today));
     }
     if (body?.changes !== undefined) await saveClubChanges(cleanChanges(body.changes));
     return NextResponse.json(await snapshot());

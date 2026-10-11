@@ -15,6 +15,7 @@ import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
+import { timesLabel } from "@/lib/clubSettings";
 
 interface Player {
   id: string;
@@ -28,6 +29,14 @@ interface TrainingSession {
   date: string;
   bestTrainerId: string;
   cancelled: boolean;
+  start?: string;
+  end?: string;
+}
+
+/** A session's day, and its times when the team's are set: "Tue 13 Oct · 6pm–7pm". */
+function when(s: TrainingSession) {
+  const times = timesLabel(s);
+  return times ? `${formatDate(s.date)} · ${times}` : formatDate(s.date);
 }
 
 function formatDate(date: string) {
@@ -330,7 +339,7 @@ export default function TrainingLog() {
   const next = ahead.find((s) => !s.cancelled);
   const unawarded = done.filter((s) => !s.cancelled && !s.bestTrainerId).length;
 
-  // The team's plan, pinned to its Mondays (see lib/trainingPlanTypes.ts).
+  // The team's plan, pinned to its training days (see lib/trainingPlanTypes.ts).
   const plan = plans.find((p) => p.team === team);
   const planWeeks = plan ? scheduleWeeks(plan, shown) : new Map<string, number>();
   const drillById = new Map(drills.map((d) => [d.id, d]));
@@ -406,7 +415,7 @@ export default function TrainingLog() {
                 s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
               }`}
             >
-              {formatDate(s.date)}
+              {when(s)}
             </span>
             {s.cancelled && (
               <span className="ml-2 text-xs text-gray-400">No Training</span>
@@ -501,7 +510,7 @@ export default function TrainingLog() {
             {next ? (
               <>
                 Next Session:{" "}
-                <span className="font-semibold text-gray-700 dark:text-gray-200">{formatDate(next.date)}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-200">{when(next)}</span>
               </>
             ) : (
               "No more sessions scheduled this season."
@@ -518,7 +527,7 @@ export default function TrainingLog() {
         {focus && plan && focusWeek !== undefined ? (
           <PlanWeekCard
             key={`${team}:${focus.date}`}
-            label={`${today ? "Today" : "Next Session"} · ${formatDate(focus.date)}`}
+            label={`${today ? "Today" : "Next Session"} · ${when(focus)}`}
             week={plan.weeks[focusWeek]}
             weekNumber={focusWeek + 1}
             drills={drillById}
@@ -627,7 +636,7 @@ export default function TrainingLog() {
                               s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
                             }`}
                           >
-                            {formatDate(s.date)}
+                            {when(s)}
                             {weekLabel(s)}
                           </span>
                           {cancelButton(s)}

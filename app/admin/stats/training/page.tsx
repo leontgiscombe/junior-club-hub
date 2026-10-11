@@ -5,7 +5,7 @@ export async function generateMetadata() {
   const CLUB = await getClub();
   return {
     title: `Training Log – ${CLUB.name}`,
-    description: `Monday training sessions and best trainer awards for ${CLUB.fullName}.`,
+    description: `Training sessions and best trainer awards for ${CLUB.fullName}.`,
   };
 }
 

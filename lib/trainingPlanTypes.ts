@@ -68,7 +68,7 @@ export interface PlanWeek {
 export interface TrainingPlan {
   team: string; // team slug (see lib/teams.ts)
   title: string;
-  // The Monday week 1 lands on, YYYY-MM-DD — "" until the plan is scheduled.
+  // The training session week 1 lands on, YYYY-MM-DD — "" until the plan is scheduled.
   startDate: string;
   weeks: PlanWeek[];
   updatedAt: string;
@@ -76,9 +76,9 @@ export interface TrainingPlan {
 
 /**
  * Which plan week each of a team's training sessions gets, as date -> week
- * index. Weeks land on the team's Mondays in order from the plan's start date,
- * skipping any session marked as no training — so a called-off Monday pushes
- * the plan back a week rather than losing that week's session.
+ * index. Weeks land on the team's training sessions in order from the plan's
+ * start date, skipping any session marked as no training — so a called-off
+ * session pushes the plan back one rather than losing that week's session.
  */
 export function scheduleWeeks(
   plan: Pick<TrainingPlan, "startDate" | "weeks">,

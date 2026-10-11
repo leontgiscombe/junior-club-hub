@@ -1,9 +1,10 @@
-// Storage for the training log: every team trains on a Monday, and each
+// Storage for the training log: each team trains on its own days of the week
+// (Coach Admin → Settings → Teams; Mondays until they're set), and each
 // session can name a best trainer. Kept in the one shared KV store as a Redis
 // hash keyed by "<team>:<date>" (same pattern as the match log).
 //
 // The sessions themselves aren't entered by hand — they come from the schedule
-// below, so the whole season's Mondays are there from the start. Only what
+// below, so the whole season's sessions are there from the start. Only what
 // happens at one (its best trainer, or that it was called off) is stored.
 //
 // The best trainer writes through to the season tallies in lib/statsStorage.ts,
@@ -11,9 +12,10 @@
 // presentation all read one set of totals.
 import { adjustPlayerStat } from "./statsStorage";
 import { getTeams } from "./settings";
+import { trainingOn, type Team, type TrainingSlot } from "./clubSettings";
 import { getKv } from "./kv";
 
-// Every team trains on a Monday, from the start of the season to the end of
+// Each team trains on its days from the start of the season to the end of
 // July. Move these when the next season's dates are known.
 export const TRAINING_START = "2026-08-17";
 export const TRAINING_END = "2027-07-31";
@@ -24,6 +26,10 @@ export interface TrainingSession {
   bestTrainerId: string; // "" when not awarded
   // Called off (a bank holiday, the pitch is frozen) — no award to give.
   cancelled: boolean;
+  // The session's times from the team's schedule, "HH:MM" (not stored: they
+  // follow the schedule, so changing a team's times changes every session).
+  start?: string;
+  end?: string;
 }
 
 
@@ -46,22 +52,27 @@ function parse(value: unknown): TrainingSession {
   };
 }
 
-/** Every Monday from TRAINING_START to TRAINING_END, as YYYY-MM-DD. */
-export function trainingDates(): string[] {
-  const dates: string[] = [];
+/** A team's sessions from TRAINING_START to TRAINING_END, in date order, each with its slot. */
+export function trainingDates(team?: Pick<Team, "training" | "trainingHistory">): { date: string; slot: TrainingSlot }[] {
+  const out: { date: string; slot: TrainingSlot }[] = [];
   const day = new Date(`${TRAINING_START}T00:00:00Z`);
-  // Step forward to the first Monday, in case the start isn't one.
-  while (day.getUTCDay() !== 1) day.setUTCDate(day.getUTCDate() + 1);
   const end = new Date(`${TRAINING_END}T00:00:00Z`);
-  while (day <= end) {
-    dates.push(day.toISOString().slice(0, 10));
-    day.setUTCDate(day.getUTCDate() + 7);
+  for (; day <= end; day.setUTCDate(day.getUTCDate() + 1)) {
+    const date = day.toISOString().slice(0, 10);
+    // the days the team had then (a change of days applies from the day it was made)
+    const slot = trainingOn(team, date).find((s) => s.day === day.getUTCDay());
+    if (slot) out.push({ date, slot });
   }
-  return dates;
+  return out;
 }
 
-export function isTrainingDate(date: string): boolean {
-  return trainingDates().includes(date);
+/** Whether `team` (a slug) trains on `date` — or has a session recorded then, from before its days changed. */
+export async function isTrainingDate(team: string, date: string): Promise<boolean> {
+  const found = (await getTeams()).find((t) => t.slug === team);
+  if (!found) return false;
+  if (trainingDates(found).some((d) => d.date === date)) return true;
+  const kv = await getKv();
+  return !!kv && (await kv.hget<unknown>(KEY, keyFor(team, date))) != null;
 }
 
 /** Only the sessions something has been recorded against. */
@@ -84,11 +95,12 @@ export async function listTraining(): Promise<TrainingSession[]> {
   );
   const sessions: TrainingSession[] = [];
   for (const team of await getTeams()) {
-    for (const date of trainingDates()) {
+    for (const { date, slot } of trainingDates(team)) {
       const key = keyFor(team.slug, date);
-      sessions.push(
-        stored.get(key) ?? { team: team.slug, date, bestTrainerId: "", cancelled: false }
-      );
+      const session = stored.get(key) ?? { team: team.slug, date, bestTrainerId: "", cancelled: false };
+      if (slot.start) session.start = slot.start;
+      if (slot.end) session.end = slot.end;
+      sessions.push(session);
       stored.delete(key);
     }
   }
@@ -103,10 +115,13 @@ async function read(team: string, date: string): Promise<TrainingSession> {
     : parse(value);
 }
 
+/** What's kept of a session: not its times, which come from the schedule. */
+const stored = ({ team, date, bestTrainerId, cancelled }: TrainingSession) => ({ team, date, bestTrainerId, cancelled });
+
 async function write(session: TrainingSession): Promise<void> {
   const kv = await getKv();
   if (!kv) return;
-  await kv.hset(KEY, { [keyFor(session.team, session.date)]: JSON.stringify(session) });
+  await kv.hset(KEY, { [keyFor(session.team, session.date)]: JSON.stringify(stored(session)) });
 }
 
 /**
@@ -161,7 +176,7 @@ export async function writeTraining(sessions: TrainingSession[]): Promise<void> 
   const kv = await getKv();
   if (!kv || sessions.length === 0) return;
   const batch: Record<string, string> = {};
-  for (const s of sessions) batch[keyFor(s.team, s.date)] = JSON.stringify(s);
+  for (const s of sessions) batch[keyFor(s.team, s.date)] = JSON.stringify(stored(s));
   await kv.hset(KEY, batch);
 }
 

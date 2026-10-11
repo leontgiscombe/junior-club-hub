@@ -18,7 +18,8 @@ import { currentPerson, listPeople } from "@/lib/people";
 import { outcome } from "@/lib/record";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
-import { listTraining } from "@/lib/trainingStorage";
+import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
+import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import HomeWallpaper from "./components/HomeWallpaper";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
@@ -91,7 +92,7 @@ export default async function Home() {
   const showNext = viewer.canCoach || familyTeams.length > 0;
   let waiting = 0;
   let firstWaiting = "";
-  let nextTraining: string | null = null;
+  let nextTraining: TrainingSession | null = null;
   let nextMatch: Match | null = null;
   let lastResult: Match | null = null;
   if (showNext && tenant) {
@@ -109,7 +110,7 @@ export default async function Home() {
     nextTraining =
       training
         .filter((s) => myTeams.includes(s.team) && !s.cancelled && s.date >= now)
-        .sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null;
+        .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? "").localeCompare(b.start ?? ""))[0] ?? null;
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
     lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
@@ -194,10 +195,13 @@ export default async function Home() {
             <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
               {nextTraining && (
                 <NextRow link={viewer.canCoach} href="/admin/stats/training">
-                  <DateBadge date={nextTraining} />
+                  <DateBadge date={nextTraining.date} />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-bold">Training</span>
-                    <span className={`block text-sm ${sub}`}>{day(nextTraining, { weekday: "long", day: "numeric", month: "short" })}</span>
+                    <span className="block truncate font-bold">{many ? `${teamName(nextTraining.team)} training` : "Training"}</span>
+                    <span className={`block text-sm ${sub}`}>
+                      {day(nextTraining.date, { weekday: "long", day: "numeric", month: "short" })}
+                      {timesLabel(nextTraining) ? ` · ${timesLabel(nextTraining)}` : ""}
+                    </span>
                   </span>
                 </NextRow>
               )}

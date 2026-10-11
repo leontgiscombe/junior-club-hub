@@ -107,8 +107,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     }
     const startDate = String(body.plan?.startDate ?? "");
-    if (startDate && !isTrainingDate(startDate)) {
-      return NextResponse.json({ error: "Start the plan on a training Monday" }, { status: 400 });
+    if (startDate && !(await isTrainingDate(team, startDate))) {
+      return NextResponse.json({ error: "Start the plan on one of the team's training days" }, { status: 400 });
     }
     return NextResponse.json({ success: true, plan: await savePlan(team, body.plan ?? {}) });
   }

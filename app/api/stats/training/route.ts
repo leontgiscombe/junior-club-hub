@@ -43,7 +43,7 @@ export async function PATCH(request: Request) {
   if (!(await isTeam(team))) {
     return NextResponse.json({ error: "Unknown team" }, { status: 400 });
   }
-  if (!isTrainingDate(date)) {
+  if (!(await isTrainingDate(team, date))) {
     return NextResponse.json({ error: "No training that day" }, { status: 400 });
   }
 
