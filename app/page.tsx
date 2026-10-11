@@ -2,7 +2,7 @@
 // "Home"), then what matters to whoever is looking —
 //   coaches: anyone waiting for approval, the next training and match, the
 //            last result, and shortcuts to the coach tools;
-//   treasurers: Financial Admin;
+//   treasurers who aren't coaches: Financial Admin;
 //   parents and players: the Training Hub and kit sizes, nothing else;
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
 // Light or dark (Your Account → Appearance): the page is "themed".
@@ -181,7 +181,7 @@ export default async function Home() {
         )}
 
         {/* coaches: what's next */}
-        {viewer.canCoach && (nextTraining || nextMatch) && (
+        {viewer.canCoach && (
           <section className="flex flex-col gap-2.5">
             <h2 className="wp-text px-1 text-xl font-bold">Up next</h2>
             <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
@@ -210,12 +210,27 @@ export default async function Home() {
                   <Chevron />
                 </Link>
               )}
+              {/* no match entered yet: where to add one */}
+              {!nextMatch && (
+                <Link href="/admin/stats/matches" className="press flex items-center gap-4 px-4 py-3.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700 dark:bg-green-400/10 dark:text-green-400">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {ICON.ball}
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold">No match coming up</span>
+                    <span className={`block text-sm ${sub}`}>Add one in the Match Log</span>
+                  </span>
+                  <Chevron />
+                </Link>
+              )}
             </div>
           </section>
         )}
 
-        {/* coaches: the last result; treasurers: the subs */}
-        {(lastResult || (viewer.canFinance && CLUB.features.financialAdmin)) && (
+        {/* coaches: the last result; a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
+        {(lastResult || (viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin)) && (
           <div className="grid grid-cols-2 gap-3">
             {lastResult && (
               <Link href={CLUB.publicResults ? "/results" : "/admin/stats/matches"} className={`press ${card} p-4`}>
@@ -228,7 +243,7 @@ export default async function Home() {
                 </span>
               </Link>
             )}
-            {viewer.canFinance && CLUB.features.financialAdmin && (
+            {viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin && (
               <a href="/finance" className={`press ${card} flex flex-col p-4`}>
                 <Tile colour="bg-emerald-700">{ICON.money}</Tile>
                 <span className="mt-3 block font-bold">Finances</span>
