@@ -11,7 +11,8 @@ import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
-import { accountKey, keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { Group, ICONS, Row, TopBar, useScreens } from "./SettingsUI";
 
 type Snapshot = {
@@ -101,6 +102,8 @@ export default function ClubSettings() {
   const router = useRouter();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // working out who this is (an account, or a password given earlier) before showing the password box
+  const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -152,17 +155,23 @@ export default function ClubSettings() {
     const urlKey = new URLSearchParams(window.location.search).get("key");
     if (urlKey) {
       setKey(urlKey);
-      load(urlKey);
+      Promise.resolve(load(urlKey)).finally(() => setChecking(false));
     } else {
-      // signed in with an account: no password needed
-      accountKey().then((k) => {
-        if (k) {
-          setKey(k);
-          load(k);
-        }
-      });
+      // signed in with an account, or the coach password given earlier: no password box
+      accountKey()
+        .then(async (k) => {
+          if (k) {
+            setKey(k);
+            await load(k);
+          }
+        })
+        .finally(() => setChecking(false));
     }
   }, [load]);
+  // a coach password that worked here opens every other tool too
+  useEffect(() => {
+    if (authed) rememberCoachKey(key);
+  }, [authed, key]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   async function send(method: string, body?: unknown, done?: string, opts: { slot?: string; keepEdits?: boolean } = {}) {
@@ -236,6 +245,7 @@ export default function ClubSettings() {
   }
 
   if (!authed || !snap) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">

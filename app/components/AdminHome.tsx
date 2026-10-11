@@ -5,7 +5,8 @@ import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
-import { keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { useClub } from "./ClubProvider";
 import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
@@ -139,6 +140,8 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // working out who this is before showing the password box
+  const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,6 +165,8 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
       }
       if (!res.ok) throw new Error();
       setAuthed(true);
+      // every tool opens with it too, until the app is closed
+      rememberCoachKey(pwd);
     } catch {
       setError("Could not sign in. Please try again.");
     } finally {
@@ -182,26 +187,29 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
     const urlKey = new URLSearchParams(window.location.search).get("key");
     if (urlKey) {
       setKey(urlKey);
-      login(urlKey);
+      Promise.resolve(login(urlKey)).finally(() => setChecking(false));
       return;
     }
     // no password in the link: a club admin or coach signed in with their account goes straight in
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
-      .then((me) => {
+      .then(async (me) => {
         if (me?.passwordSignIn === false) setPasswordOff(true);
-        if (!me?.user) return;
-        setAccount({ email: me.user.email, canCoach: !!me.canCoach });
-        if (me.canCoach) {
-          setKey(SESSION_KEY);
-          login(SESSION_KEY);
+        if (me?.user) setAccount({ email: me.user.email, canCoach: !!me.canCoach });
+        // an account that can coach, or the coach password given earlier in this session
+        const k = me?.canCoach ? SESSION_KEY : await accountKey();
+        if (k) {
+          setKey(k);
+          await login(k);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setChecking(false));
   }, [login]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!authed) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
         <BrushBackdrop />

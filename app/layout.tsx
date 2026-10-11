@@ -8,7 +8,7 @@ import { MEMBER_COOKIE, PATH_HEADER, SESSION_COOKIE, isApprovedPerson, readAcces
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
-import { THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
+import { DARK_BAR, LIGHT_BAR, THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
 import TabBar from "./components/TabBar";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
@@ -34,7 +34,9 @@ async function teamsHidden(tenant: string | null): Promise<boolean> {
 }
 
 // edge to edge on phones, so the tab bar can sit above the home indicator
-export const viewport: Viewport = { viewportFit: "cover" };
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const { club, icons } = await getClubWithIcons();
@@ -90,6 +92,8 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* the status bar matches the page, light or dark (THEME_SCRIPT and the Appearance picker keep it to the chosen one) */}
+        <meta name="theme-color" content={(await cookies()).get(THEME_COOKIE)?.value === "dark" ? DARK_BAR : LIGHT_BAR} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-full bg-gray-50 font-sans antialiased">

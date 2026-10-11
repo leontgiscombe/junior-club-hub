@@ -5,7 +5,8 @@
 // page changes.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { accountKey, keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
 
 const SECTIONS = [
@@ -66,6 +67,8 @@ const B = ({ children }: { children: React.ReactNode }) => (
 export default function HelpManual() {
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // working out who this is (an account, or a password given earlier) before showing the password box
+  const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,20 +100,27 @@ export default function HelpManual() {
     const urlKey = new URLSearchParams(window.location.search).get("key");
     if (urlKey) {
       setKey(urlKey);
-      login(urlKey);
+      Promise.resolve(login(urlKey)).finally(() => setChecking(false));
     } else {
-      // signed in with an account: no password needed
-      accountKey().then((k) => {
-        if (k) {
-          setKey(k);
-          login(k);
-        }
-      });
+      // signed in with an account, or the coach password given earlier: no password box
+      accountKey()
+        .then(async (k) => {
+          if (k) {
+            setKey(k);
+            await login(k);
+          }
+        })
+        .finally(() => setChecking(false));
     }
   }, [login]);
+  // a coach password that worked here opens every other tool too
+  useEffect(() => {
+    if (authed) rememberCoachKey(key);
+  }, [authed, key]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!authed) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
