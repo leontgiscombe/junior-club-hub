@@ -71,6 +71,17 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
     } catch {}
   }, [available]);
 
+  // while the list is open, the page behind it stays still
+  useEffect(() => {
+    if (!editing) return;
+    const html = document.documentElement;
+    const before = [html.style.overflow, document.body.style.overflow];
+    html.style.overflow = document.body.style.overflow = "hidden";
+    return () => {
+      [html.style.overflow, document.body.style.overflow] = before;
+    };
+  }, [editing]);
+
   function save(next: ShortcutId[] | null) {
     try {
       if (next) localStorage.setItem(KEY, JSON.stringify(next));
@@ -133,13 +144,13 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
       )}
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setEditing(false)}>
+        <div className="fixed inset-0 z-50 flex items-end overscroll-contain justify-center bg-black/40 sm:items-center" onClick={() => setEditing(false)}>
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Edit shortcuts"
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-[#f2f2f7] pb-[max(1rem,env(safe-area-inset-bottom))] text-gray-900 shadow-2xl dark:bg-[#1c1c1e] dark:text-gray-50 sm:rounded-3xl"
+            className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-3xl bg-[#f2f2f7] pb-[max(1rem,env(safe-area-inset-bottom))] text-gray-900 shadow-2xl dark:bg-[#1c1c1e] dark:text-gray-50 sm:rounded-3xl"
           >
             <div className="flex items-center justify-between px-5 pb-2 pt-4">
               <button onClick={() => save(null)} className="text-[15px] font-semibold text-gray-500 dark:text-gray-400">
@@ -153,7 +164,7 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
             <p className="px-5 pb-3 text-center text-sm text-gray-500 dark:text-gray-400">
               Tick up to {MAX} and put them in order. {draft.length} of {MAX} chosen.
             </p>
-            <div className="overflow-y-auto px-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2">
               <ul className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white dark:divide-white/10 dark:bg-black/40">
                 {/* the chosen ones first, in order, then the rest */}
                 {[...draft, ...available.filter((id) => !draft.includes(id))].map((id) => {
