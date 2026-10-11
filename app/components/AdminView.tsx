@@ -357,7 +357,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         {requests.length > 0 && (
           <div className="mb-6">
             <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-50">
-              📦 Kit Requests{requests.some((r) => !r.doneAt) ? ` (${requests.filter((r) => !r.doneAt).length} to sort)` : ""}
+              Kit Requests{requests.some((r) => !r.doneAt) ? ` (${requests.filter((r) => !r.doneAt).length} to sort)` : ""}
             </p>
             {/* grouped by player: tap a player to see what they've asked for */}
             <div className="flex flex-col gap-2">
@@ -465,13 +465,13 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                 disabled={!requests.some((r) => !r.doneAt)}
                 className="cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 disabled:opacity-40"
               >
-                ⬇ Order Totals CSV
+                Order Totals CSV
               </button>
               <button
                 onClick={() => downloadRequests(requests, team)}
                 className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-200 dark:hover:bg-white/5"
               >
-                ⬇ All Requests CSV
+                All Requests CSV
               </button>
             </div>
             {requests.some((r) => r.doneAt) && (
@@ -489,7 +489,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         {waiting.length > 0 && (
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:bg-amber-400/10 dark:border-amber-400/30">
             <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-              ⏳ Still to Send ({waiting.length})
+              Still to Send ({waiting.length})
             </p>
             <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
               In the {teamName(team)} squad but no kit sizes yet.
@@ -513,28 +513,27 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             onClick={() => load(key, team)}
             className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
           >
-            ↻ Refresh
+            Refresh
           </button>
           <button
             onClick={() => downloadCSV(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
             disabled={submissions.length === 0}
             className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 shadow-sm disabled:opacity-40 cursor-pointer"
           >
-            ⬇ Export CSV
+            Export CSV
           </button>
           <button
             onClick={() => downloadSizeTotals(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
             disabled={submissions.length === 0}
             className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm disabled:opacity-40 cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
           >
-            ⬇ Size Totals CSV
+            Size Totals CSV
           </button>
         </div>
 
         {submissions.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">📋</p>
-            <p>No responses yet for {teamName(team)}.</p>
+                        <p>No responses yet for {teamName(team)}.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

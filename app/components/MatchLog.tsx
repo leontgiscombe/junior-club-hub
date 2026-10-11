@@ -69,9 +69,9 @@ function fromGameType(type: string) {
 function GameTypeOptions() {
   return (
     <>
-      <option value="league">🏆 League Game</option>
-      <option value="cup">🥇 Cup Game</option>
-      <option value="friendly">🤝 Friendly</option>
+      <option value="league">League Game</option>
+      <option value="cup">Cup Game</option>
+      <option value="friendly">Friendly</option>
     </>
   );
 }
@@ -81,17 +81,37 @@ const AWARDS: {
   field: "potmId" | "mostImprovedId";
   action: string;
   label: string;
-  icon: string;
 }[] = [
-  { field: "potmId", action: "set-potm", label: "Player of the Match", icon: "🏆" },
-  {
-    field: "mostImprovedId",
-    action: "set-most-improved",
-    label: "Most Improved",
-    icon: "📈",
-  },
+  { field: "potmId", action: "set-potm", label: "Player of the Match" },
+  { field: "mostImprovedId", action: "set-most-improved", label: "Most Improved" },
 ];
 
+
+/**
+ * A game's badge, as on Home: a result's score in green, amber or red (won,
+ * drew, lost), grey while no score is logged; a game to come, its date.
+ */
+function GameBadge({ match, played }: { match: Match; played: boolean }) {
+  if (!played) {
+    const d = new Date(`${match.date}T00:00`);
+    return (
+      <span className="w-12 shrink-0 rounded-xl bg-green-50 py-1.5 text-center dark:bg-green-400/10">
+        <span className="block text-[11px] font-bold uppercase text-green-700 dark:text-green-400">
+          {isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { month: "short" })}
+        </span>
+        <span className="block text-xl font-extrabold leading-tight text-gray-900 dark:text-gray-50">{isNaN(d.getTime()) ? "?" : d.getDate()}</span>
+      </span>
+    );
+  }
+  const colour = !match.resultLogged
+    ? "bg-gray-300 dark:bg-white/20"
+    : { W: "bg-green-600", D: "bg-amber-500", L: "bg-red-600" }[outcome(match)];
+  return (
+    <span className={`grid h-12 min-w-14 shrink-0 place-items-center rounded-xl px-2 text-lg font-extrabold text-white ${colour}`}>
+      {match.resultLogged ? `${match.goals.length}–${match.opponentGoals}` : "–"}
+    </span>
+  );
+}
 
 function formatDate(date: string) {
   const d = new Date(`${date}T00:00`);
@@ -100,7 +120,7 @@ function formatDate(date: string) {
 }
 
 export default function MatchLog() {
-  const { TEAMS, teamName, teamAccent, findTeam } = useTeams();
+  const { TEAMS, teamName, findTeam } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
@@ -412,7 +432,7 @@ export default function MatchLog() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}
-        <div className="flex gap-2 mb-5">
+        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
           {TEAMS.map((t) => (
             <button
               key={t.slug}
@@ -421,10 +441,10 @@ export default function MatchLog() {
                 setTeam(t.slug);
                 setOpponent("");
               }}
-              className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
+              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
                 team === t.slug
-                  ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                  : "text-gray-600 dark:text-gray-300"
               }`}
             >
               {t.accent} {t.name}
@@ -435,18 +455,16 @@ export default function MatchLog() {
         {/* Our record so far — shown as soon as the team has any games, so the
             table is findable before the first result is in */}
         {shown.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+          <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                🏆 {teamName(team)} league record
-              </p>
+              <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">League Record</p>
               {form.length > 0 && (
                 <div className="flex items-center gap-1">
                   {form.map((f, i) => (
                     <span
                       key={i}
                       className={`grid h-5 w-5 place-items-center rounded text-[11px] font-bold text-white ${
-                        f === "W" ? "bg-green-600" : f === "D" ? "bg-gray-400" : "bg-red-400"
+                        f === "W" ? "bg-green-600" : f === "D" ? "bg-amber-500" : "bg-red-600"
                       }`}
                       title={f === "W" ? "Won" : f === "D" ? "Drawn" : "Lost"}
                     >
@@ -475,7 +493,7 @@ export default function MatchLog() {
                     <td className="px-1 py-1">{record.played}</td>
                     <td className="px-1 py-1 text-green-700 dark:text-green-400">{record.won}</td>
                     <td className="px-1 py-1">{record.drawn}</td>
-                    <td className="px-1 py-1 text-red-500">{record.lost}</td>
+                    <td className="px-1 py-1 text-red-600 dark:text-red-400">{record.lost}</td>
                     <td className="px-1 py-1">{record.scored}</td>
                     <td className="px-1 py-1">{record.conceded}</td>
                     <td className="px-1 py-1">
@@ -491,7 +509,6 @@ export default function MatchLog() {
                 games count towards it as much as league ones. */}
             {playedGames > 0 && (
               <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
-                🥅{" "}
                 <span className="font-semibold">
                   {teamCleanSheets} clean sheet{teamCleanSheets === 1 ? "" : "s"}
                 </span>{" "}
@@ -519,11 +536,9 @@ export default function MatchLog() {
         {/* Add match */}
         <form
           onSubmit={addMatch}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10"
+          className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
         >
-          <p className="text-sm font-semibold text-gray-600 mb-3 dark:text-gray-300">
-            ➕ Add a Game for {teamAccent(team)} {teamName(team)}
-          </p>
+          <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Add a Game for {teamName(team)}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {/* League or one-off — available to every team */}
             <select
@@ -583,8 +598,8 @@ export default function MatchLog() {
               aria-label="Home or away"
               className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
             >
-              <option value="home">🏠 Home</option>
-              <option value="away">🚌 Away</option>
+              <option value="home">Home</option>
+              <option value="away">Away</option>
             </select>
             <button
               type="submit"
@@ -599,10 +614,8 @@ export default function MatchLog() {
 
         {/* Who sets up whom */}
         {topPairs.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
-            <p className="text-sm font-semibold text-gray-600 mb-3 dark:text-gray-300">
-              🤝 Assist combinations — {teamName(team)}
-            </p>
+          <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Assist Combinations</p>
             <div className="flex flex-col gap-2">
               {topPairs.map((p) => (
                 <div
@@ -635,32 +648,31 @@ export default function MatchLog() {
         )}
 
         {shown.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">📅</p>
-            <p>No games yet — add this season&apos;s fixtures above.</p>
-          </div>
+          <p className="rounded-3xl bg-white p-6 text-center text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
+            No games yet — add this season&apos;s fixtures above.
+          </p>
         ) : (
           <div className="flex flex-col gap-3">
             {[...upcoming, ...results].map((m, i) => (
               <Fragment key={m.id}>
                 {i === 0 && upcoming.length > 0 && (
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    📅 Upcoming · {upcoming.length}
-                  </p>
+                  <h2 className="px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
+                    Upcoming <span className="font-semibold text-gray-400">{upcoming.length}</span>
+                  </h2>
                 )}
                 {i === upcoming.length && results.length > 0 && (
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    ✅ Results · {results.length}
-                  </p>
+                  <h2 className="mt-3 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
+                    Results <span className="font-semibold text-gray-400">{results.length}</span>
+                  </h2>
                 )}
-                <div className="rounded-2xl shadow-sm border border-gray-100 bg-white p-4 dark:bg-[#1c1c1e] dark:border-white/10">
+                <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
                 {editingId === m.id ? (
                   /* Fixtures move — this changes the details without touching
                      any goals, awards or appearances already logged. */
                   <div>
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        ✏️ Edit fixture
+                        Edit Fixture
                       </p>
                       <button
                         onClick={() => setEditingId(null)}
@@ -736,8 +748,8 @@ export default function MatchLog() {
                         aria-label="Home or away"
                         className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                       >
-                        <option value="home">🏠 Home</option>
-                        <option value="away">🚌 Away</option>
+                        <option value="home">Home</option>
+                        <option value="away">Away</option>
                       </select>
                       <button
                         onClick={() => saveEdit(m)}
@@ -757,41 +769,33 @@ export default function MatchLog() {
                   </div>
                 ) : (
                 <div className="flex items-center gap-3">
+                  <GameBadge match={m} played={isPlayed(m)} />
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-gray-900 truncate dark:text-gray-50">
-                      {teamAccent(m.team)} {teamName(m.team)}{" "}
-                      {isPlayed(m) ? (
-                        <span className="text-green-700 dark:text-green-400">
-                          {m.goals.length}–{m.opponentGoals}
+                    <p className="truncate font-bold text-gray-900 dark:text-gray-50">vs {m.opponent || "TBC"}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-500 dark:text-gray-400">
+                      <span>
+                        {m.home ? "Home" : "Away"} · {formatDate(m.date)}
+                        {m.time && ` · ${m.time}`}
+                      </span>
+                      {gameType(m) !== "league" && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                          {gameType(m) === "cup" ? "Cup" : "Friendly"}
                         </span>
-                      ) : (
-                        <span className="font-normal text-gray-400">v</span>
-                      )}{" "}
-                      {m.opponent}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
-                      {m.home ? "🏠 Home" : "🚌 Away"} · {formatDate(m.date)}
-                      {m.time && ` · ${m.time}`}
-                      {gameType(m) === "friendly" && (
-                        <span className="text-gray-400"> · 🤝 friendly</span>
                       )}
-                      {gameType(m) === "cup" && (
-                        <span className="text-gray-400"> · 🥇 cup</span>
-                      )}
-                      {!isPlayed(m) && " · not played yet"}
-                      {isPlayed(m) && !m.resultLogged && (
-                        <span className="text-amber-700 dark:text-amber-300"> · no score logged</span>
-                      )}
+                      {isPlayed(m) && !m.resultLogged && <span className="text-amber-700 dark:text-amber-300">No score logged</span>}
                     </p>
                   </div>
                   <button
                     onClick={() => startEdit(m)}
                     disabled={busyId === m.id}
-                    className="shrink-0 cursor-pointer text-sm leading-none text-gray-300 hover:text-green-600"
+                    className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-green-700 dark:hover:bg-white/10"
                     title="Change the opponent, date, kick-off or venue"
                     aria-label={`Edit ${teamName(m.team)} v ${m.opponent}`}
                   >
-                    ✏️
+                    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 20h4L19 9l-4-4L4 16z" />
+                      <path d="m14 6 4 4" />
+                    </svg>
                   </button>
                   <button
                     onClick={() => removeMatch(m)}
@@ -813,7 +817,10 @@ export default function MatchLog() {
                         key={g.id}
                         className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                       >
-                        <span className="shrink-0">⚽</span>
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m12 7 4 3-1.5 4.5h-5L8 10z" />
+                        </svg>
                         <span className="min-w-0 flex-1 truncate text-sm">
                           {g.scorerId ? (
                             <>
@@ -858,7 +865,7 @@ export default function MatchLog() {
                     onClick={() => setExpanded((prev) => [...prev, m.id])}
                     className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
                   >
-                    ⚽ Log goals
+                    Log Goals
                   </button>
                 ) : (
                   <>
@@ -872,7 +879,7 @@ export default function MatchLog() {
                     aria-label={`Goal scorer for ${m.opponent}`}
                     className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                   >
-                    <option value="">⚽ Scorer…</option>
+                    <option value="">Scorer…</option>
                     {squad.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -887,7 +894,7 @@ export default function MatchLog() {
                     aria-label={`Assist for ${m.opponent}`}
                     className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                   >
-                    <option value="">🅰️ Assist — none</option>
+                    <option value="">No assist</option>
                     {squad
                       .filter((p) => p.id !== (scorerFor[m.id] ?? ""))
                       .map((p) => (
@@ -913,7 +920,7 @@ export default function MatchLog() {
                     disabled={busyId === m.id}
                     className="mt-3 w-full cursor-pointer rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20 dark:border-amber-400/40"
                   >
-                    ✓ Confirm 0–0 (counts it in the record)
+                    Confirm 0–0 (counts it in the record)
                   </button>
                 )}
 
@@ -921,7 +928,7 @@ export default function MatchLog() {
                 <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      👟 Who Played ({(m.appearanceIds ?? []).length})
+                      Who Played ({(m.appearanceIds ?? []).length})
                     </span>
                     <span className="flex items-center gap-3">
                       <button
@@ -987,7 +994,7 @@ export default function MatchLog() {
                   {AWARDS.map((a) => (
                     <div key={a.field} className="flex items-center gap-2">
                       <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                        {a.icon} {a.label}
+                        {a.label}
                       </span>
                       <select
                         value={m[a.field] ?? ""}
@@ -1087,7 +1094,7 @@ export default function MatchLog() {
                       the game rather than on anybody's card. */}
                   {isCleanSheet(m) && (
                     <span className="ml-auto text-xs font-semibold text-green-700 dark:text-green-400">
-                      🥅 Clean sheet
+                      Clean sheet
                     </span>
                   )}
                 </div>
