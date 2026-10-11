@@ -233,38 +233,37 @@ export default async function Home() {
           </section>
         )}
 
-        {/* the last result (coaches tap through; parents and players just see the score); a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
-        {(lastResult || (viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin)) && (
+        {/* the last result, a long row like Up next's (coaches tap through; parents and players just see the score) */}
+        {lastResult && (
+          <section className="flex flex-col gap-2.5">
+            <h2 className="wp-text px-1 text-xl font-bold">Last result</h2>
+            <div className={`${card} overflow-hidden`}>
+              <NextRow link={viewer.canCoach} href={CLUB.publicResults ? "/results" : "/admin/stats/matches"}>
+                <span className="grid h-12 min-w-12 shrink-0 place-items-center rounded-xl bg-green-50 px-2 text-xl font-extrabold dark:bg-green-400/10">
+                  {lastResult.goals.length}–{lastResult.opponentGoals}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-bold">
+                    {many ? `${teamName(lastResult.team)} ` : ""}vs {lastResult.opponent || "TBC"}
+                  </span>
+                  <span className={`block text-sm ${sub}`}>
+                    {day(lastResult.date, { weekday: "long", day: "numeric", month: "short" })}
+                    {viewer.canCoach ? ` · ${{ W: "Won", D: "Drew", L: "Lost" }[outcome(lastResult)]}` : ""}
+                  </span>
+                </span>
+              </NextRow>
+            </div>
+          </section>
+        )}
+
+        {/* a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
+        {viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin && (
           <div className="grid grid-cols-2 gap-3">
-            {lastResult && !viewer.canCoach && (
-              <div className={`${card} p-4`}>
-                <span className={`block text-[13px] font-semibold ${sub}`}>Last result</span>
-                <span className="mt-1 block text-[26px] font-extrabold">
-                  {lastResult.goals.length}–{lastResult.opponentGoals}
-                </span>
-                <span className={`block truncate text-[13px] ${sub}`}>
-                  {many ? `${teamName(lastResult.team)} ` : ""}vs {lastResult.opponent}
-                </span>
-              </div>
-            )}
-            {lastResult && viewer.canCoach && (
-              <Link href={CLUB.publicResults ? "/results" : "/admin/stats/matches"} className={`press ${card} p-4`}>
-                <span className={`block text-[13px] font-semibold ${sub}`}>Last result</span>
-                <span className="mt-1 block text-[26px] font-extrabold">
-                  {lastResult.goals.length}–{lastResult.opponentGoals}
-                </span>
-                <span className={`block truncate text-[13px] ${sub}`}>
-                  vs {lastResult.opponent} · {{ W: "Won", D: "Drew", L: "Lost" }[outcome(lastResult)]}
-                </span>
-              </Link>
-            )}
-            {viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin && (
-              <a href="/finance" className={`press ${card} flex flex-col p-4`}>
-                <Tile colour="bg-emerald-700">{ICON.money}</Tile>
-                <span className="mt-3 block font-bold">Finances</span>
-                <span className={`block text-[13px] ${sub}`}>Subs and spending</span>
-              </a>
-            )}
+            <a href="/finance" className={`press ${card} flex flex-col p-4`}>
+              <Tile colour="bg-emerald-700">{ICON.money}</Tile>
+              <span className="mt-3 block font-bold">Finances</span>
+              <span className={`block text-[13px] ${sub}`}>Subs and spending</span>
+            </a>
           </div>
         )}
 
