@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import { nameOf, type Team } from "@/lib/teams";
@@ -612,7 +613,7 @@ export default function StatsTracker() {
             {loading ? "Loading…" : "Open stats"}
           </button>
           <Link
-            href="/"
+            href="/" onClick={backOr}
             className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Team Hub

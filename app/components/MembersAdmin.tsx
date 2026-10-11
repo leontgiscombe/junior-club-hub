@@ -3,6 +3,7 @@
 // Coach Admin → Members: the club's join code and link, whether only approved
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { squarePhoto } from "../account/ProfilePhoto";
@@ -208,7 +209,7 @@ export default function MembersAdmin() {
           >
             {busy ? "Loading…" : "Open Members"}
           </button>
-          <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
+          <Link href="/admin" onClick={backOr} className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
             ← Coach Admin
           </Link>
         </div>

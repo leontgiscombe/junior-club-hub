@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useState } from "react";
 import { useClub, useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
@@ -306,7 +307,7 @@ export default function TrainingLog() {
             {loading ? "Loading…" : "Open Training Log"}
           </button>
           <Link
-            href="/admin/stats"
+            href="/admin/stats" onClick={backOr}
             className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Stats

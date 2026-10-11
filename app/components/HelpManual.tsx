@@ -4,6 +4,7 @@
 // coaches' password like the rest of Coach Admin. Keep this in step when a
 // page changes.
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useState } from "react";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
@@ -146,7 +147,7 @@ export default function HelpManual() {
             {loading ? "Checking…" : "Open help"}
           </button>
           <Link
-            href="/admin"
+            href="/admin" onClick={backOr}
             className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Coach Admin

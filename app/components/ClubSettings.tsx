@@ -5,6 +5,7 @@
 // every page straight away; an empty box goes back to the default in
 // club.config.ts.
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
@@ -322,7 +323,7 @@ export default function ClubSettings() {
           >
             {loading ? "Loading…" : "Open Settings"}
           </button>
-          <Link href="/" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
+          <Link href="/" onClick={backOr} className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
             ← Back to Team Hub
           </Link>
         </div>
