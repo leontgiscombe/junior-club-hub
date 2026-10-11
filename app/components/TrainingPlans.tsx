@@ -161,7 +161,7 @@ export default function TrainingPlans() {
   const [seasonPlanTitle, setSeasonPlanTitle] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [ownerInput, setOwnerInput] = useState("");
-  // Every team's Mondays from the training log, to pin a plan's weeks to dates.
+  // Every team's training sessions from the training log, to pin a plan's weeks to dates.
   const [sessions, setSessions] = useState<Session[]>([]);
 
   const load = useCallback(async (adminKey: string) => {
@@ -479,11 +479,11 @@ export default function TrainingPlans() {
 
   function planView() {
     if (!draft) return null;
-    const mondays = sessions
+    const sessionsHere = sessions
       .filter((s) => s.team === team)
       .sort((a, b) => a.date.localeCompare(b.date));
     const weekDates = new Map<number, string>();
-    for (const [date, week] of scheduleWeeks(draft, mondays)) weekDates.set(week, date);
+    for (const [date, week] of scheduleWeeks(draft, sessionsHere)) weekDates.set(week, date);
     const unplaced = draft.startDate ? draft.weeks.length - weekDates.size : 0;
     // A long plan opens folded up, apart from the week coming up next (or, with
     // no dates, the first week not yet ticked off) — tap a week to open it.
@@ -531,10 +531,10 @@ export default function TrainingPlans() {
           >
             <option value="">Not scheduled yet</option>
             {/* a start date the schedule no longer covers still shows */}
-            {draft.startDate && !mondays.some((s) => s.date === draft.startDate) && (
+            {draft.startDate && !sessionsHere.some((s) => s.date === draft.startDate) && (
               <option value={draft.startDate}>{formatDate(draft.startDate)}</option>
             )}
-            {mondays.map((s) => (
+            {sessionsHere.map((s) => (
               <option key={s.date} value={s.date}>
                 {formatDate(s.date)}
                 {s.cancelled ? " — no training" : ""}
@@ -542,8 +542,8 @@ export default function TrainingPlans() {
             ))}
           </select>
           <span className="mt-1 block text-[11px] text-gray-400">
-            Each week goes on the next Monday, and shows in the Training Log. A Monday
-            marked as no training is skipped, so the plan moves back a week.
+            Each week goes on the team&apos;s next training session, and shows in the Training Log.
+            A session marked as no training is skipped, so the plan moves back one.
           </span>
         </label>
 

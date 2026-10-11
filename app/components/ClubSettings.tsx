@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
-import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, MAX_TRAINING_DAYS, WEEKDAYS, kitAspect, slugFor, type Feature, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -647,6 +647,89 @@ export default function ClubSettings() {
 // The teams: each one's name, emoji, poster name, FA Full-Time code and league
 // opponents. A team can be archived (hidden everywhere, its data kept) and
 // brought back, but never deleted.
+/** A team's training: each day it trains, with start and end times. */
+function TrainingDays({
+  training,
+  onChange,
+  input,
+}: {
+  training: TrainingSlot[];
+  onChange: (training: TrainingSlot[]) => void;
+  input: string;
+}) {
+  const set = (n: number, patch: Partial<TrainingSlot>) =>
+    onChange(training.map((s, k) => (k === n ? { ...s, ...patch } : s)));
+  // the next day not taken, Monday first
+  const free = [1, 2, 3, 4, 5, 6, 0].find((d) => !training.some((s) => s.day === d));
+  const small = input.replace("mt-1 w-full", "w-full").replace("px-3", "px-2");
+  return (
+    <div>
+      <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Training</span>
+      <div className="mt-1 flex flex-col gap-2">
+        {training.map((s, n) => (
+          <div key={n} className="rounded-xl bg-gray-50 p-2.5 dark:bg-white/5">
+            <div className="flex items-center gap-2">
+              <select
+                value={s.day}
+                aria-label="Day"
+                onChange={(e) => set(n, { day: Number(e.target.value) })}
+                className={`${small} min-w-0 flex-1 bg-white font-semibold dark:bg-[#1c1c1e]`}
+              >
+                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                  <option key={d} value={d} disabled={d !== s.day && training.some((o) => o.day === d)}>
+                    {WEEKDAYS[d]}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => onChange(training.filter((_, k) => k !== n))}
+                aria-label={`Remove ${WEEKDAYS[s.day]}`}
+                className="h-9 w-9 shrink-0 cursor-pointer rounded-lg text-lg text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-white/10"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="min-w-0">
+                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Starts</span>
+                <input
+                  type="time"
+                  value={s.start ?? ""}
+                  onChange={(e) => set(n, { start: e.target.value || undefined, ...(e.target.value ? {} : { end: undefined }) })}
+                  className={`${small} bg-white dark:bg-[#1c1c1e]`}
+                />
+              </label>
+              <label className="min-w-0">
+                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Ends</span>
+                <input
+                  type="time"
+                  value={s.end ?? ""}
+                  disabled={!s.start}
+                  onChange={(e) => set(n, { end: e.target.value || undefined })}
+                  className={`${small} bg-white disabled:opacity-40 dark:bg-[#1c1c1e]`}
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+        {training.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No regular training.</p>}
+      </div>
+      {training.length < MAX_TRAINING_DAYS && free !== undefined && (
+        <button
+          onClick={() => onChange([...training, { day: free }])}
+          className="mt-2 cursor-pointer text-sm font-semibold text-green-700 hover:underline dark:text-green-400"
+        >
+          + Add a training day
+        </button>
+      )}
+      <span className="mt-1 block text-xs text-gray-400">
+        The Training Log, training plans and everyone&apos;s Up next follow these. A change applies from today;
+        sessions already past stay as they were.
+      </span>
+    </div>
+  );
+}
+
 function TeamsEditor({
   teams,
   setTeams,
@@ -764,6 +847,7 @@ function TeamsEditor({
                     Shown after the initials: “{initials} {t.squadName?.trim() || t.name.trim() || "U9s Reds"}”.
                   </span>
                 </label>
+                <TrainingDays training={t.training ?? DEFAULT_TRAINING} onChange={(training) => change(i, { training })} input={input} />
                 <label>
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-200">FA Full-Time code (optional)</span>
                   <input

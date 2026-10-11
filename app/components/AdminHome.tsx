@@ -72,7 +72,7 @@ const TOOLS: {
     path: "/admin/stats/training",
     icon: "🏃",
     title: "Training Log",
-    body: "Every Monday's session, and who was best trainer.",
+    body: "Every training session, and who was best trainer.",
   },
   {
     path: "/admin/stats/player-of-the-month",

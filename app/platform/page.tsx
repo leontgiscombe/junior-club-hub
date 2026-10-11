@@ -16,7 +16,7 @@ const display = Anton({ weight: "400", subsets: ["latin"] });
 
 const FEATURES = [
   ["⚽", "Match Log", "Fixtures from FA Full-Time, scores, scorers, assists and awards."],
-  ["🏃", "Training", "Each Monday's session, best trainer, and weekly plans from a drill library."],
+  ["🏃", "Training", "Every training session at each team's own times, best trainer, and weekly plans from a drill library."],
   ["🌟", "Player of the Month", "Worked out from the awards, with a poster ready to share."],
   ["📊", "Stats & Presentation", "Season totals, milestones and a slideshow for awards night."],
   ["👕", "Kit Sizes", "Parents pick their child and send sizes; you see who's missing."],

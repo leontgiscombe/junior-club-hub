@@ -174,7 +174,7 @@ export default function HelpManual() {
           </ol>
           <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-400/10 dark:text-green-200">
             <B>The one rule to know:</B> enter things once, in the right place. Games, goals and
-            match awards go in the <B>Match Log</B>; the Monday best trainer goes in the{" "}
+            match awards go in the <B>Match Log</B>; each session&apos;s best trainer goes in the{" "}
             <B>Training Log</B>. The stats tracker and player of the month fill in from those two by
             themselves.
           </p>
@@ -283,8 +283,10 @@ export default function HelpManual() {
 
         <Section id="training-log" title="Training Log">
           <p>
-            Every Monday session for the season is already listed, so you never add one; you only
-            pick the best trainer.
+            Every training session for the season is already listed, so you never add one; you only
+            pick the best trainer. They follow each team&apos;s training days and times, set in{" "}
+            <B>Settings → Teams</B> (Monday until you change them). A change applies from that day
+            on; sessions already past stay as they were.
           </p>
           <p>
             At the top is <B>Today</B> or the <B>Next Session</B>. With a training plan, it shows
@@ -299,26 +301,26 @@ export default function HelpManual() {
           </Steps>
           <H3>When Training Is Called Off</H3>
           <p>
-            Tap <B>No Training</B> on that Monday. Any best trainer given is taken back, and the
-            training plan moves back a week instead of losing a session. <B>Back On</B> undoes it.
+            Tap <B>No Training</B> on that session. Any best trainer given is taken back, and the
+            training plan moves back one session instead of losing it. <B>Back On</B> undoes it.
           </p>
         </Section>
 
         <Section id="training-plans" title="Training Plans">
           <p>
-            Each team has its own plan: a run of Monday sessions, each with a theme and three drills
+            Each team has its own plan: a run of weekly sessions on the team&apos;s training days, each with a theme and three drills
             in order — a <B>warm-up</B>, a <B>technical</B> drill and a <B>game</B>. The drills come
             from one <B>Drill Library</B> every team shares.
           </p>
           <H3>The Quickest Start: a Built-In Season Plan</H3>
           <p>
             If your hub comes with a season plan, <B>📅 Team Plans</B> shows a button to use it. Tap
-            it, pick the Monday <B>Week 1 is on</B>, then tap <B>Save Plan</B>. You can change any
+            it, pick the session <B>Week 1 is on</B>, then tap <B>Save Plan</B>. You can change any
             week afterwards.
           </p>
           <H3>Building or Changing Weeks Yourself</H3>
           <Steps>
-            <li>Pick the Monday <B>Week 1 is on</B>; each week after lands on the next Monday.</li>
+            <li>Pick the session <B>Week 1 is on</B>; each week after lands on the team&apos;s next training session.</li>
             <li>Tap <B>+ Add Week</B>, pick its topic, then its warm-up, technical drill and game. Each list shows only drills of that topic.</li>
             <li>Use the arrows to move a week, or ✕ to remove it.</li>
             <li>Tap <B>Save Plan</B>. Nothing is kept until you do.</li>
@@ -499,11 +501,12 @@ export default function HelpManual() {
               "Add your squad in the Stats tracker",
               "Mark any goalkeepers",
               "Open the Match log so your fixtures sync",
-              "Set up your Training plan and pick the Monday week 1 is on",
+              "Set each team's training days and times in Settings → Teams",
+              "Set up your Training plan and pick the session week 1 is on",
               "Share the Kit Sizes link with parents",
             ]}
           />
-          <H3>Every Monday</H3>
+          <H3>Every Training Session</H3>
           <Checklist
             items={[
               "Check tonight's drills in the Training log",

@@ -103,8 +103,95 @@ export type Team = {
   squadName?: string;
   faSnippet?: string;
   opponents?: string[];
+  /** When the team trains each week; unset means Mondays (DEFAULT_TRAINING), [] means no regular training. */
+  training?: TrainingSlot[];
+  /**
+   * The days the team trained on before a change, oldest first: each entry's
+   * sessions are used for dates before its `until`. So moving a team from
+   * Monday to Tuesday changes its sessions from that day on, not the ones
+   * already past (set by the server when teams are saved: withTrainingHistory).
+   */
+  trainingHistory?: { until: string; training: TrainingSlot[] }[];
   archived?: boolean;
 };
+
+/** One weekly session: the day (0 Sunday … 6 Saturday) and, if known, its times as "HH:MM". */
+export type TrainingSlot = { day: number; start?: string; end?: string };
+
+/** Before a team's days are set, it trains on a Monday — as every team did before teams had their own. */
+export const DEFAULT_TRAINING: TrainingSlot[] = [{ day: 1 }];
+export const MAX_TRAINING_DAYS = 4;
+export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** A team's weekly sessions, in week order (Monday first). */
+export function trainingOf(team: Pick<Team, "training"> | undefined): TrainingSlot[] {
+  return [...(team?.training ?? DEFAULT_TRAINING)].sort((a, b) => ((a.day + 6) % 7) - ((b.day + 6) % 7));
+}
+
+/** The weekly sessions a team had on `date` (YYYY-MM-DD), allowing for changes since. */
+export function trainingOn(team: Pick<Team, "training" | "trainingHistory"> | undefined, date: string): TrainingSlot[] {
+  const past = team?.trainingHistory?.find((h) => date < h.until);
+  return past ? trainingOf(past) : trainingOf(team);
+}
+
+/** A team without its training days and times, for pages anyone can open. */
+export function withoutTraining(team: Team): Team {
+  const t = { ...team };
+  delete t.training;
+  delete t.trainingHistory;
+  return t;
+}
+
+/**
+ * The teams about to be saved, with each one's training history carried over
+ * from what was saved before (never taken from the request), and a new entry
+ * for any team whose days or times change, so the change applies from `today` on.
+ */
+export function withTrainingHistory(next: Team[], prev: Team[], today: string): Team[] {
+  return next.map((team) => {
+    const rest: Team = { ...team };
+    delete rest.trainingHistory;
+    const old = prev.find((t) => t.slug === team.slug);
+    if (!old) return rest;
+    const history = [...(old.trainingHistory ?? [])];
+    const changed = JSON.stringify(trainingOf(old)) !== JSON.stringify(trainingOf(team));
+    // changed twice in a day: the entry already made today holds the days before today
+    if (changed && !history.some((h) => h.until === today)) history.push({ until: today, training: trainingOf(old) });
+    return history.length ? { ...rest, trainingHistory: history } : rest;
+  });
+}
+
+/** "18:00" as "6pm", "18:30" as "6:30pm". */
+export function clockLabel(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return time;
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""}${h < 12 ? "am" : "pm"}`;
+}
+
+/** A session's times, e.g. "6pm–7pm", "6pm", or "" when none are set. */
+export function timesLabel(slot: { start?: string; end?: string }): string {
+  if (!slot.start) return "";
+  return slot.end ? `${clockLabel(slot.start)}–${clockLabel(slot.end)}` : clockLabel(slot.start);
+}
+
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Keep only well-formed sessions, one per day, in week order; null if none was given. */
+export function cleanTraining(input: unknown): TrainingSlot[] | null {
+  if (!Array.isArray(input)) return null;
+  const out: TrainingSlot[] = [];
+  for (const raw of input.slice(0, MAX_TRAINING_DAYS)) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const day = Number(r.day);
+    if (!Number.isInteger(day) || day < 0 || day > 6 || out.some((s) => s.day === day)) continue;
+    const slot: TrainingSlot = { day };
+    if (typeof r.start === "string" && TIME.test(r.start)) slot.start = r.start;
+    if (slot.start && typeof r.end === "string" && TIME.test(r.end) && r.end > slot.start) slot.end = r.end;
+    out.push(slot);
+  }
+  return trainingOf({ training: out });
+}
 
 export const DEFAULT_TEAMS: Team[] = DEFAULT_TEAM_LIST.map((t) => ({
   ...t,
@@ -146,6 +233,17 @@ export function cleanTeams(input: unknown): Team[] | null {
     if (Array.isArray(r.opponents)) {
       const opponents = r.opponents.map((o) => text(o, 80)).filter(Boolean).slice(0, 40);
       if (opponents.length) team.opponents = opponents;
+    }
+    const training = cleanTraining(r.training);
+    if (training) team.training = training;
+    if (Array.isArray(r.trainingHistory)) {
+      const history = r.trainingHistory
+        .slice(-20)
+        .map((h) => (h && typeof h === "object" ? (h as Record<string, unknown>) : {}))
+        .filter((h) => typeof h.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(h.until))
+        .map((h) => ({ until: h.until as string, training: cleanTraining(h.training) ?? DEFAULT_TRAINING }))
+        .sort((a, b) => a.until.localeCompare(b.until));
+      if (history.length) team.trainingHistory = history;
     }
     if (r.archived === true) team.archived = true;
     out.push(team);

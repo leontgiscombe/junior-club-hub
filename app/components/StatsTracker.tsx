@@ -708,7 +708,7 @@ export default function StatsTracker() {
               </p>
               <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
                 Log each game there — every goal with who assisted, player of the
-                match, most improved and who played — and best trainer each Monday
+                match, most improved and who played — and best trainer each session
                 in the Training Log. The totals on this page fill in by themselves. Only change a number here to fix a mistake.
               </p>
             </div>
@@ -1097,7 +1097,7 @@ export default function StatsTracker() {
             <Link
               href={`/admin/stats/training${keyQuery(key)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
-              title="Pick each Monday's best trainer"
+              title="Pick each session's best trainer"
             >
               🏃 Training Log
             </Link>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getClubWithIcons, getTeams } from "@/lib/settings";
+import { withoutTraining } from "@/lib/clubSettings";
 import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
 import { cookies, headers } from "next/headers";
@@ -82,7 +83,9 @@ export default async function RootLayout({
     teamsHidden(tenant),
     getViewer(tenant).catch(() => SIGNED_OUT),
   ]);
-  const teams = hideTeams ? [] : allTeams;
+  // each team's training times stay off the page (anyone can open it): the
+  // Training Log, Settings and a family's own Up next fetch them for those allowed
+  const teams = hideTeams ? [] : allTeams.map(withoutTraining);
   return (
     // the club's colour, laid over the hub's green (lib/palette.ts)
     // dark is drawn from the start when it's the saved choice; "Match my phone" is settled by THEME_SCRIPT
