@@ -12,7 +12,7 @@ import { EDITABLE, FEATURES, kitAspect, slugFor, type Feature } from "@/lib/club
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { Group, ICONS, Row, TopBar, useScreens } from "./SettingsUI";
 
 type Snapshot = {
   club: Club;
@@ -111,6 +111,8 @@ export default function ClubSettings() {
   const [teams, setTeams] = useState<TeamDraft[]>([]);
   // coaches can look; only club admins can change Settings
   const [canAdmin, setCanAdmin] = useState(true);
+  // which setting is open (its own screen), or "" for the list
+  const { screen, open, close: closeScreen } = useScreens("/admin/settings");
 
   // keepEdits: after uploading a picture, so changes not yet saved stay as they are
   const take = useCallback((data: Snapshot, keepEdits = false) => {
@@ -274,259 +276,360 @@ export default function ClubSettings() {
     JSON.stringify(draft) !== JSON.stringify(snap.changes) ||
     JSON.stringify(fromDrafts(teams)) !== JSON.stringify(fromDrafts(snap.teams.map(toDraft)));
 
+  // the settings that open on their own screen, by their # (useScreens)
+  const SCREENS: Record<string, string> = {
+    share: "Share Your Hub",
+    details: "Club Details",
+    colour: "Club Colour",
+    crest: "Club Crest",
+    kit: "Kit Picture",
+    teams: "Teams",
+    parts: "Parts of the Hub",
+    ...(canAdmin && snap.club.features.financialAdmin ? { finance: "Financial Admin Passwords" } : {}),
+    ...(canAdmin && snap.account ? { signin: "Sign-In" } : {}),
+  };
+  // screens whose changes wait for Save Changes (pictures and passwords save as they go)
+  const EDITS = ["details", "colour", "teams", "parts"];
+  const liveTeams = teams.filter((t) => !t.archived).length;
+
   return (
     // the page previews the colour being picked, before it's saved
     <main
-      className="min-h-screen bg-gray-50 pb-16"
+      className="min-h-screen bg-gray-100 pb-16"
       style={(draft.colour ? clubColourVars(draft.colour) : DEFAULT_COLOUR_VARS) as React.CSSProperties}
     >
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <div className="mx-auto max-w-2xl">
-          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-          <h1 className="mt-2 text-xl font-extrabold">⚙️ Settings</h1>
-          <p className="mt-0.5 text-sm text-green-200">
-            Your club&apos;s name, crest and slogan, everywhere in the hub
-          </p>
-        </div>
-      </div>
-      {!canAdmin && (
-        <div className="mx-auto mt-4 max-w-2xl px-4">
-          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            👀 You can look, but only a <strong>club admin</strong> can change Settings.
-          </p>
-        </div>
+      {screen && SCREENS[screen] ? (
+        <>
+          <TopBar title={SCREENS[screen]} onBack={closeScreen} />
+          <div className="mx-auto max-w-xl px-4">
+            {!canAdmin && (
+              <div className="mt-4">
+                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  👀 You can look, but only a <strong>club admin</strong> can change Settings.
+                </p>
+              </div>
+            )}
+            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
+            {["details", "colour", "crest"].includes(screen) && (
+              <>
+                {/* Preview: the home page's banner with the details as they'll show */}
+                <div className="relative mt-4 overflow-hidden rounded-3xl bg-[var(--club-night)] px-6 py-8 text-center text-white shadow-lg">
+                  <div
+                    className="absolute inset-0 bg-cover bg-top opacity-70"
+                    style={{ backgroundImage: "url(/poster/brush-background.jpg)", filter: "var(--club-brush-filter)" }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={club.crest.src} alt={club.crest.alt} className="mx-auto mb-3 h-24 w-auto" />
+                    <p className="text-3xl font-black uppercase tracking-wide">{shown("name")}</p>
+                    <p className="mt-1 text-sm font-bold uppercase tracking-widest text-[var(--club-bright)]">Team Hub</p>
+                    <p className="mt-3 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
+                      {shown("kitSeason")} season
+                    </p>
+                    <p className="mt-4 text-sm font-bold uppercase text-[var(--club-bright)]">{shown("slogan")}</p>
+                    <p className="mt-1 text-xs text-gray-400">{shown("fullName")}</p>
+                  </div>
+                </div>
+                <p className="mt-2 text-center text-xs text-gray-400">Preview of the top of the home page</p>
+              </>
+            )}
+            {screen === "share" && <ShareHub clubName={shown("name")} />}
+            {screen === "colour" && (
+              <>
+                {/* Colour */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+                  <h2 className="font-extrabold text-gray-900">🎨 Club Colour</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    The hub&apos;s buttons, banners and highlights take this colour. This page shows it as
+                    you pick.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() =>
+                        setDraft((d) => {
+                          const next = { ...d };
+                          delete next.colour;
+                          return next;
+                        })
+                      }
+                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                        !draft.colour ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+                      }`}
+                    >
+                      <span className="h-5 w-5 rounded-full" style={{ background: "#16a34a" }} />
+                      Hub green
+                    </button>
+                    {PRESET_COLOURS.filter((p) => p.name !== "Green").map((p) => (
+                      <button
+                        key={p.hex}
+                        onClick={() => setDraft((d) => ({ ...d, colour: p.hex }))}
+                        className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                          draft.colour === p.hex ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+                        }`}
+                      >
+                        <span className="h-5 w-5 rounded-full" style={{ background: p.hex }} />
+                        {p.name}
+                      </button>
+                    ))}
+                    <label className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold">
+                      <input
+                        type="color"
+                        value={draft.colour ?? "#16a34a"}
+                        onChange={(e) => setDraft((d) => ({ ...d, colour: e.target.value }))}
+                        className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
+                      />
+                      Your own
+                    </label>
+                  </div>
+                </section>
+              </>
+            )}
+            {screen === "crest" && (
+              <>
+                {/* Crest */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+                  <h2 className="font-extrabold text-gray-900">🛡️ Club Crest</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    A PNG with a see-through background looks best. It&apos;s also used for the home-screen
+                    icon when someone saves the hub to their phone.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={club.crest.src}
+                      alt=""
+                      className="h-20 w-20 rounded-2xl border border-gray-100 bg-gray-50 object-contain p-1.5"
+                    />
+                    <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
+                      {uploading === "crest" ? "Uploading…" : snap.crest ? "Change Crest" : "Upload Crest"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={!!uploading}
+                        onChange={(e) => {
+                          uploadPicture("crest", e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {snap.crest && (
+                      <button
+                        onClick={() => resetPicture("crest")}
+                        disabled={!!uploading}
+                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+                      >
+                        Use Default Crest
+                      </button>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
+            {screen === "kit" && (
+              <>
+                {/* Kit picture */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+                  <h2 className="font-extrabold text-gray-900">👕 Kit Picture</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Shown on the home page and the Kit Sizes pages, so parents can see the kit they&apos;re
+                    choosing sizes for. A wide photo or design works best.
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={club.kitImage.src}
+                    alt=""
+                    className="mt-4 w-full max-w-sm rounded-2xl border border-gray-100 bg-[var(--club-night)] object-contain"
+                    style={{ aspectRatio: kitAspect(club.kitImage) }}
+                  />
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
+                      {uploading === "kit" ? "Uploading…" : snap.kitImage ? "Change Kit Picture" : "Upload Kit Picture"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={!!uploading}
+                        onChange={(e) => {
+                          uploadPicture("kit", e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {snap.kitImage && (
+                      <button
+                        onClick={() => resetPicture("kit")}
+                        disabled={!!uploading}
+                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+                      >
+                        Use Default Picture
+                      </button>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
+            {screen === "details" && (
+              <>
+                {/* Identity */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+                  <h2 className="font-extrabold text-gray-900">🏷️ Club Details</h2>
+                  <p className="mt-1 text-sm text-gray-500">Leave a box empty to use the default shown in it.</p>
+                  <div className="mt-4 flex flex-col gap-4">
+                    {FIELDS.map(({ field, label, hint }) => (
+                      <label key={field} className="block">
+                        <span className="text-sm font-bold text-gray-800">{label}</span>
+                        <input
+                          value={value(field)}
+                          maxLength={EDITABLE[field]}
+                          placeholder={defaults[field]}
+                          onChange={(e) => setDraft((d) => ({ ...d, [field]: e.target.value }))}
+                          className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        />
+                        <span className="mt-1 block text-xs text-gray-400">{hint}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+            {screen === "parts" && (
+              <>
+                {/* Which parts of the hub the club uses */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+                  <h2 className="font-extrabold text-gray-900">🧩 Parts of the Hub</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Switch off anything the club doesn&apos;t use: it leaves the home page and Coach Admin,
+                    and nothing saved in it is lost.
+                  </p>
+                  <div className="mt-4 flex flex-col divide-y divide-gray-100">
+                    <Toggle
+                      label="Results for Parents"
+                      hint="Scores, league tables and top scorers. Turn off for non-competitive football; coaches still log every game."
+                      on={publicResults}
+                      onChange={(on) => setDraft((d) => ({ ...d, publicResults: on }))}
+                    />
+                    {(Object.keys(FEATURES) as Feature[]).map((f) => (
+                      <Toggle
+                        key={f}
+                        label={FEATURES[f].label}
+                        hint={FEATURES[f].hint}
+                        on={draft.features?.[f] ?? defaults.features[f]}
+                        onChange={(on) => setDraft((d) => ({ ...d, features: { ...d.features, [f]: on } }))}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+            {screen === "teams" && (
+              <>
+                <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
+              </>
+            )}
+            {screen === "finance" && (
+              <>
+                {canAdmin && snap.club.features.financialAdmin && (
+                  <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
+                )}
+              </>
+            )}
+            {screen === "signin" && (
+              <>
+                {canAdmin && snap.account && (
+                  <AccountSection
+                    email={snap.account.email}
+                    adminKey={key}
+                    onPasswordChanged={(next) => {
+                      // stay signed in with the new password
+                      setKey(next);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("key", next);
+                      window.history.replaceState(null, "", url);
+                    }}
+                  />
+                )}
+              </>
+            )}
+            {EDITS.includes(screen) && (
+              <>
+                {canAdmin && <div className="sticky bottom-4 mt-6">
+                  <button
+                    onClick={save}
+                    disabled={saving || !dirty}
+                    className="w-full cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white shadow-lg hover:bg-green-700 disabled:cursor-default disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
+                  </button>
+                </div>}
+              </>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <TopBar title="Club Settings" href={`/admin${keyQuery(key)}`} />
+          <div className="mx-auto max-w-xl px-4">
+            <div className="flex flex-col items-center pb-4 pt-2 text-center">
+              <span className="grid h-32 w-32 place-items-center rounded-3xl bg-[var(--club-night)] p-3 shadow-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={club.crest.src} alt={club.crest.alt} className="max-h-full max-w-full object-contain" />
+              </span>
+              <h1 className="mt-4 text-3xl font-semibold text-gray-900">{shown("name")}</h1>
+              <p className="mt-0.5 text-sm text-gray-500">{shown("fullName")}</p>
+            </div>
+            {!canAdmin && (
+              <div className="mt-4">
+                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  👀 You can look, but only a <strong>club admin</strong> can change Settings.
+                </p>
+              </div>
+            )}
+            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
+
+            <Group>
+              <Row icon={ICONS.share} label="Share Your Hub" onClick={() => open("share")} />
+            </Group>
+
+            <Group>
+              <Row icon={ICONS.tag} label="Club Details" detail={shown("name")} onClick={() => open("details")} />
+              <Row icon={ICONS.palette} label="Club Colour" onClick={() => open("colour")} />
+              <Row icon={ICONS.crest} label="Club Crest" onClick={() => open("crest")} />
+              <Row icon={ICONS.shirt} label="Kit Picture" onClick={() => open("kit")} />
+            </Group>
+
+            <Group>
+              <Row icon={ICONS.team} label="Teams" detail={String(liveTeams)} onClick={() => open("teams")} />
+              <Row icon={ICONS.grid} label="Parts of the Hub" onClick={() => open("parts")} />
+            </Group>
+
+            {(SCREENS.finance || SCREENS.signin) && (
+              <Group>
+                {SCREENS.finance && <Row icon={ICONS.money} label="Financial Admin Passwords" onClick={() => open("finance")} />}
+                {SCREENS.signin && <Row icon={ICONS.lock} label="Sign-In" onClick={() => open("signin")} />}
+              </Group>
+            )}
+
+            {/* changes made on a screen and not saved yet */}
+            {dirty && (
+              <>
+                {canAdmin && <div className="sticky bottom-4 mt-6">
+                  <button
+                    onClick={save}
+                    disabled={saving || !dirty}
+                    className="w-full cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white shadow-lg hover:bg-green-700 disabled:cursor-default disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
+                  </button>
+                </div>}
+              </>
+            )}
+          </div>
+        </>
       )}
-
-      <div className="mx-auto max-w-2xl px-4">
-        {/* Preview: the home page's banner with the details as they'll show */}
-        <div className="relative mt-4 overflow-hidden rounded-3xl bg-[var(--club-night)] px-6 py-8 text-center text-white shadow-lg">
-          <div
-            className="absolute inset-0 bg-cover bg-top opacity-70"
-            style={{ backgroundImage: "url(/poster/brush-background.jpg)", filter: "var(--club-brush-filter)" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={club.crest.src} alt={club.crest.alt} className="mx-auto mb-3 h-24 w-auto" />
-            <p className="text-3xl font-black uppercase tracking-wide">{shown("name")}</p>
-            <p className="mt-1 text-sm font-bold uppercase tracking-widest text-[var(--club-bright)]">Team Hub</p>
-            <p className="mt-3 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
-              {shown("kitSeason")} season
-            </p>
-            <p className="mt-4 text-sm font-bold uppercase text-[var(--club-bright)]">{shown("slogan")}</p>
-            <p className="mt-1 text-xs text-gray-400">{shown("fullName")}</p>
-          </div>
-        </div>
-        <p className="mt-2 text-center text-xs text-gray-400">Preview of the top of the home page</p>
-
-        {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-        {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
-
-        <ShareHub clubName={shown("name")} />
-
-        {/* Colour */}
-        <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h2 className="font-extrabold text-gray-900">🎨 Club Colour</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            The hub&apos;s buttons, banners and highlights take this colour. This page shows it as
-            you pick.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              onClick={() =>
-                setDraft((d) => {
-                  const next = { ...d };
-                  delete next.colour;
-                  return next;
-                })
-              }
-              className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                !draft.colour ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
-              }`}
-            >
-              <span className="h-5 w-5 rounded-full" style={{ background: "#16a34a" }} />
-              Hub green
-            </button>
-            {PRESET_COLOURS.filter((p) => p.name !== "Green").map((p) => (
-              <button
-                key={p.hex}
-                onClick={() => setDraft((d) => ({ ...d, colour: p.hex }))}
-                className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                  draft.colour === p.hex ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
-                }`}
-              >
-                <span className="h-5 w-5 rounded-full" style={{ background: p.hex }} />
-                {p.name}
-              </button>
-            ))}
-            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold">
-              <input
-                type="color"
-                value={draft.colour ?? "#16a34a"}
-                onChange={(e) => setDraft((d) => ({ ...d, colour: e.target.value }))}
-                className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
-              />
-              Your own
-            </label>
-          </div>
-        </section>
-
-        {/* Crest */}
-        <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h2 className="font-extrabold text-gray-900">🛡️ Club Crest</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            A PNG with a see-through background looks best. It&apos;s also used for the home-screen
-            icon when someone saves the hub to their phone.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={club.crest.src}
-              alt=""
-              className="h-20 w-20 rounded-2xl border border-gray-100 bg-gray-50 object-contain p-1.5"
-            />
-            <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
-              {uploading === "crest" ? "Uploading…" : snap.crest ? "Change Crest" : "Upload Crest"}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                disabled={!!uploading}
-                onChange={(e) => {
-                  uploadPicture("crest", e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {snap.crest && (
-              <button
-                onClick={() => resetPicture("crest")}
-                disabled={!!uploading}
-                className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
-              >
-                Use Default Crest
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* Kit picture */}
-        <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h2 className="font-extrabold text-gray-900">👕 Kit Picture</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Shown on the home page and the Kit Sizes pages, so parents can see the kit they&apos;re
-            choosing sizes for. A wide photo or design works best.
-          </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={club.kitImage.src}
-            alt=""
-            className="mt-4 w-full max-w-sm rounded-2xl border border-gray-100 bg-[var(--club-night)] object-contain"
-            style={{ aspectRatio: kitAspect(club.kitImage) }}
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-4">
-            <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
-              {uploading === "kit" ? "Uploading…" : snap.kitImage ? "Change Kit Picture" : "Upload Kit Picture"}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                disabled={!!uploading}
-                onChange={(e) => {
-                  uploadPicture("kit", e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {snap.kitImage && (
-              <button
-                onClick={() => resetPicture("kit")}
-                disabled={!!uploading}
-                className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
-              >
-                Use Default Picture
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* Identity */}
-        <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h2 className="font-extrabold text-gray-900">🏷️ Club Details</h2>
-          <p className="mt-1 text-sm text-gray-500">Leave a box empty to use the default shown in it.</p>
-          <div className="mt-4 flex flex-col gap-4">
-            {FIELDS.map(({ field, label, hint }) => (
-              <label key={field} className="block">
-                <span className="text-sm font-bold text-gray-800">{label}</span>
-                <input
-                  value={value(field)}
-                  maxLength={EDITABLE[field]}
-                  placeholder={defaults[field]}
-                  onChange={(e) => setDraft((d) => ({ ...d, [field]: e.target.value }))}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-                <span className="mt-1 block text-xs text-gray-400">{hint}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* Which parts of the hub the club uses */}
-        <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h2 className="font-extrabold text-gray-900">🧩 Parts of the Hub</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Switch off anything the club doesn&apos;t use: it leaves the home page and Coach Admin,
-            and nothing saved in it is lost.
-          </p>
-          <div className="mt-4 flex flex-col divide-y divide-gray-100">
-            <Toggle
-              label="Results for Parents"
-              hint="Scores, league tables and top scorers. Turn off for non-competitive football; coaches still log every game."
-              on={publicResults}
-              onChange={(on) => setDraft((d) => ({ ...d, publicResults: on }))}
-            />
-            {(Object.keys(FEATURES) as Feature[]).map((f) => (
-              <Toggle
-                key={f}
-                label={FEATURES[f].label}
-                hint={FEATURES[f].hint}
-                on={draft.features?.[f] ?? defaults.features[f]}
-                onChange={(on) => setDraft((d) => ({ ...d, features: { ...d.features, [f]: on } }))}
-              />
-            ))}
-          </div>
-        </section>
-
-        <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
-
-        {canAdmin && snap.club.features.financialAdmin && (
-          <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
-        )}
-
-        {canAdmin && snap.account && (
-          <AccountSection
-            email={snap.account.email}
-            adminKey={key}
-            onPasswordChanged={(next) => {
-              // stay signed in with the new password
-              setKey(next);
-              const url = new URL(window.location.href);
-              url.searchParams.set("key", next);
-              window.history.replaceState(null, "", url);
-            }}
-          />
-        )}
-
-        {canAdmin && <div className="sticky bottom-4 mt-6">
-          <button
-            onClick={save}
-            disabled={saving || !dirty}
-            className="w-full cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white shadow-lg hover:bg-green-700 disabled:cursor-default disabled:opacity-50"
-          >
-            {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
-          </button>
-        </div>}
-      </div>
     </main>
   );
 }
@@ -568,7 +671,7 @@ function TeamsEditor({
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
 
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
       <h2 className="font-extrabold text-gray-900">👥 Teams</h2>
       <p className="mt-1 text-sm text-gray-500">
         Each team gets its own kit form, stats, match and training logs, training plan and subs.
@@ -819,7 +922,7 @@ function AccountSection({
   const button =
     "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40";
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
       <h2 className="font-extrabold text-gray-900">🔑 Sign-In</h2>
       <label className="mt-4 block">
         <span className="text-sm font-bold text-gray-800">Club email</span>
@@ -870,7 +973,7 @@ function ShareHub({ clubName }: { clubName: string }) {
   }
 
   return (
-    <section className="mt-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
       <h2 className="font-extrabold text-gray-900">📣 Share Your Hub</h2>
       <p className="mt-1 text-sm text-gray-500">
         Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by

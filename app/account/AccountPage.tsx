@@ -5,12 +5,12 @@
 // #here, #security, #alerts, #delete) — your name, your clubs and roles, your
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
 import ProfilePhoto from "./ProfilePhoto";
+import { Group, ICONS, Row, TopBar, useScreens } from "../components/SettingsUI";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
@@ -128,26 +128,8 @@ export default function AccountPage() {
     }
   }
 
-  // which screen is open: the main list, or one setting (kept in the address's #, so a phone's back gesture works)
-  const [screen, setScreen] = useState("");
-  const [pushed, setPushed] = useState(false);
-  useEffect(() => {
-    const read = () => setScreen(window.location.hash.slice(1));
-    read();
-    window.addEventListener("hashchange", read);
-    return () => window.removeEventListener("hashchange", read);
-  }, []);
-  const open = useCallback((id: string) => {
-    setPushed(true);
-    window.location.hash = id;
-  }, []);
-  const closeScreen = useCallback(() => {
-    if (pushed) window.history.back();
-    else {
-      window.history.replaceState(null, "", "/account");
-      setScreen("");
-    }
-  }, [pushed]);
+  // which screen is open: the main list, or one setting
+  const { screen, open, close: closeScreen } = useScreens("/account");
   const leave = useCallback(() => {
     // back where you came from in the hub, or home
     if (document.referrer.startsWith(window.location.origin) && window.history.length > 1) window.history.back();
@@ -353,88 +335,5 @@ export default function AccountPage() {
         </Group>
       </div>
     </main>
-  );
-}
-
-// ---- the look: a phone's settings ----
-
-const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
-const svg = (children: React.ReactNode) => (
-  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" {...stroke}>
-    {children}
-  </svg>
-);
-const ICONS = {
-  person: svg(<><circle cx="12" cy="12" r="9" /><circle cx="12" cy="10" r="3" /><path d="M6.5 18.5a6.5 6.5 0 0 1 11 0" /></>),
-  clubs: svg(<><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0" /><circle cx="17" cy="9" r="2.5" /><path d="M16 14a5 5 0 0 1 5 5" /></>),
-  child: svg(<><circle cx="12" cy="6" r="2.5" /><path d="M8 21v-6l-2-4 6 1 6-1-2 4v6M12 12v4" /></>),
-  key: svg(<><circle cx="8" cy="8" r="4.5" /><path d="M11 11l9 9M16 16l2-2M18.5 18.5l2-2" /></>),
-  bell: svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" /><path d="M10 20a2 2 0 0 0 4 0" /></>),
-  shield: svg(<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />),
-  doc: svg(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></>),
-  out: svg(<><path d="M14 4h5v16h-5" /><path d="M10 8l-4 4 4 4M6 12h10" /></>),
-  bin: svg(<><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></>),
-};
-
-/** The bar at the top: a round back button and the screen's title. */
-function TopBar({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <div className="sticky top-0 z-30 bg-gray-100/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
-      <div className="relative mx-auto flex h-12 max-w-xl items-center justify-center">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="absolute left-0 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50"
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" {...stroke} strokeWidth={2.4}>
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </button>
-        <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-      </div>
-    </div>
-  );
-}
-
-/** A rounded group of rows. */
-function Group({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm">{children}</div>;
-}
-
-/** One row: an icon, a label, maybe a detail, and an arrow. */
-function Row({
-  icon,
-  label,
-  detail,
-  danger,
-  href,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  detail?: string;
-  danger?: boolean;
-  href?: string;
-  onClick?: () => void;
-}) {
-  const inner = (
-    <>
-      <span className={danger ? "text-red-600" : "text-gray-700"}>{icon}</span>
-      <span className={`flex-1 text-left text-[17px] ${danger ? "text-red-600" : "text-gray-900"}`}>{label}</span>
-      {detail && <span className="text-[15px] text-gray-400">{detail}</span>}
-      <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-300" aria-hidden="true" {...stroke} strokeWidth={2.2}>
-        <path d="M9 5l7 7-7 7" />
-      </svg>
-    </>
-  );
-  const className = "flex w-full items-center gap-4 px-5 py-4 hover:bg-gray-50 active:bg-gray-100";
-  return href ? (
-    <Link href={href} className={className}>
-      {inner}
-    </Link>
-  ) : (
-    <button onClick={onClick} className={className}>
-      {inner}
-    </button>
   );
 }
