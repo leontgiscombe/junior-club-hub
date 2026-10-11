@@ -18,6 +18,7 @@ import { getTenant } from "@/lib/tenant";
 import { listTraining } from "@/lib/trainingStorage";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import HomeWallpaper from "./components/HomeWallpaper";
+import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
@@ -109,14 +110,25 @@ export default async function Home() {
   }
   const many = TEAMS.length > 1 && !person?.team;
 
-  const shortcuts = [
-    { href: "/admin/stats/matches", label: "Match Log", colour: "bg-green-700", icon: ICON.ball },
-    { href: "/admin/stats/training", label: "Training Log", colour: "bg-cyan-700", icon: ICON.calendar },
-    { href: "/admin/stats", label: "Stats", colour: "bg-indigo-600", icon: ICON.stats },
-    CLUB.features.playerOfMonth
-      ? { href: "/admin/stats/player-of-the-month", label: "Player of the Month", colour: "bg-amber-700", icon: ICON.star }
-      : { href: "/admin/training/plans", label: "Training Plans", colour: "bg-blue-700", icon: ICON.plans },
+  // the coach tools this person can use, for their shortcuts (they pick which, on the page)
+  const available: ShortcutId[] = [
+    "matches",
+    "training",
+    "stats",
+    ...(CLUB.features.playerOfMonth ? (["potm"] as const) : []),
+    ...(CLUB.features.trainingPlans ? (["plans"] as const) : []),
+    ...(CLUB.features.cameraRegister ? (["camera"] as const) : []),
+    ...(CLUB.features.kitSizes ? (["kitResponses"] as const) : []),
+    "players",
+    "members",
+    "settings",
+    "help",
+    ...(CLUB.publicResults ? (["results"] as const) : []),
+    ...(viewer.canFinance && CLUB.features.financialAdmin ? (["finances"] as const) : []),
+    ...(CLUB.features.trainingHub ? (["hub"] as const) : []),
+    ...(CLUB.features.kitSizes ? (["kit"] as const) : []),
   ];
+  const defaults = available.filter((id) => ["matches", "training", "stats", "potm"].includes(id)).slice(0, 4);
 
   return (
     <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
@@ -227,19 +239,7 @@ export default async function Home() {
         )}
 
         {/* coaches: shortcuts to the tools */}
-        {viewer.canCoach && (
-          <section className="flex flex-col gap-2.5">
-            <h2 className="wp-text px-1 text-xl font-bold">Shortcuts</h2>
-            <div className="grid grid-cols-4 gap-2">
-              {shortcuts.map((s) => (
-                <Link key={s.href} href={s.href} className="wp-text press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight">
-                  <Tile colour={s.colour}>{s.icon}</Tile>
-                  {s.label}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        {viewer.canCoach && <HomeShortcuts available={available} defaults={defaults} />}
 
         {/* parents, players and anyone signed out: the Training Hub and kit sizes */}
         {(isParentView || !viewer.signedIn) && (

@@ -1,0 +1,199 @@
+"use client";
+
+// The home screen's shortcuts, which each person picks for themselves (kept on
+// this phone): Edit opens a list of every tool they can use, to tick up to
+// MAX and put in order. Until they do, the page's own default four show.
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+export type ShortcutId =
+  | "matches"
+  | "training"
+  | "stats"
+  | "potm"
+  | "plans"
+  | "camera"
+  | "kitResponses"
+  | "players"
+  | "members"
+  | "settings"
+  | "help"
+  | "results"
+  | "finances"
+  | "hub"
+  | "kit";
+
+type Tool = { href: string; label: string; colour: string; icon: React.ReactNode; external?: boolean };
+
+const svg = (children: React.ReactNode) => children;
+const TOOLS: Record<ShortcutId, Tool> = {
+  matches: { href: "/admin/stats/matches", label: "Match Log", colour: "bg-green-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></>) },
+  training: { href: "/admin/stats/training", label: "Training Log", colour: "bg-cyan-700", icon: svg(<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>) },
+  stats: { href: "/admin/stats", label: "Stats", colour: "bg-indigo-600", icon: svg(<path d="M5 20V10M12 20V4M19 20v-7" />) },
+  potm: { href: "/admin/stats/player-of-the-month", label: "Player of the Month", colour: "bg-amber-700", icon: svg(<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" />) },
+  plans: { href: "/admin/training/plans", label: "Training Plans", colour: "bg-blue-700", icon: svg(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></>) },
+  camera: { href: "/admin/camera", label: "Camera", colour: "bg-rose-700", icon: svg(<><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>) },
+  kitResponses: { href: "/admin/kit", label: "Kit Responses", colour: "bg-orange-700", icon: svg(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>) },
+  players: { href: "/admin/players", label: "Players", colour: "bg-lime-700", icon: svg(<><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /></>) },
+  members: { href: "/admin/members", label: "Members", colour: "bg-emerald-700", icon: svg(<><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>) },
+  settings: { href: "/admin/settings", label: "Settings", colour: "bg-gray-600", icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>) },
+  help: { href: "/admin/help", label: "Help", colour: "bg-slate-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></>) },
+  results: { href: "/results", label: "Results", colour: "bg-yellow-700", icon: svg(<><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" /></>) },
+  finances: { href: "/finance", label: "Finances", colour: "bg-emerald-800", icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
+  hub: { href: "/training-hub", label: "Training Hub", colour: "bg-green-800", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></>), external: true },
+  kit: { href: "/kit", label: "Kit Sizes", colour: "bg-orange-600", icon: svg(<path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" />) },
+};
+
+const MAX = 8;
+const KEY = "hub_shortcuts";
+
+function Tile({ tool, small = false }: { tool: Tool; small?: boolean }) {
+  return (
+    <span className={`grid shrink-0 place-items-center text-white ${tool.colour} ${small ? "h-10 w-10 rounded-xl" : "h-14 w-14 rounded-2xl"}`}>
+      <svg viewBox="0 0 24 24" className={small ? "h-5 w-5" : "h-7 w-7"} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {tool.icon}
+      </svg>
+    </span>
+  );
+}
+
+export default function HomeShortcuts({ available, defaults }: { available: ShortcutId[]; defaults: ShortcutId[] }) {
+  const [chosen, setChosen] = useState<ShortcutId[]>(defaults);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<ShortcutId[]>([]);
+
+  // this phone's own choice, if it has one (only tools this person can still use)
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) ?? "null") as ShortcutId[] | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved choice is only known in the browser
+      if (Array.isArray(saved)) setChosen(saved.filter((id) => available.includes(id)).slice(0, MAX));
+    } catch {}
+  }, [available]);
+
+  function save(next: ShortcutId[] | null) {
+    try {
+      if (next) localStorage.setItem(KEY, JSON.stringify(next));
+      else localStorage.removeItem(KEY);
+    } catch {}
+    setChosen(next ?? defaults);
+    setEditing(false);
+  }
+
+  const toggle = (id: ShortcutId) =>
+    setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : d.length < MAX ? [...d, id] : d));
+  const move = (id: ShortcutId, by: -1 | 1) =>
+    setDraft((d) => {
+      const i = d.indexOf(id);
+      const j = i + by;
+      if (i < 0 || j < 0 || j >= d.length) return d;
+      const next = [...d];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
+  return (
+    <section className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between px-1">
+        <h2 className="wp-text text-xl font-bold">Shortcuts</h2>
+        <button
+          onClick={() => {
+            setDraft(chosen);
+            setEditing(true);
+          }}
+          className="wp-text press text-[15px] font-semibold text-green-700 dark:text-green-400"
+        >
+          Edit
+        </button>
+      </div>
+      {chosen.length > 0 ? (
+        <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+          {chosen.map((id) => {
+            const tool = TOOLS[id];
+            const inner = (
+              <>
+                <Tile tool={tool} />
+                {tool.label}
+              </>
+            );
+            const className = "wp-text press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight";
+            return tool.external ? (
+              <a key={id} href={tool.href} className={className}>
+                {inner}
+              </a>
+            ) : (
+              <Link key={id} href={tool.href} className={className}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="wp-text px-1 text-sm text-gray-500 dark:text-gray-400">No shortcuts — tap Edit to add some.</p>
+      )}
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setEditing(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit shortcuts"
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-[#f2f2f7] pb-[max(1rem,env(safe-area-inset-bottom))] text-gray-900 shadow-2xl dark:bg-[#1c1c1e] dark:text-gray-50 sm:rounded-3xl"
+          >
+            <div className="flex items-center justify-between px-5 pb-2 pt-4">
+              <button onClick={() => save(null)} className="text-[15px] font-semibold text-gray-500 dark:text-gray-400">
+                Reset
+              </button>
+              <h2 className="text-[17px] font-semibold">Shortcuts</h2>
+              <button onClick={() => save(draft)} className="text-[15px] font-bold text-green-700 dark:text-green-400">
+                Done
+              </button>
+            </div>
+            <p className="px-5 pb-3 text-center text-sm text-gray-500 dark:text-gray-400">
+              Tick up to {MAX} and put them in order. {draft.length} of {MAX} chosen.
+            </p>
+            <div className="overflow-y-auto px-4">
+              <ul className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white dark:divide-white/10 dark:bg-black/40">
+                {/* the chosen ones first, in order, then the rest */}
+                {[...draft, ...available.filter((id) => !draft.includes(id))].map((id) => {
+                  const on = draft.includes(id);
+                  const i = draft.indexOf(id);
+                  return (
+                    <li key={id} className="flex items-center gap-3 px-4 py-2.5">
+                      <Tile tool={TOOLS[id]} small />
+                      <span className="flex-1 text-[16px]">{TOOLS[id].label}</span>
+                      {on && (
+                        <span className="flex gap-1">
+                          <button onClick={() => move(id, -1)} disabled={i === 0} aria-label={`Move ${TOOLS[id].label} up`} className="grid h-9 w-9 place-items-center rounded-full text-gray-500 disabled:opacity-25 dark:text-gray-400">
+                            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+                          </button>
+                          <button onClick={() => move(id, 1)} disabled={i === draft.length - 1} aria-label={`Move ${TOOLS[id].label} down`} className="grid h-9 w-9 place-items-center rounded-full text-gray-500 disabled:opacity-25 dark:text-gray-400">
+                            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                          </button>
+                        </span>
+                      )}
+                      <button
+                        onClick={() => toggle(id)}
+                        aria-pressed={on}
+                        aria-label={on ? `Remove ${TOOLS[id].label}` : `Add ${TOOLS[id].label}`}
+                        disabled={!on && draft.length >= MAX}
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 disabled:opacity-30 ${
+                          on ? "border-green-600 bg-green-600 text-white" : "border-gray-300 dark:border-white/25"
+                        }`}
+                      >
+                        {on && (
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
