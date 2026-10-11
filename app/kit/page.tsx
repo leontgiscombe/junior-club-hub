@@ -3,6 +3,9 @@ import Image from "next/image";
 import { kitAspect } from "@/lib/clubSettings";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
+import { canCoach, currentPerson } from "@/lib/people";
+import { teamsOf } from "@/lib/access";
+import { getTenant } from "@/lib/tenant";
 
 export const metadata = {
   title: "Kit Sizes – Pick Your Team",
@@ -17,9 +20,21 @@ function Chevron() {
   );
 }
 
-export default async function KitTeamPicker() {
+export default async function KitTeamPicker({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   await requireFeature("kitSizes");
-  const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
+  const tenant = await getTenant();
+  const [CLUB, TEAMS, me, { all }] = await Promise.all([
+    getClub(),
+    getTeams(),
+    tenant ? currentPerson(tenant).catch(() => null) : null,
+    searchParams,
+  ]);
+  // a signed-in parent (or player) sees just their own children's teams — the app knows them;
+  // coaches, and anyone signed out, see every team (and a parent can still ask for them all)
+  const person = me?.person?.status === "approved" ? me.person : null;
+  const mine = person && !canCoach(person) ? teamsOf(person) : [];
+  const ownOnly = mine.length > 0 && !all;
+  const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
   return (
     <div className="themed flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
@@ -47,9 +62,11 @@ export default async function KitTeamPicker() {
         </div>
 
         {/* the teams, as Home's grouped rows */}
-        <h2 className="mt-6 mb-2.5 px-1 text-xl font-bold">Choose your child&apos;s team</h2>
+        <h2 className="mt-6 mb-2.5 px-1 text-xl font-bold">
+          {ownOnly ? (shown.length > 1 ? "Your children's teams" : "Your child's team") : "Choose your child's team"}
+        </h2>
         <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
-          {TEAMS.map((team) => (
+          {shown.map((team) => (
             <Link key={team.slug} href={`/kit/${team.slug}`} className="press flex items-center gap-4 px-4 py-3.5">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-green-50 text-2xl dark:bg-green-400/10">
                 {team.accent}
@@ -64,6 +81,14 @@ export default async function KitTeamPicker() {
         </div>
         <p className="mt-2.5 px-1 text-center text-xs text-gray-500 dark:text-gray-400">
           It takes a minute, and there&apos;s a size guide to help.
+          {ownOnly && TEAMS.length > shown.length && (
+            <>
+              {" "}
+              <Link href="/kit?all=1" className="font-semibold text-green-700 dark:text-green-400">
+                Show all teams
+              </Link>
+            </>
+          )}
         </p>
 
         {/* kit during the season: a new shirt, a lost jacket */}
