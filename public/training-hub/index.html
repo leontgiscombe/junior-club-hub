@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts) */(function(){try{var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set)}catch(e){}})()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="apple-touch-icon" href="/hub-icon-180.png">
 <meta name="apple-mobile-web-app-title" content="Training">
@@ -250,6 +251,45 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .home-body .tod-label{color:#b45309;font-size:11px}
 .home-body .tod-text{color:#1f2937;font-size:14px}
 .home-foot{margin-top:6px;text-align:center;font-family:'Anton',sans-serif;text-transform:uppercase;color:#15803d;font-size:16px;letter-spacing:.5px}
+
+/* Dark mode (the hub's Your Account → Appearance; the script in <head> sets html.dark). Screen only. */
+@media screen {
+html.dark{color-scheme:dark}
+html.dark body,html.dark #app-home,html.dark #app-guide,html.dark #screen-quiz,html.dark #app-positions,html.dark #app-skills{background:#000}
+html.dark .card{background:#1c1c1e;border-color:rgba(255,255,255,.08);box-shadow:none}
+html.dark .card-title{color:#f5f5f7}
+html.dark .card-desc{color:#d1d5db}
+html.dark .card-desc strong{color:#f5f5f7}
+html.dark .legend,html.dark .pitch-legend{background:#242426;border-top-color:#2c2c2e;color:#d1d5db}
+html.dark .question-text{color:#f5f5f7}
+html.dark .opt-btn{background:#1c1c1e;border-color:#3a3a3c;color:#f5f5f7}
+html.dark .opt-btn.correct,html.dark .feedback-box.correct,html.dark .skill-item.done{background:rgba(76,175,80,.18)}
+html.dark .opt-btn.wrong,html.dark .feedback-box.wrong{background:rgba(229,57,53,.18)}
+html.dark .feedback-box.correct .feedback-title,html.dark .feedback-box.correct .fb-guide-label{color:#86efac}
+html.dark .feedback-msg{color:#e5e7eb}
+html.dark .feedback-tip{color:#a1a1a8}
+html.dark .btn-view-all{background:#1c1c1e;color:#86efac;border-color:#4ade80}
+html.dark .pos-zone-rule{background:rgba(126,87,194,.2);color:#e5e7eb}
+html.dark .pos-zone-rule strong{color:#d8b4fe}
+html.dark .skills-cat-title{color:#86efac;border-bottom-color:#2c2c2e}
+html.dark .skill-item{background:#1c1c1e;border-color:#2c2c2e;box-shadow:none}
+html.dark .skill-name{color:#f5f5f7}
+html.dark .skill-item.done .skill-name{color:#86efac}
+html.dark .gloss-search{background:#1c1c1e;color:#f5f5f7;border-color:#2c2c2e}
+html.dark .gloss-item{background:#1c1c1e;box-shadow:none}
+html.dark .gloss-word{color:#86efac}
+html.dark .gloss-def{color:#d1d5db}
+html.dark .progress-card,html.dark .home-body .tod-box{background:#1c1c1e;box-shadow:none}
+html.dark .progress-card h2{color:#86efac}
+html.dark .prog-row,html.dark .pb-title{color:#d1d5db}
+html.dark .prog-row b{color:#5eead4}
+html.dark .prog-bar{background:#2c2c2e}
+html.dark .pb-pill{background:#242426}
+html.dark .pb-pill .pb-sc{color:#f5f5f7}
+html.dark .pb-pill.beg .pb-lv{color:#86efac}
+html.dark .home-body .tod-text{color:#e5e7eb}
+html.dark .home-foot{color:#4ade80}
+}
 </style>
 </head>
 <body>
