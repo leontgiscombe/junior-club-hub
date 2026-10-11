@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
-import { accountKey, keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
 
 // Home games come from the match log now, so a fixture is only entered once.
@@ -37,6 +38,8 @@ export default function CameraRegister() {
   const { TEAMS, teamName, teamAccent } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // working out who this is (an account, or a password given earlier) before showing the password box
+  const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -75,17 +78,23 @@ export default function CameraRegister() {
     const urlKey = new URLSearchParams(window.location.search).get("key");
     if (urlKey) {
       setKey(urlKey);
-      load(urlKey);
+      Promise.resolve(load(urlKey)).finally(() => setChecking(false));
     } else {
-      // signed in with an account: no password needed
-      accountKey().then((k) => {
-        if (k) {
-          setKey(k);
-          load(k);
-        }
-      });
+      // signed in with an account, or the coach password given earlier: no password box
+      accountKey()
+        .then(async (k) => {
+          if (k) {
+            setKey(k);
+            await load(k);
+          }
+        })
+        .finally(() => setChecking(false));
     }
   }, [load]);
+  // a coach password that worked here opens every other tool too
+  useEffect(() => {
+    if (authed) rememberCoachKey(key);
+  }, [authed, key]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   async function patch(matchId: string, body: Record<string, unknown>) {
@@ -126,6 +135,7 @@ export default function CameraRegister() {
   }
 
   if (!authed) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">

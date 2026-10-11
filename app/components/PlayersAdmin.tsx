@@ -7,7 +7,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
-import { keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
@@ -23,6 +24,12 @@ type Snapshot = { teams: TeamOption[]; players: SquadPlayer[]; canDelete: boolea
 export default function PlayersAdmin() {
   const [key, setKey] = useState("");
   const [snap, setSnap] = useState<Snapshot | null>(null);
+  // working out who this is (an account, or a password given earlier) before showing the password box
+  const [checking, setChecking] = useState(true);
+  // a coach password that worked here opens every other tool too
+  useEffect(() => {
+    if (snap) rememberCoachKey(key);
+  }, [snap, key]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
@@ -48,14 +55,17 @@ export default function PlayersAdmin() {
     const t = setTimeout(async () => {
       if (urlKey) {
         setKey(urlKey);
-        load(urlKey);
+        await load(urlKey);
+        setChecking(false);
         return;
       }
-      const me = await fetch("/api/auth/me", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
-      if (!cancelled && me?.canCoach) {
-        setKey(SESSION_KEY);
-        load(SESSION_KEY);
+      // signed in with an account, or the coach password given earlier: no password box
+      const k = await accountKey();
+      if (!cancelled && k) {
+        setKey(k);
+        await load(k);
       }
+      if (!cancelled) setChecking(false);
     }, 0);
     return () => {
       cancelled = true;
@@ -104,6 +114,7 @@ export default function PlayersAdmin() {
   }
 
   if (!snap) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">

@@ -4,9 +4,10 @@
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { RELATIONS, ROLES, SESSION_KEY, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
+import { RELATIONS, ROLES, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
-import { keyQuery } from "./coachKey";
+import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
+import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
@@ -65,6 +66,12 @@ const when = (iso: string) =>
 export default function MembersAdmin() {
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // working out who this is (an account, or a password given earlier) before showing the password box
+  const [checking, setChecking] = useState(true);
+  // a coach password that worked here opens every other tool too
+  useEffect(() => {
+    if (authed) rememberCoachKey(key);
+  }, [authed, key]);
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,15 +99,17 @@ export default function MembersAdmin() {
     const t = setTimeout(async () => {
       if (urlKey) {
         setKey(urlKey);
-        load(urlKey);
+        await load(urlKey);
+        setChecking(false);
         return;
       }
-      // a club admin or coach signed in with their account needs no password
-      const me = await fetch("/api/auth/me", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
-      if (!cancelled && me?.canCoach) {
-        setKey(SESSION_KEY);
-        load(SESSION_KEY);
+      // signed in with an account, or the coach password given earlier: no password box
+      const k = await accountKey();
+      if (!cancelled && k) {
+        setKey(k);
+        await load(k);
       }
+      if (!cancelled) setChecking(false);
     }, 0);
     return () => {
       cancelled = true;
@@ -136,6 +145,7 @@ export default function MembersAdmin() {
   }
 
   if (!authed || !snap) {
+    if (checking) return <ToolSkeleton />;
     return (
       <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
