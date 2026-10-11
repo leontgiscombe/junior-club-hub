@@ -107,16 +107,16 @@ function PlanWeekCard({
     );
   const minutes = weekDrills.reduce((sum, d) => sum + d.minutes, 0);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4 mb-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-green-700">{label}</p>
-      <p className="mt-1 text-base font-extrabold text-gray-900">
+    <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-green-400/30">
+      <p className="text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400">{label}</p>
+      <p className="mt-1 text-base font-extrabold text-gray-900 dark:text-gray-50">
         Week {weekNumber}
         {week.theme ? `: ${week.theme}` : ""}
       </p>
       {weekDrills.length === 0 ? (
         <p className="mt-2 text-xs text-gray-400">No drills picked for this week yet.</p>
       ) : (
-        <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100">
+        <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100 dark:border-white/10 dark:divide-white/10">
           {weekDrills.map((drill) => {
             const isOpen = open === drill.id;
             return (
@@ -127,7 +127,7 @@ function PlanWeekCard({
                   className="flex w-full cursor-pointer items-center gap-2 text-left"
                 >
                   <KindBadge kind={drill.kind} />
-                  <span className="min-w-0 flex-1 text-sm font-semibold text-gray-900">
+                  <span className="min-w-0 flex-1 text-sm font-semibold text-gray-900 dark:text-gray-50">
                     {drill.title}
                   </span>
                   {drill.minutes > 0 && (
@@ -145,7 +145,7 @@ function PlanWeekCard({
                       className={`mt-2 cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-bold disabled:opacity-40 ${
                         ticked
                           ? "border-green-600 bg-green-600 text-white"
-                          : "border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-700"
+                          : "border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/15"
                       }`}
                     >
                       {ticked ? "✓ Done" : "Mark Done"}
@@ -153,7 +153,7 @@ function PlanWeekCard({
                   );
                 })()}
                 {isOpen && (
-                  <div className="mt-3 border-t border-gray-100 pt-3">
+                  <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                     <DrillDetails drill={drill} adminKey={adminKey} />
                   </div>
                 )}
@@ -162,8 +162,8 @@ function PlanWeekCard({
           })}
         </ol>
       )}
-      {tickError && <p className="mt-2 text-xs text-red-600">{tickError}</p>}
-      {minutes > 0 && <p className="mt-2 text-right text-xs font-semibold text-gray-500">⏱ {minutes} min</p>}
+      {tickError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{tickError}</p>}
+      {minutes > 0 && <p className="mt-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">⏱ {minutes} min</p>}
     </div>
   );
 }
@@ -263,12 +263,12 @@ export default function TrainingLog() {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🏃</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Training Log</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Training Log</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -276,9 +276,9 @@ export default function TrainingLog() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -288,7 +288,7 @@ export default function TrainingLog() {
           </button>
           <Link
             href="/admin/stats"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Stats
           </Link>
@@ -336,7 +336,7 @@ export default function TrainingLog() {
     const total = week.drillIds.filter((id) => drillById.has(id)).length;
     const done = week.doneIds.filter((id) => drillById.has(id)).length;
     return (
-      <span className="ml-2 text-xs font-medium text-green-700">
+      <span className="ml-2 text-xs font-medium text-green-700 dark:text-green-400">
         📝 Week {i + 1}
         {week.theme ? ` · ${week.theme}` : ""}
         {total > 0 && done === total ? " ✓" : ""}
@@ -369,8 +369,8 @@ export default function TrainingLog() {
         disabled={busy === id}
         className={`shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-40 ${
           s.cancelled
-            ? "border-gray-300 bg-gray-100 text-gray-600 hover:border-green-400 hover:text-green-700"
-            : "border-gray-200 bg-white text-gray-500 hover:border-red-300 hover:text-red-600"
+            ? "border-gray-300 bg-gray-100 text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:bg-white/10 dark:border-white/20"
+            : "border-gray-200 bg-white text-gray-500 hover:border-red-300 hover:text-red-600 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/15"
         }`}
         title={s.cancelled ? "Training is back on" : "Training called off this week"}
       >
@@ -386,14 +386,14 @@ export default function TrainingLog() {
       <div
         key={id}
         className={`rounded-2xl border p-3 shadow-sm ${
-          s.cancelled ? "border-gray-100 bg-gray-50" : "border-gray-100 bg-white"
+          s.cancelled ? "border-gray-100 bg-gray-50 dark:bg-white/5 dark:border-white/10" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
         }`}
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm">
             <span
               className={`font-bold ${
-                s.cancelled ? "text-gray-400 line-through" : "text-gray-900"
+                s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
               }`}
             >
               {formatDate(s.date)}
@@ -407,7 +407,7 @@ export default function TrainingLog() {
         </div>
         {!s.cancelled && (
           <label className="mt-2 flex items-center gap-2">
-            <span className="shrink-0 text-xs font-medium text-gray-500">
+            <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
               💪 Best Trainer
             </span>
             <select
@@ -417,7 +417,7 @@ export default function TrainingLog() {
               }
               disabled={busy === id}
               aria-label={`Best trainer on ${formatDate(s.date)}`}
-              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
             >
               <option value="">— Not Awarded —</option>
               {/* someone since removed from the squad still shows */}
@@ -437,7 +437,7 @@ export default function TrainingLog() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href={`/admin/stats${keyQuery(key)}`} label="Stats Tracker" />
         <h1 className="text-xl font-extrabold mt-2">🏃 Training Log</h1>
@@ -457,7 +457,7 @@ export default function TrainingLog() {
               className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
                 team === t.slug
                   ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
               }`}
             >
               {t.accent} {t.name}
@@ -466,12 +466,12 @@ export default function TrainingLog() {
         </div>
 
         {error && (
-          <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>
         )}
 
         {/* Where the team stands */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
-          <p className="text-sm font-semibold text-gray-600">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
             💪 {teamName(team)} Best Trainer
           </p>
           {leaders.length === 0 ? (
@@ -483,29 +483,29 @@ export default function TrainingLog() {
             <ol className="mt-2 flex flex-col gap-1">
               {leaders.map((p, i) => (
                 <li key={p.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-900">
+                  <span className="text-gray-900 dark:text-gray-50">
                     <span className="mr-2 text-xs font-bold text-gray-400">{i + 1}</span>
                     {p.name}
                   </span>
-                  <span className="font-extrabold text-green-700 tabular-nums">
+                  <span className="font-extrabold text-green-700 tabular-nums dark:text-green-400">
                     {p.bestTrainer}
                   </span>
                 </li>
               ))}
             </ol>
           )}
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
             {next ? (
               <>
                 Next Session:{" "}
-                <span className="font-semibold text-gray-700">{formatDate(next.date)}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-200">{formatDate(next.date)}</span>
               </>
             ) : (
               "No more sessions scheduled this season."
             )}
           </p>
           {unawarded > 0 && (
-            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
               {unawarded} session{unawarded === 1 ? " has" : "s have"} no best trainer
               yet — pick one, or mark it as no training.
             </p>
@@ -526,13 +526,13 @@ export default function TrainingLog() {
             }
           />
         ) : !features.trainingPlans ? null : (
-          <p className="mb-4 text-xs text-gray-500">
+          <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
             {plan?.startDate
               ? `${teamName(team)}'s training plan has no week for the next session.`
               : `${teamName(team)} has no training plan scheduled.`}{" "}
             <Link
               href={`/admin/training/plans${keyQuery(key)}`}
-              className="font-semibold text-green-700 hover:underline"
+              className="font-semibold text-green-700 hover:underline dark:text-green-400"
             >
               Training Plans →
             </Link>
@@ -540,7 +540,7 @@ export default function TrainingLog() {
         )}
 
         {squad.length === 0 && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             No players in {teamName(team)} yet — add the squad on the{" "}
             <Link
               href={`/admin/stats${keyQuery(key)}`}
@@ -555,7 +555,7 @@ export default function TrainingLog() {
         {/* Sessions so far, most recent first */}
         {done.length > 0 && (
           <section className="mb-6">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
               Sessions so far
             </h2>
             <div className="flex flex-col gap-3">
@@ -572,13 +572,13 @@ export default function TrainingLog() {
                       aria-expanded={isOpen}
                       className="mb-1 flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-1 text-left hover:text-green-700"
                     >
-                      <span className="text-sm font-bold text-gray-700">{group.month}</span>
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</span>
                       <span className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-400">
                           {group.sessions.length} session{group.sessions.length === 1 ? "" : "s"}
                         </span>
                         {needs > 0 && (
-                          <span className="font-semibold text-amber-700">{needs} to award</span>
+                          <span className="font-semibold text-amber-700 dark:text-amber-300">{needs} to award</span>
                         )}
                         <span className="text-gray-400">{isOpen ? "▲" : "▼"}</span>
                       </span>
@@ -600,7 +600,7 @@ export default function TrainingLog() {
           <section>
             <button
               onClick={() => setShowAhead((v) => !v)}
-              className="mb-2 flex w-full cursor-pointer items-center justify-between text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-green-700"
+              className="mb-2 flex w-full cursor-pointer items-center justify-between text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-green-700 dark:text-gray-400"
               aria-expanded={showAhead}
             >
               <span>
@@ -612,8 +612,8 @@ export default function TrainingLog() {
               <div className="flex flex-col gap-4">
                 {byMonth(ahead).map((group) => (
                   <div key={group.month}>
-                    <p className="mb-1 text-sm font-bold text-gray-700">{group.month}</p>
-                    <div className="flex flex-col divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <p className="mb-1 text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</p>
+                    <div className="flex flex-col divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm dark:bg-[#1c1c1e] dark:border-white/10 dark:divide-white/10">
                       {group.sessions.map((s) => (
                         <div
                           key={s.date}
@@ -621,7 +621,7 @@ export default function TrainingLog() {
                         >
                           <span
                             className={`text-sm ${
-                              s.cancelled ? "text-gray-400 line-through" : "text-gray-900"
+                              s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
                             }`}
                           >
                             {formatDate(s.date)}

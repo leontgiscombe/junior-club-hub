@@ -27,10 +27,10 @@ const SECTIONS = [
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-lg font-extrabold text-gray-900">{title}</h2>
-      <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-gray-700">{children}</div>
-      <a href="#contents" className="mt-4 block text-xs font-semibold text-green-700 hover:text-green-800">
+    <section id={id} className="scroll-mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+      <h2 className="mb-3 text-lg font-extrabold text-gray-900 dark:text-gray-50">{title}</h2>
+      <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-gray-700 dark:text-gray-200">{children}</div>
+      <a href="#contents" className="mt-4 block text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400">
         ↑ Back to contents
       </a>
     </section>
@@ -38,7 +38,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 const H3 = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="mt-2 font-bold text-gray-900">{children}</h3>
+  <h3 className="mt-2 font-bold text-gray-900 dark:text-gray-50">{children}</h3>
 );
 
 const Steps = ({ children }: { children: React.ReactNode }) => (
@@ -61,7 +61,7 @@ const Checklist = ({ items }: { items: string[] }) => (
 );
 
 const B = ({ children }: { children: React.ReactNode }) => (
-  <strong className="font-semibold text-gray-900">{children}</strong>
+  <strong className="font-semibold text-gray-900 dark:text-gray-50">{children}</strong>
 );
 
 export default function HelpManual() {
@@ -114,12 +114,12 @@ export default function HelpManual() {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">❓</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Help</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Help</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -127,9 +127,9 @@ export default function HelpManual() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && login(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => login(key)}
             disabled={loading || !key}
@@ -139,7 +139,7 @@ export default function HelpManual() {
           </button>
           <Link
             href="/admin"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Coach Admin
           </Link>
@@ -149,7 +149,7 @@ export default function HelpManual() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-12">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
         <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">❓ Help — how to use the Team Hub</h1>
@@ -160,18 +160,18 @@ export default function HelpManual() {
       </div>
 
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
-        <nav id="contents" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">Contents</p>
+        <nav id="contents" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Contents</p>
           <ol className="ml-5 list-decimal space-y-1 text-[15px]">
             {SECTIONS.map((s) => (
               <li key={s.id}>
-                <a href={`#${s.id}`} className="font-medium text-green-700 hover:text-green-800">
+                <a href={`#${s.id}`} className="font-medium text-green-700 hover:text-green-800 dark:text-green-400">
                   {s.title}
                 </a>
               </li>
             ))}
           </ol>
-          <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-900">
+          <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-400/10 dark:text-green-200">
             <B>The one rule to know:</B> enter things once, in the right place. Games, goals and
             match awards go in the <B>Match Log</B>; the Monday best trainer goes in the{" "}
             <B>Training Log</B>. The stats tracker and player of the month fill in from those two by
@@ -537,7 +537,7 @@ export default function HelpManual() {
               ["Can't change a drill", "Only the club owner can edit the drill library."],
             ].map(([q, a]) => (
               <div key={q}>
-                <dt className="font-semibold text-gray-900">{q}</dt>
+                <dt className="font-semibold text-gray-900 dark:text-gray-50">{q}</dt>
                 <dd>{a}</dd>
               </div>
             ))}

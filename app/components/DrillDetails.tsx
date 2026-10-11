@@ -5,9 +5,9 @@
 import { DRILL_KINDS, topicName, type Drill, type DrillKind } from "@/lib/trainingPlanTypes";
 
 const KIND_STYLES: Record<DrillKind, string> = {
-  "warm-up": "bg-amber-50 text-amber-800",
-  technical: "bg-sky-50 text-sky-800",
-  game: "bg-green-50 text-green-800",
+  "warm-up": "bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300",
+  technical: "bg-sky-50 text-sky-800 dark:bg-sky-400/10 dark:text-sky-300",
+  game: "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300",
 };
 
 function kindName(kind: DrillKind) {
@@ -37,7 +37,7 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
     drill.ageGroup ? `🎂 ${drill.ageGroup}` : "",
   ].filter(Boolean);
   return (
-    <div className="flex flex-col gap-3 text-sm text-gray-700">
+    <div className="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-200">
       {/* the session-plan pages first: the diagram is what's wanted at the pitch */}
       {images.map((f) => (
         <a
@@ -46,28 +46,28 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
           target="_blank"
           rel="noopener noreferrer"
           title={`${f.label} — open full size`}
-          className="block overflow-hidden rounded-xl border border-gray-100"
+          className="block overflow-hidden rounded-xl border border-gray-100 dark:border-white/10"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- served behind the admin password, so not through the image optimiser */}
           <img src={fileUrl(f.name)} alt={`${drill.title}: ${f.label}`} className="w-full" />
         </a>
       ))}
-      {facts.length > 0 && <p className="text-xs text-gray-500">{facts.join(" · ")}</p>}
+      {facts.length > 0 && <p className="text-xs text-gray-500 dark:text-gray-400">{facts.join(" · ")}</p>}
       {drill.equipment && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipment</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Equipment</p>
           <p className="mt-0.5 whitespace-pre-line">{drill.equipment}</p>
         </div>
       )}
       {drill.setup && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Setup</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Setup</p>
           <p className="mt-0.5 whitespace-pre-line">{drill.setup}</p>
         </div>
       )}
       {drill.howItWorks && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             How it works
           </p>
           <p className="mt-0.5 whitespace-pre-line">{drill.howItWorks}</p>
@@ -75,7 +75,7 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
       )}
       {drill.coachingPoints.length > 0 && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Coaching points
           </p>
           <ul className="mt-0.5 list-disc pl-5">
@@ -87,7 +87,7 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
       )}
       {drill.progressions.length > 0 && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Progressions
           </p>
           <ul className="mt-0.5 list-disc pl-5">
@@ -113,7 +113,7 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
           href={fileUrl(f.name)}
           target="_blank"
           rel="noopener noreferrer"
-          className="self-start rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700"
+          className="self-start rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 dark:text-gray-200 dark:border-white/15"
         >
           📄 {f.label}
         </a>

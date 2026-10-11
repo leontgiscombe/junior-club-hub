@@ -2,8 +2,17 @@
 
 /* Light and dark (Your Account → Appearance; lib/theme.ts). "dark" on <html>
    switches the pages built for both — each marks its root "themed" — and only
-   those: a page not converted yet stays light rather than half dark. */
-@custom-variant dark (&:where(.dark .themed, .dark .themed *));
+   those: a page not converted yet stays light rather than half dark. Anything
+   marked "no-dark" (posters, exports) keeps its own colours. */
+@custom-variant dark (&:where(.dark .themed, .dark .themed *):not(:where(.no-dark, .no-dark *)));
+
+/* form controls, date pickers and scrollbars follow the theme too */
+html.dark .themed {
+  color-scheme: dark;
+}
+html.dark .themed .no-dark {
+  color-scheme: light;
+}
 
 html.dark body:has(.themed) {
   background: #000;

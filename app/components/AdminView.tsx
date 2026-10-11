@@ -142,12 +142,12 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🔒</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Admin Access</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Admin Access</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
               {CLUB.name} – {lockedTeam ? `${teamName(team)} kit` : "Kit"} responses
             </p>
           </div>
@@ -157,10 +157,10 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key, team)}
             placeholder="Enter admin password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
           {error && (
-            <p className="text-sm text-red-600 mb-3 text-center">{error}</p>
+            <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>
           )}
           <button
             onClick={() => load(key, team)}
@@ -171,7 +171,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
           </button>
           <Link
             href="/"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Team Hub
           </Link>
@@ -185,7 +185,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   );
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">⚽ {teamName(team)} – Kit Responses</h1>
@@ -203,7 +203,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                 className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
                   team === t.slug
                     ? "bg-green-600 border-green-600 text-white shadow"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
                 }`}
               >
                 {t.accent} {t.name}
@@ -214,9 +214,9 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
 
         {/* Stats */}
         <div className="grid grid-cols-1 gap-3 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-extrabold text-green-700">{submissions.length}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+          <div className="bg-white rounded-2xl p-4 shadow-sm text-center dark:bg-[#1c1c1e]">
+            <p className="text-2xl font-extrabold text-green-700 dark:text-green-400">{submissions.length}</p>
+            <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
               {teamName(team)} responses
             </p>
           </div>
@@ -224,18 +224,18 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
 
         {/* Who still needs to send sizes */}
         {waiting.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm font-bold text-amber-900">
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:bg-amber-400/10 dark:border-amber-400/30">
+            <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
               ⏳ Still to Send ({waiting.length})
             </p>
-            <p className="mt-0.5 text-xs text-amber-700">
+            <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
               In the {teamName(team)} squad but no kit sizes yet.
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {waiting.map((name) => (
                 <span
                   key={name}
-                  className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200"
+                  className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200 dark:bg-[#1c1c1e] dark:text-amber-200 dark:ring-amber-400/30"
                 >
                   {name}
                 </span>
@@ -248,7 +248,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         <div className="flex gap-3 mb-5">
           <button
             onClick={() => load(key, team)}
-            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
           >
             ↻ Refresh
           </button>
@@ -271,11 +271,11 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             {sorted.map((s) => (
               <div
                 key={s.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 dark:bg-[#1c1c1e] dark:border-white/10"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-bold text-gray-900">{s.childName}</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">{s.childName}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{formatDate(s.submittedAt)}</p>
                   </div>
                   <button
@@ -295,10 +295,10 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                   ].map(({ icon, label, value }) => (
                     <div
                       key={label}
-                      className="flex-1 bg-green-50 rounded-xl py-2 text-center"
+                      className="flex-1 bg-green-50 rounded-xl py-2 text-center dark:bg-green-400/10"
                     >
-                      <p className="text-xs text-gray-500">{icon} {label}</p>
-                      <p className="text-base font-extrabold text-green-700 mt-0.5">{value}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{icon} {label}</p>
+                      <p className="text-base font-extrabold text-green-700 mt-0.5 dark:text-green-400">{value}</p>
                     </div>
                   ))}
                 </div>

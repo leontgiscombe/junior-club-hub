@@ -31,13 +31,13 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl">
+    <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={club.crest.src} alt={club.crest.alt} className="mx-auto h-20 w-auto" />
-          <h1 className="mt-3 text-2xl font-extrabold text-gray-900">{club.name}</h1>
-          {access.private && <p className="mt-1 text-sm text-gray-500">This hub is for the club&apos;s members.</p>}
+          <h1 className="mt-3 text-2xl font-extrabold text-gray-900 dark:text-gray-50">{club.name}</h1>
+          {access.private && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">This hub is for the club&apos;s members.</p>}
         </div>
         {access.private ? (
           <JoinForm
@@ -48,7 +48,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
         ) : (
           // (a link, not a redirect: the hub may take a few seconds to notice it's open)
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">This hub is open to everyone.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">This hub is open to everyone.</p>
             <Link href="/" className="mt-4 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
               Open the Hub →
             </Link>

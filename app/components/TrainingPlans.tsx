@@ -85,7 +85,7 @@ function newId() {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15";
 
 function iconButton(label: string, onClick: () => void, disabled = false, title?: string) {
   return (
@@ -95,7 +95,7 @@ function iconButton(label: string, onClick: () => void, disabled = false, title?
       disabled={disabled}
       title={title}
       aria-label={title}
-      className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-green-400 hover:text-green-700 disabled:cursor-default disabled:opacity-30"
+      className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-green-400 hover:text-green-700 disabled:cursor-default disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
     >
       {label}
     </button>
@@ -412,12 +412,12 @@ export default function TrainingPlans() {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">📝</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Training Plans</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Training Plans</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -425,9 +425,9 @@ export default function TrainingPlans() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -437,7 +437,7 @@ export default function TrainingPlans() {
           </button>
           <Link
             href="/admin"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Coach Admin
           </Link>
@@ -498,7 +498,7 @@ export default function TrainingPlans() {
     return (
       <>
         <label className="mb-4 block">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
             {teamName(team)} plan
           </span>
           <input
@@ -511,7 +511,7 @@ export default function TrainingPlans() {
         </label>
 
         <label className="mb-4 block">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
             Week 1 is on
           </span>
           <select
@@ -538,7 +538,7 @@ export default function TrainingPlans() {
         </label>
 
         {unplaced > 0 && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             {unplaced === 1 ? "The last week doesn't" : `The last ${unplaced} weeks don't`} fit
             before training ends for the season — start the plan earlier, or take some weeks
             out.
@@ -546,7 +546,7 @@ export default function TrainingPlans() {
         )}
 
         {drills.length === 0 && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             The drill library is empty — add some drills in the{" "}
             <button
               onClick={() => setView("library")}
@@ -559,7 +559,7 @@ export default function TrainingPlans() {
         )}
 
         {draft.weeks.length === 0 && (
-          <p className="mb-4 rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500">
+          <p className="mb-4 rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/20">
             No weeks yet. Add a week, pick its topic, then its warm-up, technical and game
             {seasonPlan.length > 0 ? ` — or start from the ${seasonPlan.length}-week season plan` : ""}.
           </p>
@@ -568,10 +568,10 @@ export default function TrainingPlans() {
         {seasonPlan.length > 0 && (
           <button
             onClick={applySeasonPlan}
-            className="mb-4 w-full cursor-pointer rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-left text-sm hover:border-green-400"
+            className="mb-4 w-full cursor-pointer rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-left text-sm hover:border-green-400 dark:bg-green-400/10 dark:border-green-400/30"
           >
-            <span className="font-bold text-green-800">📋 Use the {seasonPlan.length}-Week Season Plan</span>
-            <span className="mt-0.5 block text-xs text-green-700">
+            <span className="font-bold text-green-800 dark:text-green-300">📋 Use the {seasonPlan.length}-Week Season Plan</span>
+            <span className="mt-0.5 block text-xs text-green-700 dark:text-green-400">
               Fills {possessive(teamName(team))} weeks with the
               {seasonPlanTitle ? ` ${seasonPlanTitle}` : " season plan"}&apos;s topics and drills, in
               order. You can change any week afterwards.
@@ -581,15 +581,15 @@ export default function TrainingPlans() {
 
         {draft.weeks.length > 3 && (
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-semibold text-gray-500">
+            <span className="font-semibold text-gray-500 dark:text-gray-400">
               {draft.weeks.filter((w) => drillCount(w) > 0 && doneCount(w) === drillCount(w)).length} of{" "}
               {draft.weeks.length} weeks done
             </span>
             <span className="flex gap-3">
-              <button onClick={() => allWeeks(true)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700">
+              <button onClick={() => allWeeks(true)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300">
                 Open All
               </button>
-              <button onClick={() => allWeeks(false)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700">
+              <button onClick={() => allWeeks(false)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300">
                 Close All
               </button>
             </span>
@@ -632,21 +632,21 @@ export default function TrainingPlans() {
                   onClick={toggleWeek}
                   aria-expanded={false}
                   className={`flex w-full cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-left shadow-sm ${
-                    allDone ? "border-green-200 bg-green-50" : "border-gray-100 bg-white"
+                    allDone ? "border-green-200 bg-green-50 dark:bg-green-400/10 dark:border-green-400/30" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
                   }`}
                 >
-                  <span className="shrink-0 text-sm font-extrabold text-green-700">Week {wi + 1}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
+                  <span className="shrink-0 text-sm font-extrabold text-green-700 dark:text-green-400">Week {wi + 1}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
                     {week.theme || "No topic yet"}
                     {draft.startDate && weekDates.has(wi) && (
-                      <span className="ml-2 text-xs font-normal text-gray-500">
+                      <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
                         {formatDate(weekDates.get(wi)!)}
                       </span>
                     )}
                   </span>
                   {total > 0 && (
                     <span
-                      className={`shrink-0 text-xs font-bold ${allDone ? "text-green-700" : "text-gray-400"}`}
+                      className={`shrink-0 text-xs font-bold ${allDone ? "text-green-700 dark:text-green-400" : "text-gray-400"}`}
                     >
                       {allDone ? "✓ Done" : `${done}/${total}`}
                     </span>
@@ -659,7 +659,7 @@ export default function TrainingPlans() {
               <section
                 key={week.id}
                 className={`rounded-2xl border p-4 shadow-sm ${
-                  allDone ? "border-green-200 bg-green-50" : "border-gray-100 bg-white"
+                  allDone ? "border-green-200 bg-green-50 dark:bg-green-400/10 dark:border-green-400/30" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -667,7 +667,7 @@ export default function TrainingPlans() {
                     onClick={toggleWeek}
                     aria-expanded={true}
                     title="Fold this week up"
-                    className="shrink-0 cursor-pointer text-sm font-extrabold text-green-700"
+                    className="shrink-0 cursor-pointer text-sm font-extrabold text-green-700 dark:text-green-400"
                   >
                     Week {wi + 1} ▲
                   </button>
@@ -714,7 +714,7 @@ export default function TrainingPlans() {
                   )}
                 </div>
                 {draft.startDate && (
-                  <p className="mt-1.5 text-xs text-gray-500">
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                     📅{" "}
                     {weekDates.has(wi)
                       ? formatDate(weekDates.get(wi)!)
@@ -722,7 +722,7 @@ export default function TrainingPlans() {
                   </p>
                 )}
 
-                <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100">
+                <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100 dark:border-white/10 dark:divide-white/10">
                   {DRILL_KINDS.map((k) => {
                     const drill = inSlot(k.slug);
                     const ofKind = drills.filter((d) => d.kind === k.slug);
@@ -747,7 +747,7 @@ export default function TrainingPlans() {
                                 className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-bold disabled:cursor-default disabled:opacity-40 ${
                                   ticked
                                     ? "border-green-600 bg-green-600 text-white"
-                                    : "border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-700"
+                                    : "border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/15"
                                 }`}
                               >
                                 {ticked ? "✓ Done" : "Mark Done"}
@@ -805,7 +805,7 @@ export default function TrainingPlans() {
                             )}
                         </div>
                         {isOpen && drill && (
-                          <div className="mt-3 border-t border-gray-100 pt-3">
+                          <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                             <DrillDetails drill={drill} adminKey={key} />
                           </div>
                         )}
@@ -815,7 +815,7 @@ export default function TrainingPlans() {
                 </ol>
 
                 {minutes > 0 && (
-                  <p className="mt-2 text-right text-xs font-semibold text-gray-500">
+                  <p className="mt-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">
                     ⏱ {minutes} min
                   </p>
                 )}
@@ -831,7 +831,7 @@ export default function TrainingPlans() {
               weeks: [...p.weeks, { id: newId(), theme: "", drillIds: [], doneIds: [] }],
             }))
           }
-          className="mt-4 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700"
+          className="mt-4 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/20"
         >
           + Add Week
         </button>
@@ -845,14 +845,14 @@ export default function TrainingPlans() {
     ) => setDrillForm({ ...form, [field]: e.target.value });
     const field = (label: string, input: ReactNode, hint?: string) => (
       <label className="block">
-        <span className="text-xs font-semibold text-gray-600">{label}</span>
+        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{label}</span>
         <div className="mt-1">{input}</div>
         {hint && <span className="mt-0.5 block text-[11px] text-gray-400">{hint}</span>}
       </label>
     );
     return (
-      <section className="rounded-2xl border border-green-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-base font-extrabold text-gray-900">
+      <section className="rounded-2xl border border-green-200 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-green-400/30">
+        <h2 className="mb-3 text-base font-extrabold text-gray-900 dark:text-gray-50">
           {form.id ? "Edit drill" : "New drill"}
         </h2>
         <div className="flex flex-col gap-3">
@@ -972,7 +972,7 @@ export default function TrainingPlans() {
         <div className="mt-4 flex justify-end gap-2">
           <button
             onClick={() => setDrillForm(null)}
-            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-gray-300"
+            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-gray-300 dark:text-gray-300 dark:border-white/15"
           >
             Cancel
           </button>
@@ -1017,7 +1017,7 @@ export default function TrainingPlans() {
               className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold ${
                 kindFilter === k.slug
                   ? "border-green-600 bg-green-600 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
               }`}
             >
               {k.name} <span className="opacity-70">{kindCount(k.slug)}</span>
@@ -1033,7 +1033,7 @@ export default function TrainingPlans() {
               className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold ${
                 topicFilter === t.slug
                   ? "border-green-700 bg-green-700 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
               }`}
             >
               {t.name} <span className="opacity-70">{topicCount(t.slug)}</span>
@@ -1042,7 +1042,7 @@ export default function TrainingPlans() {
         </div>
 
         {drills.length > 0 && (
-          <p className="mb-2 text-xs font-semibold text-gray-500">
+          <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
             {shownDrills.length === drills.length
               ? `All ${drills.length} drills`
               : `Showing ${shownDrills.length} of ${drills.length} drills`}
@@ -1050,12 +1050,12 @@ export default function TrainingPlans() {
         )}
 
         {drills.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500">
+          <p className="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/20">
             No drills yet. Every team&apos;s plan picks from this one library, so a drill
             only has to be written once.
           </p>
         ) : shownDrills.length === 0 ? (
-          <p className="text-center text-sm text-gray-500">No drills match.</p>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">No drills match.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {shownDrills.map((drill) => {
@@ -1064,7 +1064,7 @@ export default function TrainingPlans() {
               return (
                 <div
                   key={drill.id}
-                  className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm"
+                  className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10"
                 >
                   <button
                     onClick={() => setOpen(isOpen ? null : drill.id)}
@@ -1072,7 +1072,7 @@ export default function TrainingPlans() {
                     className="flex w-full cursor-pointer items-center gap-2 text-left"
                   >
                     <KindBadge kind={drill.kind} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900">
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
                       {drill.title}
                     </span>
                     {drill.topic && (
@@ -1086,7 +1086,7 @@ export default function TrainingPlans() {
                     <span className="shrink-0 text-xs text-gray-400">{isOpen ? "▲" : "▼"}</span>
                   </button>
                   {isOpen && (
-                    <div className="mt-3 border-t border-gray-100 pt-3">
+                    <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                       <DrillDetails drill={drill} adminKey={key} />
                       <p className="mt-3 text-xs text-gray-400">
                         {uses.length > 0 ? `Used in ${uses.join(", ")}` : "Not in any plan yet"}
@@ -1095,7 +1095,7 @@ export default function TrainingPlans() {
                         <div className="mt-3 flex gap-2">
                           <button
                             onClick={() => setDrillForm(toDraft(drill))}
-                            className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-green-400 hover:text-green-700"
+                            className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/15"
                           >
                             ✏️ Edit
                           </button>
@@ -1103,7 +1103,7 @@ export default function TrainingPlans() {
                             <button
                               onClick={() => deleteDrill(drill)}
                               disabled={saving}
-                              className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:border-red-300 hover:text-red-600 disabled:opacity-40"
+                              className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:border-red-300 hover:text-red-600 disabled:opacity-40 dark:text-gray-400 dark:border-white/15"
                             >
                               Delete
                             </button>
@@ -1122,7 +1122,7 @@ export default function TrainingPlans() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-24">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-24">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">📝 Training Plans</h1>
@@ -1133,7 +1133,7 @@ export default function TrainingPlans() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Plan / library switch */}
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-gray-200 p-1">
+        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-gray-200 p-1 dark:bg-white/15">
           {(
             [
               ["plan", "📅 Team Plans"],
@@ -1147,7 +1147,7 @@ export default function TrainingPlans() {
                 setOpen(null);
               }}
               className={`cursor-pointer rounded-lg py-2 text-sm font-bold ${
-                view === v ? "bg-white text-green-700 shadow" : "text-gray-600 hover:text-gray-900"
+                view === v ? "bg-white text-green-700 shadow dark:bg-[#1c1c1e] dark:text-green-400" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
               {label}
@@ -1165,7 +1165,7 @@ export default function TrainingPlans() {
                 className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
                   team === t.slug
                     ? "bg-green-600 border-green-600 text-white shadow"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
                 }`}
               >
                 {t.accent} {t.name}
@@ -1175,21 +1175,21 @@ export default function TrainingPlans() {
         )}
 
         {error && (
-          <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>
         )}
 
         {/* The library is the owner's: they unlock editing it with their own password */}
         {view === "library" && !coachesEditDrills && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs text-gray-500 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
             {canEdit ? (
               <>
-                <span className="font-semibold text-green-700">✏️ Editing drills as the owner</span>
+                <span className="font-semibold text-green-700 dark:text-green-400">✏️ Editing drills as the owner</span>
                 <button
                   onClick={() => {
                     setDrillForm(null);
                     setOwnerKey("");
                   }}
-                  className="cursor-pointer font-semibold text-gray-600 hover:text-green-700"
+                  className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300"
                 >
                   Done
                 </button>
@@ -1220,7 +1220,7 @@ export default function TrainingPlans() {
                 {ownerKeySet && (
                   <button
                     onClick={() => setUnlocking(true)}
-                    className="cursor-pointer font-semibold text-gray-600 hover:text-green-700"
+                    className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300"
                   >
                     🔒 Owner
                   </button>
@@ -1235,16 +1235,16 @@ export default function TrainingPlans() {
 
       {/* Unsaved plan changes follow the coach down the page */}
       {dirty && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-white/15">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-            <span className="text-sm font-semibold text-amber-700">
+            <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
               {teamName(team)} plan has unsaved changes
             </span>
             <div className="flex gap-2">
               <button
                 onClick={discardPlan}
                 disabled={saving}
-                className="cursor-pointer rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 hover:border-gray-300 disabled:opacity-40"
+                className="cursor-pointer rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 hover:border-gray-300 disabled:opacity-40 dark:text-gray-300 dark:border-white/15"
               >
                 Discard
               </button>

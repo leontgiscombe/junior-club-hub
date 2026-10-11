@@ -97,7 +97,7 @@ export default async function ResultsPage({
   const shownTeams = teams.filter((t) => t.slug === current);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="themed flex min-h-screen flex-col bg-gray-50 dark:bg-black dark:text-gray-50">
       <header className="relative bg-gradient-to-br from-green-900 to-green-500 px-6 pb-8 pt-10 text-center text-white">
         <BackButton href="/" label="Team Hub" className="absolute left-4 top-4" />
         <Image
@@ -130,7 +130,7 @@ export default async function ResultsPage({
                     className={`flex-1 rounded-xl border-2 px-3 py-2 text-center text-sm font-bold ${
                       current === t.slug
                         ? "border-green-600 bg-green-600 text-white shadow"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:text-green-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
                     }`}
                   >
                     {t.accent} {t.name}
@@ -141,21 +141,21 @@ export default async function ResultsPage({
 
             {shownTeams.map((team) => (
               <section key={team.slug}>
-                <h2 className="mb-3 text-lg font-extrabold text-gray-900">
+                <h2 className="mb-3 text-lg font-extrabold text-gray-900 dark:text-gray-50">
                   {team.accent} {team.name}
                 </h2>
 
                 {team.nothingYet && (
-                  <p className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-500 shadow-sm">
+                  <p className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/10">
                     No results yet this season — check back after the next game.
                   </p>
                 )}
 
                 {/* League record */}
                 {team.record.played > 0 && (
-                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
                     <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-600">League record</p>
+                      <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">League record</p>
                       <div className="flex items-center gap-1">
                         {team.form.map((f, i) => (
                           <span
@@ -176,7 +176,7 @@ export default async function ResultsPage({
                     <div className="overflow-x-auto">
                       <table className="w-full text-center text-sm">
                         <thead>
-                          <tr className="text-xs text-gray-500">
+                          <tr className="text-xs text-gray-500 dark:text-gray-400">
                             {["P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h) => (
                               <th key={h} className="px-1 py-1 font-semibold">
                                 {h}
@@ -185,9 +185,9 @@ export default async function ResultsPage({
                           </tr>
                         </thead>
                         <tbody>
-                          <tr className="font-extrabold tabular-nums text-gray-900">
+                          <tr className="font-extrabold tabular-nums text-gray-900 dark:text-gray-50">
                             <td className="px-1 py-1">{team.record.played}</td>
-                            <td className="px-1 py-1 text-green-700">{team.record.won}</td>
+                            <td className="px-1 py-1 text-green-700 dark:text-green-400">{team.record.won}</td>
                             <td className="px-1 py-1">{team.record.drawn}</td>
                             <td className="px-1 py-1 text-red-500">{team.record.lost}</td>
                             <td className="px-1 py-1">{team.record.scored}</td>
@@ -196,7 +196,7 @@ export default async function ResultsPage({
                               {team.record.difference > 0 ? "+" : ""}
                               {team.record.difference}
                             </td>
-                            <td className="px-1 py-1 text-green-700">
+                            <td className="px-1 py-1 text-green-700 dark:text-green-400">
                               {team.record.points}
                             </td>
                           </tr>
@@ -204,7 +204,7 @@ export default async function ResultsPage({
                       </table>
                     </div>
                     {team.cleanSheets > 0 && (
-                      <p className="mt-2 text-xs text-gray-600">
+                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                         🥅{" "}
                         <span className="font-semibold">
                           {team.cleanSheets} clean sheet
@@ -218,8 +218,8 @@ export default async function ResultsPage({
 
                 {/* Recent results */}
                 {team.results.length > 0 && (
-                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <p className="mb-2 text-sm font-semibold text-gray-600">
+                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+                    <p className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
                       Recent results
                     </p>
                     <div className="flex flex-col gap-1.5">
@@ -230,7 +230,7 @@ export default async function ResultsPage({
                         return (
                           <div
                             key={m.id}
-                            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2"
+                            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                           >
                             <span
                               className={`grid h-5 w-5 shrink-0 place-items-center rounded text-[11px] font-bold text-white ${
@@ -243,7 +243,7 @@ export default async function ResultsPage({
                             >
                               {result}
                             </span>
-                            <span className="min-w-0 flex-1 truncate text-sm text-gray-900">
+                            <span className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-50">
                               <span className="font-bold">
                                 {us}–{them}
                               </span>{" "}
@@ -254,7 +254,7 @@ export default async function ResultsPage({
                                 </span>
                               )}
                             </span>
-                            <span className="shrink-0 text-xs text-gray-500">
+                            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                               {formatDate(m.date)}
                             </span>
                           </div>
@@ -275,18 +275,18 @@ export default async function ResultsPage({
                     .map((card) => (
                       <div
                         key={card.title}
-                        className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+                        className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10"
                       >
-                        <p className="mb-2 text-sm font-semibold text-gray-600">
+                        <p className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
                           {card.title}
                         </p>
                         <div className="flex flex-col gap-1.5">
                           {card.rows.map((p) => (
                             <div key={p.id} className="flex items-center gap-2">
-                              <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900">
+                              <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
                                 {fullNames ? p.name : shortName(p.name)}
                               </span>
-                              <span className="shrink-0 text-sm font-extrabold tabular-nums text-green-700">
+                              <span className="shrink-0 text-sm font-extrabold tabular-nums text-green-700 dark:text-green-400">
                                 {p[card.field]}
                               </span>
                             </div>
@@ -301,7 +301,7 @@ export default async function ResultsPage({
         )}
       </main>
 
-      <footer className="py-6 text-center text-sm text-gray-500">
+      <footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
         <p>{CLUB.fullName}</p>
       </footer>
     </div>

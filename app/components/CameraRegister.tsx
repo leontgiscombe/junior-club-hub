@@ -127,12 +127,12 @@ export default function CameraRegister() {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🎥</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Camera Register</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Camera Register</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -140,9 +140,9 @@ export default function CameraRegister() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -152,7 +152,7 @@ export default function CameraRegister() {
           </button>
           <Link
             href="/"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Team Hub
           </Link>
@@ -168,7 +168,7 @@ export default function CameraRegister() {
   const uploadedCount = shown.filter((m) => m.footageUploaded).length;
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">🎥 Camera Register</h1>
@@ -179,11 +179,11 @@ export default function CameraRegister() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {legacy > 0 && (
-          <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4">
-            <p className="text-sm font-semibold text-amber-900">
+          <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:bg-amber-400/10 dark:border-amber-400/40">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
               {legacy} fixture{legacy === 1 ? "" : "s"} from the old register
             </p>
-            <p className="mt-1 text-xs text-amber-800">
+            <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
               Home games now live in the match log, so each one is only entered once.
               Bring these across and they&apos;ll appear here and in the match log.
             </p>
@@ -199,7 +199,7 @@ export default function CameraRegister() {
           </div>
         )}
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         {/* Filter tabs */}
         <div className="flex gap-2 mb-4">
@@ -210,7 +210,7 @@ export default function CameraRegister() {
               className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
                 filter === f
                   ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
               }`}
             >
               {f === "all" ? "All" : `${teamAccent(f)} ${teamName(f)}`}
@@ -218,7 +218,7 @@ export default function CameraRegister() {
           ))}
         </div>
 
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-gray-500 mb-3 dark:text-gray-400">
           {shown.length} home game{shown.length === 1 ? "" : "s"} · {uploadedCount} uploaded
         </p>
 
@@ -228,7 +228,7 @@ export default function CameraRegister() {
             <p>No home games yet.</p>
             <Link
               href={`/admin/stats/matches${keyQuery(key)}`}
-              className="mt-2 inline-block text-sm font-semibold text-green-700 hover:text-green-800"
+              className="mt-2 inline-block text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
             >
               Add Fixtures in the Match Log →
             </Link>
@@ -240,8 +240,8 @@ export default function CameraRegister() {
                 key={m.id}
                 className={`rounded-2xl shadow-sm border p-4 ${
                   m.footageUploaded
-                    ? "bg-green-50 border-green-200"
-                    : "bg-white border-gray-100"
+                    ? "bg-green-50 border-green-200 dark:bg-green-400/10 dark:border-green-400/30"
+                    : "bg-white border-gray-100 dark:bg-[#1c1c1e] dark:border-white/10"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -264,24 +264,24 @@ export default function CameraRegister() {
                     />
                   </label>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 truncate">
+                    <p className="font-bold text-gray-900 truncate dark:text-gray-50">
                       {teamAccent(m.team)} {teamName(m.team)}{" "}
                       <span className="text-gray-400 font-normal">vs</span> {m.opponent}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
                       {formatWhen(m.date, m.time)}
                     </p>
                   </div>
                   <span
                     className={`text-xs font-semibold shrink-0 ${
-                      m.footageUploaded ? "text-green-700" : "text-gray-400"
+                      m.footageUploaded ? "text-green-700 dark:text-green-400" : "text-gray-400"
                     }`}
                   >
                     {m.footageUploaded ? "Uploaded ✓" : "Not uploaded"}
                   </span>
                 </div>
                 <div className="mt-3 flex items-center gap-2 pl-9">
-                  <span className="text-xs font-medium text-gray-500 shrink-0">
+                  <span className="text-xs font-medium text-gray-500 shrink-0 dark:text-gray-400">
                     📸 Camera:
                   </span>
                   <select
@@ -293,7 +293,7 @@ export default function CameraRegister() {
                       })
                     }
                     disabled={busyId === m.id}
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                     aria-label={`Who has the camera for ${m.opponent}`}
                   >
                     <option value="">— Not set —</option>

@@ -32,7 +32,7 @@ function SizeButton({ size, selected, onClick }: { size: string; selected: boole
       className={`flex-1 py-3 px-1 rounded-xl text-sm font-extrabold border-2 transition-all duration-100 cursor-pointer select-none ${
         selected
           ? "bg-green-700 border-green-700 text-white shadow-md scale-105"
-          : "bg-white border-gray-200 text-gray-700 hover:border-green-500 hover:text-green-700"
+          : "bg-white border-gray-200 text-gray-700 hover:border-green-500 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
       }`}
     >
       {size}
@@ -44,7 +44,7 @@ function Step({ n, done }: { n: number; done: boolean }) {
   return (
     <span
       className={`mr-2 inline-grid h-6 w-6 place-items-center rounded-full text-xs font-extrabold align-middle ${
-        done ? "bg-green-600 text-white" : "bg-gray-900 text-white"
+        done ? "bg-green-600 text-white" : "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
       }`}
     >
       {done ? "✓" : n}
@@ -56,11 +56,11 @@ function SizeSelector<T extends string>({ step, label, emoji, value, onChange, s
   step: number; label: string; emoji: string; value: T | null; onChange: (s: T) => void; sizes: readonly T[];
 }) {
   return (
-    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-      <p className="text-sm font-bold text-gray-700 mb-3">
+    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 dark:bg-white/5 dark:border-white/10">
+      <p className="text-sm font-bold text-gray-700 mb-3 dark:text-gray-200">
         <Step n={step} done={!!value} />
         {emoji} {label}
-        {value && <span className="ml-2 text-green-700 font-extrabold">{value}</span>}
+        {value && <span className="ml-2 text-green-700 font-extrabold dark:text-green-400">{value}</span>}
       </p>
       <div className="flex gap-2">
         {sizes.map((s) => (
@@ -74,69 +74,69 @@ function SizeSelector<T extends string>({ step, label, emoji, value, onChange, s
 function SizeGuide() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-blue-50 rounded-2xl border border-blue-100 overflow-hidden">
+    <div className="bg-blue-50 rounded-2xl border border-blue-100 overflow-hidden dark:bg-blue-400/10 dark:border-blue-400/25">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-blue-800 cursor-pointer"
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-blue-800 cursor-pointer dark:text-blue-300"
       >
         <span>📏 Size Guide</span>
         <span className="text-blue-500 text-xs">{open ? "▲ Hide" : "▼ Show"}</span>
       </button>
       {open && (
         <div className="px-4 pb-4 overflow-x-auto">
-          <p className="mb-1 text-xs font-bold text-blue-900">👕 Shirt</p>
+          <p className="mb-1 text-xs font-bold text-blue-900 dark:text-blue-200">👕 Shirt</p>
           <table className="w-full text-xs text-left border-collapse min-w-[260px]">
             <thead>
-              <tr className="border-b border-blue-200">
+              <tr className="border-b border-blue-200 dark:border-blue-400/30">
                 {["Size","Height","Chest"].map((h) => (
-                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap">{h}</th>
+                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap dark:text-blue-200">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {SIZES.map((size) => (
-                <tr key={size} className="border-b border-blue-100 last:border-0">
-                  <td className="py-2 pr-3 font-bold text-blue-800">{size}</td>
-                  <td className="py-2 pr-3 text-gray-700 whitespace-nowrap">{SIZE_GUIDE[size].height}</td>
-                  <td className="py-2 text-gray-700 whitespace-nowrap">{SIZE_GUIDE[size].chest}</td>
+                <tr key={size} className="border-b border-blue-100 last:border-0 dark:border-blue-400/25">
+                  <td className="py-2 pr-3 font-bold text-blue-800 dark:text-blue-300">{size}</td>
+                  <td className="py-2 pr-3 text-gray-700 whitespace-nowrap dark:text-gray-200">{SIZE_GUIDE[size].height}</td>
+                  <td className="py-2 text-gray-700 whitespace-nowrap dark:text-gray-200">{SIZE_GUIDE[size].chest}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-4 mb-1 text-xs font-bold text-blue-900">🩳 Shorts</p>
+          <p className="mt-4 mb-1 text-xs font-bold text-blue-900 dark:text-blue-200">🩳 Shorts</p>
           <table className="w-full text-xs text-left border-collapse min-w-[260px]">
             <thead>
-              <tr className="border-b border-blue-200">
+              <tr className="border-b border-blue-200 dark:border-blue-400/30">
                 {["Size","Height","Waist"].map((h) => (
-                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap">{h}</th>
+                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap dark:text-blue-200">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {SIZES.map((size) => (
-                <tr key={size} className="border-b border-blue-100 last:border-0">
-                  <td className="py-2 pr-3 font-bold text-blue-800">{size}</td>
-                  <td className="py-2 pr-3 text-gray-700 whitespace-nowrap">{SIZE_GUIDE[size].height}</td>
-                  <td className="py-2 text-gray-700 whitespace-nowrap">{SIZE_GUIDE[size].waist}</td>
+                <tr key={size} className="border-b border-blue-100 last:border-0 dark:border-blue-400/25">
+                  <td className="py-2 pr-3 font-bold text-blue-800 dark:text-blue-300">{size}</td>
+                  <td className="py-2 pr-3 text-gray-700 whitespace-nowrap dark:text-gray-200">{SIZE_GUIDE[size].height}</td>
+                  <td className="py-2 text-gray-700 whitespace-nowrap dark:text-gray-200">{SIZE_GUIDE[size].waist}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-4 mb-1 text-xs font-bold text-blue-900">🧦 Socks</p>
+          <p className="mt-4 mb-1 text-xs font-bold text-blue-900 dark:text-blue-200">🧦 Socks</p>
           <table className="w-full text-xs text-left border-collapse min-w-[200px]">
             <thead>
-              <tr className="border-b border-blue-200">
+              <tr className="border-b border-blue-200 dark:border-blue-400/30">
                 {["Size","Shoe size"].map((h) => (
-                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap">{h}</th>
+                  <th key={h} className="py-2 pr-3 font-bold text-blue-900 whitespace-nowrap dark:text-blue-200">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {SOCK_SIZES.map((size) => (
-                <tr key={size} className="border-b border-blue-100 last:border-0">
-                  <td className="py-2 pr-3 font-bold text-blue-800">{size}</td>
-                  <td className="py-2 text-gray-700 whitespace-nowrap">{SOCK_GUIDE[size].shoe}</td>
+                <tr key={size} className="border-b border-blue-100 last:border-0 dark:border-blue-400/25">
+                  <td className="py-2 pr-3 font-bold text-blue-800 dark:text-blue-300">{size}</td>
+                  <td className="py-2 text-gray-700 whitespace-nowrap dark:text-gray-200">{SOCK_GUIDE[size].shoe}</td>
                 </tr>
               ))}
             </tbody>
@@ -155,31 +155,31 @@ function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSiz
     <div className="flex flex-col gap-5 pb-8">
       <div className="text-center pt-4">
         <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-green-600 text-3xl text-white shadow-md">✓</div>
-        <h2 className="text-xl font-extrabold text-gray-900">All done!</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">All done!</h2>
+        <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
           Kit sizes for <strong>{childName}</strong> have been saved.
         </p>
         {alreadySent && (
-          <p className="mt-2 text-xs text-amber-700">
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
             Sizes had already been sent for {childName} — the coaches will see both.
           </p>
         )}
       </div>
 
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-green-700 mb-3 uppercase tracking-wide">Kit order for {childName}</p>
+      <div className="bg-green-50 border border-green-200 rounded-2xl p-4 dark:bg-green-400/10 dark:border-green-400/30">
+        <p className="text-xs font-semibold text-green-700 mb-3 uppercase tracking-wide dark:text-green-400">Kit order for {childName}</p>
         <div className="flex gap-3">
           {[["👕","Shirt",shirtSize],["🩳","Shorts",shortsSize],["🧦","Socks",socksSize]].map(([icon,label,val]) => (
-            <div key={label} className="flex-1 bg-white rounded-xl py-3 text-center border border-green-100">
+            <div key={label} className="flex-1 bg-white rounded-xl py-3 text-center border border-green-100 dark:bg-[#1c1c1e] dark:border-green-400/25">
               <p className="text-xs text-gray-400">{icon}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{label}</p>
-              <p className="text-lg font-extrabold text-green-700 mt-1">{val}</p>
+              <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{label}</p>
+              <p className="text-lg font-extrabold text-green-700 mt-1 dark:text-green-400">{val}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <button onClick={onReset} className="text-sm text-green-700 underline underline-offset-2 text-center cursor-pointer py-1">
+      <button onClick={onReset} className="text-sm text-green-700 underline underline-offset-2 text-center cursor-pointer py-1 dark:text-green-400">
         Submit Another Child
       </button>
     </div>
@@ -252,8 +252,8 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-8">
-      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-        <label htmlFor="kit-child" className="block text-sm font-bold text-gray-700 mb-2">
+      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 dark:bg-white/5 dark:border-white/10">
+        <label htmlFor="kit-child" className="block text-sm font-bold text-gray-700 mb-2 dark:text-gray-200">
           <Step n={1} done={hasChild} />
           👶 Your Child
         </label>
@@ -262,7 +262,7 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
             id="kit-child"
             value={picked}
             onChange={(e) => setPicked(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 text-base dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
           >
             <option value="" disabled>
               Choose your child…
@@ -292,7 +292,7 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
       <SizeSelector step={3} label="Shorts Size" emoji="🩳" value={shortsSize} onChange={setShortsSize} sizes={SIZES} />
       <SizeSelector step={4} label="Socks Size"  emoji="🧦" value={socksSize}  onChange={setSocksSize}  sizes={SOCK_SIZES} />
 
-      {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300 dark:border-red-400/30">{error}</div>}
 
       <button type="submit" disabled={!canSubmit}
         className="mt-2 w-full py-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-700 active:scale-95 shadow-md transition-all cursor-pointer disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed disabled:scale-100">

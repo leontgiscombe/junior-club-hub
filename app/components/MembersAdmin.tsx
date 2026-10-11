@@ -137,12 +137,12 @@ export default function MembersAdmin() {
 
   if (!authed || !snap) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
+      <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
             <div className="mb-2 text-3xl">👪</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Members</h1>
-            <p className="mt-1 text-sm text-gray-500">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Members</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -150,9 +150,9 @@ export default function MembersAdmin() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="mb-3 text-center text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={busy || !key}
@@ -160,7 +160,7 @@ export default function MembersAdmin() {
           >
             {busy ? "Loading…" : "Open Members"}
           </button>
-          <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700">
+          <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
             ← Coach Admin
           </Link>
         </div>
@@ -179,10 +179,10 @@ export default function MembersAdmin() {
   ].filter((g) => g.people.length);
   // phones approved before accounts (and any still waiting from then)
   const phones = snap.members.filter((m) => m.status !== "declined");
-  const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm";
+  const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10";
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-16">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
           <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
@@ -192,12 +192,12 @@ export default function MembersAdmin() {
       </div>
 
       <div className="mx-auto max-w-2xl px-4">
-        {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
         {/* Join code */}
         <section className={card}>
-          <h2 className="font-extrabold text-gray-900">🔑 Your Club Code</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Your Club Code</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Give parents, players and coaches this code, or send them the join link. They sign in with
             their email and ask to join; you approve them below.
             {snap.platformJoin && (
@@ -206,14 +206,14 @@ export default function MembersAdmin() {
               </>
             )}
           </p>
-          <p className="mt-4 select-all rounded-2xl bg-gray-50 py-4 text-center font-mono text-3xl font-extrabold tracking-[0.2em] text-gray-900">
+          <p className="mt-4 select-all rounded-2xl bg-gray-50 py-4 text-center font-mono text-3xl font-extrabold tracking-[0.2em] text-gray-900 dark:bg-white/5 dark:text-gray-50">
             {snap.code}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => copy(snap.code, "code")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
+            <button onClick={() => copy(snap.code, "code")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
               {copied === "code" ? "Copied ✓" : "Copy Code"}
             </button>
-            <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
+            <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
               {copied === "link" ? "Copied ✓" : "Copy Join Link"}
             </button>
             {snap.canAdmin && <button
@@ -221,7 +221,7 @@ export default function MembersAdmin() {
                 if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
               }}
               disabled={busy}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
             >
               New Code
             </button>}
@@ -234,8 +234,8 @@ export default function MembersAdmin() {
         <section className={card}>
           <label className="flex cursor-pointer items-start justify-between gap-4">
             <span>
-              <span className="block font-extrabold text-gray-900">🔒 Only approved members</span>
-              <span className="mt-1 block text-sm text-gray-500">
+              <span className="block font-extrabold text-gray-900 dark:text-gray-50">🔒 Only approved members</span>
+              <span className="mt-1 block text-sm text-gray-500 dark:text-gray-400">
                 {snap.private
                   ? "On: only people you've approved can open the hub. Anyone else is asked for the club code, signs in and waits for approval."
                   : "Off: anyone with the hub's address can open it. Turn on so only people you approve can see it."}
@@ -260,15 +260,15 @@ export default function MembersAdmin() {
         {/* Waiting */}
         <section className={card}>
           <div className="flex items-center justify-between">
-            <h2 className="font-extrabold text-gray-900">⏳ Waiting for Approval {pending.length > 0 && `(${pending.length})`}</h2>
-            <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
+            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">⏳ Waiting for Approval {pending.length > 0 && `(${pending.length})`}</h2>
+            <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
               Refresh
             </button>
           </div>
           {pending.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-500">No one is waiting.</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No one is waiting.</p>
           ) : (
-            <ul className="mt-3 divide-y divide-gray-100">
+            <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
               {pending.map((p) => (
                 <PendingPerson key={p.userId} person={p} players={snap.players} canAdmin={snap.canAdmin} busy={busy} onDecide={act} />
               ))}
@@ -278,17 +278,17 @@ export default function MembersAdmin() {
 
         {/* Approved, by team */}
         <section className={card}>
-          <h2 className="font-extrabold text-gray-900">✅ Members ({approved.length})</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✅ Members ({approved.length})</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             By team. Tap a role to give or take it away — club admins and coaches can use Coach Admin.
           </p>
-          {approved.length === 0 && <p className="mt-2 text-sm text-gray-500">No members yet.</p>}
+          {approved.length === 0 && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No members yet.</p>}
           {groups.map((g) => (
-            <details key={g.key || "none"} open className="mt-4 rounded-xl border border-gray-100">
-              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800">
-                {g.title} <span className="font-semibold text-gray-500">({g.people.length})</span>
+            <details key={g.key || "none"} open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
+              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
+                {g.title} <span className="font-semibold text-gray-500 dark:text-gray-400">({g.people.length})</span>
               </summary>
-              <ul className="divide-y divide-gray-100 px-4">
+              <ul className="divide-y divide-gray-100 px-4 dark:divide-white/10">
                 {g.people.map((p) => (
                   <MemberRow key={p.userId} person={p} inTeam={g.key || undefined} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
                 ))}
@@ -299,15 +299,15 @@ export default function MembersAdmin() {
 
         {declined.length > 0 && (
           <section className={card}>
-            <h2 className="font-extrabold text-gray-900">Declined ({declined.length})</h2>
-            <ul className="mt-3 divide-y divide-gray-100">
+            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Declined ({declined.length})</h2>
+            <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
               {declined.map((p) => (
                 <li key={p.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
-                    <span className="block font-bold text-gray-900">{p.name}</span>
-                    <span className="block text-sm text-gray-500">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
+                    <span className="block font-bold text-gray-900 dark:text-gray-50">{p.name}</span>
+                    <span className="block text-sm text-gray-500 dark:text-gray-400">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
                   </span>
-                  <button onClick={() => act({ action: "removePerson", userId: p.userId })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
+                  <button onClick={() => act({ action: "removePerson", userId: p.userId })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
                     Remove
                   </button>
                 </li>
@@ -318,27 +318,27 @@ export default function MembersAdmin() {
 
         {phones.length > 0 && (
           <section className={card}>
-            <h2 className="font-extrabold text-gray-900">📱 Phones Approved Before Accounts ({phones.length})</h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">📱 Phones Approved Before Accounts ({phones.length})</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               These still work. Ask each person to sign in and join with an account, then remove their phone here.
             </p>
-            <ul className="mt-3 divide-y divide-gray-100">
+            <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
               {phones.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
-                    <span className="block font-bold text-gray-900">
+                    <span className="block font-bold text-gray-900 dark:text-gray-50">
                       {m.name}
-                      {m.role === "coach" && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">Coach</span>}
+                      {m.role === "coach" && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600 dark:text-gray-300 dark:bg-white/10">Coach</span>}
                     </span>
-                    <span className="block text-sm text-gray-500">{describe(m) || (m.status === "pending" ? "waiting" : "")}</span>
+                    <span className="block text-sm text-gray-500 dark:text-gray-400">{describe(m) || (m.status === "pending" ? "waiting" : "")}</span>
                   </span>
                   <span className="flex gap-3">
                     {m.status === "pending" && (
-                      <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
+                      <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
                         Approve
                       </button>
                     )}
-                    <button onClick={() => act({ action: "remove", id: m.id })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
+                    <button onClick={() => act({ action: "remove", id: m.id })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
                       Remove
                     </button>
                   </span>
@@ -381,7 +381,7 @@ function RoleChips({
             aria-pressed={on}
             onClick={() => onChange(on ? roles.filter((x) => x !== r) : [...roles, r])}
             className={`rounded-full px-3 py-1 text-xs font-bold transition-colors disabled:opacity-50 ${
-              on ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              on ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:bg-white/10 dark:hover:bg-white/15"
             }`}
           >
             {ROLES[r]}
@@ -417,27 +417,27 @@ function PendingPerson({
   const [roles, setRoles] = useState<Role[]>([first]);
   return (
     <li className="py-3">
-      <span className="block font-bold text-gray-900">{person.name}</span>
-      <span className="block text-sm text-gray-500">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
+      <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
+      <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
       {person.relation === "coach" && (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
           ⚠️ Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
         </p>
       )}
       {kids.length > 0 && (
-        <div className="mt-2 rounded-lg bg-gray-50 p-2">
-          <p className="text-xs font-semibold text-gray-500">Their children in your squad:</p>
+        <div className="mt-2 rounded-lg bg-gray-50 p-2 dark:bg-white/5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Their children in your squad:</p>
           {kids.map((c) => (
-            <label key={c.id} className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-800">
+            <label key={c.id} className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
               <span className="min-w-0 flex-1 font-semibold">
                 {c.name}
-                {c.team && <span className="font-normal text-gray-500"> · {c.team.name}</span>}
+                {c.team && <span className="font-normal text-gray-500 dark:text-gray-400"> · {c.team.name}</span>}
               </span>
               <select
                 value={links[c.id] ?? "new"}
                 onChange={(e) => setLinks({ ...links, [c.id]: e.target.value })}
                 aria-label={`Squad player for ${c.name}`}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm"
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
               >
                 <option value="new">Add as a new player</option>
                 {players
@@ -452,7 +452,7 @@ function PendingPerson({
           ))}
         </div>
       )}
-      <p className="mt-2 text-xs font-semibold text-gray-500">Approve as:</p>
+      <p className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Approve as:</p>
       <RoleChips roles={roles} disabled={busy} onChange={setRoles} canAdmin={canAdmin} />
       <div className="mt-2 flex gap-2">
         <button
@@ -462,7 +462,7 @@ function PendingPerson({
         >
           Approve
         </button>
-        <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+        <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
           Decline
         </button>
       </div>
@@ -498,11 +498,11 @@ function MemberRow({
     <li className="py-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <span className="min-w-0 flex-1">
-          <span className="block font-bold text-gray-900">{person.name}</span>
-          <span className="block text-sm text-gray-500">{[person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
+          <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
+          <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
         </span>
         <span className="flex gap-3">
-          <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40">
+          <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
             {editing ? "Close" : "Edit"}
           </button>
           {(canAdmin || !person.roles.some((r) => ADMIN_ROLES.includes(r))) && (
@@ -511,7 +511,7 @@ function MemberRow({
                 if (confirm(`Remove ${person.name}? They won't be able to open the hub until they ask again.`)) onAct({ action: "removePerson", userId: person.userId });
               }}
               disabled={busy}
-              className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+              className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
             >
               Remove
             </button>
@@ -525,16 +525,16 @@ function MemberRow({
         onChange={(roles) => roles.length && onAct({ action: "personRoles", userId: person.userId, roles })}
       />
       {editing && (
-        <div className="mt-3 rounded-xl bg-gray-50 p-3">
+        <div className="mt-3 rounded-xl bg-gray-50 p-3 dark:bg-white/5">
           {isParent ? (
             <>
-              <p className="mb-2 text-xs font-semibold text-gray-600">Their children and teams</p>
+              <p className="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">Their children and teams</p>
               <ChildrenEditor value={kids} teams={teams} onChange={setKids} />
             </>
           ) : (
-            <label className="block text-xs font-semibold text-gray-600">
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">
               Team
-              <select value={team} onChange={(e) => setTeam(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900">
+              <select value={team} onChange={(e) => setTeam(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15">
                 <option value="">No team</option>
                 {teams.map((t) => (
                   <option key={t.slug} value={t.slug}>{t.name}</option>
@@ -552,7 +552,7 @@ function MemberRow({
               setEditing(false);
             }}
             disabled={busy}
-            className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:opacity-40"
+            className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
           >
             Save
           </button>
@@ -569,11 +569,11 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
   const [roles, setRoles] = useState<Role[]>(["coach"]);
   const [team, setTeam] = useState("");
   const shownRoles = snap.canAdmin ? roles : roles.filter((r) => !ADMIN_ROLES.includes(r));
-  const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+  const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="font-extrabold text-gray-900">✉️ Invite by Email</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✉️ Invite by Email</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         For your coaches and helpers: they get an email, sign in with that address, and they&apos;re straight in
         with the roles you choose — no code or approval needed.
       </p>
@@ -602,17 +602,17 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
         Send Invite
       </button>
       {snap.invites.length > 0 && (
-        <ul className="mt-4 divide-y divide-gray-100 border-t border-gray-100">
+        <ul className="mt-4 divide-y divide-gray-100 border-t border-gray-100 dark:border-white/10 dark:divide-white/10">
           {snap.invites.map((i) => (
             <li key={i.email} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
               <span className="min-w-0">
-                <span className="block font-semibold text-gray-900">{i.name || i.email}</span>
-                <span className="block text-sm text-gray-500">
+                <span className="block font-semibold text-gray-900 dark:text-gray-50">{i.name || i.email}</span>
+                <span className="block text-sm text-gray-500 dark:text-gray-400">
                   {[i.name ? i.email : "", i.roles.map((r) => ROLES[r]).join(", "), i.team?.name, `invited ${when(i.createdAt)}`].filter(Boolean).join(" · ")}
                 </span>
               </span>
               {(snap.canAdmin || !i.roles.some((r) => ADMIN_ROLES.includes(r))) && (
-                <button onClick={() => onAct({ action: "cancelInvite", email: i.email })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40">
+                <button onClick={() => onAct({ action: "cancelInvite", email: i.email })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
                   Cancel
                 </button>
               )}
@@ -627,9 +627,9 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
 /** The club's shared coach password: on (still works) or off (everyone signs in with their own account). */
 function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="font-extrabold text-gray-900">🔑 Shared Coach Password</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Shared Coach Password</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {snap.passwordOff
           ? "Off: everyone signs in with their own account. Nobody can get in with a shared password."
           : "On: anyone with the club's coach password can still use Coach Admin. Once your coaches have their own accounts, switch it off — then removing someone from Members takes away their access straight away."}
@@ -643,13 +643,13 @@ function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean;
           }}
           disabled={busy}
           className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-40 ${
-            snap.passwordOff ? "border border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-gray-900 text-white hover:bg-black"
+            snap.passwordOff ? "border border-gray-200 text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15" : "bg-gray-900 text-white hover:bg-black dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
           }`}
         >
           {snap.passwordOff ? "Switch the Password Back On" : "Switch the Password Off"}
         </button>
       ) : (
-        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
           To change this, sign in with your own club admin account (Coach Admin → Sign In With Your Email).
         </p>
       )}

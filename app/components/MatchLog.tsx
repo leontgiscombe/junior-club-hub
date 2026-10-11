@@ -302,12 +302,12 @@ export default function MatchLog() {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">⚽</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Match Log</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Match Log</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -315,9 +315,9 @@ export default function MatchLog() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -327,7 +327,7 @@ export default function MatchLog() {
           </button>
           <Link
             href="/admin/stats"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Back to Stats
           </Link>
@@ -397,7 +397,7 @@ export default function MatchLog() {
     .slice(0, 6);
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href={`/admin/stats${keyQuery(key)}`} label="Stats Tracker" />
         <h1 className="text-xl font-extrabold mt-2">⚽ Match Log</h1>
@@ -420,7 +420,7 @@ export default function MatchLog() {
               className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
                 team === t.slug
                   ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
               }`}
             >
               {t.accent} {t.name}
@@ -431,9 +431,9 @@ export default function MatchLog() {
         {/* Our record so far — shown as soon as the team has any games, so the
             table is findable before the first result is in */}
         {shown.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-gray-600">
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                 🏆 {teamName(team)} league record
               </p>
               {form.length > 0 && (
@@ -455,7 +455,7 @@ export default function MatchLog() {
             <div className="overflow-x-auto">
               <table className="w-full text-center text-sm">
                 <thead>
-                  <tr className="text-xs text-gray-500">
+                  <tr className="text-xs text-gray-500 dark:text-gray-400">
                     <th className="px-1 py-1 font-semibold">P</th>
                     <th className="px-1 py-1 font-semibold">W</th>
                     <th className="px-1 py-1 font-semibold">D</th>
@@ -467,9 +467,9 @@ export default function MatchLog() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="font-extrabold text-gray-900 tabular-nums">
+                  <tr className="font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
                     <td className="px-1 py-1">{record.played}</td>
-                    <td className="px-1 py-1 text-green-700">{record.won}</td>
+                    <td className="px-1 py-1 text-green-700 dark:text-green-400">{record.won}</td>
                     <td className="px-1 py-1">{record.drawn}</td>
                     <td className="px-1 py-1 text-red-500">{record.lost}</td>
                     <td className="px-1 py-1">{record.scored}</td>
@@ -477,7 +477,7 @@ export default function MatchLog() {
                     <td className="px-1 py-1">
                       {record.difference > 0 ? `+${record.difference}` : record.difference}
                     </td>
-                    <td className="px-1 py-1 text-green-700">{record.points}</td>
+                    <td className="px-1 py-1 text-green-700 dark:text-green-400">{record.points}</td>
                   </tr>
                 </tbody>
               </table>
@@ -486,7 +486,7 @@ export default function MatchLog() {
                 here rather than against each player's name. Cup and friendly
                 games count towards it as much as league ones. */}
             {playedGames > 0 && (
-              <p className="mt-2 text-xs text-gray-600">
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                 🥅{" "}
                 <span className="font-semibold">
                   {teamCleanSheets} clean sheet{teamCleanSheets === 1 ? "" : "s"}
@@ -501,7 +501,7 @@ export default function MatchLog() {
               </p>
             )}
             {awaiting > 0 && (
-              <p className="mt-2 text-xs text-amber-700">
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
                 {awaiting} past game{awaiting === 1 ? "" : "s"} not counted yet — add
                 the score, or confirm a 0–0, below.
               </p>
@@ -515,9 +515,9 @@ export default function MatchLog() {
         {/* Add match */}
         <form
           onSubmit={addMatch}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10"
         >
-          <p className="text-sm font-semibold text-gray-600 mb-3">
+          <p className="text-sm font-semibold text-gray-600 mb-3 dark:text-gray-300">
             ➕ Add a Game for {teamAccent(team)} {teamName(team)}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -531,7 +531,7 @@ export default function MatchLog() {
                 setOpponent("");
               }}
               aria-label="Game type"
-              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
             >
               <GameTypeOptions />
             </select>
@@ -541,7 +541,7 @@ export default function MatchLog() {
                 value={opponent}
                 onChange={(e) => setOpponent(e.target.value)}
                 aria-label="Opponent"
-                className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
               >
                 <option value="">Opponent…</option>
                 {leagueOpponents.map((name) => (
@@ -557,27 +557,27 @@ export default function MatchLog() {
                 onChange={(e) => setOpponent(e.target.value)}
                 placeholder="Opponent, e.g. City Juniors"
                 aria-label="Opponent"
-                className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
               />
             )}
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
             />
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
               aria-label="Kick-off time"
-              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
             />
             <select
               value={home ? "home" : "away"}
               onChange={(e) => setHome(e.target.value === "home")}
               aria-label="Home or away"
-              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
             >
               <option value="home">🏠 Home</option>
               <option value="away">🚌 Away</option>
@@ -590,27 +590,27 @@ export default function MatchLog() {
               {adding ? "Adding…" : "Add Game"}
             </button>
           </div>
-          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+          {error && <p className="text-sm text-red-600 mt-3 dark:text-red-400">{error}</p>}
         </form>
 
         {/* Who sets up whom */}
         {topPairs.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
-            <p className="text-sm font-semibold text-gray-600 mb-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+            <p className="text-sm font-semibold text-gray-600 mb-3 dark:text-gray-300">
               🤝 Assist combinations — {teamName(team)}
             </p>
             <div className="flex flex-col gap-2">
               {topPairs.map((p) => (
                 <div
                   key={`${p.assistId}|${p.scorerId}`}
-                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2"
+                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                 >
-                  <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900">
+                  <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
                     {playerName(p.assistId)}{" "}
                     <span className="font-normal text-gray-400">→</span>{" "}
                     {playerName(p.scorerId)}
                   </span>
-                  <span className="shrink-0 text-sm font-extrabold text-green-700 tabular-nums">
+                  <span className="shrink-0 text-sm font-extrabold text-green-700 tabular-nums dark:text-green-400">
                     ×{p.count}
                   </span>
                 </div>
@@ -619,12 +619,12 @@ export default function MatchLog() {
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-gray-500 mb-3 dark:text-gray-400">
           {shown.length} game{shown.length === 1 ? "" : "s"} for {teamName(team)}
         </p>
 
         {squad.length === 0 && (
-          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             Add players to {teamName(team)} on the Stats Tracker first — you pick the
             scorer and assister from the squad.
           </p>
@@ -640,27 +640,27 @@ export default function MatchLog() {
             {[...upcoming, ...results].map((m, i) => (
               <Fragment key={m.id}>
                 {i === 0 && upcoming.length > 0 && (
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     📅 Upcoming · {upcoming.length}
                   </p>
                 )}
                 {i === upcoming.length && results.length > 0 && (
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     ✅ Results · {results.length}
                   </p>
                 )}
-                <div className="rounded-2xl shadow-sm border border-gray-100 bg-white p-4">
+                <div className="rounded-2xl shadow-sm border border-gray-100 bg-white p-4 dark:bg-[#1c1c1e] dark:border-white/10">
                 {editingId === m.id ? (
                   /* Fixtures move — this changes the details without touching
                      any goals, awards or appearances already logged. */
                   <div>
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-600">
+                      <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                         ✏️ Edit fixture
                       </p>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="shrink-0 cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-700"
+                        className="shrink-0 cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
                       >
                         Cancel
                       </button>
@@ -672,7 +672,7 @@ export default function MatchLog() {
                           setDraft((d) => ({ ...d, ...fromGameType(e.target.value) }))
                         }
                         aria-label="Game type"
-                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                       >
                         <GameTypeOptions />
                       </select>
@@ -684,7 +684,7 @@ export default function MatchLog() {
                             setDraft((d) => ({ ...d, opponent: e.target.value }))
                           }
                           aria-label="Opponent"
-                          className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                          className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                         >
                           <option value="">Opponent…</option>
                           {editOpponents.map((name) => (
@@ -702,7 +702,7 @@ export default function MatchLog() {
                           }
                           placeholder="Opponent"
                           aria-label="Opponent"
-                          className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+                          className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                         />
                       )}
 
@@ -713,7 +713,7 @@ export default function MatchLog() {
                           setDraft((d) => ({ ...d, date: e.target.value }))
                         }
                         aria-label="Date"
-                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                       />
                       <input
                         type="time"
@@ -722,7 +722,7 @@ export default function MatchLog() {
                           setDraft((d) => ({ ...d, time: e.target.value }))
                         }
                         aria-label="Kick-off time"
-                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                       />
                       <select
                         value={draft.home ? "home" : "away"}
@@ -730,7 +730,7 @@ export default function MatchLog() {
                           setDraft((d) => ({ ...d, home: e.target.value === "home" }))
                         }
                         aria-label="Home or away"
-                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                       >
                         <option value="home">🏠 Home</option>
                         <option value="away">🚌 Away</option>
@@ -754,10 +754,10 @@ export default function MatchLog() {
                 ) : (
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-gray-900 truncate">
+                    <p className="font-bold text-gray-900 truncate dark:text-gray-50">
                       {teamAccent(m.team)} {teamName(m.team)}{" "}
                       {isPlayed(m) ? (
-                        <span className="text-green-700">
+                        <span className="text-green-700 dark:text-green-400">
                           {m.goals.length}–{m.opponentGoals}
                         </span>
                       ) : (
@@ -765,7 +765,7 @@ export default function MatchLog() {
                       )}{" "}
                       {m.opponent}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
                       {m.home ? "🏠 Home" : "🚌 Away"} · {formatDate(m.date)}
                       {m.time && ` · ${m.time}`}
                       {gameType(m) === "friendly" && (
@@ -776,7 +776,7 @@ export default function MatchLog() {
                       )}
                       {!isPlayed(m) && " · not played yet"}
                       {isPlayed(m) && !m.resultLogged && (
-                        <span className="text-amber-700"> · no score logged</span>
+                        <span className="text-amber-700 dark:text-amber-300"> · no score logged</span>
                       )}
                     </p>
                   </div>
@@ -807,17 +807,17 @@ export default function MatchLog() {
                     {m.goals.map((g) => (
                       <div
                         key={g.id}
-                        className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2"
+                        className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                       >
                         <span className="shrink-0">⚽</span>
                         <span className="min-w-0 flex-1 truncate text-sm">
                           {g.scorerId ? (
                             <>
-                              <span className="font-bold text-gray-900">
+                              <span className="font-bold text-gray-900 dark:text-gray-50">
                                 {playerName(g.scorerId)}
                               </span>
                               {g.assistId ? (
-                                <span className="text-gray-500">
+                                <span className="text-gray-500 dark:text-gray-400">
                                   {" "}
                                   · assist {playerName(g.assistId)}
                                 </span>
@@ -852,7 +852,7 @@ export default function MatchLog() {
                 {!isPlayed(m) && !expanded.includes(m.id) ? (
                   <button
                     onClick={() => setExpanded((prev) => [...prev, m.id])}
-                    className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800"
+                    className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
                   >
                     ⚽ Log goals
                   </button>
@@ -866,7 +866,7 @@ export default function MatchLog() {
                       setScorerFor((prev) => ({ ...prev, [m.id]: e.target.value }))
                     }
                     aria-label={`Goal scorer for ${m.opponent}`}
-                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                   >
                     <option value="">⚽ Scorer…</option>
                     {squad.map((p) => (
@@ -881,7 +881,7 @@ export default function MatchLog() {
                       setAssistFor((prev) => ({ ...prev, [m.id]: e.target.value }))
                     }
                     aria-label={`Assist for ${m.opponent}`}
-                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                   >
                     <option value="">🅰️ Assist — none</option>
                     {squad
@@ -907,16 +907,16 @@ export default function MatchLog() {
                   <button
                     onClick={() => patch(m.id, { action: "confirm-result" })}
                     disabled={busyId === m.id}
-                    className="mt-3 w-full cursor-pointer rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-40"
+                    className="mt-3 w-full cursor-pointer rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20 dark:border-amber-400/40"
                   >
                     ✓ Confirm 0–0 (counts it in the record)
                   </button>
                 )}
 
                 {/* Who played */}
-                <div className="mt-3 border-t border-gray-100 pt-3">
+                <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-gray-500">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       👟 Who Played ({(m.appearanceIds ?? []).length})
                     </span>
                     <span className="flex items-center gap-3">
@@ -928,7 +928,7 @@ export default function MatchLog() {
                           })
                         }
                         disabled={busyId === m.id || squad.length === 0}
-                        className="cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-40"
+                        className="cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-40 dark:text-green-400"
                       >
                         All
                       </button>
@@ -937,7 +937,7 @@ export default function MatchLog() {
                           patch(m.id, { action: "set-appearances", playerIds: [] })
                         }
                         disabled={busyId === m.id || (m.appearanceIds ?? []).length === 0}
-                        className="cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-700 disabled:opacity-40"
+                        className="cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-700 disabled:opacity-40 dark:text-gray-400"
                       >
                         None
                       </button>
@@ -966,7 +966,7 @@ export default function MatchLog() {
                             className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-40 ${
                               played
                                 ? "border-green-600 bg-green-600 text-white"
-                                : "border-gray-200 bg-white text-gray-600 hover:border-green-400 hover:text-green-700"
+                                : "border-gray-200 bg-white text-gray-600 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
                             }`}
                           >
                             {p.name}
@@ -979,10 +979,10 @@ export default function MatchLog() {
                 </div>
 
                 {/* Per-game awards */}
-                <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3">
+                <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
                   {AWARDS.map((a) => (
                     <div key={a.field} className="flex items-center gap-2">
-                      <span className="shrink-0 text-xs font-medium text-gray-500">
+                      <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
                         {a.icon} {a.label}
                       </span>
                       <select
@@ -992,7 +992,7 @@ export default function MatchLog() {
                         }
                         disabled={busyId === m.id}
                         aria-label={`${a.label} for ${m.opponent}`}
-                        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                       >
                         <option value="">— Not Awarded —</option>
                         {squad.map((p) => (
@@ -1007,8 +1007,8 @@ export default function MatchLog() {
 
                 {/* Our score, for a result written up afterwards: the goals
                     nobody can put a name to still count towards it. */}
-                <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
-                  <span className="text-xs font-medium text-gray-500">
+                <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                     {teamName(m.team)} scored
                   </span>
                   <button
@@ -1019,7 +1019,7 @@ export default function MatchLog() {
                       busyId === m.id ||
                       m.goals.filter((g) => !g.scorerId).length === 0
                     }
-                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30"
+                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
                     title={
                       m.goals.filter((g) => !g.scorerId).length === 0
                         ? "Every goal here has a scorer — remove one from the list above"
@@ -1029,7 +1029,7 @@ export default function MatchLog() {
                   >
                     −
                   </button>
-                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums">
+                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
                     {m.goals.length}
                   </span>
                   <button
@@ -1047,7 +1047,7 @@ export default function MatchLog() {
 
                 {/* Opponent score */}
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                     {m.opponent} scored
                   </span>
                   <button
@@ -1058,12 +1058,12 @@ export default function MatchLog() {
                       })
                     }
                     disabled={m.opponentGoals === 0 || busyId === m.id}
-                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30"
+                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
                     aria-label={`Fewer goals for ${m.opponent}`}
                   >
                     −
                   </button>
-                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums">
+                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
                     {m.opponentGoals}
                   </span>
                   <button
@@ -1082,7 +1082,7 @@ export default function MatchLog() {
                   {/* A clean sheet is the team's, so it is counted here against
                       the game rather than on anybody's card. */}
                   {isCleanSheet(m) && (
-                    <span className="ml-auto text-xs font-semibold text-green-700">
+                    <span className="ml-auto text-xs font-semibold text-green-700 dark:text-green-400">
                       🥅 Clean sheet
                     </span>
                   )}
