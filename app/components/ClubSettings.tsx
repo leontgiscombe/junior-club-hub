@@ -75,6 +75,20 @@ const pictureOf = (canvas: HTMLCanvasElement, type = "image/png"): Picture => ({
   height: canvas.height,
 });
 
+/** A see-through kit picture has to be a PNG: made smaller until it's within the upload limit. */
+const KIT_PNG_BYTES = 560 * 1024;
+function pngWithin(canvas: HTMLCanvasElement, maxBytes: number): Picture {
+  let pic = pictureOf(canvas);
+  for (let scale = 0.85; (pic.image.length * 3) / 4 > maxBytes && scale > 0.2; scale -= 0.15) {
+    const smaller = document.createElement("canvas");
+    smaller.width = Math.max(1, Math.round(canvas.width * scale));
+    smaller.height = Math.max(1, Math.round(canvas.height * scale));
+    smaller.getContext("2d")!.drawImage(canvas, 0, 0, smaller.width, smaller.height);
+    pic = pictureOf(smaller);
+  }
+  return pic;
+}
+
 async function shrinkImage(
   file: File,
   { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
@@ -232,8 +246,8 @@ export default function ClubSettings() {
     kit: { name: "kit picture", shrink: { max: 1600, type: "image/jpeg" } },
   } as const;
 
-  // a crest with a plain background: both versions, for the coach to pick from
-  const [crestPick, setCrestPick] = useState<{ original: Picture; cleaned: Picture } | null>(null);
+  // a crest or kit picture with a plain background: both versions, for the coach to pick from
+  const [bgPick, setBgPick] = useState<{ slot: keyof typeof PICTURES; original: Picture; cleaned: Picture } | null>(null);
 
   async function uploadPicture(slot: keyof typeof PICTURES, file: File | undefined, ready?: Picture) {
     if (!file && !ready) return;
@@ -245,12 +259,21 @@ export default function ClubSettings() {
         const canvas = await shrinkToCanvas(file!, shrink);
         const cleaned = removeBackground(canvas);
         if (cleaned) {
-          setCrestPick({ original: pictureOf(canvas), cleaned: pictureOf(cleaned) });
+          setBgPick({ slot, original: pictureOf(canvas), cleaned: pictureOf(cleaned) });
           return;
         }
         picture = pictureOf(canvas);
       }
-      setCrestPick(null);
+      if (!picture && slot === "kit") {
+        // worked on as a PNG, so a see-through version keeps its see-through parts
+        const canvas = await shrinkToCanvas(file!, { max: shrink.max, type: "image/png" });
+        const cleaned = removeBackground(canvas, { shaded: true });
+        if (cleaned) {
+          setBgPick({ slot, original: await shrinkImage(file!, shrink), cleaned: pngWithin(cleaned, KIT_PNG_BYTES) });
+          return;
+        }
+      }
+      setBgPick(null);
       const body = { ...(picture ?? (await shrinkImage(file!, shrink))), slot };
       await send("POST", body, `New ${name} saved.`, { keepEdits: true });
     } catch (e) {
@@ -456,7 +479,7 @@ export default function ClubSettings() {
                         }}
                       />
                     </label>
-                    {snap.crest && !crestPick && (
+                    {snap.crest && bgPick?.slot !== "crest" && (
                       <button
                         onClick={() => resetPicture("crest")}
                         disabled={!!uploading}
@@ -467,45 +490,14 @@ export default function ClubSettings() {
                     )}
                   </div>
                   {/* the crest had a plain background: with it taken off, or as it was */}
-                  {crestPick && (
-                    <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
-                      <p className="text-sm font-bold text-gray-900 dark:text-gray-50">Take the background off?</p>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        Your crest has a plain background. Here it is with that taken off, and as you uploaded it.
-                      </p>
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        {(
-                          [
-                            ["cleaned", "Background Off", crestPick.cleaned],
-                            ["original", "As Uploaded", crestPick.original],
-                          ] as const
-                        ).map(([key, label, pic]) => (
-                          <button
-                            key={key}
-                            onClick={() => uploadPicture("crest", undefined, pic)}
-                            disabled={!!uploading}
-                            className={`cursor-pointer rounded-2xl border-2 p-2 text-sm font-bold disabled:opacity-50 ${
-                              key === "cleaned"
-                                ? "border-green-600 text-green-700 dark:text-green-400"
-                                : "border-gray-200 text-gray-700 dark:border-white/15 dark:text-gray-200"
-                            }`}
-                          >
-                            {/* on the dark green the home-screen icon uses, so any leftover background shows */}
-                            <span className="grid aspect-square place-items-center rounded-xl bg-[radial-gradient(circle_at_50%_46%,#1f5c2c_0%,#0b2412_55%,#060906_100%)] p-3">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={pic.image} alt="" className="max-h-full max-w-full object-contain" />
-                            </span>
-                            <span className="mt-2 block">Use {label}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setCrestPick(null)}
-                        className="mt-3 w-full cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                  {bgPick?.slot === "crest" && (
+                    <BackgroundChoice
+                      what="crest"
+                      pick={bgPick}
+                      busy={!!uploading}
+                      onPick={(pic) => uploadPicture("crest", undefined, pic)}
+                      onCancel={() => setBgPick(null)}
+                    />
                   )}
                 </section>
               </>
@@ -516,8 +508,8 @@ export default function ClubSettings() {
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
                   <h2 className="font-extrabold text-gray-900 dark:text-gray-50">👕 Kit Picture</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Shown on the home page and the Kit Sizes pages, so parents can see the kit they&apos;re
-                    choosing sizes for. A wide photo or design works best.
+                    Shown on the Kit page, so parents can see the kit they&apos;re choosing sizes for. A wide
+                    design works best; if it&apos;s on a plain or shaded background, the hub offers to take that off.
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -540,7 +532,7 @@ export default function ClubSettings() {
                         }}
                       />
                     </label>
-                    {snap.kitImage && (
+                    {snap.kitImage && bgPick?.slot !== "kit" && (
                       <button
                         onClick={() => resetPicture("kit")}
                         disabled={!!uploading}
@@ -550,6 +542,17 @@ export default function ClubSettings() {
                       </button>
                     )}
                   </div>
+                  {/* the kit picture had a plain or shaded background: with it taken off, or as it was */}
+                  {bgPick?.slot === "kit" && (
+                    <BackgroundChoice
+                      what="kit picture"
+                      pick={bgPick}
+                      wide
+                      busy={!!uploading}
+                      onPick={(pic) => uploadPicture("kit", undefined, pic)}
+                      onCancel={() => setBgPick(null)}
+                    />
+                  )}
                 </section>
                 {/* the kit form's items beyond shirt, shorts and socks */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
@@ -745,6 +748,70 @@ export default function ClubSettings() {
 // opponents. A team can be archived (hidden everywhere, its data kept) and
 // brought back, but never deleted.
 /** A team's training: each day it trains, with start and end times. */
+/** Offer a picture with its background taken off, or as it was uploaded; the coach taps one to save it. */
+function BackgroundChoice({
+  what,
+  pick,
+  wide = false,
+  busy,
+  onPick,
+  onCancel,
+}: {
+  what: string;
+  pick: { original: Picture; cleaned: Picture };
+  /** a wide picture (the kit): the two one above the other */
+  wide?: boolean;
+  busy: boolean;
+  onPick: (picture: Picture) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
+      <p className="text-sm font-bold text-gray-900 dark:text-gray-50">Take the background off?</p>
+      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+        Your {what} has a plain background. Here it is with that taken off, and as you uploaded it.
+      </p>
+      <div className={`mt-3 grid gap-3 ${wide ? "grid-cols-1" : "grid-cols-2"}`}>
+        {(
+          [
+            ["cleaned", "Background Off", pick.cleaned],
+            ["original", "As Uploaded", pick.original],
+          ] as const
+        ).map(([key, label, pic]) => (
+          <button
+            key={key}
+            onClick={() => onPick(pic)}
+            disabled={busy}
+            className={`cursor-pointer rounded-2xl border-2 p-2 text-sm font-bold disabled:opacity-50 ${
+              key === "cleaned"
+                ? "border-green-600 text-green-700 dark:text-green-400"
+                : "border-gray-200 text-gray-700 dark:border-white/15 dark:text-gray-200"
+            }`}
+          >
+            {/* on the dark colour it's shown on, so any leftover background shows */}
+            <span
+              className={`grid place-items-center rounded-xl p-3 ${
+                wide ? "bg-[var(--club-night)]" : "aspect-square bg-[radial-gradient(circle_at_50%_46%,#1f5c2c_0%,#0b2412_55%,#060906_100%)]"
+              }`}
+              style={wide ? { aspectRatio: kitAspect(pick.original) } : undefined}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pic.image} alt="" className="max-h-full max-w-full object-contain" />
+            </span>
+            <span className="mt-2 block">Use {label}</span>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={onCancel}
+        className="mt-3 w-full cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 function TrainingDays({
   training,
   onChange,
