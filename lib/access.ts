@@ -70,9 +70,15 @@ export function childrenOf(p: Pick<Person, "children" | "child" | "team" | "rela
   return p.child ? [{ id: "legacy", name: p.child, ...(p.team ? { team: p.team } : {}) }] : [];
 }
 
-/** Every team a person belongs to: their own, and their children's. */
-export function teamsOf(p: Pick<Person, "children" | "child" | "team" | "relation">): string[] {
-  const own = p.relation === "parent" && childrenOf(p).length ? [] : p.team ? [p.team.slug] : [];
+/** Whether a person's own team is theirs to belong to, not only their children's: anyone but a parent and nothing else. */
+export function hasOwnTeam(p: Pick<Person, "children" | "child" | "team" | "relation"> & { roles?: Role[] }): boolean {
+  const parentOnly = p.relation === "parent" && childrenOf(p).length > 0;
+  return !parentOnly || !!p.roles?.some((r) => r !== "parent");
+}
+
+/** Every team a person belongs to: their own (a coach's, a player's — a parent who also coaches has one too), and their children's. */
+export function teamsOf(p: Pick<Person, "children" | "child" | "team" | "relation"> & { roles?: Role[] }): string[] {
+  const own = hasOwnTeam(p) && p.team ? [p.team.slug] : [];
   return [...new Set([...own, ...childrenOf(p).flatMap((c) => (c.team ? [c.team.slug] : []))])];
 }
 

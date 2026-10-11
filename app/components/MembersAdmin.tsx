@@ -492,6 +492,8 @@ function MemberRow({
 }) {
   const [editing, setEditing] = useState(false);
   const isParent = person.relation === "parent" || childrenOf(person).length > 0;
+  // a team of their own: anyone who isn't only a parent (a parent who coaches has one as well as their children's)
+  const ownTeam = !isParent || person.roles.some((r) => r !== "parent");
   const [kids, setKids] = useState<ChildDraft[]>(() => {
     const now = toDrafts(childrenOf(person));
     return now.length ? now : [{ name: "", team: "" }];
@@ -530,14 +532,10 @@ function MemberRow({
       />
       {editing && (
         <div className="mt-3 rounded-xl bg-gray-50 p-3 dark:bg-white/5">
-          {isParent ? (
-            <>
-              <p className="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">Their children and teams</p>
-              <ChildrenEditor value={kids} teams={teams} onChange={setKids} />
-            </>
-          ) : (
+          {/* their own team (the one they coach, or play for) — a parent who also coaches has both */}
+          {ownTeam && (
             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">
-              Team
+              {isParent ? "Their own team (the one they coach)" : "Team"}
               <select value={team} onChange={(e) => setTeam(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15">
                 <option value="">No team</option>
                 {teams.map((t) => (
@@ -546,13 +544,20 @@ function MemberRow({
               </select>
             </label>
           )}
+          {isParent && (
+            <div className={ownTeam ? "mt-4" : ""}>
+              <p className="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">Their children and teams</p>
+              <ChildrenEditor value={kids} teams={teams} onChange={setKids} />
+            </div>
+          )}
           <button
             onClick={() => {
-              onAct(
-                isParent
-                  ? { action: "editPerson", userId: person.userId, children: kids.filter((k) => k.name.trim()) }
-                  : { action: "editPerson", userId: person.userId, team },
-              );
+              onAct({
+                action: "editPerson",
+                userId: person.userId,
+                ...(ownTeam ? { team } : {}),
+                ...(isParent ? { children: kids.filter((k) => k.name.trim()) } : {}),
+              });
               setEditing(false);
             }}
             disabled={busy}
