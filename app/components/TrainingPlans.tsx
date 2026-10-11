@@ -252,7 +252,13 @@ export default function TrainingPlans() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "check-owner", ownerKey: ownerInput }),
       });
-      if (!res.ok) throw new Error("That isn't the owner password");
+      if (!res.ok) {
+        throw new Error(
+          res.status === 429
+            ? ((await res.json().catch(() => null))?.error ?? "Too many wrong passwords — try again later")
+            : "That isn't the owner password"
+        );
+      }
       setOwnerKey(ownerInput);
       setUnlocking(false);
     } catch (err) {
