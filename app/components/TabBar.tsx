@@ -1,62 +1,74 @@
 "use client";
 
-// The app's bottom tab bar — a floating frosted bar like iOS's, light or dark: the club's main
-// pages, Finances for treasurers and club admins, and Coach Admin for coaches. It
-// shows on the tabs' own pages only (TAB_PAGES); every other page is one you
-// go into and come back from, with a round back button (BackButton).
+// The app's bottom tab bar — a floating frosted bar like iOS's, light or dark.
+// Which tabs: lib/tabs.ts (each person can choose their own, Your Account → Tab
+// Bar). It shows on the tabs' own pages; every other page is one you go into
+// and come back from, with a round back button (BackButton).
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { Viewer } from "@/lib/viewer";
+import { TABS_EVENT, chosenTabs, loadSavedTabs, tabDef, type TabContext, type TabId } from "@/lib/tabs";
 import { useClub } from "./ClubProvider";
 import { useJoinRequests } from "./JoinAlerts";
 
-/** The pages the bar shows on. */
+/** The pages the bar always shows on; a page someone has made a tab shows it too. */
 export const TAB_PAGES = [/^\/$/, /^\/kit$/, /^\/admin$/];
 
-type Tab = {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  match: (path: string) => boolean;
-  external?: boolean;
-  /** a red count on the icon (people waiting to join, on Coach) */
-  badge?: number;
+const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+/** Each tab's icon (also shown in Your Account → Tab Bar). */
+export const TAB_ICONS: Record<TabId, React.ReactNode> = {
+  home: <><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V20h5v-6h4v6h5V9.5" /></>,
+  training: <><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /><path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" /></>,
+  finances: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>,
+  kit: <path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" />,
+  coach: <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>,
+  results: <><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" /></>,
+  account: <><circle cx="12" cy="8.5" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  matches: <><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></>,
+  trainingLog: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
+  stats: <path d="M5 20V10M12 20V4M19 20v-7" />,
+  members: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>,
 };
 
-const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
-const Icon = ({ children }: { children: React.ReactNode }) => (
-  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" {...stroke}>
-    {children}
-  </svg>
-);
-
-const HOME = <Icon><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V20h5v-6h4v6h5V9.5" /></Icon>;
-const TRAINING = <Icon><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /><path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" /></Icon>;
-const KIT = <Icon><path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /></Icon>;
-const COACH = <Icon><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></Icon>;
-const FINANCE = <Icon><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></Icon>;
-const ACCOUNT = <Icon><circle cx="12" cy="8.5" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></Icon>;
+export function TabIcon({ id, className = "h-6 w-6" }: { id: TabId; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      {TAB_ICONS[id]}
+    </svg>
+  );
+}
 
 export default function TabBar({ viewer }: { viewer: Viewer }) {
   const club = useClub();
   const path = usePathname() ?? "/";
-  const onTabPage = TAB_PAGES.some((p) => p.test(path));
+  const ctx: TabContext = {
+    signedIn: viewer.signedIn,
+    canCoach: viewer.canCoach,
+    canFinance: viewer.canFinance,
+    features: club.features,
+    publicResults: club.publicResults,
+  };
+  // this phone's chosen tabs (Your Account → Tab Bar), once the page knows them
+  const [saved, setSaved] = useState<unknown>(null);
+  useEffect(() => {
+    const read = () => setSaved(loadSavedTabs());
+    read();
+    window.addEventListener(TABS_EVENT, read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(TABS_EVENT, read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  const ids = chosenTabs(ctx, saved);
+  const defs = ids.map((id) => ({ id, ...tabDef(id, ctx) }));
+  const onTabPage = TAB_PAGES.some((p) => p.test(path)) || defs.some((d) => !d.external && d.match(path));
   // people waiting for approval, for the Coach tab's badge
-  const { status: joins } = useJoinRequests(undefined, viewer.canCoach && onTabPage);
+  const { status: joins } = useJoinRequests(undefined, viewer.canCoach && onTabPage && ids.includes("coach"));
   if (!onTabPage) return null;
-
-  const tabs: Tab[] = [{ href: "/", label: "Home", icon: HOME, match: (p) => p === "/" }];
-  if (club.features.trainingHub) tabs.push({ href: "/training-hub", label: "Training", icon: TRAINING, match: () => false, external: true });
-  // Finances for whoever can open it (signed out we can't tell, so it shows); Results is on the home page
-  if (club.features.financialAdmin && (viewer.canFinance || !viewer.signedIn)) {
-    tabs.push({ href: "/finance", label: "Finances", icon: FINANCE, match: () => false, external: true });
-  }
-  if (club.features.kitSizes) tabs.push({ href: "/kit", label: "Kit", icon: KIT, match: (p) => p.startsWith("/kit") });
-  if (viewer.canCoach) {
-    tabs.push({ href: "/admin", label: "Coach", icon: COACH, match: (p) => p.startsWith("/admin"), badge: joins?.pending });
-  }
-  if (!viewer.signedIn) tabs.push({ href: "/signin", label: "Sign In", icon: ACCOUNT, match: () => false });
-  else if (tabs.length < 5) tabs.push({ href: "/account", label: "Account", icon: ACCOUNT, match: (p) => p === "/account" });
+  const tabs = defs.map((d) => ({ ...d, icon: <TabIcon id={d.id} />, badge: d.id === "coach" ? joins?.pending : undefined }));
 
   return (
     <>

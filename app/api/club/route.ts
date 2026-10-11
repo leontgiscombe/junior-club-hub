@@ -21,6 +21,7 @@ export async function GET() {
       season: CLUB.kitSeason,
       crest: CLUB.crest.src,
       features: CLUB.features,
+      publicResults: CLUB.publicResults,
     },
     teams: TEAMS.map((t) => ({
       id: t.slug,
