@@ -310,15 +310,6 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
       </header>
 
       <main className="relative mx-auto -mt-8 w-full max-w-2xl flex-1 px-5 pb-10">
-        <p className="mx-auto mb-4 w-fit rounded-full bg-white px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-gray-500 shadow-sm">
-          Choose a tool
-        </p>
-        {account && key === SESSION_KEY && (
-          <p className="mb-4 text-center text-xs text-gray-500">
-            Signed in as {account.email} ·{" "}
-            <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
-          </p>
-        )}
         {account?.canCoach && key === SESSION_KEY && <AlertsPrompt status={joins} refresh={refreshJoins} />}
         <div className="grid gap-4 sm:grid-cols-2">
           {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
@@ -355,6 +346,12 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             </Link>
           ))}
         </div>
+        {account && key === SESSION_KEY && (
+          <p className="mt-6 text-center text-xs text-gray-500">
+            Signed in as {account.email} ·{" "}
+            <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
+          </p>
+        )}
       </main>
 
       <footer className="bg-[var(--club-night)] px-6 py-8 text-center">
