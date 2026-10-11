@@ -42,7 +42,7 @@ body {
   }
 }
 
-/* the home screen's wallpaper (app/components/HomeWallpaper.tsx): the page
+/* the wallpaper on Home and Coach Admin (app/components/HomeWallpaper.tsx): the page
    behind it goes clear, and the headings on it turn white */
 html[data-wallpaper] .wp-page {
   background: transparent !important;
