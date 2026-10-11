@@ -17,7 +17,7 @@ import { cleanSheetCount, playedCount } from "@/lib/cleanSheets";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 type StatField =
   | "appearances"
@@ -663,15 +663,8 @@ export default function StatsTracker() {
   const approaching = approachingMilestones(shown);
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-        <h1 className="text-xl font-extrabold mt-2">📊 Stats Tracker</h1>
-        <p className="text-green-200 text-sm mt-0.5">
-          {`${season ? `${season} season` : "Season"} · team record & clean sheets, ` +
-            `then every player's own tallies`}
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+      <TopBar title="Stats Tracker" href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}

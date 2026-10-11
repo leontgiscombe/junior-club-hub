@@ -7,7 +7,7 @@ import type { TeamSlug } from "@/lib/teams";
 import { getMyTeam, setMyTeam } from "@/lib/myTeam";
 import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 interface Submission {
   id: string;
@@ -185,12 +185,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   );
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-        <h1 className="text-xl font-extrabold mt-2">⚽ {teamName(team)} – Kit Responses</h1>
-        <p className="text-green-200 text-sm mt-0.5">{CLUB.fullName} – {CLUB.kitSeason}</p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+      <TopBar title={<>{teamName(team)} – Kit Responses</>} href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team selector (combined admin only) */}

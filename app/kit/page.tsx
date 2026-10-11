@@ -13,10 +13,10 @@ export default async function KitTeamPicker() {
   await requireFeature("kitSizes");
   const [CLUB, TEAMS] = await Promise.all([getClub(), getTeams()]);
   return (
-    <div className="themed flex min-h-screen flex-col bg-gray-50 dark:bg-black dark:text-gray-50">
+    <div className="themed flex min-h-screen flex-col bg-gray-100 dark:bg-black dark:text-gray-50">
       <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
 
-      <main className="relative mx-auto -mt-8 w-full max-w-md flex-1 px-4">
+      <main className="relative mx-auto mt-3 w-full max-w-md flex-1 px-4">
         {/* the new kits, without any team's sponsor */}
         <div className="relative overflow-hidden rounded-3xl bg-[var(--club-night)] shadow-lg">
           <div

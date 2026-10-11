@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
 type SquadPlayer = {
@@ -146,14 +146,8 @@ export default function PlayersAdmin() {
   ];
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-16">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <div className="mx-auto max-w-2xl">
-          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-          <h1 className="mt-2 text-xl font-extrabold">🧒 Players</h1>
-          <p className="mt-0.5 text-sm text-green-200">The club&apos;s squad, and which team each player is in</p>
-        </div>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16">
+      <TopBar title="Players" href={`/admin${keyQuery(key)}`} />
       <div className="mx-auto max-w-2xl px-4">
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           Parents&apos; children join here when you approve them in Members. Choose each player&apos;s team —

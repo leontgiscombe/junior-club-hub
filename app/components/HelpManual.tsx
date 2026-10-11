@@ -5,9 +5,8 @@
 // page changes.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -65,7 +64,6 @@ const B = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function HelpManual() {
-  const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -149,15 +147,8 @@ export default function HelpManual() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-12">
-      <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
-        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-        <h1 className="text-xl font-extrabold mt-2">❓ Help — how to use the Team Hub</h1>
-        <p className="text-green-100 text-sm mt-0.5">
-          Everything for the {CLUB.name} teams in one place. Start with Getting started, then
-          read the part for the page you&apos;re on.
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-12">
+      <TopBar title="Help" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
         <nav id="contents" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">

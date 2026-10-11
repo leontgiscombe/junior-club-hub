@@ -17,7 +17,7 @@ import {
 } from "@/lib/trainingPlanTypes";
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 type View = "plan" | "library";
 
@@ -1122,14 +1122,8 @@ export default function TrainingPlans() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-24">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-        <h1 className="text-xl font-extrabold mt-2">📝 Training Plans</h1>
-        <p className="text-green-200 text-sm mt-0.5">
-          Each team&apos;s weeks, themes and drills — picked from one shared drill library
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-24">
+      <TopBar title="Training Plans" href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Plan / library switch */}

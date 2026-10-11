@@ -1,12 +1,9 @@
 import Image from "next/image";
-import { Anton } from "next/font/google";
 import { getClub } from "@/lib/settings";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
-// the same heavy lettering as the home page and the posters
-const display = Anton({ weight: "400", subsets: ["latin"] });
 
-/** The kit pages' banner: the home page's paint strokes, crest and lettering. */
+/** The kit pages' header: a large title on the Kit tab, the top bar on a team's form. */
 export default async function KitHeader({
   back,
   title,
@@ -18,60 +15,37 @@ export default async function KitHeader({
   subtitle: string;
 }) {
   const CLUB = await getClub();
+  // a team's form: a page you go into, with the back arrow and the title
+  if (back) return <TopBar title={title} href={back.href} />;
+  // the Kit tab itself: a large title, like Home
   return (
-    <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-14 pt-6 text-center text-white">
-      <Image
-        src="/poster/brush-background.jpg"
-        alt=""
-        style={{ filter: "var(--club-brush-filter)" }}
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-top opacity-70"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
-      <div className="relative">
-        <div className="mx-auto w-full max-w-md text-left">
-          {back && <BackButton href={back.href} label={back.label} />}
-        </div>
-        <Image
-          src={CLUB.crest.src}
-          unoptimized
-          alt={CLUB.crest.alt}
-          width={CLUB.crest.width}
-          height={CLUB.crest.height}
-          className="mx-auto mt-3 h-20 w-auto"
-          priority
-        />
-        <h1
-          className={`${display.className} mt-3 text-4xl uppercase leading-none tracking-wide drop-shadow-[3px_3px_0_rgba(0,0,0,0.8)]`}
-        >
-          {title}
-        </h1>
-        <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
-          {subtitle}
-        </p>
-        <p className="mx-auto mt-3 inline-block rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-100">
-          {CLUB.kitSeason} season
+    <header className="mx-auto flex w-full max-w-md items-end justify-between gap-4 px-5 pb-2 pt-[max(1.75rem,env(safe-area-inset-top))]">
+      <div className="min-w-0">
+        <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">{title}</h1>
+        <p className="mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">
+          {subtitle} · {CLUB.kitSeason} season
         </p>
       </div>
+      <Image
+        src={CLUB.crest.src}
+        unoptimized
+        alt={CLUB.crest.alt}
+        width={CLUB.crest.width}
+        height={CLUB.crest.height}
+        className="h-12 w-auto shrink-0"
+        priority
+      />
     </header>
   );
 }
 
+/** The kit pages' foot: the legal links, small. */
 export async function KitFooter() {
-  const CLUB = await getClub();
   return (
-    <footer className="mt-10 bg-[var(--club-night)] px-6 py-8 text-center">
-      <p className={`${display.className} text-lg uppercase tracking-wide text-[var(--club-bright)]`}>
-        {CLUB.slogan}
-      </p>
-      <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>
-      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        <a href="/privacy" className="hover:text-gray-300">Privacy</a>
-        {" · "}
-        <a href="/terms" className="hover:text-gray-300">Terms</a>
-      </p>
-    </footer>
+    <p className="mt-8 pb-6 text-center text-xs text-gray-500 dark:text-gray-400">
+      <a href="/privacy" className="hover:underline">Privacy</a>
+      {" · "}
+      <a href="/terms" className="hover:underline">Terms</a>
+    </p>
   );
 }

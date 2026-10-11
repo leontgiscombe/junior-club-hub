@@ -13,7 +13,7 @@ import {
 } from "@/lib/trainingPlanTypes";
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 interface Player {
   id: string;
@@ -437,15 +437,8 @@ export default function TrainingLog() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <BackButton href={`/admin/stats${keyQuery(key)}`} label="Stats Tracker" />
-        <h1 className="text-xl font-extrabold mt-2">🏃 Training Log</h1>
-        <p className="text-green-200 text-sm mt-0.5">
-          Every Monday&apos;s session — pick the best trainer and season totals update
-          automatically
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+      <TopBar title="Training Log" href={`/admin/stats${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}

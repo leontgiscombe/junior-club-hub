@@ -71,7 +71,7 @@ const BACK_ARROW = (
 );
 
 /** The bar at the top: a round back button (a link, or a function) and the screen's title. */
-export function TopBar({ title, onBack, href }: { title: string; onBack?: () => void; href?: string }) {
+export function TopBar({ title, onBack, href }: { title: React.ReactNode; onBack?: () => void; href?: string }) {
   const button = "absolute left-0 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10";
   return (
     <div className="sticky top-0 z-30 bg-gray-100/90 dark:bg-black/80 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
