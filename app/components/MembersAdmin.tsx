@@ -305,7 +305,7 @@ export default function MembersAdmin() {
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
         {/* Waiting */}
-        <Fold id="waiting" title="⏳ Waiting for Approval" summary={pending.length ? String(pending.length) : "None"} alert={pending.length > 0} forceOpen={pending.length > 0}>
+        <Fold id="waiting" title="Waiting for Approval" summary={pending.length ? String(pending.length) : "None"} alert={pending.length > 0} forceOpen={pending.length > 0}>
           <div className="flex items-center justify-end">
             <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
               Refresh
@@ -323,7 +323,7 @@ export default function MembersAdmin() {
         </Fold>
 
         {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
-        <Fold id="members" title="✅ Members" summary={String(approved.length)} defaultOpen>
+        <Fold id="members" title="Members" summary={String(approved.length)} defaultOpen>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Each team&apos;s coaches and staff, then its players with their parents or carers (guardians). Tap a role to give
             or take it away — club admins and coaches can use Coach Admin.
@@ -464,7 +464,7 @@ export default function MembersAdmin() {
         </Fold>
 
         {/* Join code */}
-        <Fold id="code" title="🔑 Your Club Code" summary={snap.code}>
+        <Fold id="code" title="Your Club Code" summary={snap.code}>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Give parents, players and coaches this code, or send them the join link. They sign in with
             their email and ask to join; you approve them below.
@@ -499,7 +499,7 @@ export default function MembersAdmin() {
         <InviteSection snap={snap} busy={busy} onAct={act} />
 
         {/* Private hub */}
-        <Fold id="private" title="🔒 Only Approved Members" summary={snap.private ? "On" : "Off"}>
+        <Fold id="private" title="Only Approved Members" summary={snap.private ? "On" : "Off"}>
           <label className="flex cursor-pointer items-start justify-between gap-4">
             <span>
               <span className="block text-sm text-gray-500 dark:text-gray-400">
@@ -543,7 +543,7 @@ export default function MembersAdmin() {
         )}
 
         {phones.length > 0 && (
-          <Fold id="phones" title="📱 Phones Approved Before Accounts" summary={String(phones.length)}>
+          <Fold id="phones" title="Phones Approved Before Accounts" summary={String(phones.length)}>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               These still work. Ask each person to sign in and join with an account, then remove their phone here.
             </p>
@@ -718,7 +718,7 @@ function PendingPerson({
       <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
       {person.relation === "coach" && (
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-          ⚠️ Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
+          Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
         </p>
       )}
       {kids.length > 0 && (
@@ -1156,7 +1156,7 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
   const shownRoles = snap.canAdmin ? roles : roles.filter((r) => !ADMIN_ROLES.includes(r));
   const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   return (
-    <Fold id="invite" title="✉️ Invite by Email" summary={snap.invites.length ? `${snap.invites.length} waiting` : undefined}>
+    <Fold id="invite" title="Invite by Email" summary={snap.invites.length ? `${snap.invites.length} waiting` : undefined}>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         For your coaches and helpers: they get an email, sign in with that address, and they&apos;re straight in
         with the roles you choose — no code or approval needed.
@@ -1211,7 +1211,7 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
 /** The club's shared coach password: on (still works) or off (everyone signs in with their own account). */
 function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
   return (
-    <Fold id="password" title="🔑 Shared Coach Password" summary={snap.passwordOff ? "Off" : "On"}>
+    <Fold id="password" title="Shared Coach Password" summary={snap.passwordOff ? "Off" : "On"}>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {snap.passwordOff
           ? "Off: everyone signs in with their own account. Nobody can get in with a shared password."

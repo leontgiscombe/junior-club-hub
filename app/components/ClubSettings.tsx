@@ -368,7 +368,7 @@ export default function ClubSettings() {
             {!canAdmin && (
               <div className="mt-4">
                 <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-                  👀 You can look, but only a <strong>club admin</strong> can change Settings.
+                  You can look, but only a <strong>club admin</strong> can change Settings.
                 </p>
               </div>
             )}
@@ -403,7 +403,7 @@ export default function ClubSettings() {
               <>
                 {/* Colour */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🎨 Club Colour</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Club Colour</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     The hub&apos;s buttons, banners and highlights take this colour. This page shows it as
                     you pick.
@@ -453,7 +453,7 @@ export default function ClubSettings() {
               <>
                 {/* Crest */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🛡️ Club Crest</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Club Crest</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     A PNG with a see-through background looks best; if yours has a plain background, the
                     hub offers to take it off. It&apos;s also used for the home-screen icon when someone
@@ -506,7 +506,7 @@ export default function ClubSettings() {
               <>
                 {/* Kit picture */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">👕 Kit Picture</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Kit Picture</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Shown on the Kit page, so parents can see the kit they&apos;re choosing sizes for. A wide
                     design works best; if it&apos;s on a plain or shaded background, the hub offers to take that off.
@@ -556,7 +556,7 @@ export default function ClubSettings() {
                 </section>
                 {/* the kit form's items beyond shirt, shorts and socks */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🧥 Kit Items</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Kit Items</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Every kit form asks for a shirt, shorts and socks. Switch on anything else parents should
                     send a size for; they can also choose &ldquo;Not needed&rdquo;.
@@ -585,7 +585,7 @@ export default function ClubSettings() {
               <>
                 {/* Identity */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🏷️ Club Details</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Club Details</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Leave a box empty to use the default shown in it.</p>
                   <div className="mt-4 flex flex-col gap-4">
                     {FIELDS.map(({ field, label, hint }) => (
@@ -609,7 +609,7 @@ export default function ClubSettings() {
               <>
                 {/* Which parts of the hub the club uses */}
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🧩 Parts of the Hub</h2>
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Parts of the Hub</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Switch off anything the club doesn&apos;t use: it leaves the home page and Coach Admin,
                     and nothing saved in it is lost.
@@ -693,7 +693,7 @@ export default function ClubSettings() {
             {!canAdmin && (
               <div className="mt-4">
                 <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-                  👀 You can look, but only a <strong>club admin</strong> can change Settings.
+                  You can look, but only a <strong>club admin</strong> can change Settings.
                 </p>
               </div>
             )}
@@ -931,7 +931,7 @@ function TeamsEditor({
 
   return (
     <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">👥 Teams</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Teams</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Each team gets its own kit form, stats, match and training logs, training plan and subs.
         Archiving a team hides it everywhere but keeps all its data.
@@ -1183,7 +1183,7 @@ function AccountSection({
     "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900";
   return (
     <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Sign-In</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Sign-In</h2>
       <label className="mt-4 block">
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Club email</span>
         <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={input} />
@@ -1234,7 +1234,7 @@ function ShareHub({ clubName }: { clubName: string }) {
 
   return (
     <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">📣 Share Your Hub</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Share Your Hub</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by
         WhatsApp, email or your club&apos;s app. They can save it to their phone&apos;s home screen.
