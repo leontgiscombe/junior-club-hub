@@ -2,6 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
+<script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts) */(function(){try{var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set)}catch(e){}})()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Monthly subs and finance tracker for the club's teams">
 <meta name="theme-color" content="#1f7a3d">
@@ -288,6 +289,32 @@
   #view-settings.fs-open .fs-top { display: flex; }
   #view-settings:not(.fs-open) .fs-panel, #view-settings.fs-open .fs-panel:not(.fs-on) { display: none !important; }
   #view-settings .fs-panel .panel-head { display: none; }
+  /* Dark mode (the hub's Your Account → Appearance; the script in <head> sets html.dark). Screen only: printing stays light. */
+  @media screen {
+    html.dark { color-scheme: dark;
+      --ink: #f5f5f7; --muted: #a1a1a8; --line: #2c2c2e; --bg: #000; --card: #1c1c1e;
+      --green-light: rgba(74,222,128,.14); --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12); --red: #f87171; --red-bg: rgba(248,113,113,.12);
+      --shadow: none; }
+    html.dark body { background: #000; }
+    html.dark h2.section { color: var(--pitch); }
+    html.dark nav.tabs { background: rgba(28,28,30,.92); }
+    html.dark .tab:not(.active) { background: transparent; color: #d1d5db; }
+    html.dark .pill.paid { color: #86efac; }
+    html.dark .pill.exempt { background: rgba(129,140,248,.16); color: #a5b4fc; }
+    html.dark tbody tr:hover { background: #242426; }
+    html.dark th { background: #242426; }
+    html.dark button:hover, html.dark .btn:hover { border-color: #3a3a3c; background: #2c2c2e; }
+    html.dark .btn-primary:hover { background: var(--green-dark); }
+    html.dark .btn-danger { border-color: rgba(248,113,113,.4); }
+    html.dark input, html.dark select, html.dark textarea { background: #2c2c2e; border-color: #3a3a3c; }
+    html.dark .modal-foot { background: #242426; }
+    html.dark #fs-list .fs-group, html.dark .fs-back { background: var(--card); color: var(--ink); }
+    html.dark .fs-row { color: var(--ink); border-top-color: #2c2c2e; }
+    html.dark .fs-row:hover { background: #2c2c2e; }
+    html.dark .fs-ico { color: #d1d5db; }
+    html.dark .fs-chev { color: #5a5a60; }
+    html.dark .fs-top h2 { color: var(--ink); }
+  }
 </style>
 </head>
 <body class="locked">
