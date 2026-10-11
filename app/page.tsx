@@ -2,13 +2,15 @@
 // "Home"), then what matters to whoever is looking —
 //   coaches: anyone waiting for approval, the next training and match, the
 //            last result, and shortcuts to the coach tools;
+//   everyone else signed in to the club: the next training and match for
+//            their own (or their children's) team, to look at only;
 //   treasurers who aren't coaches: Financial Admin;
 //   parents and players: the Training Hub and kit sizes, nothing else;
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
 // Light or dark (Your Account → Appearance): the page is "themed".
 import Link from "next/link";
 import Image from "next/image";
-import { childrenOf } from "@/lib/access";
+import { childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { listMembers } from "@/lib/members";
 import { currentPerson, listPeople } from "@/lib/people";
@@ -82,18 +84,21 @@ export default async function Home() {
     .filter(Boolean)
     .join(" · ");
 
-  // ---- the coaches' cards ----
+  // ---- what's next, and the coaches' cards ----
+  // a parent or player only sees their own (or their children's) team's
+  const familyTeams = person ? teamsOf(person) : [];
+  const showNext = viewer.canCoach || familyTeams.length > 0;
   let waiting = 0;
   let firstWaiting = "";
   let nextTraining: string | null = null;
   let nextMatch: Match | null = null;
   let lastResult: Match | null = null;
-  if (viewer.canCoach && tenant) {
-    const myTeams = person?.team ? [person.team.slug] : TEAMS.map((t) => t.slug);
+  if (showNext && tenant) {
+    const myTeams = !viewer.canCoach ? familyTeams : person?.team ? [person.team.slug] : TEAMS.map((t) => t.slug);
     const now = today();
     const [people, members, matches, training] = await Promise.all([
-      listPeople(tenant).catch(() => []),
-      listMembers(tenant).catch(() => []),
+      viewer.canCoach ? listPeople(tenant).catch(() => []) : [],
+      viewer.canCoach ? listMembers(tenant).catch(() => []) : [],
       listMatches().catch(() => []),
       listTraining().catch(() => []),
     ]);
@@ -106,9 +111,10 @@ export default async function Home() {
         .sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null;
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
-    lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+    if (viewer.canCoach) lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
   }
-  const many = TEAMS.length > 1 && !person?.team;
+  const many = viewer.canCoach ? TEAMS.length > 1 && !person?.team : familyTeams.length > 1;
+
 
   // the coach tools this person can use, for their shortcuts (they pick which, on the page)
   const available: ShortcutId[] = [
@@ -180,23 +186,22 @@ export default async function Home() {
           </Link>
         )}
 
-        {/* coaches: what's next */}
-        {viewer.canCoach && (
+        {/* what's next: coaches' teams, or a parent's or player's own */}
+        {showNext && (
           <section className="flex flex-col gap-2.5">
             <h2 className="wp-text px-1 text-xl font-bold">Up next</h2>
             <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
               {nextTraining && (
-                <Link href="/admin/stats/training" className="press flex items-center gap-4 px-4 py-3.5">
+                <NextRow link={viewer.canCoach} href="/admin/stats/training">
                   <DateBadge date={nextTraining} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold">Training</span>
                     <span className={`block text-sm ${sub}`}>{day(nextTraining, { weekday: "long", day: "numeric", month: "short" })}</span>
                   </span>
-                  <Chevron />
-                </Link>
+                </NextRow>
               )}
               {nextMatch && (
-                <Link href="/admin/stats/matches" className="press flex items-center gap-4 px-4 py-3.5">
+                <NextRow link={viewer.canCoach} href="/admin/stats/matches">
                   <DateBadge date={nextMatch.date} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">
@@ -207,12 +212,11 @@ export default async function Home() {
                       {nextMatch.time ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>
                   </span>
-                  <Chevron />
-                </Link>
+                </NextRow>
               )}
-              {/* no match entered yet: where to add one */}
+              {/* no match entered yet: where coaches add one */}
               {!nextMatch && (
-                <Link href="/admin/stats/matches" className="press flex items-center gap-4 px-4 py-3.5">
+                <NextRow link={viewer.canCoach} href="/admin/stats/matches">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700 dark:bg-green-400/10 dark:text-green-400">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       {ICON.ball}
@@ -220,10 +224,9 @@ export default async function Home() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold">No match coming up</span>
-                    <span className={`block text-sm ${sub}`}>Add one in the Match Log</span>
+                    <span className={`block text-sm ${sub}`}>{viewer.canCoach ? "Add one in the Match Log" : "It'll show here once it's arranged"}</span>
                   </span>
-                  <Chevron />
-                </Link>
+                </NextRow>
               )}
             </div>
           </section>
@@ -314,6 +317,18 @@ export default async function Home() {
 }
 
 /** A calendar-style date: the month small, the day large. */
+/** A row under Up next: coaches tap through to the log; everyone else just sees it. */
+function NextRow({ link, href, children }: { link: boolean; href: string; children: React.ReactNode }) {
+  return link ? (
+    <Link href={href} className="press flex items-center gap-4 px-4 py-3.5">
+      {children}
+      <Chevron />
+    </Link>
+  ) : (
+    <div className="flex items-center gap-4 px-4 py-3.5">{children}</div>
+  );
+}
+
 function DateBadge({ date }: { date: string }) {
   return (
     <span className="w-12 shrink-0 rounded-xl bg-green-50 py-1.5 text-center dark:bg-green-400/10">
