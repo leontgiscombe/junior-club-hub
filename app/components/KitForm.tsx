@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SquadOption } from "@/lib/kitSquad";
+import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 
 const SIZES = ["4XS", "3XS", "XXS", "XS", "S"] as const;
 type Size = (typeof SIZES)[number];
@@ -52,8 +53,10 @@ function Step({ n, done }: { n: number; done: boolean }) {
   );
 }
 
-function SizeSelector<T extends string>({ step, label, emoji, value, onChange, sizes }: {
+function SizeSelector<T extends string>({ step, label, emoji, value, onChange, sizes, notNeeded }: {
   step: number; label: string; emoji: string; value: T | null; onChange: (s: T) => void; sizes: readonly T[];
+  /** offer "Not needed" too (for the club's extra kit items) */
+  notNeeded?: boolean;
 }) {
   return (
     <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 dark:bg-white/5 dark:border-white/10">
@@ -67,6 +70,11 @@ function SizeSelector<T extends string>({ step, label, emoji, value, onChange, s
           <SizeButton key={s} size={s} selected={value === s} onClick={() => onChange(s)} />
         ))}
       </div>
+      {notNeeded && (
+        <div className="mt-2 flex">
+          <SizeButton size={NOT_NEEDED} selected={value === NOT_NEEDED} onClick={() => onChange(NOT_NEEDED as T)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -148,8 +156,9 @@ function SizeGuide() {
   );
 }
 
-function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSize, onReset }: {
-  childName: string; alreadySent: boolean; shirtSize: string; shortsSize: string; socksSize: string; onReset: () => void;
+function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSize, extras, onReset }: {
+  childName: string; alreadySent: boolean; shirtSize: string; shortsSize: string; socksSize: string;
+  extras: [KitExtra, string][]; onReset: () => void;
 }) {
   return (
     <div className="flex flex-col gap-5 pb-8">
@@ -168,12 +177,15 @@ function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSiz
 
       <div className="bg-green-50 border border-green-200 rounded-2xl p-4 dark:bg-green-400/10 dark:border-green-400/30">
         <p className="text-xs font-semibold text-green-700 mb-3 uppercase tracking-wide dark:text-green-400">Kit order for {childName}</p>
-        <div className="flex gap-3">
-          {[["👕","Shirt",shirtSize],["🩳","Shorts",shortsSize],["🧦","Socks",socksSize]].map(([icon,label,val]) => (
-            <div key={label} className="flex-1 bg-white rounded-xl py-3 text-center border border-green-100 dark:bg-[#1c1c1e] dark:border-green-400/25">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            ["👕","Shirt",shirtSize],["🩳","Shorts",shortsSize],["🧦","Socks",socksSize],
+            ...extras.map(([e, val]) => [KIT_EXTRAS[e].emoji, KIT_EXTRAS[e].short, val]),
+          ].map(([icon,label,val]) => (
+            <div key={label} className="bg-white rounded-xl py-3 text-center border border-green-100 dark:bg-[#1c1c1e] dark:border-green-400/25">
               <p className="text-xs text-gray-400">{icon}</p>
               <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{label}</p>
-              <p className="text-lg font-extrabold text-green-700 mt-1 dark:text-green-400">{val}</p>
+              <p className={`mt-1 font-extrabold text-green-700 dark:text-green-400 ${val === NOT_NEEDED ? "text-sm" : "text-lg"}`}>{val}</p>
             </div>
           ))}
         </div>
@@ -188,7 +200,7 @@ function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSiz
 
 const NOT_LISTED = "__not-listed__";
 
-export default function KitForm({ team, squad }: { team: string; squad: SquadOption[] }) {
+export default function KitForm({ team, squad, extras = [] }: { team: string; squad: SquadOption[]; extras?: KitExtra[] }) {
   // a child picked from the squad (their id), NOT_LISTED to type a name, or ""
   const [picked, setPicked] = useState(squad.length ? "" : NOT_LISTED);
   const [childName, setChildName] = useState("");
@@ -196,6 +208,8 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
   const [shirtSize, setShirtSize] = useState<Size | null>(null);
   const [shortsSize, setShortsSize] = useState<Size | null>(null);
   const [socksSize, setSocksSize] = useState<SockSize | null>(null);
+  // the club's extra items (jackets…): a size or "Not needed" for each
+  const [extraSizes, setExtraSizes] = useState<Partial<Record<KitExtra, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -203,10 +217,10 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
   const typing = picked === NOT_LISTED;
   const chosenLabel = squad.find((p) => p.id === picked)?.label ?? "";
   const hasChild = typing ? !!childName.trim() : !!chosenLabel;
-  const canSubmit = !!(hasChild && shirtSize && shortsSize && socksSize && !submitting);
+  const canSubmit = !!(hasChild && shirtSize && shortsSize && socksSize && extras.every((e) => extraSizes[e]) && !submitting);
 
   function reset() {
-    setResult(false); setChildName(""); setShirtSize(null); setShortsSize(null); setSocksSize(null);
+    setResult(false); setChildName(""); setShirtSize(null); setShortsSize(null); setSocksSize(null); setExtraSizes({});
     setPicked(squad.length ? "" : NOT_LISTED); setAlreadySent(false);
     setError(null);
   }
@@ -226,6 +240,7 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
           shirtSize,
           shortsSize,
           socksSize,
+          ...(extras.length ? { extras: extraSizes } : {}),
         }),
       });
       const data = await res.json();
@@ -245,6 +260,7 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
         childName={typing ? childName.trim() : chosenLabel}
         alreadySent={alreadySent}
         shirtSize={shirtSize!} shortsSize={shortsSize!} socksSize={socksSize!}
+        extras={extras.map((e) => [e, extraSizes[e] ?? ""] as [KitExtra, string])}
         onReset={reset}
       />
     );
@@ -291,6 +307,18 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
       <SizeSelector step={2} label="Shirt Size"  emoji="👕" value={shirtSize}  onChange={setShirtSize}  sizes={SIZES} />
       <SizeSelector step={3} label="Shorts Size" emoji="🩳" value={shortsSize} onChange={setShortsSize} sizes={SIZES} />
       <SizeSelector step={4} label="Socks Size"  emoji="🧦" value={socksSize}  onChange={setSocksSize}  sizes={SOCK_SIZES} />
+      {extras.map((e, i) => (
+        <SizeSelector
+          key={e}
+          step={5 + i}
+          label={KIT_EXTRAS[e].label}
+          emoji={KIT_EXTRAS[e].emoji}
+          value={extraSizes[e] ?? null}
+          onChange={(s) => setExtraSizes((x) => ({ ...x, [e]: s }))}
+          sizes={SIZES}
+          notNeeded
+        />
+      ))}
 
       {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300 dark:border-red-400/30">{error}</div>}
 
@@ -299,7 +327,7 @@ export default function KitForm({ team, squad }: { team: string; squad: SquadOpt
         {submitting ? "Saving…" : "Continue →"}
       </button>
       {!canSubmit && !submitting && (
-        <p className="text-center text-xs text-gray-400">Choose your child and all three sizes to continue</p>
+        <p className="text-center text-xs text-gray-400">Choose your child and every size to continue</p>
       )}
       <p className="text-center text-xs text-gray-400">
         Sizes go to your child&apos;s coaches only.{" "}

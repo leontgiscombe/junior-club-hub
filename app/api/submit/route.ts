@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSubmissions, saveSubmission } from "@/lib/storage";
 import { getClub, isTeam } from "@/lib/settings";
 import { squadPlayer } from "@/lib/kitSquad";
+import type { KitExtra } from "@/lib/clubSettings";
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +10,8 @@ export async function POST(request: Request) {
     const { team, childName, shirtSize, shortsSize, socksSize } = body;
     const playerId = typeof body.playerId === "string" ? body.playerId : "";
 
-    if (!(await getClub()).features.kitSizes) {
+    const club = await getClub();
+    if (!club.features.kitSizes) {
       return NextResponse.json({ error: "Kit sizes aren't being collected" }, { status: 404 });
     }
     if (!(await isTeam(team))) {
@@ -30,7 +32,15 @@ export async function POST(request: Request) {
       name = player.name;
     }
 
-    if (!name || !shirtSize || !shortsSize || !socksSize) {
+    // the club's extra kit items (a size, or "Not needed"), each one required
+    const sent = body.extras && typeof body.extras === "object" ? (body.extras as Record<string, unknown>) : {};
+    const extras: Partial<Record<KitExtra, string>> = {};
+    for (const e of club.kitExtras) {
+      const v = typeof sent[e] === "string" ? (sent[e] as string).trim().slice(0, 12) : "";
+      if (v) extras[e] = v;
+    }
+
+    if (!name || !shirtSize || !shortsSize || !socksSize || club.kitExtras.some((e) => !extras[e])) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
@@ -45,6 +55,7 @@ export async function POST(request: Request) {
       shirtSize,
       shortsSize,
       socksSize,
+      ...(Object.keys(extras).length ? { extras } : {}),
     });
 
     // nothing about the child goes back to the (public) page

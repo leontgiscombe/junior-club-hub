@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, MAX_TRAINING_DAYS, WEEKDAYS, kitAspect, slugFor, type Feature, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, kitAspect, slugFor, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -321,14 +321,15 @@ export default function ClubSettings() {
     details: "Club Details",
     colour: "Club Colour",
     crest: "Club Crest",
-    kit: "Kit Picture",
+    kit: "Kit",
     teams: "Teams",
     parts: "Parts of the Hub",
     ...(canAdmin && snap.club.features.financialAdmin ? { finance: "Financial Admin Passwords" } : {}),
     ...(canAdmin && snap.account ? { signin: "Sign-In" } : {}),
   };
   // screens whose changes wait for Save Changes (pictures and passwords save as they go)
-  const EDITS = ["details", "colour", "teams", "parts"];
+  const EDITS = ["details", "colour", "teams", "parts", "kit"];
+  const kitExtras = draft.kitExtras ?? defaults.kitExtras ?? [];
   const liveTeams = teams.filter((t) => !t.archived).length;
 
   return (
@@ -550,6 +551,31 @@ export default function ClubSettings() {
                     )}
                   </div>
                 </section>
+                {/* the kit form's items beyond shirt, shorts and socks */}
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🧥 Kit Items</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Every kit form asks for a shirt, shorts and socks. Switch on anything else parents should
+                    send a size for; they can also choose &ldquo;Not needed&rdquo;.
+                  </p>
+                  <div className="mt-2 flex flex-col divide-y divide-gray-100 dark:divide-white/10">
+                    {(Object.keys(KIT_EXTRAS) as KitExtra[]).map((e) => (
+                      <Toggle
+                        key={e}
+                        label={`${KIT_EXTRAS[e].emoji} ${KIT_EXTRAS[e].label}`}
+                        hint="Sizes 4XS to S, as for the shirt."
+                        on={kitExtras.includes(e)}
+                        onChange={(on) =>
+                          setDraft((d) => {
+                            const now = d.kitExtras ?? defaults.kitExtras ?? [];
+                            const next = (Object.keys(KIT_EXTRAS) as KitExtra[]).filter((x) => (x === e ? on : now.includes(x)));
+                            return { ...d, kitExtras: next };
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
               </>
             )}
             {screen === "details" && (
@@ -679,7 +705,7 @@ export default function ClubSettings() {
               <Row icon={ICONS.tag} label="Club Details" detail={shown("name")} onClick={() => open("details")} />
               <Row icon={ICONS.palette} label="Club Colour" onClick={() => open("colour")} />
               <Row icon={ICONS.crest} label="Club Crest" onClick={() => open("crest")} />
-              <Row icon={ICONS.shirt} label="Kit Picture" onClick={() => open("kit")} />
+              <Row icon={ICONS.shirt} label="Kit" onClick={() => open("kit")} />
             </Group>
 
             <Group>

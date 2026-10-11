@@ -1,4 +1,5 @@
 import { getKv, kvCredentials } from "./kv";
+import type { KitExtra } from "./clubSettings";
 export interface Submission {
   id: string;
   childName: string;
@@ -8,6 +9,8 @@ export interface Submission {
   shirtSize: string;
   shortsSize: string;
   socksSize: string;
+  /** sizes for the club's extra kit items (lib/clubSettings.ts KIT_EXTRAS), or "Not needed" */
+  extras?: Partial<Record<KitExtra, string>>;
   submittedAt: string;
 }
 

@@ -31,9 +31,9 @@ export default async function KitTeamPage({
         <div className="rounded-3xl bg-white px-4 pt-6 shadow-sm dark:bg-[#1c1c1e]">
           <p className="mb-5 text-center text-sm leading-relaxed text-gray-500 dark:text-gray-400">
             Please choose the size for each item separately — your child can have a different
-            size shirt to shorts or socks. Use the size guide to help pick the right fit.
+            size for each item. Use the size guide to help pick the right fit.
           </p>
-          <KitForm team={team} squad={squad} />
+          <KitForm team={team} squad={squad} extras={CLUB.kitExtras} />
         </div>
       </main>
 
