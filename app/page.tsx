@@ -11,7 +11,6 @@
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
 // Light or dark (Your Account → Appearance): the page is "themed".
 import Link from "next/link";
-import Image from "next/image";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { getSubmissions } from "@/lib/storage";
@@ -24,6 +23,7 @@ import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
 import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import HomeWallpaper from "./components/HomeWallpaper";
+import AppHeader from "./components/AppHeader";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
@@ -165,38 +165,7 @@ export default async function Home() {
       <HomeWallpaper />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         {/* header: your photo (Your Account), Search, the club's crest */}
-        <div className="flex items-center justify-between pt-2">
-          <Link
-            href={viewer.signedIn ? "/account" : "/signin"}
-            aria-label={viewer.signedIn ? "Your account" : "Sign in"}
-            className="press grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-green-700 text-base font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#1c1c1e]"
-          >
-            {viewer.photo ? (
-              // eslint-disable-next-line @next/next/no-img-element -- your own photo, private to you
-              <img src={viewer.photo} alt="" className="h-full w-full object-cover" />
-            ) : viewer.signedIn ? (
-              viewer.initials
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
-                {ICON.person}
-              </svg>
-            )}
-          </Link>
-          <span className="flex items-center gap-3">
-            {/* Search: pages, settings and (for those allowed) the club's own data */}
-            <Link
-              href="/search"
-              aria-label="Search"
-              className="press grid h-11 w-11 place-items-center rounded-full bg-white/85 text-gray-700 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:bg-[#1c1c1e]/85 dark:text-gray-200 dark:ring-white/10"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-            </Link>
-            <Image src={CLUB.crest.src} unoptimized alt={CLUB.crest.alt} width={CLUB.crest.width} height={CLUB.crest.height} className="h-11 w-auto" priority />
-          </span>
-        </div>
+        <AppHeader viewer={viewer} crest={CLUB.crest} />
 
         <div>
           <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>
