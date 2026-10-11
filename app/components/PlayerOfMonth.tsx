@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toBlob, toPng } from "html-to-image";
 import { CLUB as CONFIG } from "@/club.config";
@@ -314,7 +315,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             {loading ? "Loading…" : "Open player of the month"}
           </button>
           <Link
-            href="/admin"
+            href="/admin" onClick={backOr}
             className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Coach Admin

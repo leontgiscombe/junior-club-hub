@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTeams } from "./ClubProvider";
 import { positionIcon, statsForSquad } from "@/lib/positions";
@@ -311,6 +312,7 @@ export default function StatsPresentation() {
           </button>
           <Link
             href="/admin/stats"
+            onClick={backOr}
             className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
           >
             ← Back to Stats
@@ -545,8 +547,10 @@ export default function StatsPresentation() {
         className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 p-4"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* back, not forward: leaving shouldn't leave the slideshow behind the back button */}
         <Link
           href={`/admin/stats${keyQuery(key)}`}
+          onClick={backOr}
           className="pointer-events-auto rounded-full bg-black/25 px-4 py-2 text-xs font-semibold text-white/80 backdrop-blur hover:bg-black/40 hover:text-white"
         >
           ← Exit
