@@ -254,6 +254,12 @@ export default function MembersAdmin() {
     }))
     .filter((g) => g.staff.length || g.squad.length || g.others.length);
   const openPlayer = profile ? snap.players.find((pl) => pl.id === profile) ?? null : null;
+  // everyone not listed as staff or another member: parents and carers, listed with their children,
+  // so an account never seems to disappear (it's also under each child's profile)
+  const listed = new Set([...clubWide, ...teamGroups.flatMap((g) => [...g.staff, ...g.others])].map((p) => p.userId));
+  const carers = approved
+    .filter((p) => !listed.has(p.userId) && personHit(p))
+    .sort((a, b) => a.name.localeCompare(b.name));
   /** What a coach or staff member does, and whose guardian they are. */
   const staffLine = (p: Person) => {
     const role = p.roles.includes("admin") ? "Club admin" : p.roles.includes("coach") ? "Coach" : p.roles.includes("treasurer") ? "Treasurer" : p.roles.includes("player") ? "Player" : "";
@@ -479,6 +485,34 @@ export default function MembersAdmin() {
               </div>
             </details>
           ))}
+          {carers.length > 0 && (
+            <details open={!!q} className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
+              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
+                Parents & Carers <span className="font-semibold text-gray-500 dark:text-gray-400">({carers.length})</span>
+              </summary>
+              <ul className="divide-y divide-gray-100 px-4 dark:divide-white/10">
+                {carers.map((p) => {
+                  const kids = childrenOf(p);
+                  return (
+                    <MemberRow
+                      key={p.userId}
+                      person={p}
+                      note={[
+                        p.email,
+                        kids.length
+                          ? `${p.relation && p.relation !== "parent" ? RELATIONS[p.relation] : "Guardian"} of ${kids.map((c) => (c.team ? `${c.name} (${c.team.name})` : c.name)).join(", ")}`
+                          : "No children added yet",
+                      ].join(" · ")}
+                      teams={snap.teams}
+                      canAdmin={snap.canAdmin}
+                      busy={busy}
+                      onAct={act}
+                    />
+                  );
+                })}
+              </ul>
+            </details>
+          )}
           {openPlayer && (
             <PlayerProfile
               player={openPlayer}
@@ -973,8 +1007,9 @@ function MemberRow({
 
   return (
     <li className={guardian ? "py-2" : "py-3"}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <span className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        {/* the name gets the room; Edit and Remove from Club go underneath when it's tight */}
+        <span className="min-w-[13rem] flex-1">
           <span className={`block font-bold text-gray-900 dark:text-gray-50 ${guardian ? "text-sm" : ""}`}>{person.name}</span>
           <span className="block text-sm text-gray-500 dark:text-gray-400">{note ?? [person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
         </span>
@@ -985,12 +1020,17 @@ function MemberRow({
           {(canAdmin || !person.roles.some((r) => ADMIN_ROLES.includes(r))) && (
             <button
               onClick={() => {
-                if (confirm(`Remove ${person.name}? They won't be able to open the hub until they ask again.`)) onAct({ action: "removePerson", userId: person.userId });
+                if (
+                  confirm(
+                    `Remove ${person.name} from the club? This isn't taking a role away (tap the role for that) — they'll lose access to the hub completely until they ask to join again.`,
+                  )
+                )
+                  onAct({ action: "removePerson", userId: person.userId });
               }}
               disabled={busy}
               className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
             >
-              Remove
+              Remove from Club
             </button>
           )}
         </span>
