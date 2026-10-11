@@ -9,6 +9,7 @@ import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
+import { KIT_EXTRAS, type KitExtra } from "@/lib/clubSettings";
 
 interface Submission {
   id: string;
@@ -16,7 +17,13 @@ interface Submission {
   shirtSize: string;
   shortsSize: string;
   socksSize: string;
+  extras?: Partial<Record<KitExtra, string>>;
   submittedAt: string;
+}
+
+/** The extra kit items to show: the ones the club collects, and any already in the answers. */
+function extrasIn(rows: Submission[], club: KitExtra[]): KitExtra[] {
+  return (Object.keys(KIT_EXTRAS) as KitExtra[]).filter((e) => club.includes(e) || rows.some((r) => r.extras?.[e]));
 }
 
 function formatDate(iso: string) {
@@ -28,22 +35,23 @@ function formatDate(iso: string) {
   });
 }
 
-function toCSV(rows: Submission[]): string {
-  const header = "Name,Shirt,Shorts,Socks,Submitted";
+function toCSV(rows: Submission[], extras: KitExtra[]): string {
+  const header = ["Name", "Shirt", "Shorts", "Socks", ...extras.map((e) => KIT_EXTRAS[e].label), "Submitted"].join(",");
   const lines = rows.map((r) =>
     [
       `"${r.childName}"`,
       r.shirtSize,
       r.shortsSize,
       r.socksSize,
-      formatDate(r.submittedAt),
+      ...extras.map((e) => r.extras?.[e] ?? ""),
+      `"${formatDate(r.submittedAt)}"`,
     ].join(",")
   );
   return [header, ...lines].join("\n");
 }
 
-function downloadCSV(rows: Submission[], team: string) {
-  const blob = new Blob([toCSV(rows)], { type: "text/csv" });
+function downloadCSV(rows: Submission[], team: string, extras: KitExtra[]) {
+  const blob = new Blob([toCSV(rows, extras)], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -259,7 +267,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             ↻ Refresh
           </button>
           <button
-            onClick={() => downloadCSV(sorted, team)}
+            onClick={() => downloadCSV(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
             disabled={submissions.length === 0}
             className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 shadow-sm disabled:opacity-40 cursor-pointer"
           >
@@ -293,18 +301,23 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                     {deleting === s.id ? "…" : "✕"}
                   </button>
                 </div>
-                <div className="mt-3 flex gap-3">
+                <div className="mt-3 grid grid-cols-3 gap-3">
                   {[
                     { icon: "👕", label: "Shirt", value: s.shirtSize },
                     { icon: "🩳", label: "Shorts", value: s.shortsSize },
                     { icon: "🧦", label: "Socks", value: s.socksSize },
+                    ...extrasIn(sorted, CLUB.kitExtras).map((e) => ({
+                      icon: KIT_EXTRAS[e].emoji,
+                      label: KIT_EXTRAS[e].short,
+                      value: s.extras?.[e] ?? "—",
+                    })),
                   ].map(({ icon, label, value }) => (
                     <div
                       key={label}
-                      className="flex-1 bg-green-50 rounded-xl py-2 text-center dark:bg-green-400/10"
+                      className="bg-green-50 rounded-xl py-2 text-center dark:bg-green-400/10"
                     >
                       <p className="text-xs text-gray-500 dark:text-gray-400">{icon} {label}</p>
-                      <p className="text-base font-extrabold text-green-700 mt-0.5 dark:text-green-400">{value}</p>
+                      <p className={`font-extrabold text-green-700 mt-0.5 dark:text-green-400 ${value.length > 4 ? "text-sm" : "text-base"}`}>{value}</p>
                     </div>
                   ))}
                 </div>

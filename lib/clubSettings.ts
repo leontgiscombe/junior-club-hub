@@ -19,7 +19,19 @@ export type Club = {
   features: Features;
   /** The club's main colour (#rrggbb); none keeps the hub green. */
   colour?: string;
+  /** Kit items beyond shirt, shorts and socks that parents send sizes for. */
+  kitExtras: KitExtra[];
 };
+
+/** The kit items a club can add to the kit form (Coach Admin → Settings → Kit). */
+export const KIT_EXTRAS = {
+  jacket: { label: "Long Sleeve Jacket", short: "Jacket", emoji: "🧥" },
+  rainJacket: { label: "Waterproof Rain Jacket", short: "Rain Jacket", emoji: "🌧️" },
+} as const;
+export type KitExtra = keyof typeof KIT_EXTRAS;
+export const isKitExtra = (v: unknown): v is KitExtra => typeof v === "string" && v in KIT_EXTRAS;
+/** What a parent picks for an extra their child won't have. */
+export const NOT_NEEDED = "Not needed";
 
 /** The parts of the hub a club can switch off on Coach Admin → Settings. */
 export const FEATURES = {
@@ -50,6 +62,7 @@ export const DEFAULT_CLUB: Club = {
   crest: { ...DEFAULTS.crest },
   kitImage: { ...DEFAULT_KIT_IMAGE },
   features: { ...ALL_ON },
+  kitExtras: [],
 };
 
 /** What a coach can change on the Settings page, with each field's limit. */
@@ -67,6 +80,7 @@ export type ClubChanges = Partial<Record<EditableText, string>> & {
   publicResults?: boolean;
   features?: Partial<Features>;
   colour?: string;
+  kitExtras?: KitExtra[];
 };
 
 /** Keep only well-formed, trimmed fields within their limits. */
@@ -80,6 +94,9 @@ export function cleanChanges(input: unknown): ClubChanges {
   }
   if (typeof src.publicResults === "boolean") out.publicResults = src.publicResults;
   if (typeof src.colour === "string" && /^#[0-9a-f]{6}$/i.test(src.colour)) out.colour = src.colour.toLowerCase();
+  if (Array.isArray(src.kitExtras)) {
+    out.kitExtras = (Object.keys(KIT_EXTRAS) as KitExtra[]).filter((e) => (src.kitExtras as unknown[]).includes(e));
+  }
   if (src.features && typeof src.features === "object") {
     const features: Partial<Features> = {};
     for (const f of Object.keys(FEATURES) as Feature[]) {
