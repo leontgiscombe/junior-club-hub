@@ -23,7 +23,7 @@ export interface KitRequest {
 
 const KEY = "kit_requests";
 /** a family can't have more than this many waiting at once */
-export const MAX_OPEN_PER_PERSON = 10;
+export const MAX_OPEN_PER_PERSON = 20;
 
 export async function listKitRequests(): Promise<KitRequest[]> {
   const kv = await getKv();

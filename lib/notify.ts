@@ -134,10 +134,10 @@ async function pushTo(
   console.log(`${what} alerts (${tenant}): ${summary}, ${sent} phone alerts sent`);
 }
 
-/** Let a team's coaches know a parent has asked for kit. Never throws. */
+/** Let a team's coaches know a parent has asked for kit — one or more items, in one alert. Never throws. */
 export async function notifyKitRequest(
   tenant: string,
-  request: { team: string; teamName: string; item: string; size: string; quantity: number; clubName: string },
+  request: { team: string; teamName: string; items: { item: string; size: string; quantity: number }[]; clubName: string },
 ): Promise<void> {
   try {
     const approved = (await listPeople(tenant)).filter((p) => p.status === "approved");
@@ -146,7 +146,11 @@ export async function notifyKitRequest(
     const people = teamCoaches.length
       ? teamCoaches
       : approved.filter((p) => p.roles.includes("admin") || (p.roles.includes("coach") && !p.team));
-    const what = `${request.quantity > 1 ? `${request.quantity} × ` : "a "}${request.item} (${request.size})`;
+    const one = (i: { item: string; size: string; quantity: number }) => `${i.quantity > 1 ? `${i.quantity} × ` : ""}${i.item} (${i.size})`;
+    const what =
+      request.items.length === 1
+        ? `${request.items[0].quantity > 1 ? "" : "a "}${one(request.items[0])}`
+        : `${request.items.length} items: ${request.items.map(one).join(", ")}`;
     const line = `A parent has asked for ${what} for a ${request.teamName} player.`;
     const url = `/admin/kit?team=${encodeURIComponent(request.team)}`;
 
