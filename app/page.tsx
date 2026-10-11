@@ -4,7 +4,7 @@
 //            last result, and shortcuts to the coach tools;
 //   everyone else signed in to the club: the next training and match for
 //            their own (or their children's) team, and the last game's
-//            score (if the club shows results), to look at only;
+//            score, to look at only;
 //   treasurers who aren't coaches: Financial Admin;
 //   parents and players: the Training Hub and kit sizes, nothing else;
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
@@ -112,7 +112,7 @@ export default async function Home() {
         .sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? null;
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
-    if (viewer.canCoach || CLUB.publicResults) lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+    lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
   }
   const many = viewer.canCoach ? TEAMS.length > 1 && !person?.team : familyTeams.length > 1;
 
@@ -233,7 +233,7 @@ export default async function Home() {
           </section>
         )}
 
-        {/* the last result (coaches tap through; parents and players just see the score, if the club shows results); a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
+        {/* the last result (coaches tap through; parents and players just see the score); a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
         {(lastResult || (viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin)) && (
           <div className="grid grid-cols-2 gap-3">
             {lastResult && !viewer.canCoach && (
