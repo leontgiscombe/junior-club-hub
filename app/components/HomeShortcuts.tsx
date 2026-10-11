@@ -5,6 +5,7 @@
 // MAX and put in order. Until they do, the page's own default four show.
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type ShortcutId =
   | "matches"
@@ -143,8 +144,9 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
         <p className="wp-text px-1 text-sm text-gray-500 dark:text-gray-400">No shortcuts — tap Edit to add some.</p>
       )}
 
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-end overscroll-contain justify-center bg-black/40 sm:items-center" onClick={() => setEditing(false)}>
+      {/* on the page's body, not in here: the page's slide-in wrapper would keep it under the tab bar */}
+      {editing && createPortal(
+        <div className="themed fixed inset-0 z-50 flex items-end overscroll-contain justify-center bg-black/40 sm:items-center" onClick={() => setEditing(false)}>
           <div
             role="dialog"
             aria-modal="true"
@@ -204,7 +206,7 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </section>
   );
 }
