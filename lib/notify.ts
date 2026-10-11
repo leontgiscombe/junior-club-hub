@@ -1,8 +1,10 @@
-// Telling a club's admins and coaches that someone has asked to join: an
-// email to each, and an alert on any phone they've turned alerts on for
-// (Coach Admin). Club admins hear about every request; a coach hears about
-// requests for their own team (or every one, if they have no team). Neither
-// message has children's names in it. Server only.
+// Telling a club's admins and coaches that someone has asked to join, or that
+// a parent has asked for kit: an email to each, and an alert on any phone
+// they've turned alerts on for (Your Account → Alerts). Club admins hear about
+// every join request; a coach hears about requests for their own team (or
+// every one, if they have no team). Kit requests go to the team's own coaches
+// (the admins only if it has none). No message has children's names in it.
+// Server only.
 import webpush from "web-push";
 import { joinAlertsKey, kvCall, type Person } from "./access";
 import { sendEmail, simpleEmail } from "./email";
@@ -84,37 +86,85 @@ export async function notifyJoinRequest(
       ),
     );
 
-    // phone alerts
-    const ids = new Set(people.map((p) => p.userId));
-    const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
-    // counts only — no names or addresses in the log
-    const summary = `${people.length} admins/coaches, ${emails.size} emails, ${alerts.length} phones`;
-    if (!alerts.length) {
-      console.log(`Join request alerts (${tenant}): ${summary}`);
-      return;
-    }
-    if (!(await setUpVapid(tenantUrl(tenant)))) {
-      console.log(`Join request alerts (${tenant}): ${summary} — no keys to send phone alerts with`);
-      return;
-    }
-    let sent = 0;
-    const payload = JSON.stringify({ title: "New request to join", body: `${line} Tap to approve or decline.`, url: "/admin/members" });
-    await Promise.all(
-      alerts.map(async (a) => {
-        try {
-          await webpush.sendNotification({ endpoint: a.endpoint, keys: a.keys }, payload);
-          sent++;
-        } catch (err) {
-          // a phone that's turned alerts off, or a browser that's gone
-          const code = (err as { statusCode?: number })?.statusCode;
-          console.log(`Join request alert to a phone refused (${code ?? "no status"})`);
-          if (code === 403 || code === 404 || code === 410) await removeJoinAlert(tenant, a.endpoint).catch(() => {});
-        }
-      }),
-    );
-    console.log(`Join request alerts (${tenant}): ${summary}, ${sent} phone alerts sent`);
+    await pushTo(tenant, people, emails.size, "Join request", {
+      title: "New request to join",
+      body: `${line} Tap to approve or decline.`,
+      url: "/admin/members",
+    });
   } catch (e) {
     console.error("Join request alerts not sent:", e);
+  }
+}
+
+/** Alerts on the phones `people` have turned alerts on for; `what` names it in the log. */
+async function pushTo(
+  tenant: string,
+  people: Person[],
+  emailed: number,
+  what: string,
+  message: { title: string; body: string; url: string },
+): Promise<void> {
+  const ids = new Set(people.map((p) => p.userId));
+  const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
+  // counts only — no names or addresses in the log
+  const summary = `${people.length} admins/coaches, ${emailed} emails, ${alerts.length} phones`;
+  if (!alerts.length) {
+    console.log(`${what} alerts (${tenant}): ${summary}`);
+    return;
+  }
+  if (!(await setUpVapid(tenantUrl(tenant)))) {
+    console.log(`${what} alerts (${tenant}): ${summary} — no keys to send phone alerts with`);
+    return;
+  }
+  let sent = 0;
+  const payload = JSON.stringify(message);
+  await Promise.all(
+    alerts.map(async (a) => {
+      try {
+        await webpush.sendNotification({ endpoint: a.endpoint, keys: a.keys }, payload);
+        sent++;
+      } catch (err) {
+        // a phone that's turned alerts off, or a browser that's gone
+        const code = (err as { statusCode?: number })?.statusCode;
+        console.log(`${what} alert to a phone refused (${code ?? "no status"})`);
+        if (code === 403 || code === 404 || code === 410) await removeJoinAlert(tenant, a.endpoint).catch(() => {});
+      }
+    }),
+  );
+  console.log(`${what} alerts (${tenant}): ${summary}, ${sent} phone alerts sent`);
+}
+
+/** Let a team's coaches know a parent has asked for kit. Never throws. */
+export async function notifyKitRequest(
+  tenant: string,
+  request: { team: string; teamName: string; item: string; size: string; quantity: number; clubName: string },
+): Promise<void> {
+  try {
+    const approved = (await listPeople(tenant)).filter((p) => p.status === "approved");
+    const teamCoaches = approved.filter((p) => p.roles.includes("coach") && p.team?.slug === request.team);
+    // no coach of the team's own: the admins, and coaches who look after every team
+    const people = teamCoaches.length
+      ? teamCoaches
+      : approved.filter((p) => p.roles.includes("admin") || (p.roles.includes("coach") && !p.team));
+    const what = `${request.quantity > 1 ? `${request.quantity} × ` : "a "}${request.item} (${request.size})`;
+    const line = `A parent has asked for ${what} for a ${request.teamName} player.`;
+    const url = `/admin/kit?team=${encodeURIComponent(request.team)}`;
+
+    const message = simpleEmail({
+      heading: "A kit request",
+      paragraphs: [line, "See who it's for, and mark it done, in Coach Admin → Kit Responses."],
+      button: { label: "Open Kit Responses", url: tenantUrl(tenant, url) },
+      footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
+    });
+    const emails = new Set(people.map((p) => p.email.toLowerCase()));
+    await Promise.all(
+      [...emails].map((to) =>
+        sendEmail({ to, subject: `Kit request – ${request.teamName}`, ...message }).catch(() => false),
+      ),
+    );
+    await pushTo(tenant, people, emails.size, "Kit request", { title: "Kit request", body: `${line} Tap to see it.`, url });
+  } catch (e) {
+    console.error("Kit request alerts not sent:", e);
   }
 }
 

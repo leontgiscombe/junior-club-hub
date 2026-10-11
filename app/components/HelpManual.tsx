@@ -407,6 +407,13 @@ export default function HelpManual() {
             order. <B>Still to Send</B> lists the squad members (from the Stats tracker) who
             haven&apos;t sent sizes yet, so you know who to chase.
           </p>
+          <H3>Kit Requests</H3>
+          <p>
+            Parents can ask for kit during the season (Kit → <B>Request Kit</B>): the item, size, how
+            many and a note. The team&apos;s coaches get an email and, with <B>Coach Alerts</B> on in Your
+            Account, a phone alert. Requests show at the top of Kit Responses; tap <B>Mark Done</B> once
+            it&apos;s sorted, and the parent sees it as done.
+          </p>
         </Section>
 
         <Section id="subs" title="Financial Admin">

@@ -193,11 +193,11 @@ export function AlertsSettings({ className }: { className: string }) {
   if (!status?.pushAvailable) return null;
   return (
     <section className={className} id="alerts">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 Join Request Alerts</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 Coach Alerts</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {status.alerts
-          ? "On for this phone — you get an alert when someone asks to join, and tapping it opens Members."
-          : "Get an alert on this phone when someone asks to join. Club admins hear about every request; coaches about their own team's."}
+          ? "On for this phone — you get an alert when someone asks to join or a parent requests kit. Tapping it opens the right page."
+          : "Get an alert on this phone when someone asks to join, or a parent requests kit. Club admins hear about every join request; coaches about their own team's, and their team's kit requests."}
       </p>
       <button
         onClick={status.alerts ? turnOff : turnOn}
