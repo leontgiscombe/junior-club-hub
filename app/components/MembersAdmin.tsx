@@ -4,7 +4,7 @@
 // members can open the hub, and approving (or not) the people who ask to join.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { RELATIONS, ROLES, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
+import { RELATIONS, ROLES, childrenOf, hasOwnTeam, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
@@ -47,15 +47,37 @@ function likelyPlayer(child: { name: string; team?: { slug: string } }, players:
   return match?.id ?? "new";
 }
 
-/** "Parent or carer of Sam B (Hawks), Max B (Owls) · new this season" */
-function describe(m: Pick<Person, "relation" | "child" | "children" | "team" | "note">, inTeam?: string): string {
+/** "Coaches U10 Whites", "Plays for Hawks" — or just the team — for someone's own team, if they have one. */
+function ownTeamLine(m: Pick<Person, "relation" | "child" | "children" | "team"> & { roles?: Role[] }): string {
+  if (!m.team || !hasOwnTeam(m)) return "";
+  if (m.roles?.includes("coach")) return `Coaches ${m.team.name}`;
+  if (m.roles?.includes("player")) return `Plays for ${m.team.name}`;
+  return m.team.name;
+}
+
+/**
+ * "Parent or carer of Sam B (Hawks), Max B (Owls) · new this season". Under one
+ * team's heading, it says why they're under it: a parent who also coaches shows
+ * "Coaches U10 Whites · also parent of Cian (U10 Greens)" under the team they
+ * coach, and their children under their children's team.
+ */
+function describe(m: Pick<Person, "relation" | "child" | "children" | "team" | "note"> & { roles?: Role[] }, inTeam?: string): string {
+  const parentOf = (kids: ReturnType<typeof childrenOf>) =>
+    `${m.relation ? RELATIONS[m.relation] : "Parent or carer"} of ${kids.map((c) => (c.team ? `${c.name} (${c.team.name})` : c.name)).join(", ")}`;
+  const own = ownTeamLine(m);
+  const allKids = childrenOf(m);
+  // under the team they coach (or play for)
+  if (inTeam && own && m.team?.slug === inTeam) {
+    const elsewhere = allKids.filter((c) => c.team?.slug !== inTeam);
+    const here = allKids.filter((c) => c.team?.slug === inTeam);
+    return [own, here.length ? `also ${parentOf(here).replace(/^\w/, (x) => x.toLowerCase())}` : "", elsewhere.length ? `also ${parentOf(elsewhere).replace(/^\w/, (x) => x.toLowerCase())}` : "", m.note]
+      .filter(Boolean)
+      .join(" · ");
+  }
   // under one team's heading, a parent shows just their children in that team
-  const kids = childrenOf(m).filter((c) => !inTeam || c.team?.slug === inTeam);
+  const kids = allKids.filter((c) => !inTeam || c.team?.slug === inTeam);
   if (kids.length) {
-    const who = `${m.relation ? RELATIONS[m.relation] : "Parent or carer"} of ${kids
-      .map((c) => (c.team ? `${c.name} (${c.team.name})` : c.name))
-      .join(", ")}`;
-    return [who, m.note].filter(Boolean).join(" · ");
+    return [parentOf(kids), own ? `also ${own.replace(/^\w/, (x) => x.toLowerCase())}` : "", m.note].filter(Boolean).join(" · ");
   }
   return [m.relation ? RELATIONS[m.relation] : "", m.team?.name, m.note].filter(Boolean).join(" · ");
 }
