@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
+import AppHeader, { type HeaderViewer } from "./AppHeader";
 import { useClub } from "./ClubProvider";
 import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
@@ -137,7 +138,13 @@ const TOOLS: {
   },
 ];
 
-export default function AdminHome({ canResetPassword = false }: { canResetPassword?: boolean }) {
+export default function AdminHome({
+  canResetPassword = false,
+  viewer = { signedIn: false, initials: "", photo: null },
+}: {
+  canResetPassword?: boolean;
+  viewer?: HeaderViewer;
+}) {
   const CLUB = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -304,20 +311,11 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
   return (
     <div className="themed min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <div className="flex items-end justify-between gap-4 pt-2">
-          <div className="min-w-0">
-            <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
-            <p className="mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
-          </div>
-          <Image
-            src={CLUB.crest.src}
-            unoptimized
-            alt={CLUB.crest.alt}
-            width={CLUB.crest.width}
-            height={CLUB.crest.height}
-            className="h-12 w-auto shrink-0"
-            priority
-          />
+        {/* header: your photo (Your Account), Search, the club's crest — as on Home */}
+        <AppHeader viewer={viewer} crest={CLUB.crest} />
+        <div>
+          <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
+          <p className="mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
         </div>
 
         {account?.canCoach && key === SESSION_KEY && <AlertsPrompt status={joins} refresh={refreshJoins} />}
