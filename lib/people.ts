@@ -18,7 +18,7 @@ import {
   type Role,
 } from "./access";
 import { getTeams } from "./settings";
-import { addPlayer, deletePlayer, listPlayers, setPlayerTeam } from "./statsStorage";
+import { addPlayer, deletePlayer, listPlayers, setPlayerTeam, updatePlayer, type Position } from "./statsStorage";
 import { currentUser, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
@@ -322,6 +322,27 @@ export async function assignPlayerTeam(tenant: string, playerId: string, slug: s
       return updated;
     });
     await save(tenant, { ...person, children });
+  }
+  return true;
+}
+
+/**
+ * A squad player's name and position, changed by the club; a new name is also
+ * given to them on their parents' and carers' lists of children, so the two
+ * never disagree.
+ */
+export async function editSquadPlayer(
+  tenant: string,
+  playerId: string,
+  change: { name?: string; position?: Position },
+): Promise<boolean> {
+  const name = change.name?.trim().slice(0, 60);
+  if (!(await updatePlayer(playerId, { ...(name ? { name } : {}), ...(change.position ? { position: change.position } : {}) }))) return false;
+  if (!name) return true;
+  for (const person of await listPeople(tenant)) {
+    const kids = childrenOf(person);
+    if (!kids.some((c) => c.playerId === playerId && c.name !== name)) continue;
+    await save(tenant, { ...person, children: kids.map((c) => (c.playerId === playerId ? { ...c, name } : c)) });
   }
   return true;
 }

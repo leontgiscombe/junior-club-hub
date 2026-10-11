@@ -83,7 +83,7 @@ async function snapshot(tenant: string, key: string) {
     // the squad, for linking a new parent's children to players already there
     // (and each player's photo version, for their profile picture)
     players: players
-      .map((p) => ({ id: p.id, name: p.name, team: p.team, ...(photos[p.id] ? { photo: photos[p.id] } : {}) }))
+      .map((p) => ({ id: p.id, name: p.name, team: p.team, position: p.position, ...(photos[p.id] ? { photo: photos[p.id] } : {}) }))
       .sort((a, b) => a.name.localeCompare(b.name)),
   };
 }

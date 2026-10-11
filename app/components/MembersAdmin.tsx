@@ -35,7 +35,14 @@ type Snapshot = {
 
 /** The roles only a club admin can give or take away. */
 const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
-type SquadPlayer = { id: string; name: string; team: string; /** their photo's version, if they have one */ photo?: string };
+type SquadPlayer = {
+  id: string;
+  name: string;
+  team: string;
+  position?: "outfield" | "goalkeeper";
+  /** their photo's version, if they have one */
+  photo?: string;
+};
 
 /** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
 function likelyPlayer(child: { name: string; team?: { slug: string } }, players: SquadPlayer[]): string {
@@ -261,7 +268,7 @@ export default function MembersAdmin() {
   };
 
   // moving a player to another team, or taking them out of the squad (the Players API)
-  async function playerAction(change: { id: string; team: string } | { remove: string }) {
+  async function playerAction(change: PlayerChange) {
     setBusy(true);
     setError(null);
     try {
@@ -269,9 +276,9 @@ export default function MembersAdmin() {
         "remove" in change
           ? await fetch(`/api/players?key=${encodeURIComponent(key)}&id=${encodeURIComponent(change.remove)}`, { method: "DELETE" })
           : await fetch(`/api/players?key=${encodeURIComponent(key)}`, {
-              method: "POST",
+              method: "edit" in change ? "PATCH" : "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(change),
+              body: JSON.stringify("edit" in change ? change.edit : change),
             });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That didn't work");
@@ -661,6 +668,9 @@ function PendingPerson({
   );
 }
 
+/** A change to a squad player: their team, their name and position, or taking them out of the squad. */
+type PlayerChange = { id: string; team: string } | { edit: { id: string; name: string; position: "outfield" | "goalkeeper" } } | { remove: string };
+
 const initialsOf = (name: string) =>
   name
     .split(/\s+/)
@@ -726,11 +736,15 @@ function PlayerProfile({
   adminKey: string;
   busy: boolean;
   onAct: (body: Record<string, unknown>) => void;
-  onPlayer: (change: { id: string; team: string } | { remove: string }) => void;
+  onPlayer: (change: PlayerChange) => void;
   onPhoto: () => void;
   onClose: () => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  // their name and position, as being edited
+  const [name, setName] = useState(player.name);
+  const [position, setPosition] = useState(player.position ?? "outfield");
+  const changed = name.trim() !== player.name || position !== (player.position ?? "outfield");
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -801,6 +815,50 @@ function PlayerProfile({
             <h2 className="mt-3 text-2xl font-extrabold">{player.name}</h2>
             <p className="text-[15px] text-gray-500 dark:text-gray-400">{teamName ?? "No team yet"}</p>
           </div>
+
+          <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Details</p>
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white dark:divide-white/10 dark:bg-black/40">
+            <label className="flex items-center gap-3 px-4 py-3">
+              <span className="w-20 shrink-0 text-[15px] text-gray-500 dark:text-gray-400">Name</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={60}
+                aria-label={`${player.name}'s name`}
+                className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold focus:outline-none"
+              />
+            </label>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <span className="w-20 shrink-0 text-[15px] text-gray-500 dark:text-gray-400">Position</span>
+              <span className="flex flex-1 gap-1 rounded-full bg-gray-100 p-1 dark:bg-white/10">
+                {(["outfield", "goalkeeper"] as const).map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setPosition(pos)}
+                    aria-pressed={position === pos}
+                    className={`flex-1 rounded-full py-1.5 text-sm font-semibold ${
+                      position === pos ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50" : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {pos === "outfield" ? "Outfield" : "Goalkeeper"}
+                  </button>
+                ))}
+              </span>
+            </div>
+          </div>
+          {changed && (
+            <button
+              onClick={() => onPlayer({ edit: { id: player.id, name: name.trim() || player.name, position } })}
+              disabled={busy || !name.trim()}
+              className="mt-2 w-full rounded-2xl bg-green-600 py-3 text-[16px] font-bold text-white hover:bg-green-700 disabled:opacity-40"
+            >
+              {busy ? "Saving…" : "Save Changes"}
+            </button>
+          )}
+          {changed && name.trim() !== player.name && guardians.length > 0 && (
+            <p className="mt-1.5 px-1 text-xs text-gray-500 dark:text-gray-400">The new name is changed on their parent&apos;s account too.</p>
+          )}
 
           <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Team</p>
           <div className="rounded-2xl bg-white px-4 py-3 dark:bg-black/40">
