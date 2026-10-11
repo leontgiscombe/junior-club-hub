@@ -10,6 +10,7 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
 import { KIT_EXTRAS, type KitExtra } from "@/lib/clubSettings";
+import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
 
 interface Submission {
   id: string;
@@ -19,6 +20,19 @@ interface Submission {
   socksSize: string;
   extras?: Partial<Record<KitExtra, string>>;
   submittedAt: string;
+}
+
+/** Kit a parent has asked for during the season (lib/kitRequests.ts). */
+interface KitRequest {
+  id: string;
+  childName: string;
+  item: KitItem;
+  size: string;
+  quantity: number;
+  note?: string;
+  requestedBy: string;
+  createdAt: string;
+  doneAt?: string;
 }
 
 /** The extra kit items to show: the ones the club collects, and any already in the answers. */
@@ -74,6 +88,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   // squad members (from the stats tracker) who haven't sent sizes yet
   const [waiting, setWaiting] = useState<string[]>([]);
+  const [requests, setRequests] = useState<KitRequest[]>([]);
+  const [showDone, setShowDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -94,6 +110,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
       const data = await res.json();
       setSubmissions(data.submissions);
       setWaiting(data.waiting ?? []);
+      setRequests(data.requests ?? []);
       setAuthed(true);
     } catch {
       setError("Could not load responses. Please try again.");
@@ -106,6 +123,18 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     setTeam(teamSlug);
     setMyTeam(teamSlug);
     load(key, teamSlug);
+  }
+
+  async function changeRequest(id: string, change: { done: boolean } | { remove: true }) {
+    if ("remove" in change && !confirm("Remove this request?")) return;
+    const res = await fetch(`/api/responses${keyQuery(key)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestId: id, ...change }),
+    });
+    if (!res.ok) return alert("That didn't save — please try again.");
+    const data = await res.json();
+    setRequests((all) => ("remove" in change ? all.filter((r) => r.id !== id) : all.map((r) => (r.id === id ? data.request : r))));
   }
 
   async function handleDelete(id: string) {
@@ -235,6 +264,69 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             </p>
           </div>
         </div>
+
+        {/* Kit asked for during the season */}
+        {requests.length > 0 && (
+          <div className="mb-6">
+            <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-50">
+              📦 Kit Requests{requests.some((r) => !r.doneAt) ? ` (${requests.filter((r) => !r.doneAt).length} to sort)` : ""}
+            </p>
+            <div className="flex flex-col gap-2">
+              {requests
+                .filter((r) => !r.doneAt || showDone)
+                .map((r) => (
+                  <div
+                    key={r.id}
+                    className={`rounded-2xl border p-4 shadow-sm ${
+                      r.doneAt
+                        ? "border-gray-100 bg-gray-50 opacity-70 dark:border-white/10 dark:bg-white/5"
+                        : "border-blue-200 bg-white dark:border-blue-400/30 dark:bg-[#1c1c1e]"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 dark:text-gray-50">
+                          {KIT_ITEMS[r.item]?.emoji} {r.quantity > 1 ? `${r.quantity} × ` : ""}
+                          {KIT_ITEMS[r.item]?.label ?? r.item} · {r.size}
+                        </p>
+                        <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-200">For {r.childName}</p>
+                        {r.note && <p className="mt-1 text-sm italic text-gray-500 dark:text-gray-400">“{r.note}”</p>}
+                        <p className="mt-1 text-xs text-gray-400">
+                          Asked by {r.requestedBy} · {formatDate(r.createdAt)}
+                          {r.doneAt ? ` · Done ${formatDate(r.doneAt)}` : ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => changeRequest(r.id, { remove: true })}
+                        className="text-lg leading-none text-gray-300 hover:text-red-400 cursor-pointer"
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => changeRequest(r.id, { done: !r.doneAt })}
+                      className={`mt-3 w-full cursor-pointer rounded-xl py-2 text-sm font-bold ${
+                        r.doneAt
+                          ? "border border-gray-200 text-gray-600 dark:border-white/15 dark:text-gray-300"
+                          : "bg-green-600 text-white hover:bg-green-700"
+                      }`}
+                    >
+                      {r.doneAt ? "Not Done Yet" : "✓ Mark Done"}
+                    </button>
+                  </div>
+                ))}
+            </div>
+            {requests.some((r) => r.doneAt) && (
+              <button
+                onClick={() => setShowDone((v) => !v)}
+                className="mt-2 cursor-pointer text-sm font-semibold text-green-700 dark:text-green-400"
+              >
+                {showDone ? "Hide done requests" : `Show done requests (${requests.filter((r) => r.doneAt).length})`}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Who still needs to send sizes */}
         {waiting.length > 0 && (

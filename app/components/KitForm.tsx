@@ -3,11 +3,9 @@
 import { useState } from "react";
 import type { SquadOption } from "@/lib/kitSquad";
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
+import { SIZES, SOCK_SIZES } from "@/lib/kitItems";
 
-const SIZES = ["4XS", "3XS", "XXS", "XS", "S"] as const;
 type Size = (typeof SIZES)[number];
-
-const SOCK_SIZES = ["XS", "S", "M"] as const;
 type SockSize = (typeof SOCK_SIZES)[number];
 
 const SOCK_GUIDE = {

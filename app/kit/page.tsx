@@ -64,6 +64,19 @@ export default async function KitTeamPicker() {
         <p className="mt-5 text-center text-xs text-gray-400">
           It takes a minute, and there&apos;s a size guide to help.
         </p>
+
+        {/* kit during the season: a new shirt, a lost jacket */}
+        <Link
+          href="/kit/request"
+          className="mt-6 flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:bg-[#1c1c1e]"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-xl dark:bg-blue-400/15">📦</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold text-gray-900 dark:text-gray-50">Request Kit</span>
+            <span className="block text-sm text-gray-500 dark:text-gray-400">Need something during the season? Ask the coaches.</span>
+          </span>
+          <span className="text-xl text-gray-300 dark:text-gray-600">›</span>
+        </Link>
       </main>
 
       <KitFooter />
