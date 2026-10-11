@@ -88,7 +88,7 @@ function newId() {
 const inputClass =
   "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15";
 
-function iconButton(label: string, onClick: () => void, disabled = false, title?: string) {
+function iconButton(label: ReactNode, onClick: () => void, disabled = false, title?: string) {
   return (
     <button
       type="button"
@@ -512,8 +512,8 @@ export default function TrainingPlans() {
     return (
       <>
         <label className="mb-4 block">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-            {teamName(team)} plan
+          <span className="px-1 text-[15px] font-semibold text-gray-900 dark:text-gray-50">
+            {teamName(team)} Plan
           </span>
           <input
             value={draft.title}
@@ -525,8 +525,8 @@ export default function TrainingPlans() {
         </label>
 
         <label className="mb-4 block">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-            Week 1 is on
+          <span className="px-1 text-[15px] font-semibold text-gray-900 dark:text-gray-50">
+            Week 1 Is On
           </span>
           <select
             value={draft.startDate}
@@ -573,7 +573,7 @@ export default function TrainingPlans() {
         )}
 
         {draft.weeks.length === 0 && (
-          <p className="mb-4 rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/20">
+          <p className="mb-4 rounded-3xl bg-white px-4 py-6 text-center text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
             No weeks yet. Add a week, pick its topic, then its warm-up, technical and game
             {seasonPlan.length > 0 ? ` — or start from the ${seasonPlan.length}-week season plan` : ""}.
           </p>
@@ -582,10 +582,10 @@ export default function TrainingPlans() {
         {seasonPlan.length > 0 && (
           <button
             onClick={applySeasonPlan}
-            className="mb-4 w-full cursor-pointer rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-left text-sm hover:border-green-400 dark:bg-green-400/10 dark:border-green-400/30"
+            className="mb-4 w-full cursor-pointer rounded-3xl bg-white p-4 text-left text-sm shadow-sm ring-2 ring-green-600/30 dark:bg-[#1c1c1e]"
           >
-            <span className="font-bold text-green-800 dark:text-green-300">📋 Use the {seasonPlan.length}-Week Season Plan</span>
-            <span className="mt-0.5 block text-xs text-green-700 dark:text-green-400">
+            <span className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Use the {seasonPlan.length}-Week Season Plan</span>
+            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
               Fills {possessive(teamName(team))} weeks with the
               {seasonPlanTitle ? ` ${seasonPlanTitle}` : " season plan"}&apos;s topics and drills, in
               order. You can change any week afterwards.
@@ -645,11 +645,11 @@ export default function TrainingPlans() {
                   key={week.id}
                   onClick={toggleWeek}
                   aria-expanded={false}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-left shadow-sm ${
-                    allDone ? "border-green-200 bg-green-50 dark:bg-green-400/10 dark:border-green-400/30" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
+                  className={`flex w-full cursor-pointer items-center gap-2 rounded-3xl bg-white px-4 py-3.5 text-left shadow-sm dark:bg-[#1c1c1e] ${
+                    allDone ? "ring-2 ring-green-600/30" : ""
                   }`}
                 >
-                  <span className="shrink-0 text-sm font-extrabold text-green-700 dark:text-green-400">Week {wi + 1}</span>
+                  <span className="shrink-0 rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">Week {wi + 1}</span>
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
                     {week.theme || "No topic yet"}
                     {draft.startDate && weekDates.has(wi) && (
@@ -665,15 +665,15 @@ export default function TrainingPlans() {
                       {allDone ? "✓ Done" : `${done}/${total}`}
                     </span>
                   )}
-                  <span className="shrink-0 text-xs text-gray-400">▼</span>
+                  <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${false ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                 </button>
               );
             }
             return (
               <section
                 key={week.id}
-                className={`rounded-2xl border p-4 shadow-sm ${
-                  allDone ? "border-green-200 bg-green-50 dark:bg-green-400/10 dark:border-green-400/30" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
+                className={`rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e] ${
+                  allDone ? "ring-2 ring-green-600/30" : ""
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -681,9 +681,10 @@ export default function TrainingPlans() {
                     onClick={toggleWeek}
                     aria-expanded={true}
                     title="Fold this week up"
-                    className="shrink-0 cursor-pointer text-sm font-extrabold text-green-700 dark:text-green-400"
+                    className="flex shrink-0 cursor-pointer items-center gap-1"
                   >
-                    Week {wi + 1} ▲
+                    <span className="rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">Week {wi + 1}</span>
+                    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${true ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                   </button>
                   <select
                     value={week.theme}
@@ -729,7 +730,6 @@ export default function TrainingPlans() {
                 </div>
                 {draft.startDate && (
                   <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    📅{" "}
                     {weekDates.has(wi)
                       ? formatDate(weekDates.get(wi)!)
                       : "After the last session of the season"}
@@ -812,7 +812,7 @@ export default function TrainingPlans() {
                           </select>
                           {drill &&
                             iconButton(
-                              isOpen ? "▲" : "▼",
+                              <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>,
                               () => setOpen(isOpen ? null : rowId),
                               false,
                               isOpen ? "Hide the drill" : "Show the drill"
@@ -830,7 +830,7 @@ export default function TrainingPlans() {
 
                 {minutes > 0 && (
                   <p className="mt-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    ⏱ {minutes} min
+                    {minutes} min
                   </p>
                 )}
               </section>
@@ -865,8 +865,8 @@ export default function TrainingPlans() {
       </label>
     );
     return (
-      <section className="rounded-2xl border border-green-200 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-green-400/30">
-        <h2 className="mb-3 text-base font-extrabold text-gray-900 dark:text-gray-50">
+      <section className="rounded-3xl bg-white p-4 shadow-sm ring-2 ring-green-600/30 dark:bg-[#1c1c1e]">
+        <h2 className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">
           {form.id ? "Edit drill" : "New drill"}
         </h2>
         <div className="flex flex-col gap-3">
@@ -1064,7 +1064,7 @@ export default function TrainingPlans() {
         )}
 
         {drills.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-500 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/20">
+          <p className="rounded-3xl bg-white px-4 py-6 text-center text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
             No drills yet. Every team&apos;s plan picks from this one library, so a drill
             only has to be written once.
           </p>
@@ -1078,7 +1078,7 @@ export default function TrainingPlans() {
               return (
                 <div
                   key={drill.id}
-                  className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10"
+                  className="rounded-3xl bg-white px-4 py-3 shadow-sm dark:bg-[#1c1c1e]"
                 >
                   <button
                     onClick={() => setOpen(isOpen ? null : drill.id)}
@@ -1097,7 +1097,7 @@ export default function TrainingPlans() {
                     {drill.minutes > 0 && (
                       <span className="shrink-0 text-xs text-gray-400">{drill.minutes}′</span>
                     )}
-                    <span className="shrink-0 text-xs text-gray-400">{isOpen ? "▲" : "▼"}</span>
+                    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                   </button>
                   {isOpen && (
                     <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
@@ -1111,7 +1111,7 @@ export default function TrainingPlans() {
                             onClick={() => setDrillForm(toDraft(drill))}
                             className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/15"
                           >
-                            ✏️ Edit
+                            Edit
                           </button>
                           {!drill.builtIn && (
                             <button
@@ -1141,11 +1141,11 @@ export default function TrainingPlans() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Plan / library switch */}
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-gray-200 p-1 dark:bg-white/15">
+        <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
           {(
             [
-              ["plan", "📅 Team Plans"],
-              ["library", `📚 Drill Library (${drills.length})`],
+              ["plan", "Team Plans"],
+              ["library", `Drill Library (${drills.length})`],
             ] as const
           ).map(([v, label]) => (
             <button
@@ -1154,8 +1154,10 @@ export default function TrainingPlans() {
                 setView(v);
                 setOpen(null);
               }}
-              className={`cursor-pointer rounded-lg py-2 text-sm font-bold ${
-                view === v ? "bg-white text-green-700 shadow dark:bg-[#1c1c1e] dark:text-green-400" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className={`min-w-0 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
+                view === v
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                  : "text-gray-600 dark:text-gray-300"
               }`}
             >
               {label}
@@ -1165,15 +1167,15 @@ export default function TrainingPlans() {
 
         {/* Team tabs — plans only; the library is shared */}
         {view === "plan" && (
-          <div className="flex gap-2 mb-5">
+          <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
             {TEAMS.map((t) => (
               <button
                 key={t.slug}
                 onClick={() => switchTeam(t.slug)}
-                className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
+                className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
                   team === t.slug
-                    ? "bg-green-600 border-green-600 text-white shadow"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+                    ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                    : "text-gray-600 dark:text-gray-300"
                 }`}
               >
                 {t.accent} {t.name}
@@ -1188,10 +1190,10 @@ export default function TrainingPlans() {
 
         {/* The library is the owner's: they unlock editing it with their own password */}
         {view === "library" && !coachesEditDrills && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-xs text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-3xl bg-white px-4 py-3 text-xs text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
             {canEdit ? (
               <>
-                <span className="font-semibold text-green-700 dark:text-green-400">✏️ Editing drills as the owner</span>
+                <span className="font-semibold text-green-700 dark:text-green-400">Editing drills as the owner</span>
                 <button
                   onClick={() => {
                     setDrillForm(null);
@@ -1224,13 +1226,13 @@ export default function TrainingPlans() {
               </span>
             ) : (
               <>
-                <span>👀 Drills are set by the owner</span>
+                <span>Drills are set by the owner</span>
                 {ownerKeySet && (
                   <button
                     onClick={() => setUnlocking(true)}
-                    className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300"
+                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 font-semibold text-gray-700 hover:text-green-700 dark:bg-white/10 dark:text-gray-200"
                   >
-                    🔒 Owner
+                    Owner Unlock
                   </button>
                 )}
               </>
@@ -1243,7 +1245,7 @@ export default function TrainingPlans() {
 
       {/* Unsaved plan changes follow the coach down the page */}
       {dirty && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-white/15">
+        <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#1c1c1e]/95">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
               {teamName(team)} plan has unsaved changes
