@@ -42,6 +42,21 @@ body {
   }
 }
 
+/* the home screen's wallpaper (app/components/HomeWallpaper.tsx): the page
+   behind it goes clear, and the headings on it turn white */
+html[data-wallpaper] .wp-page {
+  background: transparent !important;
+}
+html[data-wallpaper] .wp-text {
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+@keyframes wp-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* buttons and links press in when tapped, like an app's */
 .press {
   transition: transform 120ms ease, opacity 120ms ease;

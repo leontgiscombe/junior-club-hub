@@ -17,6 +17,7 @@ import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { listTraining } from "@/lib/trainingStorage";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
+import HomeWallpaper from "./components/HomeWallpaper";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
@@ -118,7 +119,9 @@ export default async function Home() {
   ];
 
   return (
-    <div className="themed min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
+    <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
+      {/* the wallpaper chosen on this phone, if any (Your Account → Appearance) */}
+      <HomeWallpaper />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         {/* header: your photo (Your Account), the club's crest */}
         <div className="flex items-center justify-between pt-2">
@@ -142,8 +145,8 @@ export default async function Home() {
         </div>
 
         <div>
-          <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>
-          <p className={`mt-0.5 text-[15px] ${sub}`}>{context}</p>
+          <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>
+          <p className={`wp-text mt-0.5 text-[15px] ${sub}`}>{context}</p>
         </div>
 
         {/* coaches: anyone waiting for approval */}
@@ -168,7 +171,7 @@ export default async function Home() {
         {/* coaches: what's next */}
         {viewer.canCoach && (nextTraining || nextMatch) && (
           <section className="flex flex-col gap-2.5">
-            <h2 className="px-1 text-xl font-bold">Up next</h2>
+            <h2 className="wp-text px-1 text-xl font-bold">Up next</h2>
             <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
               {nextTraining && (
                 <Link href="/admin/stats/training" className="press flex items-center gap-4 px-4 py-3.5">
@@ -226,10 +229,10 @@ export default async function Home() {
         {/* coaches: shortcuts to the tools */}
         {viewer.canCoach && (
           <section className="flex flex-col gap-2.5">
-            <h2 className="px-1 text-xl font-bold">Shortcuts</h2>
+            <h2 className="wp-text px-1 text-xl font-bold">Shortcuts</h2>
             <div className="grid grid-cols-4 gap-2">
               {shortcuts.map((s) => (
-                <Link key={s.href} href={s.href} className="press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight">
+                <Link key={s.href} href={s.href} className="wp-text press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight">
                   <Tile colour={s.colour}>{s.icon}</Tile>
                   {s.label}
                 </Link>
@@ -287,7 +290,7 @@ export default async function Home() {
           </div>
         )}
 
-        <p className={`text-center text-xs ${sub}`}>
+        <p className={`wp-text text-center text-xs ${sub}`}>
           <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link>
         </p>
       </main>
