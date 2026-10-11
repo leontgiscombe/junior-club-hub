@@ -90,6 +90,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   const [waiting, setWaiting] = useState<string[]>([]);
   const [requests, setRequests] = useState<KitRequest[]>([]);
   const [showDone, setShowDone] = useState(false);
+  // the players whose requests are opened up
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -191,6 +193,18 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   }, [authed, key]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // kit requests by player: those with something still to sort first, newest first
+  const requestGroups = Object.values(
+    requests
+      .filter((r) => !r.doneAt || showDone)
+      .reduce<Record<string, { name: string; items: KitRequest[]; latest: string }>>((all, r) => {
+        const g = (all[r.childName] ??= { name: r.childName, items: [], latest: r.createdAt });
+        g.items.push(r);
+        if (r.createdAt > g.latest) g.latest = r.createdAt;
+        return all;
+      }, {}),
+  ).sort((a, b) => Number(b.items.some((r) => !r.doneAt)) - Number(a.items.some((r) => !r.doneAt)) || b.latest.localeCompare(a.latest));
+
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
@@ -276,51 +290,104 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-50">
               📦 Kit Requests{requests.some((r) => !r.doneAt) ? ` (${requests.filter((r) => !r.doneAt).length} to sort)` : ""}
             </p>
+            {/* grouped by player: tap a player to see what they've asked for */}
             <div className="flex flex-col gap-2">
-              {requests
-                .filter((r) => !r.doneAt || showDone)
-                .map((r) => (
+              {requestGroups.map((g) => {
+                const open = openGroups.has(g.name);
+                const waiting = g.items.filter((r) => !r.doneAt);
+                const count = (list: KitRequest[]) => list.reduce((n, r) => n + r.quantity, 0);
+                return (
                   <div
-                    key={r.id}
-                    className={`rounded-2xl border p-4 shadow-sm ${
-                      r.doneAt
-                        ? "border-gray-100 bg-gray-50 opacity-70 dark:border-white/10 dark:bg-white/5"
-                        : "border-blue-200 bg-white dark:border-blue-400/30 dark:bg-[#1c1c1e]"
+                    key={g.name}
+                    className={`overflow-hidden rounded-2xl border shadow-sm ${
+                      waiting.length ? "border-blue-200 bg-white dark:border-blue-400/30 dark:bg-[#1c1c1e]" : "border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-900 dark:text-gray-50">
-                          {KIT_ITEMS[r.item]?.emoji} {r.quantity > 1 ? `${r.quantity} × ` : ""}
-                          {KIT_ITEMS[r.item]?.label ?? r.item} · {r.size}
-                        </p>
-                        <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-200">For {r.childName}</p>
-                        {r.note && <p className="mt-1 text-sm italic text-gray-500 dark:text-gray-400">“{r.note}”</p>}
-                        <p className="mt-1 text-xs text-gray-400">
-                          Asked by {r.requestedBy} · {formatDate(r.createdAt)}
-                          {r.doneAt ? ` · Done ${formatDate(r.doneAt)}` : ""}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => changeRequest(r.id, { remove: true })}
-                        className="text-lg leading-none text-gray-300 hover:text-red-400 cursor-pointer"
-                        title="Remove"
-                      >
-                        ✕
-                      </button>
-                    </div>
                     <button
-                      onClick={() => changeRequest(r.id, { done: !r.doneAt })}
-                      className={`mt-3 w-full cursor-pointer rounded-xl py-2 text-sm font-bold ${
-                        r.doneAt
-                          ? "border border-gray-200 text-gray-600 dark:border-white/15 dark:text-gray-300"
-                          : "bg-green-600 text-white hover:bg-green-700"
-                      }`}
+                      onClick={() =>
+                        setOpenGroups((all) => {
+                          const next = new Set(all);
+                          if (next.has(g.name)) next.delete(g.name);
+                          else next.add(g.name);
+                          return next;
+                        })
+                      }
+                      aria-expanded={open}
+                      className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
                     >
-                      {r.doneAt ? "Not Done Yet" : "✓ Mark Done"}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold text-gray-900 dark:text-gray-50">{g.name}</span>
+                        <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                          {g.items
+                            .slice(0, 3)
+                            .map((r) => `${r.quantity > 1 ? `${r.quantity}× ` : ""}${KIT_ITEMS[r.item]?.short ?? r.item}`)
+                            .join(", ")}
+                          {g.items.length > 3 ? ` +${g.items.length - 3} more` : ""} · {formatDate(g.latest)}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          waiting.length ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                        }`}
+                      >
+                        {waiting.length ? `${count(waiting)} to sort` : "Done"}
+                      </span>
+                      <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m9 6 6 6-6 6" />
+                      </svg>
                     </button>
+                    {open && (
+                      <div className="border-t border-gray-100 px-4 pb-3 dark:border-white/10">
+                        <ul className="divide-y divide-gray-100 dark:divide-white/10">
+                          {g.items.map((r) => (
+                            <li key={r.id} className={`flex items-start gap-3 py-2.5 ${r.doneAt ? "opacity-60" : ""}`}>
+                              <span className="text-2xl leading-none">{KIT_ITEMS[r.item]?.emoji}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className={`block font-semibold text-gray-900 dark:text-gray-50 ${r.doneAt ? "line-through" : ""}`}>
+                                  {r.quantity > 1 ? `${r.quantity} × ` : ""}
+                                  {KIT_ITEMS[r.item]?.label ?? r.item} · {r.size}
+                                </span>
+                                {r.note && <span className="block text-sm italic text-gray-500 dark:text-gray-400">“{r.note}”</span>}
+                                <span className="block text-xs text-gray-400">
+                                  Asked by {r.requestedBy} · {formatDate(r.createdAt)}
+                                  {r.doneAt ? ` · Done ${formatDate(r.doneAt)}` : ""}
+                                </span>
+                              </span>
+                              <span className="flex shrink-0 items-center gap-1">
+                                <button
+                                  onClick={() => changeRequest(r.id, { done: !r.doneAt })}
+                                  className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-bold ${
+                                    r.doneAt ? "border border-gray-200 text-gray-600 dark:border-white/15 dark:text-gray-300" : "bg-green-600 text-white hover:bg-green-700"
+                                  }`}
+                                >
+                                  {r.doneAt ? "Undo" : "✓ Done"}
+                                </button>
+                                <button
+                                  onClick={() => changeRequest(r.id, { remove: true })}
+                                  className="h-8 w-8 cursor-pointer text-lg leading-none text-gray-300 hover:text-red-400"
+                                  title="Remove"
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        {waiting.length > 1 && (
+                          <button
+                            onClick={async () => {
+                              for (const r of waiting) await changeRequest(r.id, { done: true });
+                            }}
+                            className="mt-1 w-full cursor-pointer rounded-xl bg-green-600 py-2 text-sm font-bold text-white hover:bg-green-700"
+                          >
+                            ✓ Mark All Done for {g.name.split(" ")[0]}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
+                );
+              })}
             </div>
             {requests.some((r) => r.doneAt) && (
               <button
