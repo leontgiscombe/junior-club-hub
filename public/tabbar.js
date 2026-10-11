@@ -107,6 +107,13 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   };
+  // an alert tapped while this page is open: go to the page it points to (public/hub-sw.js)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", function (e) {
+      var url = e.data && e.data.type === "hub-open" && typeof e.data.url === "string" ? e.data.url : null;
+      if (url && url.charAt(0) === "/" && url.charAt(1) !== "/") location.href = url;
+    });
+  }
   Promise.all([json("/api/club"), json("/api/auth/me")]).then(function (r) {
     var club = r[0], me = r[1];
     if (me && me.canCoach) {

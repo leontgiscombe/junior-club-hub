@@ -12,6 +12,7 @@ import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import { DARK_BAR, LIGHT_BAR, THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
 import TabBar from "./components/TabBar";
 import BackTracker from "./components/BackTracker";
+import NotificationNav from "./components/NotificationNav";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
 export const dynamic = "force-dynamic";
@@ -106,6 +107,7 @@ export default async function RootLayout({
           {/* the app's tab bar — a club's hub only (not the platform's own site), and not for someone a private club hasn't let in yet */}
           {tenant && !hideTeams && <TabBar viewer={viewer} />}
           <BackTracker />
+          <NotificationNav />
         </ClubProvider>
       </body>
     </html>
