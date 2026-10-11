@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 const SIZE = 256;
 
 /** The middle square of a picture, SIZE pixels a side, as a JPEG data: URL. */
-async function squarePhoto(file: File): Promise<string> {
+export async function squarePhoto(file: File): Promise<string> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
