@@ -268,6 +268,26 @@
     td .pill, td button .pill { padding: 3px 8px; }
   }
   @media print { .app-foot { display: none !important; } header.app::before, header.app::after { display: none; } header.app { background: var(--green); } }
+  /* Settings laid out like a phone's (and the hub's Your Account): rounded groups of rows, each opening its panel */
+  #fs-list .fs-group { background: #fff; border-radius: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 14px; }
+  .fs-row { display: flex; align-items: center; gap: 16px; width: 100%; padding: 16px 20px; background: none; border: 0; border-top: 1px solid #f1f2f4; font: inherit; color: #111827; cursor: pointer; text-align: left; }
+  .fs-group .fs-row:first-child { border-top: 0; }
+  .fs-row:hover { background: #f9fafb; }
+  .fs-ico svg, .fs-chev svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  .fs-ico { color: #374151; }
+  .fs-label { flex: 1; font-size: 17px; }
+  .fs-detail { color: #9ca3af; font-size: 15px; }
+  .fs-chev { color: #d1d5db; }
+  .fs-chev svg { width: 20px; height: 20px; stroke-width: 2.2; }
+  .fs-top { display: none; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+  .fs-top h2 { margin: 0; font-size: 18px; font-weight: 700; color: #111827; text-align: center; flex: 1; }
+  .fs-top span { width: 44px; }
+  .fs-back { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: grid; place-items: center; cursor: pointer; color: #111827; flex-shrink: 0; }
+  .fs-back::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
+  #view-settings.fs-open #fs-list, #view-settings.fs-open #fs-heading, #view-settings.fs-open #fs-sub { display: none; }
+  #view-settings.fs-open .fs-top { display: flex; }
+  #view-settings:not(.fs-open) .fs-panel, #view-settings.fs-open .fs-panel:not(.fs-on) { display: none !important; }
+  #view-settings .fs-panel .panel-head { display: none; }
 </style>
 </head>
 <body class="locked">
@@ -396,9 +416,17 @@
 
   <!-- SETTINGS -->
   <section class="view" id="view-settings">
-    <h2 class="section">Settings &amp; Backup</h2>
-    <p class="section-sub">Set your monthly fee, season and start month, and keep a backup of your data.</p>
-    <div class="panel">
+    <h2 class="section" id="fs-heading">Settings &amp; Backup</h2>
+    <p class="section-sub" id="fs-sub">Set your monthly fee, season and start month, and keep a backup of your data.</p>
+    <!-- the settings as a phone's: a list of rows, each opening its panel on its own -->
+    <div class="fs-top" id="fs-top"><button class="fs-back" id="fs-back" aria-label="Back to Settings"></button><h2 id="fs-title"></h2><span></span></div>
+    <div id="fs-list">
+      <div class="fs-group"><button class="fs-row" data-fs-open="team"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/><path d="M7 20a5 5 0 0 1 10 0M1.5 19a3.5 3.5 0 0 1 6-2.5M22.5 19a3.5 3.5 0 0 0-6-2.5"/></svg></span><span class="fs-label">Team &amp; Subs</span><span class="fs-detail" id="fs-detail-team"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+      <div class="fs-group"><button class="fs-row" data-fs-open="backup"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 15v5h14v-5"/></svg></span><span class="fs-label">Backup &amp; Restore</span><span class="fs-detail" id="fs-detail-backup"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="reminders"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="fs-label">Monthly Reminders</span><span class="fs-detail" id="fs-detail-reminders"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+      <div class="fs-group"><button class="fs-row" data-fs-open="security"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="fs-label">Security &amp; Sync</span><span class="fs-detail" id="fs-detail-security"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="devices"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><span class="fs-label">Devices &amp; Passkeys</span><span class="fs-detail" id="fs-detail-devices"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+      <div class="fs-group"><button class="fs-row" data-fs-open="about"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></span><span class="fs-label">About &amp; Privacy</span><span class="fs-detail" id="fs-detail-about"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+    </div>
+    <div class="panel fs-panel" data-fs="team">
       <div class="panel-head"><h3>Team &amp; Subs</h3></div>
       <div class="form-grid">
         <label class="field"><span>Team name</span><input id="set-team"></label>
@@ -409,7 +437,7 @@
       </div>
       <button class="btn btn-primary" id="save-settings">Save Settings</button>
     </div>
-    <div class="panel">
+    <div class="panel fs-panel" data-fs="backup">
       <div class="panel-head"><h3>Backup &amp; Restore</h3></div>
       <p class="muted" style="font-size:13px;margin-top:0">Your team's data syncs to the club database (stored encrypted). Exporting a backup is still a good idea before big changes. Note: the exported file itself is <strong>not</strong> password-protected, so store and share it securely.</p>
       <div class="toolbar">
@@ -420,7 +448,7 @@
         <button class="btn btn-danger" id="reset-data" style="margin-left:auto">Reset All Data</button>
       </div>
     </div>
-    <div class="panel">
+    <div class="panel fs-panel" data-fs="reminders">
       <div class="panel-head"><h3>Monthly Reminders</h3></div>
       <p class="muted" style="font-size:13px;margin-top:0">Get a push notification on the 1st of each month reminding you to check this team's subs and chase anyone who hasn't paid. Turn it on for each device (phone) you want reminded.</p>
       <div class="toolbar">
@@ -432,7 +460,7 @@
       <p class="muted" id="push-status" style="font-size:12px;margin:10px 0 0"></p>
       <p class="muted" style="font-size:12px;margin:8px 0 0">On iPhone/iPad you must first add this app to your Home Screen (Share → Add to Home Screen) and open it from there, then turn on reminders.</p>
     </div>
-    <div class="panel">
+    <div class="panel fs-panel" data-fs="security">
       <div class="panel-head"><h3>Security &amp; Sync</h3></div>
       <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. If the password is ever forgotten, a coach can reset it in Coach Admin → Settings with the team's recovery code.</p>
       <div class="toolbar">
@@ -442,13 +470,13 @@
         <button class="btn" id="lock-now-btn">🔒 Lock Now</button>
       </div>
     </div>
-    <div class="panel" id="devices-panel" style="display:none">
+    <div class="panel fs-panel" data-fs="devices" id="devices-panel" style="display:none">
       <div class="panel-head"><h3>Devices &amp; Passkeys</h3></div>
       <p class="muted" style="font-size:13px;margin-top:0">Phones, computers and passkeys that open this team with a treasurer&rsquo;s or club admin&rsquo;s account, without the team password. Each has its own key, so the records stay encrypted. Approve a waiting device here (you must have this team open), or remove one that&rsquo;s lost or no longer used.</p>
       <div id="passkey-offer"></div>
       <div id="devices-list"></div>
     </div>
-    <div class="panel">
+    <div class="panel fs-panel" data-fs="about">
       <div class="panel-head"><h3>About &amp; Privacy</h3></div>
       <p class="muted" style="font-size:13px">This tracker holds children's and parents' personal details. It is encrypted with your admin password and stays only on this device/browser. Keep the device secure, only record what you need, and delete a player's record when they leave the team. Share backups securely.</p>
     </div>
@@ -1149,6 +1177,7 @@
     $("#set-currency").value = state.settings.currency;
     $("#set-start").value = state.settings.startMonth || thisMonth();
     refreshPushState();
+    fsSync();
   }
 
   // ---------- Modal helpers ----------
@@ -1213,6 +1242,33 @@
 
   // ---------- Events ----------
   const viewRenderers = { dashboard:renderDashboard, subs:renderSubs, players:renderPlayers, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
+  // ---- Settings as a list of rows, each opening its panel on its own (with the phone's back gesture) ----
+  function fsSync(){
+    const dev = $("#devices-panel");
+    const row = document.querySelector('[data-fs-open="devices"]');
+    if(row) row.style.display = (dev && dev.style.display === 'none') ? 'none' : '';
+    const d = $("#fs-detail-team"); if(d && state && state.settings) d.textContent = money(fee()) + ' a month';
+    const r = $("#fs-detail-reminders"); const off = $("#push-disable-btn");
+    if(r) r.textContent = (off && off.style.display !== 'none') ? 'On' : '';
+  }
+  function fsShow(id){
+    const view = $("#view-settings");
+    view.classList.toggle('fs-open', !!id);
+    $$('#view-settings .fs-panel').forEach(p=>p.classList.toggle('fs-on', p.dataset.fs === id));
+    const row = document.querySelector('[data-fs-open="'+id+'"] .fs-label');
+    $("#fs-title").innerHTML = row ? row.innerHTML : '';
+    if(!id) fsSync();
+    window.scrollTo(0,0);
+  }
+  document.addEventListener('click', e=>{
+    const r = e.target.closest('[data-fs-open]');
+    if(r){ history.pushState({ fs: r.dataset.fsOpen }, '', '#settings-' + r.dataset.fsOpen); fsShow(r.dataset.fsOpen); return; }
+    if(e.target.closest('#fs-back')){ if(history.state && history.state.fs) history.back(); else fsShow(''); }
+    // another tab: back to the list
+    if(e.target.closest('.tab')) fsShow('');
+  });
+  window.addEventListener('popstate', ()=> fsShow(history.state && history.state.fs || ''));
+
   function switchView(name){
     $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
     $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
@@ -1757,7 +1813,7 @@
       if(r.pk) return '<button class="btn btn-primary" data-pk-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+' with Your Passkey</button>';
       if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px">'+name+': waiting for another treasurer or club admin to approve this device (Financial Admin \u2192 Settings \u2192 Devices) \u2014 or unlock it once with the team password below. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a></p>';
       return '<button class="btn" data-ask-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Use This Device for '+name+'</button>';
-    }).join('') + (!anyPasskey && canPasskey() ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#passkeys" style="color:var(--green);font-weight:700">add a passkey</a> to your account, then open your teams with Face ID or a fingerprint on any of your devices.</p>' : '');
+    }).join('') + (!anyPasskey && canPasskey() ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, then open your teams with Face ID or a fingerprint on any of your devices.</p>' : '');
   }
   async function openWithAccount(id){
     $("#account-err").textContent = '';
@@ -1813,15 +1869,16 @@
   }
   async function renderDevices(){
     const panel = $("#devices-panel"), list = $("#devices-list");
-    if(!account || !currentTeam){ panel.style.display = 'none'; return; }
+    if(!account || !currentTeam){ panel.style.display = 'none'; fsSync(); return; }
     panel.style.display = '';
+    fsSync();
     try {
       const dev = await deviceKeys();
       const d = await devicesOf(currentTeam);
       const offer = $("#passkey-offer");
       const usable = (d.passkeys || []).filter(k=> k.prf !== false);
       if(!canPasskey()) offer.innerHTML = '';
-      else if(!(d.passkeys || []).length) offer.innerHTML = '<p class="muted" style="font-size:13px"><a href="/account#passkeys" style="color:var(--green);font-weight:700">Add a passkey</a> to your account to open this team with Face ID or a fingerprint on any of your devices.</p>';
+      else if(!(d.passkeys || []).length) offer.innerHTML = '<p class="muted" style="font-size:13px"><a href="/account#security" style="color:var(--green);font-weight:700">Add a passkey</a> to your account to open this team with Face ID or a fingerprint on any of your devices.</p>';
       else if(usable.length && !myPasskeyCopies(d).length && dataKeyRaw) offer.innerHTML = '<button class="btn btn-primary" data-pk-add style="margin-bottom:8px">Open This Team with My Passkey</button><p class="muted" style="font-size:12px;margin:0 0 8px">Then Face ID or your fingerprint opens it on any of your devices \u2014 a new phone too.</p>';
       else offer.innerHTML = '';
       if(!d.devices.length){ list.innerHTML = '<p class="muted" style="font-size:13px">No devices yet.</p>'; return; }
