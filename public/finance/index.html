@@ -351,7 +351,6 @@
 </div>
 <header class="app">
   <div class="header-inner">
-    <a class="hub-link hub-back" href="/" aria-label="Back to Team Hub"></a>
     <div class="badge"><img id="club-badge" src="" alt=""></div>
     <div class="header-titles">
       <h1 id="app-title">Financial Admin</h1>
@@ -1378,7 +1377,7 @@
   // small toast
   let toastEl;
   function flash(msg){
-    if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2a22;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
+    if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1c2a22;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
     toastEl.textContent = msg; toastEl.style.opacity='1';
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.opacity='0', 2200);
   }
@@ -1987,5 +1986,6 @@
   boot();
 })();
 </script>
+<script src="/tabbar.js" defer></script>
 </body>
 </html>
