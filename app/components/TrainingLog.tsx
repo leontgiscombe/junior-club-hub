@@ -117,7 +117,7 @@ function PlanWeekCard({
     );
   const minutes = weekDrills.reduce((sum, d) => sum + d.minutes, 0);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-green-400/30">
+    <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm ring-2 ring-green-600/30 dark:bg-[#1c1c1e] dark:ring-green-400/30">
       <p className="text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400">{label}</p>
       <p className="mt-1 text-base font-extrabold text-gray-900 dark:text-gray-50">
         Week {weekNumber}
@@ -126,7 +126,7 @@ function PlanWeekCard({
       {weekDrills.length === 0 ? (
         <p className="mt-2 text-xs text-gray-400">No drills picked for this week yet.</p>
       ) : (
-        <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100 dark:border-white/10 dark:divide-white/10">
+        <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-2xl bg-gray-50 dark:bg-white/5 dark:divide-white/10">
           {weekDrills.map((drill) => {
             const isOpen = open === drill.id;
             return (
@@ -143,7 +143,7 @@ function PlanWeekCard({
                   {drill.minutes > 0 && (
                     <span className="shrink-0 text-xs text-gray-400">{drill.minutes}′</span>
                   )}
-                  <span className="shrink-0 text-xs text-gray-400">{isOpen ? "▲" : "▼"}</span>
+                  <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                 </button>
                 {(() => {
                   const ticked = week.doneIds.includes(drill.id);
@@ -355,8 +355,8 @@ export default function TrainingLog() {
     const total = week.drillIds.filter((id) => drillById.has(id)).length;
     const done = week.doneIds.filter((id) => drillById.has(id)).length;
     return (
-      <span className="ml-2 text-xs font-medium text-green-700 dark:text-green-400">
-        📝 Week {i + 1}
+      <span className="ml-2 inline-block rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">
+        Week {i + 1}
         {week.theme ? ` · ${week.theme}` : ""}
         {total > 0 && done === total ? " ✓" : ""}
       </span>
@@ -404,9 +404,7 @@ export default function TrainingLog() {
     return (
       <div
         key={id}
-        className={`rounded-2xl border p-3 shadow-sm ${
-          s.cancelled ? "border-gray-100 bg-gray-50 dark:bg-white/5 dark:border-white/10" : "border-gray-100 bg-white dark:bg-[#1c1c1e] dark:border-white/10"
-        }`}
+        className={`rounded-3xl p-4 shadow-sm ${s.cancelled ? "bg-white/60 dark:bg-white/5" : "bg-white dark:bg-[#1c1c1e]"}`}
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm">
@@ -427,7 +425,7 @@ export default function TrainingLog() {
         {!s.cancelled && (
           <label className="mt-2 flex items-center gap-2">
             <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-              💪 Best Trainer
+              Best Trainer
             </span>
             <select
               value={s.bestTrainerId}
@@ -461,15 +459,15 @@ export default function TrainingLog() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}
-        <div className="flex gap-2 mb-5">
+        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
           {TEAMS.map((t) => (
             <button
               key={t.slug}
               onClick={() => setTeam(t.slug)}
-              className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
+              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
                 team === t.slug
-                  ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                  : "text-gray-600 dark:text-gray-300"
               }`}
             >
               {t.accent} {t.name}
@@ -482,10 +480,8 @@ export default function TrainingLog() {
         )}
 
         {/* Where the team stands */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-            💪 {teamName(team)} Best Trainer
-          </p>
+        <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+          <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Best Trainer</p>
           {leaders.length === 0 ? (
             <p className="mt-2 text-xs text-gray-400">
               No awards yet — pick a best trainer against a session below and the
@@ -567,9 +563,7 @@ export default function TrainingLog() {
         {/* Sessions so far, most recent first */}
         {done.length > 0 && (
           <section className="mb-6">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              Sessions so far
-            </h2>
+            <h2 className="mb-2.5 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Sessions So Far</h2>
             <div className="flex flex-col gap-3">
               {byMonth(done).map((group, gi) => {
                 // the latest month opens by itself; older ones fold up
@@ -592,7 +586,7 @@ export default function TrainingLog() {
                         {needs > 0 && (
                           <span className="font-semibold text-amber-700 dark:text-amber-300">{needs} to award</span>
                         )}
-                        <span className="text-gray-400">{isOpen ? "▲" : "▼"}</span>
+                        <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                       </span>
                     </button>
                     {isOpen && (
@@ -612,24 +606,27 @@ export default function TrainingLog() {
           <section>
             <button
               onClick={() => setShowAhead((v) => !v)}
-              className="mb-2 flex w-full cursor-pointer items-center justify-between text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-green-700 dark:text-gray-400"
+              className="mb-2.5 flex w-full cursor-pointer items-center justify-between px-1 text-left"
               aria-expanded={showAhead}
             >
-              <span>
-                Coming up · {ahead.length} session{ahead.length === 1 ? "" : "s"}
+              <span className="text-xl font-bold text-gray-900 dark:text-gray-50">
+                Coming Up <span className="font-semibold text-gray-400">{ahead.length}</span>
               </span>
-              <span>{showAhead ? "Hide ▲" : "Show ▼"}</span>
+              <span className="flex items-center gap-1 text-sm font-semibold text-green-700 dark:text-green-400">
+                {showAhead ? "Hide" : "Show"}
+                <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${showAhead ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+              </span>
             </button>
             {showAhead && (
               <div className="flex flex-col gap-4">
                 {byMonth(ahead).map((group) => (
                   <div key={group.month}>
                     <p className="mb-1 text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</p>
-                    <div className="flex flex-col divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm dark:bg-[#1c1c1e] dark:border-white/10 dark:divide-white/10">
+                    <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e] dark:divide-white/10">
                       {group.sessions.map((s) => (
                         <div
                           key={s.date}
-                          className="flex items-center justify-between gap-2 px-3 py-2"
+                          className="flex items-center justify-between gap-2 px-4 py-3"
                         >
                           <span
                             className={`text-sm ${
