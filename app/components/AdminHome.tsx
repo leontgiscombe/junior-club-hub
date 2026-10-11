@@ -13,19 +13,20 @@ import type { Feature } from "@/lib/clubSettings";
 // the same heavy lettering as the home page and the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
-// Each tool's icon tile colour — looks only; the list and its order are below.
-const TILE: Record<string, string> = {
-  "/admin/stats/matches": "from-green-700 to-green-500",
-  "/admin/stats/training": "from-teal-600 to-cyan-500",
-  "/admin/stats/player-of-the-month": "from-amber-500 to-yellow-400",
-  "/admin/training/plans": "from-blue-600 to-sky-500",
-  "/admin/stats": "from-indigo-600 to-violet-500",
-  "/admin/camera": "from-rose-600 to-pink-500",
-  "/admin/kit": "from-orange-600 to-amber-500",
-  "/admin/players": "from-lime-600 to-green-500",
-  "/admin/members": "from-emerald-600 to-teal-500",
-  "/admin/settings": "from-gray-700 to-gray-500",
-  "/admin/help": "from-slate-600 to-slate-500",
+// Each tool's app-style icon: its tile colour and a line drawing — looks only;
+// the list and its order are below.
+const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
+  "/admin/stats/matches": { colour: "bg-green-700", icon: <><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></> },
+  "/admin/stats/training": { colour: "bg-cyan-700", icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
+  "/admin/stats/player-of-the-month": { colour: "bg-amber-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
+  "/admin/training/plans": { colour: "bg-blue-700", icon: <><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></> },
+  "/admin/stats": { colour: "bg-indigo-600", icon: <path d="M5 20V10M12 20V4M19 20v-7" /> },
+  "/admin/camera": { colour: "bg-rose-700", icon: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></> },
+  "/admin/kit": { colour: "bg-orange-700", icon: <path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /> },
+  "/admin/players": { colour: "bg-lime-700", icon: <><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /></> },
+  "/admin/members": { colour: "bg-emerald-700", icon: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></> },
+  "/admin/settings": { colour: "bg-gray-600", icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></> },
+  "/admin/help": { colour: "bg-slate-700", icon: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></> },
 };
 
 // The dark paint-stroke banner shared with the home page.
@@ -54,6 +55,8 @@ const TOOLS: {
   title: string;
   body: string;
   badge?: string;
+  /** a shorter name for the icon grid */
+  short?: string;
   /** The Settings switch that hides this tool when it's off. */
   feature?: Feature;
 }[] = [
@@ -88,12 +91,14 @@ const TOOLS: {
     path: "/admin/stats",
     icon: "📊",
     title: "Stats Tracker",
+    short: "Stats",
     body: "Season totals for every player, added up from the match log.",
   },
   {
     path: "/admin/camera",
     icon: "🎥",
     title: "Camera Register",
+    short: "Camera",
     feature: "cameraRegister",
     body: "Home-game filming and cloud uploads.",
   },
@@ -283,83 +288,65 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
 
   // an account needs no password in its links
   const suffix = keyQuery(key);
+  const tools = TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]);
 
+  // laid out like an app: a large title, then the tools as a grid of icons
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="relative overflow-hidden bg-[var(--club-night)] px-6 pb-14 pt-8 text-center text-white">
-        <BrushBackdrop />
-        <div className="relative">
+    <div className="themed min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <div className="flex items-end justify-between gap-4 pt-2">
+          <div className="min-w-0">
+            <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
+            <p className="mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
+          </div>
           <Image
             src={CLUB.crest.src}
             unoptimized
             alt={CLUB.crest.alt}
             width={CLUB.crest.width}
             height={CLUB.crest.height}
-            className="mx-auto mt-3 h-20 w-auto"
+            className="h-12 w-auto shrink-0"
             priority
           />
-          <h1
-            className={`${display.className} mt-3 text-4xl uppercase leading-none tracking-wide drop-shadow-[3px_3px_0_rgba(0,0,0,0.8)] sm:text-5xl`}
-          >
-            Coach Admin
-          </h1>
-          <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
-            {CLUB.fullName}
-          </p>
         </div>
-      </header>
 
-      <main className="relative mx-auto -mt-8 w-full max-w-2xl flex-1 px-5 pb-10">
         {account?.canCoach && key === SESSION_KEY && <AlertsPrompt status={joins} refresh={refreshJoins} />}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {TOOLS.filter((tool) => !tool.feature || CLUB.features[tool.feature]).map((tool) => (
-            <Link
-              key={tool.path}
-              href={`${tool.path}${suffix}`}
-              className="group flex flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              <span className="mb-3 flex items-center gap-3">
-                <span
-                  className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br text-3xl shadow-sm ${
-                    TILE[tool.path] ?? "from-green-700 to-green-500"
-                  }`}
+
+        <div className="rounded-3xl bg-white px-2 pb-3 pt-5 shadow-sm dark:bg-[#1c1c1e]">
+          <div className="grid grid-cols-3 gap-x-1 gap-y-5">
+            {tools.map((tool) => {
+              const tile = TILE[tool.path];
+              const badge = tool.path === "/admin/members" && !!joins?.pending ? joins.pending : 0;
+              return (
+                <Link
+                  key={tool.path}
+                  href={`${tool.path}${suffix}`}
+                  className="press relative flex flex-col items-center gap-2 text-center text-[12.5px] font-semibold leading-tight"
                 >
-                  {tool.icon}
-                </span>
-                {tool.path === "/admin/members" && !!joins?.pending && (
-                  <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
-                    {joins.pending} waiting
+                  <span className={`grid h-[60px] w-[60px] place-items-center rounded-[18px] text-white shadow-sm ${tile?.colour ?? "bg-green-700"}`}>
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {tile?.icon}
+                    </svg>
                   </span>
-                )}
-                {tool.badge && (
-                  <span className="rounded-full bg-[var(--club-bright)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--club-night)]">
-                    {tool.badge}
-                  </span>
-                )}
-              </span>
-              <h2 className="text-lg font-extrabold text-gray-900">{tool.title}</h2>
-              <p className="mt-1 flex-1 text-sm leading-relaxed text-gray-500">{tool.body}</p>
-              <span className="mt-4 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-2.5 text-sm font-bold text-gray-900 transition-colors group-hover:bg-gray-900 group-hover:text-white">
-                Open
-                <span className="transition-transform group-hover:translate-x-1">→</span>
-              </span>
-            </Link>
-          ))}
+                  {tool.short ?? tool.title}
+                  {badge > 0 && (
+                    <span className="absolute -top-1.5 left-1/2 ml-5 min-w-[1.4rem] rounded-full bg-red-500 px-1.5 text-center text-xs font-bold leading-[1.4rem] text-white ring-2 ring-white dark:ring-[#1c1c1e]">
+                      {badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         </div>
+
         {account && key === SESSION_KEY && (
-          <p className="mt-6 text-center text-xs text-gray-500">
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             Signed in as {account.email} ·{" "}
-            <Link href="/account" className="font-semibold text-green-700 hover:underline">Your account</Link>
+            <Link href="/account" className="font-semibold text-green-700 hover:underline dark:text-green-400">Your account</Link>
           </p>
         )}
       </main>
-
-      <footer className="bg-[var(--club-night)] px-6 py-8 text-center">
-        <p className={`${display.className} text-lg uppercase tracking-wide text-[var(--club-bright)]`}>
-          {CLUB.slogan}
-        </p>
-        <p className="mt-2 text-sm text-gray-400">{CLUB.fullName}</p>
-      </footer>
     </div>
   );
 }

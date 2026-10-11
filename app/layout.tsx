@@ -8,6 +8,7 @@ import { MEMBER_COOKIE, PATH_HEADER, SESSION_COOKIE, isApprovedPerson, readAcces
 import { ClubProvider } from "./components/ClubProvider";
 import { clubColourVars } from "@/lib/palette";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
+import { THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
 import TabBar from "./components/TabBar";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
@@ -81,7 +82,16 @@ export default async function RootLayout({
   const teams = hideTeams ? [] : allTeams;
   return (
     // the club's colour, laid over the hub's green (lib/palette.ts)
-    <html lang="en" className="h-full" style={clubColourVars(club.colour) as React.CSSProperties}>
+    // dark is drawn from the start when it's the saved choice; "Match my phone" is settled by THEME_SCRIPT
+    <html
+      lang="en"
+      className={`h-full${(await cookies()).get(THEME_COOKIE)?.value === "dark" ? " dark" : ""}`}
+      style={clubColourVars(club.colour) as React.CSSProperties}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full bg-gray-50 font-sans antialiased">
         <ClubProvider club={club} teams={teams}>
           {children}

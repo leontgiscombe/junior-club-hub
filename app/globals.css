@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+/* Light and dark (Your Account → Appearance; lib/theme.ts). "dark" on <html>
+   switches the pages built for both — each marks its root "themed" — and only
+   those: a page not converted yet stays light rather than half dark. */
+@custom-variant dark (&:where(.dark .themed, .dark .themed *));
+
+html.dark body:has(.themed) {
+  background: #000;
+}
+
+/* App feel: no grey flash when tapping, no rubber-band showing the page's edges */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  overscroll-behavior-y: none;
+}
+/* buttons and links press in when tapped, like an app's */
+.press {
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.press:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
 /* The club's brand colours. A colour chosen on Coach Admin → Settings
    overrides these and Tailwind's green scale (lib/palette.ts). */
 :root {

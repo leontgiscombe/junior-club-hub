@@ -156,11 +156,11 @@ export function AlertsPrompt({ status, refresh }: { status: Status | null; refre
   // stays up just long enough to say it worked (or why it didn't)
   if (!status?.pushAvailable || (status.alerts && !note)) return null;
   return (
-    <div className="mb-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm">
+    <div className="mb-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm dark:bg-[#1c1c1e] dark:border-white/15">
       {!status.alerts && (
         <div className="flex items-center gap-3">
           <span className="text-xl">🔔</span>
-          <p className="flex-1 text-gray-700">Get an alert on this phone when someone asks to join.</p>
+          <p className="flex-1 text-gray-700 dark:text-gray-200">Get an alert on this phone when someone asks to join.</p>
           <button
             onClick={turnOn}
             disabled={busy}
@@ -177,7 +177,7 @@ export function AlertsPrompt({ status, refresh }: { status: Status | null; refre
             <>
               {" "}
               You can turn them off in{" "}
-              <Link href="/account#alerts" className="font-semibold text-green-700 hover:underline">Your Account</Link>.
+              <Link href="/account#alerts" className="font-semibold text-green-700 hover:underline dark:text-green-400">Your Account</Link>.
             </>
           )}
         </p>
@@ -193,8 +193,8 @@ export function AlertsSettings({ className }: { className: string }) {
   if (!status?.pushAvailable) return null;
   return (
     <section className={className} id="alerts">
-      <h2 className="font-extrabold text-gray-900">🔔 Join Request Alerts</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 Join Request Alerts</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {status.alerts
           ? "On for this phone — you get an alert when someone asks to join, and tapping it opens Members."
           : "Get an alert on this phone when someone asks to join. Club admins hear about every request; coaches about their own team's."}
@@ -203,7 +203,7 @@ export function AlertsSettings({ className }: { className: string }) {
         onClick={status.alerts ? turnOff : turnOn}
         disabled={busy}
         className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-40 ${
-          status.alerts ? "border border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-gray-900 text-white hover:bg-black"
+          status.alerts ? "border border-gray-200 text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15" : "bg-gray-900 text-white hover:bg-black dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
         }`}
       >
         {busy ? "…" : status.alerts ? "Turn Off on This Phone" : "Turn On for This Phone"}
@@ -212,12 +212,12 @@ export function AlertsSettings({ className }: { className: string }) {
         <button
           onClick={test}
           disabled={busy}
-          className="mt-3 ml-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+          className="mt-3 ml-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
         >
           Send a Test Alert
         </button>
       )}
-      {note && <p className="mt-2 text-sm text-gray-600">{note}</p>}
+      {note && <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{note}</p>}
     </section>
   );
 }
