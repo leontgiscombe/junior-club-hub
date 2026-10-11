@@ -60,7 +60,7 @@ export default function FaSnippetTest() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
       <div className="bg-green-700 px-4 py-6 text-white">
         <BackButton href="/admin" label="Coach Admin" />
         <h1 className="mt-2 text-xl font-extrabold">🔌 FA Full-Time Test</h1>
@@ -82,21 +82,21 @@ export default function FaSnippetTest() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             inputMode="numeric"
             aria-label="Snippet code (lrcode)"
-            className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900"
+            className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
           />
           <button className="cursor-pointer rounded-xl bg-green-600 px-4 py-2 font-bold text-white">
             Load
           </button>
         </form>
 
-        <p className="mb-2 text-sm font-semibold text-gray-700">{status}</p>
+        <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">{status}</p>
 
         <iframe
           key={loaded}
           ref={frame}
           srcDoc={snippetPage(loaded)}
           title="Full-Time snippet"
-          className="mb-4 h-80 w-full rounded-xl border border-gray-200 bg-white"
+          className="mb-4 h-80 w-full rounded-xl border border-gray-200 bg-white dark:bg-[#1c1c1e] dark:border-white/15"
         />
 
         {html && (
@@ -111,7 +111,7 @@ export default function FaSnippetTest() {
               readOnly
               value={html}
               rows={10}
-              className="w-full rounded-xl border border-gray-200 bg-white p-2 font-mono text-xs text-gray-700"
+              className="w-full rounded-xl border border-gray-200 bg-white p-2 font-mono text-xs text-gray-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
             />
           </>
         )}

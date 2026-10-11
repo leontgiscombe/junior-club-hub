@@ -17,9 +17,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const tenant = await getTenant();
   const club = tenant ? await getClub() : null;
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-20">
+    <main className="themed relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-20">
       <BackButton href="/" label="Home" className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" />
-      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="mb-6 text-center">
           {club ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -27,11 +27,11 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           ) : (
             <div className="text-4xl">⚽</div>
           )}
-          <h1 className="mt-3 text-2xl font-extrabold text-gray-900">Sign In</h1>
-          <p className="mt-1 text-sm text-gray-500">{club ? club.name : PLATFORM_NAME}</p>
+          <h1 className="mt-3 text-2xl font-extrabold text-gray-900 dark:text-gray-50">Sign In</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{club ? club.name : PLATFORM_NAME}</p>
         </div>
         {expired && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             That sign-in link has run out or was already used. Send yourself a new one.
           </p>
         )}

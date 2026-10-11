@@ -86,14 +86,14 @@ export default function JoinForm({
     return (
       <div className="mt-6 text-center">
         <div className="text-4xl">⏳</div>
-        <h2 className="mt-2 text-lg font-extrabold text-gray-900">Waiting for a coach</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-gray-50">Waiting for a coach</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Your request has been sent. Once a coach approves it, this page opens the hub by itself —
           or come back to this link later.
         </p>
         <button
           onClick={() => window.location.reload()}
-          className="mt-5 w-full rounded-xl border border-gray-200 py-3 font-bold text-gray-700 hover:bg-gray-50"
+          className="mt-5 w-full rounded-xl border border-gray-200 py-3 font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
         >
           Check Again
         </button>
@@ -104,8 +104,8 @@ export default function JoinForm({
   if (status === "declined" && !askAgain) {
     return (
       <div className="mt-6 text-center">
-        <h2 className="text-lg font-extrabold text-gray-900">Not approved</h2>
-        <p className="mt-1 text-sm text-gray-500">A coach didn&apos;t approve this request. If that&apos;s a mistake, speak to your coach, then ask again.</p>
+        <h2 className="text-lg font-extrabold text-gray-900 dark:text-gray-50">Not approved</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">A coach didn&apos;t approve this request. If that&apos;s a mistake, speak to your coach, then ask again.</p>
         <button onClick={() => setAskAgain(true)} className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700">
           Ask Again
         </button>
@@ -114,12 +114,12 @@ export default function JoinForm({
   }
 
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   if (!teams) {
     return (
       <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
         <label>
-          <span className="text-sm font-bold text-gray-800">Club code</span>
+          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Club code</span>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -132,11 +132,11 @@ export default function JoinForm({
           />
           <span className="mt-1 block text-xs text-gray-400">Your coach can give you this.</span>
         </label>
-        {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
         <button disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Checking…" : "Next"}
         </button>
-        <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700">
+        <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
           I&apos;m a coach — sign in
         </a>
       </form>
@@ -146,7 +146,7 @@ export default function JoinForm({
   if (!signedIn) {
     return (
       <div className="mt-6">
-        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
+        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">
           That&apos;s the right code. Now sign in with your email — it makes your account, if you
           haven&apos;t one, so you can open the hub on any device.
         </p>
@@ -169,11 +169,11 @@ export default function JoinForm({
     <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
       {account && <p className="text-center text-xs text-gray-400">Signed in as {account.email}</p>}
       <label>
-        <span className="text-sm font-bold text-gray-800">Your name</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoComplete="name" className={input} />
       </label>
       <label>
-        <span className="text-sm font-bold text-gray-800">You are a…</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">You are a…</span>
         <select value={relation} onChange={(e) => setRelation(e.target.value as Relation)} required className={input}>
           <option value="">Choose…</option>
           {(Object.keys(RELATIONS) as Relation[]).map((r) => (
@@ -185,7 +185,7 @@ export default function JoinForm({
       </label>
       {relation === "parent" ? (
         <div>
-          <span className="text-sm font-bold text-gray-800">Your child (or children)</span>
+          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your child (or children)</span>
           <span className="mb-2 block text-xs text-gray-400">
             Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
           </span>
@@ -194,7 +194,7 @@ export default function JoinForm({
       ) : (
         teams.length > 0 && (
           <label>
-            <span className="text-sm font-bold text-gray-800">Team</span>
+            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Team</span>
             <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
               <option value="">Not sure / more than one</option>
               {teams.map((t) => (
@@ -207,10 +207,10 @@ export default function JoinForm({
         )
       )}
       <label>
-        <span className="text-sm font-bold text-gray-800">Anything else? (optional)</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Anything else? (optional)</span>
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="e.g. new this season" className={input} />
       </label>
-      {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
       <button disabled={busy} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
         {busy ? "Sending…" : "Ask to Join"}
       </button>

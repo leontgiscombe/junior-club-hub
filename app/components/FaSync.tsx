@@ -137,9 +137,9 @@ export default function FaSync<M>({
   if (!code) return null;
 
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-      <p className="min-w-0 text-xs text-gray-600">
-        <span className="font-semibold text-gray-800">🔄 Fixtures from FA Full-Time</span>
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+      <p className="min-w-0 text-xs text-gray-600 dark:text-gray-300">
+        <span className="font-semibold text-gray-800 dark:text-gray-100">🔄 Fixtures from FA Full-Time</span>
         <br />
         {syncing
           ? "Checking Full-Time…"
@@ -156,7 +156,7 @@ export default function FaSync<M>({
       <button
         onClick={sync}
         disabled={syncing}
-        className="shrink-0 cursor-pointer rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 disabled:opacity-40"
+        className="shrink-0 cursor-pointer rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 disabled:opacity-40 dark:text-gray-200 dark:border-white/15"
       >
         Sync Now
       </button>

@@ -66,21 +66,21 @@ export default function ResetPassword() {
   }
 
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const button =
-    "mt-4 w-full cursor-pointer rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40";
+    "mt-4 w-full cursor-pointer rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--club-night)] px-4 py-10">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
+    <main className="themed flex min-h-screen items-center justify-center bg-[var(--club-night)] px-4 py-10">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={club.crest.src} alt={club.crest.alt} className="mx-auto mb-3 h-16 w-auto" />
-        <h1 className="text-center text-xl font-extrabold text-gray-900">Reset the Coach Password</h1>
-        <p className="mt-1 text-center text-sm text-gray-500">{club.fullName}</p>
+        <h1 className="text-center text-xl font-extrabold text-gray-900 dark:text-gray-50">Reset the Coach Password</h1>
+        <p className="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">{club.fullName}</p>
 
         {done ? (
           <div className="mt-5 text-center">
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-gray-700 dark:text-gray-200">
               The new password is set. Share it with your coaches; the old one no longer works.
             </p>
             <Link href="/admin" className={`${button} block`}>
@@ -89,10 +89,10 @@ export default function ResetPassword() {
           </div>
         ) : token ? (
           valid === null ? (
-            <p className="mt-5 text-center text-sm text-gray-500">Checking the link…</p>
+            <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">Checking the link…</p>
           ) : !valid ? (
             <div className="mt-5 text-center">
-              <p className="text-sm text-gray-700">This link has expired or has already been used.</p>
+              <p className="text-sm text-gray-700 dark:text-gray-200">This link has expired or has already been used.</p>
               <Link href="/reset-password" className={`${button} block`}>
                 Send a New Link
               </Link>
@@ -100,32 +100,32 @@ export default function ResetPassword() {
           ) : (
             <form onSubmit={reset} className="mt-5">
               <label className="block">
-                <span className="text-sm font-bold text-gray-800">New coach password</span>
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-100">New coach password</span>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required autoComplete="new-password" className={input} />
               </label>
               <label className="mt-3 block">
-                <span className="text-sm font-bold text-gray-800">New password again</span>
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-100">New password again</span>
                 <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} required autoComplete="new-password" className={input} />
               </label>
-              {error && <p className="mt-3 text-center text-sm text-red-600">{error}</p>}
+              {error && <p className="mt-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
               <button disabled={busy} className={button}>{busy ? "Saving…" : "Set New Password"}</button>
             </form>
           )
         ) : message ? (
-          <p className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-center text-sm text-green-800">{message}</p>
+          <p className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-center text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{message}</p>
         ) : (
           <form onSubmit={request} className="mt-5">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Enter the email the club signed up with, and we&apos;ll send a link to choose a new
               password.
             </p>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className={`${input} mt-3`} />
-            {error && <p className="mt-3 text-center text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
             <button disabled={busy || !email} className={button}>{busy ? "Sending…" : "Send Reset Link"}</button>
           </form>
         )}
 
-        <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700">
+        <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
           ← Back to sign in
         </Link>
       </div>

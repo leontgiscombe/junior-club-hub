@@ -237,12 +237,12 @@ export default function ClubSettings() {
 
   if (!authed || !snap) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
+      <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
             <div className="mb-2 text-3xl">⚙️</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Settings</h1>
-            <p className="mt-1 text-sm text-gray-500">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Settings</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -250,9 +250,9 @@ export default function ClubSettings() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="mb-3 text-center text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -260,7 +260,7 @@ export default function ClubSettings() {
           >
             {loading ? "Loading…" : "Open Settings"}
           </button>
-          <Link href="/" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700">
+          <Link href="/" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
             ← Back to Team Hub
           </Link>
         </div>
@@ -295,7 +295,7 @@ export default function ClubSettings() {
   return (
     // the page previews the colour being picked, before it's saved
     <main
-      className="min-h-screen bg-gray-100 pb-16"
+      className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16"
       style={(draft.colour ? clubColourVars(draft.colour) : DEFAULT_COLOUR_VARS) as React.CSSProperties}
     >
       {screen && SCREENS[screen] ? (
@@ -304,13 +304,13 @@ export default function ClubSettings() {
           <div className="mx-auto max-w-xl px-4">
             {!canAdmin && (
               <div className="mt-4">
-                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
                   👀 You can look, but only a <strong>club admin</strong> can change Settings.
                 </p>
               </div>
             )}
-            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
+            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
+            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{notice}</p>}
             {["details", "colour", "crest"].includes(screen) && (
               <>
                 {/* Preview: the home page's banner with the details as they'll show */}
@@ -339,9 +339,9 @@ export default function ClubSettings() {
             {screen === "colour" && (
               <>
                 {/* Colour */}
-                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-                  <h2 className="font-extrabold text-gray-900">🎨 Club Colour</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🎨 Club Colour</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     The hub&apos;s buttons, banners and highlights take this colour. This page shows it as
                     you pick.
                   </p>
@@ -355,7 +355,7 @@ export default function ClubSettings() {
                         })
                       }
                       className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                        !draft.colour ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+                        !draft.colour ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200 dark:border-white/15"
                       }`}
                     >
                       <span className="h-5 w-5 rounded-full" style={{ background: "#16a34a" }} />
@@ -366,14 +366,14 @@ export default function ClubSettings() {
                         key={p.hex}
                         onClick={() => setDraft((d) => ({ ...d, colour: p.hex }))}
                         className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                          draft.colour === p.hex ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200"
+                          draft.colour === p.hex ? "border-gray-900 ring-2 ring-gray-900" : "border-gray-200 dark:border-white/15"
                         }`}
                       >
                         <span className="h-5 w-5 rounded-full" style={{ background: p.hex }} />
                         {p.name}
                       </button>
                     ))}
-                    <label className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-semibold dark:border-white/15">
                       <input
                         type="color"
                         value={draft.colour ?? "#16a34a"}
@@ -389,9 +389,9 @@ export default function ClubSettings() {
             {screen === "crest" && (
               <>
                 {/* Crest */}
-                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-                  <h2 className="font-extrabold text-gray-900">🛡️ Club Crest</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🛡️ Club Crest</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     A PNG with a see-through background looks best. It&apos;s also used for the home-screen
                     icon when someone saves the hub to their phone.
                   </p>
@@ -400,7 +400,7 @@ export default function ClubSettings() {
                     <img
                       src={club.crest.src}
                       alt=""
-                      className="h-20 w-20 rounded-2xl border border-gray-100 bg-gray-50 object-contain p-1.5"
+                      className="h-20 w-20 rounded-2xl border border-gray-100 bg-gray-50 object-contain p-1.5 dark:bg-white/5 dark:border-white/10"
                     />
                     <label className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700">
                       {uploading === "crest" ? "Uploading…" : snap.crest ? "Change Crest" : "Upload Crest"}
@@ -419,7 +419,7 @@ export default function ClubSettings() {
                       <button
                         onClick={() => resetPicture("crest")}
                         disabled={!!uploading}
-                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
                       >
                         Use Default Crest
                       </button>
@@ -431,9 +431,9 @@ export default function ClubSettings() {
             {screen === "kit" && (
               <>
                 {/* Kit picture */}
-                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-                  <h2 className="font-extrabold text-gray-900">👕 Kit Picture</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">👕 Kit Picture</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Shown on the home page and the Kit Sizes pages, so parents can see the kit they&apos;re
                     choosing sizes for. A wide photo or design works best.
                   </p>
@@ -441,7 +441,7 @@ export default function ClubSettings() {
                   <img
                     src={club.kitImage.src}
                     alt=""
-                    className="mt-4 w-full max-w-sm rounded-2xl border border-gray-100 bg-[var(--club-night)] object-contain"
+                    className="mt-4 w-full max-w-sm rounded-2xl border border-gray-100 bg-[var(--club-night)] object-contain dark:border-white/10"
                     style={{ aspectRatio: kitAspect(club.kitImage) }}
                   />
                   <div className="mt-3 flex flex-wrap items-center gap-4">
@@ -462,7 +462,7 @@ export default function ClubSettings() {
                       <button
                         onClick={() => resetPicture("kit")}
                         disabled={!!uploading}
-                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40"
+                        className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
                       >
                         Use Default Picture
                       </button>
@@ -474,19 +474,19 @@ export default function ClubSettings() {
             {screen === "details" && (
               <>
                 {/* Identity */}
-                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-                  <h2 className="font-extrabold text-gray-900">🏷️ Club Details</h2>
-                  <p className="mt-1 text-sm text-gray-500">Leave a box empty to use the default shown in it.</p>
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🏷️ Club Details</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Leave a box empty to use the default shown in it.</p>
                   <div className="mt-4 flex flex-col gap-4">
                     {FIELDS.map(({ field, label, hint }) => (
                       <label key={field} className="block">
-                        <span className="text-sm font-bold text-gray-800">{label}</span>
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{label}</span>
                         <input
                           value={value(field)}
                           maxLength={EDITABLE[field]}
                           placeholder={defaults[field]}
                           onChange={(e) => setDraft((d) => ({ ...d, [field]: e.target.value }))}
-                          className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                          className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                         />
                         <span className="mt-1 block text-xs text-gray-400">{hint}</span>
                       </label>
@@ -498,13 +498,13 @@ export default function ClubSettings() {
             {screen === "parts" && (
               <>
                 {/* Which parts of the hub the club uses */}
-                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-                  <h2 className="font-extrabold text-gray-900">🧩 Parts of the Hub</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+                  <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🧩 Parts of the Hub</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Switch off anything the club doesn&apos;t use: it leaves the home page and Coach Admin,
                     and nothing saved in it is lost.
                   </p>
-                  <div className="mt-4 flex flex-col divide-y divide-gray-100">
+                  <div className="mt-4 flex flex-col divide-y divide-gray-100 dark:divide-white/10">
                     <Toggle
                       label="Results for Parents"
                       hint="Scores, league tables and top scorers. Turn off for non-competitive football; coaches still log every game."
@@ -577,18 +577,18 @@ export default function ClubSettings() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={club.crest.src} alt={club.crest.alt} className="max-h-full max-w-full object-contain" />
               </span>
-              <h1 className="mt-4 text-3xl font-semibold text-gray-900">{shown("name")}</h1>
-              <p className="mt-0.5 text-sm text-gray-500">{shown("fullName")}</p>
+              <h1 className="mt-4 text-3xl font-semibold text-gray-900 dark:text-gray-50">{shown("name")}</h1>
+              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{shown("fullName")}</p>
             </div>
             {!canAdmin && (
               <div className="mt-4">
-                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
                   👀 You can look, but only a <strong>club admin</strong> can change Settings.
                 </p>
               </div>
             )}
-            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>}
+            {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
+            {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{notice}</p>}
 
             <Group>
               <Row icon={ICONS.share} label="Share Your Hub" onClick={() => open("share")} />
@@ -668,28 +668,28 @@ function TeamsEditor({
   };
 
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
 
   return (
-    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-      <h2 className="font-extrabold text-gray-900">👥 Teams</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">👥 Teams</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Each team gets its own kit form, stats, match and training logs, training plan and subs.
         Archiving a team hides it everywhere but keeps all its data.
       </p>
 
       <div className="mt-4 flex flex-col gap-3">
         {active.map(({ t, i }, pos) => (
-          <div key={t.slug || `new-${i}`} className="rounded-2xl border border-gray-200">
+          <div key={t.slug || `new-${i}`} className="rounded-2xl border border-gray-200 dark:border-white/15">
             <div className="flex items-center gap-2 px-3 py-2.5">
               <span className="text-2xl">{t.accent || "⚽"}</span>
               <button
                 onClick={() => setOpen(open === i ? null : i)}
-                className="min-w-0 flex-1 cursor-pointer truncate text-left font-bold text-gray-900"
+                className="min-w-0 flex-1 cursor-pointer truncate text-left font-bold text-gray-900 dark:text-gray-50"
               >
                 {t.name.trim() || "New team"}
                 {!t.slug && (
-                  <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">
+                  <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800 dark:text-green-300 dark:bg-green-400/15">
                     New
                   </span>
                 )}
@@ -698,7 +698,7 @@ function TeamsEditor({
                 onClick={() => move(i, -1)}
                 disabled={pos === 0}
                 aria-label={`Move ${t.name} up`}
-                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-white/10"
               >
                 ↑
               </button>
@@ -706,23 +706,23 @@ function TeamsEditor({
                 onClick={() => move(i, 1)}
                 disabled={pos === active.length - 1}
                 aria-label={`Move ${t.name} down`}
-                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+                className="h-8 w-8 cursor-pointer rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-white/10"
               >
                 ↓
               </button>
               <button
                 onClick={() => setOpen(open === i ? null : i)}
-                className="cursor-pointer rounded-lg px-2 py-1 text-sm font-semibold text-green-700 hover:bg-green-50"
+                className="cursor-pointer rounded-lg px-2 py-1 text-sm font-semibold text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-400/15"
               >
                 {open === i ? "Done" : "Edit"}
               </button>
             </div>
 
             {open === i && (
-              <div className="flex flex-col gap-3 border-t border-gray-100 px-3 pb-4 pt-3">
+              <div className="flex flex-col gap-3 border-t border-gray-100 px-3 pb-4 pt-3 dark:border-white/10">
                 <div className="flex gap-3">
                   <label className="w-20 shrink-0">
-                    <span className="text-xs font-bold text-gray-700">Emoji</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Emoji</span>
                     <input
                       value={t.accent}
                       maxLength={8}
@@ -731,7 +731,7 @@ function TeamsEditor({
                     />
                   </label>
                   <label className="min-w-0 flex-1">
-                    <span className="text-xs font-bold text-gray-700">Team name</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Team name</span>
                     <input
                       value={t.name}
                       maxLength={30}
@@ -742,7 +742,7 @@ function TeamsEditor({
                   </label>
                 </div>
                 <label>
-                  <span className="text-xs font-bold text-gray-700">Name on posters</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Name on posters</span>
                   <input
                     value={t.squadName ?? ""}
                     maxLength={30}
@@ -755,7 +755,7 @@ function TeamsEditor({
                   </span>
                 </label>
                 <label>
-                  <span className="text-xs font-bold text-gray-700">FA Full-Time code (optional)</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">FA Full-Time code (optional)</span>
                   <input
                     value={t.faSnippet ?? ""}
                     inputMode="numeric"
@@ -770,7 +770,7 @@ function TeamsEditor({
                   </span>
                 </label>
                 <label>
-                  <span className="text-xs font-bold text-gray-700">League opponents (optional)</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">League opponents (optional)</span>
                   <textarea
                     value={t.opponentsText}
                     rows={4}
@@ -792,7 +792,7 @@ function TeamsEditor({
                           setOpen(null);
                         }
                       }}
-                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600"
+                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 dark:text-gray-400"
                     >
                       Archive Team
                     </button>
@@ -802,7 +802,7 @@ function TeamsEditor({
                         setTeams((all) => all.filter((_, n) => n !== i));
                         setOpen(null);
                       }}
-                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600"
+                      className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600 dark:text-gray-400"
                     >
                       Remove
                     </button>
@@ -816,7 +816,7 @@ function TeamsEditor({
 
       <button
         onClick={add}
-        className="mt-3 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700"
+        className="mt-3 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/20"
       >
         + Add Team
       </button>
@@ -826,12 +826,12 @@ function TeamsEditor({
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Archived</p>
           <div className="mt-2 flex flex-col gap-2">
             {archived.map(({ t, i }) => (
-              <div key={t.slug} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
+              <div key={t.slug} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5">
                 <span className="text-xl opacity-60">{t.accent}</span>
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-500">{t.name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-500 dark:text-gray-400">{t.name}</span>
                 <button
                   onClick={() => change(i, { archived: false })}
-                  className="cursor-pointer text-sm font-semibold text-green-700 hover:text-green-800"
+                  className="cursor-pointer text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
                 >
                   Bring Back
                 </button>
@@ -859,13 +859,13 @@ function Toggle({
   return (
     <label className="flex cursor-pointer items-start gap-3 py-3">
       <span className="min-w-0 flex-1">
-        <span className="block font-bold text-gray-900">{label}</span>
-        <span className="mt-0.5 block text-sm text-gray-500">{hint}</span>
+        <span className="block font-bold text-gray-900 dark:text-gray-50">{label}</span>
+        <span className="mt-0.5 block text-sm text-gray-500 dark:text-gray-400">{hint}</span>
       </span>
       <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
       <span
         aria-hidden
-        className="relative mt-1 h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400"
+        className="relative mt-1 h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400 dark:bg-white/20"
       />
     </label>
   );
@@ -918,22 +918,22 @@ function AccountSection({
   }
 
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const button =
-    "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40";
+    "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900";
   return (
-    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-      <h2 className="font-extrabold text-gray-900">🔑 Sign-In</h2>
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Sign-In</h2>
       <label className="mt-4 block">
-        <span className="text-sm font-bold text-gray-800">Club email</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Club email</span>
         <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={input} />
         <span className="mt-1 block text-xs text-gray-400">Password reset links are sent here.</span>
       </label>
       <button onClick={() => save("email")} disabled={busy !== null || newEmail.trim() === email} className={button}>
         {busy === "email" ? "Saving…" : "Save Email"}
       </button>
-      <div className="mt-5 border-t border-gray-100 pt-4">
-        <span className="text-sm font-bold text-gray-800">Change the coach password</span>
+      <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Change the coach password</span>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password (8+ characters)" autoComplete="new-password" className={input} />
         <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="New password again" autoComplete="new-password" className={`${input} mt-2`} />
         <button onClick={() => save("password")} disabled={busy !== null || password.length < 8} className={button}>
@@ -941,7 +941,7 @@ function AccountSection({
         </button>
       </div>
       {message && (
-        <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
+        <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>
           {message.text}
         </p>
       )}
@@ -973,20 +973,20 @@ function ShareHub({ clubName }: { clubName: string }) {
   }
 
   return (
-    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-      <h2 className="font-extrabold text-gray-900">📣 Share Your Hub</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">📣 Share Your Hub</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by
         WhatsApp, email or your club&apos;s app. They can save it to their phone&apos;s home screen.
         Your club code, and who&apos;s allowed in, are in{" "}
-        <Link href="/admin/members" className="font-semibold text-green-700 underline">Coach Admin → Members</Link>.
+        <Link href="/admin/members" className="font-semibold text-green-700 underline dark:text-green-400">Coach Admin → Members</Link>.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-800">{url || "…"}</code>
+        <code className="min-w-0 flex-1 truncate rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-800 dark:bg-white/5 dark:text-gray-100">{url || "…"}</code>
         <button
           onClick={copy}
           disabled={!url}
-          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
         >
           {copied ? "Copied ✓" : "Copy Link"}
         </button>

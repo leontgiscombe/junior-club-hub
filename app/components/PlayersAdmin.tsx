@@ -105,12 +105,12 @@ export default function PlayersAdmin() {
 
   if (!snap) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
+      <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
             <div className="mb-2 text-3xl">🧒</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Players</h1>
-            <p className="mt-1 text-sm text-gray-500">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Players</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -118,9 +118,9 @@ export default function PlayersAdmin() {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="mb-3 text-center text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-3 text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={busy || !key}
@@ -128,7 +128,7 @@ export default function PlayersAdmin() {
           >
             {busy ? "Loading…" : "Open Players"}
           </button>
-          <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700">
+          <Link href="/admin" className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
             ← Coach Admin
           </Link>
         </div>
@@ -146,7 +146,7 @@ export default function PlayersAdmin() {
   ];
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-16">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-16">
       <div className="bg-green-700 px-4 py-6 text-white">
         <div className="mx-auto max-w-2xl">
           <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
@@ -155,33 +155,33 @@ export default function PlayersAdmin() {
         </div>
       </div>
       <div className="mx-auto max-w-2xl px-4">
-        <p className="mt-4 text-sm text-gray-500">
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           Parents&apos; children join here when you approve them in Members. Choose each player&apos;s team —
           it&apos;s the same squad the Match Log, Stats and Kit Sizes use.
         </p>
-        {error && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search players or parents"
-          className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
         />
         {groups.map((g) =>
           g.key === "" && g.players.length === 0 ? null : (
-            <section key={g.key || "none"} className={`mt-4 rounded-2xl border bg-white p-4 shadow-sm ${g.key ? "border-gray-100" : "border-amber-200"}`}>
-              <h2 className="font-extrabold text-gray-900">
-                {g.key ? g.title : `⚠️ ${g.title}`} <span className="font-semibold text-gray-500">({g.players.length})</span>
+            <section key={g.key || "none"} className={`mt-4 rounded-2xl border bg-white p-4 shadow-sm ${g.key ? "border-gray-100 dark:border-white/10" : "border-amber-200 dark:border-amber-400/30"}`}>
+              <h2 className="font-extrabold text-gray-900 dark:text-gray-50">
+                {g.key ? g.title : `⚠️ ${g.title}`} <span className="font-semibold text-gray-500 dark:text-gray-400">({g.players.length})</span>
               </h2>
               {g.players.length === 0 ? (
-                <p className="mt-1 text-sm text-gray-500">No players yet.</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No players yet.</p>
               ) : (
-                <ul className="mt-2 divide-y divide-gray-100">
+                <ul className="mt-2 divide-y divide-gray-100 dark:divide-white/10">
                   {g.players.map((p) => (
                     <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                       <span className="min-w-0 flex-1">
-                        <span className="block font-bold text-gray-900">{p.name}</span>
-                        <span className="block text-sm text-gray-500">
+                        <span className="block font-bold text-gray-900 dark:text-gray-50">{p.name}</span>
+                        <span className="block text-sm text-gray-500 dark:text-gray-400">
                           {[
                             p.parents.length ? `Parent: ${p.parents.map((x) => x.name).join(", ")}` : "No parent account yet",
                             !p.team && p.requestedTeam ? `asked for ${p.requestedTeam.name}` : "",
@@ -196,7 +196,7 @@ export default function PlayersAdmin() {
                         onChange={(e) => move(p.id, e.target.value)}
                         disabled={busy}
                         aria-label={`${p.name}'s team`}
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                       >
                         <option value="">No team yet</option>
                         {snap.teams.map((t) => (

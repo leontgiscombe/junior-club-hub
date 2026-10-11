@@ -203,7 +203,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
 
   if (!authed) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
+      <main className="themed relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
         <BrushBackdrop />
         <div className="relative w-full max-w-sm">
           <div className="mb-6 text-center text-white">
@@ -225,10 +225,10 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
               {CLUB.fullName}
             </p>
           </div>
-          <div className="rounded-3xl bg-white p-7 shadow-2xl">
-            <p className="mb-4 text-center text-sm font-semibold text-gray-500">🔒 Coaches only</p>
+          <div className="rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
+            <p className="mb-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">🔒 Coaches only</p>
             {account && !account.canCoach && (
-              <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+              <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
                 You&apos;re signed in as {account.email}, but you&apos;re not a coach at this club. A club admin can
                 give you the Coach role in Members.
               </p>
@@ -245,7 +245,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
               </>
             )}
             {passwordOff ? (
-              error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>
+              error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>
             ) : (
               <>
             <input
@@ -254,13 +254,13 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
               onChange={(e) => setKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && login(key)}
               placeholder="Enter admin password"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
             />
-            {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+            {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
             <button
               onClick={() => login(key)}
               disabled={loading || !key}
-              className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40 cursor-pointer"
+              className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40 cursor-pointer dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
@@ -269,14 +269,14 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             {canResetPassword && !passwordOff && (
               <Link
                 href="/reset-password"
-                className="mt-4 block text-center text-sm font-semibold text-green-700 hover:text-green-800"
+                className="mt-4 block text-center text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
               >
                 Forgot the password?
               </Link>
             )}
             <Link
               href="/"
-              className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+              className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
             >
               ← Back to Team Hub
             </Link>

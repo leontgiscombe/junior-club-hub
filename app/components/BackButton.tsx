@@ -24,7 +24,7 @@ export default function BackButton({
       title={label}
       className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
         light
-          ? "bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50"
+          ? "bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10"
           : "bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-md hover:bg-white/25"
       } ${className}`}
     >

@@ -280,12 +280,12 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🌟</div>
-            <h1 className="text-xl font-extrabold text-gray-900">Player of the Month</h1>
-            <p className="text-sm text-gray-500 mt-1">Coaches only</p>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Player of the Month</h1>
+            <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
           <input
             type="password"
@@ -293,9 +293,9 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load(key)}
             placeholder="Enter password"
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
           />
-          {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
           <button
             onClick={() => load(key)}
             disabled={loading || !key}
@@ -305,7 +305,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
           </button>
           <Link
             href="/admin"
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700"
+            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
           >
             ← Coach Admin
           </Link>
@@ -344,7 +344,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     navigator.canShare({ files: [image.file] });
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-12">
+    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-12">
       <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
         <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
         <h1 className="text-xl font-extrabold mt-2">🌟 Player of the Month</h1>
@@ -363,7 +363,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               className={`rounded-xl border px-2 py-2 text-sm font-bold cursor-pointer ${
                 team === t.slug
                   ? "border-green-600 bg-green-600 text-white"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-green-400"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
               }`}
             >
               {t.accent} {t.name}
@@ -371,22 +371,22 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
           ))}
         </div>
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         {months.length === 0 ? (
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/10">
             No awards logged for {teamName(team)} yet. Pick a best trainer in the Training Log and a
             player of the match or most improved in the match log, and each month&apos;s winner
             shows here.
           </div>
         ) : (
           <>
-            <label className="mb-4 block text-sm font-semibold text-gray-600">
+            <label className="mb-4 block text-sm font-semibold text-gray-600 dark:text-gray-300">
               Month
               <select
                 value={month}
                 onChange={(e) => setPickedMonth(e.target.value)}
-                className="ml-2 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="ml-2 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
               >
                 {months.map((m) => (
                   <option key={m} value={m}>
@@ -397,8 +397,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             </label>
 
             {/* The standings */}
-            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="mb-1 text-sm font-semibold text-gray-600">
+            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+              <p className="mb-1 text-sm font-semibold text-gray-600 dark:text-gray-300">
                 🏅 {mName} standings — {teamName(team)}
               </p>
               <p className="mb-3 text-xs text-gray-400">
@@ -414,21 +414,21 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                       onClick={() => edit({ winnerId: s.playerId })}
                       className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left cursor-pointer ${
                         chosen
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-100 bg-gray-50 hover:border-green-300"
+                          ? "border-green-500 bg-green-50 dark:bg-green-400/10"
+                          : "border-gray-100 bg-gray-50 hover:border-green-300 dark:bg-white/5 dark:border-white/10"
                       }`}
                     >
                       <span className="w-5 shrink-0 text-xs font-bold text-gray-400">{i + 1}</span>
-                      <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900">
+                      <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
                         {fullNameOf(s.playerId)}
                         {chosen && <span className="ml-1 text-green-600" title="Winner">★</span>}
                       </span>
-                      <span className="shrink-0 text-xs text-gray-500 tabular-nums">
+                      <span className="shrink-0 text-xs text-gray-500 tabular-nums dark:text-gray-400">
                         {MONTH_AWARD_KINDS.filter((k) => s.counts[k.kind] > 0)
                           .map((k) => `${k.icon} ${s.counts[k.kind]}`)
                           .join("  ")}
                       </span>
-                      <span className="w-12 shrink-0 text-right text-sm font-extrabold text-green-700 tabular-nums">
+                      <span className="w-12 shrink-0 text-right text-sm font-extrabold text-green-700 tabular-nums dark:text-green-400">
                         {s.points} pt{s.points === 1 ? "" : "s"}
                       </span>
                     </button>
@@ -436,7 +436,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                 })}
               </div>
               {decidedByTieBreak(standings) && !edits.winnerId && (
-                <p className="mt-2 text-xs text-amber-700">
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
                   {fullNameOf(standings[0].playerId)} and {fullNameOf(standings[1].playerId)} are
                   level on points — the tie-break picked {fullNameOf(standings[0].playerId)}.
                 </p>
@@ -444,7 +444,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               {edits.winnerId && edits.winnerId !== standings[0]?.playerId && (
                 <button
                   onClick={() => edit({ winnerId: undefined })}
-                  className="mt-2 text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer"
+                  className="mt-2 text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer dark:text-green-400"
                 >
                   ↺ Go back to the top of the standings
                 </button>
@@ -452,15 +452,15 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             </div>
 
             {/* The winner's photo */}
-            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="mb-1 text-sm font-semibold text-gray-600">📷 Winner&apos;s photo (optional)</p>
+            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+              <p className="mb-1 text-sm font-semibold text-gray-600 dark:text-gray-300">📷 Winner&apos;s photo (optional)</p>
               <p className="mb-3 text-xs text-gray-400">
                 Only add a photo if the child&apos;s parents are happy for it to be shared. It stays on
                 this phone — it&apos;s only in the image you make, never saved to the hub.
               </p>
               {photo ? (
                 <>
-                  <label className="mb-2 block text-xs font-semibold text-gray-500">
+                  <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                     Move the photo up or down
                     <input
                       type="range"
@@ -472,7 +472,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                     />
                   </label>
                   <div className="flex gap-3">
-                    <label className="cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800">
+                    <label className="cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400">
                       Change photo
                       <input
                         type="file"
@@ -486,14 +486,14 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                     </label>
                     <button
                       onClick={removePhoto}
-                      className="text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer"
+                      className="text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer dark:text-red-400"
                     >
                       Remove photo
                     </button>
                   </div>
                 </>
               ) : (
-                <label className="block w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-200 py-3 text-center text-sm font-semibold text-green-700 hover:border-green-400">
+                <label className="block w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-200 py-3 text-center text-sm font-semibold text-green-700 hover:border-green-400 dark:text-green-400 dark:border-white/15">
                   + Add a Photo
                   <input
                     type="file"
@@ -509,37 +509,37 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             </div>
 
             {/* The poster's words */}
-            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-semibold text-gray-600">✏️ Poster Words</p>
-              <label className="mb-2 block text-xs font-semibold text-gray-500">
+            <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+              <p className="mb-3 text-sm font-semibold text-gray-600 dark:text-gray-300">✏️ Poster Words</p>
+              <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Headline
                 <input
                   value={headline}
                   onChange={(e) => edit({ headline: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                 />
               </label>
-              <label className="mb-2 block text-xs font-semibold text-gray-500">
+              <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Why they won
                 <textarea
                   value={body}
                   rows={5}
                   onChange={(e) => edit({ body: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                 />
               </label>
-              <label className="block text-xs font-semibold text-gray-500">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Slogan along the bottom
                 <input
                   value={slogan}
                   onChange={(e) => edit({ slogan: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15"
                 />
               </label>
               {(edits.headline !== undefined || edits.body !== undefined || edits.slogan !== undefined) && (
                 <button
                   onClick={() => edit({ headline: undefined, body: undefined, slogan: undefined })}
-                  className="mt-2 text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer"
+                  className="mt-2 text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer dark:text-green-400"
                 >
                   ↺ Reset the words
                 </button>
@@ -550,7 +550,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             </div>
 
             {/* The poster */}
-            <div ref={frameRef} className="w-full overflow-hidden rounded-xl shadow-lg" style={{ height: POSTER_H * scale }}>
+            <div ref={frameRef} className="no-dark w-full overflow-hidden rounded-xl shadow-lg" style={{ height: POSTER_H * scale }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: POSTER_W }}>
                 <Poster
                   ref={posterRef}
@@ -580,8 +580,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                 {making ? "Making the Image…" : image ? "↻ Make the Image Again" : "🖼️ Make the Image"}
               </button>
               {image && (
-                <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                  <p className="mb-2 text-xs text-gray-500">
+                <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+                  <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                     Here&apos;s the image — on a phone, press and hold it to save it to your photos.
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -598,7 +598,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                     <a
                       href={image.url}
                       download={image.file.name}
-                      className="flex-1 rounded-xl border border-green-600 py-2.5 text-center text-sm font-bold text-green-700 hover:bg-green-50"
+                      className="flex-1 rounded-xl border border-green-600 py-2.5 text-center text-sm font-bold text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-400/15"
                     >
                       ⬇ Download
                     </a>

@@ -77,32 +77,32 @@ export default function SignInForm({
   }
 
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   if (!sent) {
     return (
       <form onSubmit={send} className="flex flex-col gap-4">
         {passkeys === "first" && (
           <>
-            <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
+            <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
               Sign In with a Passkey
             </button>
             <p className="-mt-2 text-center text-xs text-gray-400">Face ID, fingerprint or your screen lock — if you&apos;ve added one</p>
             <div className="flex items-center gap-3 text-xs font-semibold text-gray-400">
-              <span className="h-px flex-1 bg-gray-200" />or<span className="h-px flex-1 bg-gray-200" />
+              <span className="h-px flex-1 bg-gray-200 dark:bg-white/15" />or<span className="h-px flex-1 bg-gray-200 dark:bg-white/15" />
             </div>
           </>
         )}
         <label>
-          <span className="text-sm font-bold text-gray-800">Your email</span>
+          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your email</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={input} placeholder="you@example.com" />
           <span className="mt-1 block text-xs text-gray-400">We&apos;ll email you a code — no password needed.</span>
         </label>
-        {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
         <button disabled={busy} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Sending…" : "Email Me a Code"}
         </button>
         {passkeys === "also" && (
-          <button type="button" onClick={withPasskey} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-50">
+          <button type="button" onClick={withPasskey} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-50 dark:text-gray-400">
             Added a passkey? Sign in with it
           </button>
         )}
@@ -111,11 +111,11 @@ export default function SignInForm({
   }
   return (
     <form onSubmit={verify} className="flex flex-col gap-4">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 dark:text-gray-300">
         We&apos;ve emailed a code to <strong>{email}</strong>. It can take a minute — check your junk folder too.
       </p>
       <label>
-        <span className="text-sm font-bold text-gray-800">Code</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Code</span>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
@@ -126,7 +126,7 @@ export default function SignInForm({
           className={`${input} text-center font-mono text-2xl tracking-[0.3em]`}
         />
       </label>
-      {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
       <button disabled={busy || code.replace(/\D/g, "").length !== 6} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
         {busy ? "Checking…" : "Sign In"}
       </button>
@@ -134,11 +134,11 @@ export default function SignInForm({
         {sentTo ? (
           <span />
         ) : (
-          <button type="button" onClick={() => { setSent(false); setCode(""); setError(null); }} className="text-gray-500 hover:text-gray-800">
+          <button type="button" onClick={() => { setSent(false); setCode(""); setError(null); }} className="text-gray-500 hover:text-gray-800 dark:text-gray-400">
             ← Different email
           </button>
         )}
-        <button type="button" onClick={() => send()} disabled={busy} className="text-green-700 hover:underline disabled:opacity-50">
+        <button type="button" onClick={() => send()} disabled={busy} className="text-green-700 hover:underline disabled:opacity-50 dark:text-green-400">
           Send a new code
         </button>
       </div>
