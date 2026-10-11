@@ -140,7 +140,7 @@ export default function AccountPage() {
   }, []);
   const { status: alerts } = useJoinRequests();
 
-  if (!account) return <main className="themed min-h-screen bg-gray-100 dark:bg-black" />;
+  if (!account) return <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black" />;
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const isParent = !!here?.person && (here.person.relation === "parent" || here.person.children.length > 0);
@@ -164,7 +164,7 @@ export default function AccountPage() {
   };
   if (screen && titles[screen]) {
     return (
-      <main className="themed min-h-screen bg-gray-100 dark:bg-black pb-16">
+      <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black pb-16">
         <TopBar title={titles[screen]} onBack={closeScreen} />
         <div className="mx-auto max-w-xl px-4">
           {screen === "details" && (
@@ -306,7 +306,7 @@ export default function AccountPage() {
 
   // the main list
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black pb-16">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black pb-16">
       <TopBar title="Your Account" onBack={leave} />
       <div className="mx-auto max-w-xl px-4">
         <div className="flex flex-col items-center pb-6 pt-2 text-center">

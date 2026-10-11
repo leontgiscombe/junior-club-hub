@@ -192,7 +192,7 @@ export default function MembersAdmin() {
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10";
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16">
       <TopBar title="Members" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto max-w-2xl px-4">

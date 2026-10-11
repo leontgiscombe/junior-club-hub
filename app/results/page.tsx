@@ -27,6 +27,10 @@ export async function generateMetadata() {
 }
 
 
+/** Home's colours for a result: green won, amber drew, red lost. */
+const BADGE = { W: "bg-green-600", D: "bg-amber-500", L: "bg-red-600" } as const;
+const card = "rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]";
+
 function formatDate(date: string) {
   const d = new Date(`${date}T00:00`);
   if (isNaN(d.getTime())) return date;
@@ -96,28 +100,29 @@ export default async function ResultsPage({
   const shownTeams = teams.filter((t) => t.slug === current);
 
   return (
-    <div className="themed flex min-h-screen flex-col bg-gray-100 dark:bg-black dark:text-gray-50">
+    <div className="themed flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title="Results" href="/" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pb-8 pt-2">
-        <p className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">{CLUB.name} · {season} season</p>
+        <p className="mb-4 text-center text-[15px] text-gray-500 dark:text-gray-400">{CLUB.name} · {season} season</p>
         {teams.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
             <p className="mb-3 text-4xl">⚽</p>
             <p>No results yet this season — check back after the next game.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
+            {/* the teams, as a switch like iOS's */}
             {tabs.length > 1 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
                 {tabs.map((t) => (
                   <Link
                     key={t.slug}
                     href={`/results?team=${t.slug}`}
-                    className={`flex-1 rounded-xl border-2 px-3 py-2 text-center text-sm font-bold ${
+                    className={`min-w-0 flex-1 truncate rounded-full px-3 py-2 text-center text-sm font-semibold ${
                       current === t.slug
-                        ? "border-green-600 bg-green-600 text-white shadow"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                        : "text-gray-600 dark:text-gray-300"
                     }`}
                   >
                     {t.accent} {t.name}
@@ -127,162 +132,116 @@ export default async function ResultsPage({
             )}
 
             {shownTeams.map((team) => (
-              <section key={team.slug}>
-                <h2 className="mb-3 text-lg font-extrabold text-gray-900 dark:text-gray-50">
-                  {team.accent} {team.name}
-                </h2>
-
+              <div key={team.slug} className="flex flex-col gap-6">
                 {team.nothingYet && (
-                  <p className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/10">
+                  <p className={`${card} p-5 text-center text-sm text-gray-500 dark:text-gray-400`}>
                     No results yet this season — check back after the next game.
                   </p>
                 )}
 
                 {/* League record */}
                 {team.record.played > 0 && (
-                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">League record</p>
+                  <section>
+                    <div className="mb-2.5 flex items-center justify-between gap-3 px-1">
+                      <h2 className="text-xl font-bold">League Record</h2>
                       <div className="flex items-center gap-1">
                         {team.form.map((f, i) => (
-                          <span
-                            key={i}
-                            className={`grid h-5 w-5 place-items-center rounded text-[11px] font-bold text-white ${
-                              f === "W"
-                                ? "bg-green-600"
-                                : f === "D"
-                                  ? "bg-gray-400"
-                                  : "bg-red-400"
-                            }`}
-                          >
+                          <span key={i} className={`grid h-6 w-6 place-items-center rounded-md text-[11px] font-bold text-white ${BADGE[f]}`}>
                             {f}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-center text-sm">
-                        <thead>
-                          <tr className="text-xs text-gray-500 dark:text-gray-400">
-                            {["P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h) => (
-                              <th key={h} className="px-1 py-1 font-semibold">
-                                {h}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="font-extrabold tabular-nums text-gray-900 dark:text-gray-50">
-                            <td className="px-1 py-1">{team.record.played}</td>
-                            <td className="px-1 py-1 text-green-700 dark:text-green-400">{team.record.won}</td>
-                            <td className="px-1 py-1">{team.record.drawn}</td>
-                            <td className="px-1 py-1 text-red-500">{team.record.lost}</td>
-                            <td className="px-1 py-1">{team.record.scored}</td>
-                            <td className="px-1 py-1">{team.record.conceded}</td>
-                            <td className="px-1 py-1">
-                              {team.record.difference > 0 ? "+" : ""}
-                              {team.record.difference}
-                            </td>
-                            <td className="px-1 py-1 text-green-700 dark:text-green-400">
-                              {team.record.points}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className={`${card} p-4`}>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-center text-sm">
+                          <thead>
+                            <tr className="text-xs text-gray-500 dark:text-gray-400">
+                              {["P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h) => (
+                                <th key={h} className="px-1 py-1 font-semibold">
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="text-base font-extrabold tabular-nums text-gray-900 dark:text-gray-50">
+                              <td className="px-1 py-1">{team.record.played}</td>
+                              <td className="px-1 py-1 text-green-700 dark:text-green-400">{team.record.won}</td>
+                              <td className="px-1 py-1">{team.record.drawn}</td>
+                              <td className="px-1 py-1 text-red-600 dark:text-red-400">{team.record.lost}</td>
+                              <td className="px-1 py-1">{team.record.scored}</td>
+                              <td className="px-1 py-1">{team.record.conceded}</td>
+                              <td className="px-1 py-1">
+                                {team.record.difference > 0 ? "+" : ""}
+                                {team.record.difference}
+                              </td>
+                              <td className="px-1 py-1 text-green-700 dark:text-green-400">{team.record.points}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      {team.cleanSheets > 0 && (
+                        <p className="mt-2 border-t border-gray-100 pt-2 text-center text-sm text-gray-600 dark:border-white/10 dark:text-gray-300">
+                          🥅 <span className="font-semibold">{team.cleanSheets} clean sheet{team.cleanSheets === 1 ? "" : "s"}</span> this season
+                        </p>
+                      )}
                     </div>
-                    {team.cleanSheets > 0 && (
-                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
-                        🥅{" "}
-                        <span className="font-semibold">
-                          {team.cleanSheets} clean sheet
-                          {team.cleanSheets === 1 ? "" : "s"}
-                        </span>{" "}
-                        this season
-                      </p>
-                    )}
-                  </div>
+                  </section>
                 )}
 
-                {/* Recent results */}
+                {/* Recent results: rows like Home's Last result */}
                 {team.results.length > 0 && (
-                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
-                    <p className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                      Recent results
-                    </p>
-                    <div className="flex flex-col gap-1.5">
+                  <section>
+                    <h2 className="mb-2.5 px-1 text-xl font-bold">Recent Results</h2>
+                    <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
                       {team.results.map((m) => {
                         const us = m.goals.length;
                         const them = m.opponentGoals;
                         const result = us > them ? "W" : us === them ? "D" : "L";
                         return (
-                          <div
-                            key={m.id}
-                            className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
-                          >
-                            <span
-                              className={`grid h-5 w-5 shrink-0 place-items-center rounded text-[11px] font-bold text-white ${
-                                result === "W"
-                                  ? "bg-green-600"
-                                  : result === "D"
-                                    ? "bg-gray-400"
-                                    : "bg-red-400"
-                              }`}
-                            >
-                              {result}
+                          <div key={m.id} className="flex items-center gap-4 px-4 py-3">
+                            <span className={`grid h-11 min-w-14 shrink-0 place-items-center rounded-xl px-2 text-lg font-extrabold text-white ${BADGE[result]}`}>
+                              {us}–{them}
                             </span>
-                            <span className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-50">
-                              <span className="font-bold">
-                                {us}–{them}
-                              </span>{" "}
-                              {m.home ? "v" : "away at"} {m.opponent}
-                              {m.friendly && (
-                                <span className="text-gray-400">
-                                  {m.cup ? " · cup" : " · friendly"}
-                                </span>
-                              )}
-                            </span>
-                            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(m.date)}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-bold">
+                                {m.home ? "vs" : "at"} {m.opponent}
+                              </span>
+                              <span className="block truncate text-sm text-gray-500 dark:text-gray-400">
+                                {formatDate(m.date)} · {m.home ? "Home" : "Away"}
+                                {m.friendly ? (m.cup ? " · Cup" : " · Friendly") : ""}
+                              </span>
                             </span>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* Top scorers / assists */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    { title: "⚽ Top Scorers", rows: team.scorers, field: "goals" as const },
-                    { title: "🅰️ Most Assists", rows: team.assisters, field: "assists" as const },
-                    { title: "🧤 Most Saves", rows: team.keepers, field: "saves" as const },
-                  ]
-                    .filter((c) => c.rows.length > 0)
-                    .map((card) => (
-                      <div
-                        key={card.title}
-                        className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10"
-                      >
-                        <p className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                          {card.title}
-                        </p>
-                        <div className="flex flex-col gap-1.5">
-                          {card.rows.map((p) => (
-                            <div key={p.id} className="flex items-center gap-2">
-                              <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
-                                {fullNames ? p.name : shortName(p.name)}
-                              </span>
-                              <span className="shrink-0 text-sm font-extrabold tabular-nums text-green-700 dark:text-green-400">
-                                {p[card.field]}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                {/* Top scorers / assists / saves */}
+                {[
+                  { title: "⚽ Top Scorers", rows: team.scorers, field: "goals" as const },
+                  { title: "🅰️ Most Assists", rows: team.assisters, field: "assists" as const },
+                  { title: "🧤 Most Saves", rows: team.keepers, field: "saves" as const },
+                ]
+                  .filter((c) => c.rows.length > 0)
+                  .map((list) => (
+                    <section key={list.title}>
+                      <h2 className="mb-2.5 px-1 text-xl font-bold">{list.title}</h2>
+                      <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
+                        {list.rows.map((p, i) => (
+                          <div key={p.id} className="flex items-center gap-3 px-4 py-3">
+                            <span className="w-5 shrink-0 text-center text-sm font-bold text-gray-400">{i + 1}</span>
+                            <span className="min-w-0 flex-1 truncate font-semibold">{fullNames ? p.name : shortName(p.name)}</span>
+                            <span className="shrink-0 text-lg font-extrabold tabular-nums text-green-700 dark:text-green-400">{p[list.field]}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                </div>
-              </section>
+                    </section>
+                  ))}
+              </div>
             ))}
           </div>
         )}

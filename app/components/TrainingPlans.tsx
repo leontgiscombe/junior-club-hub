@@ -1136,7 +1136,7 @@ export default function TrainingPlans() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-24">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-24">
       <TopBar title="Training Plans" href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">

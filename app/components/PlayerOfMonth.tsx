@@ -354,7 +354,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     navigator.canShare({ files: [image.file] });
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-12">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-12">
       <TopBar title="Player of the Month" href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-5">

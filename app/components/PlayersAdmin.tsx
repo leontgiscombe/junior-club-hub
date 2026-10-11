@@ -161,7 +161,7 @@ export default function PlayersAdmin() {
   ];
 
   return (
-    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16">
+    <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16">
       <TopBar title="Players" href={`/admin${keyQuery(key)}`} />
       <div className="mx-auto max-w-2xl px-4">
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
