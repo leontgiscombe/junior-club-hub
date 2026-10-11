@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { useClub, useTeams } from "./ClubProvider";
+import { useTeams } from "./ClubProvider";
 import { nameOf, type Team } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import { approachingMilestones, reachedMilestones } from "@/lib/milestones";
@@ -17,6 +17,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
+import { MoreMenu } from "./MoreMenu";
 import { TopBar } from "./SettingsUI";
 
 type StatField =
@@ -240,7 +241,6 @@ function winners(list: Player[], field: StatField) {
 
 export default function StatsTracker() {
   const { TEAMS, teamName } = useTeams();
-  const { features } = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
@@ -1020,32 +1020,21 @@ export default function StatsTracker() {
           </>
         )}
 
-        {/* Sort + count + export */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <div className="flex items-center gap-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {shown.length} player{shown.length === 1 ? "" : "s"} in {teamName(team)}
-            </p>
-            {!editing && shown.length > 0 && (
-              <button
-                onClick={() => {
-                  const open = !shown.every((p) => playerOpen[p.id]);
-                  setPlayerOpen(Object.fromEntries(shown.map((p) => [p.id, open])));
-                }}
-                className="text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer whitespace-nowrap dark:text-green-400"
-              >
-                {shown.every((p) => playerOpen[p.id]) ? "Close All" : "Open All"}
-              </button>
-            )}
+        {/* Count, edit and the less-used actions; then sort and open/close */}
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate px-1 text-sm text-gray-500 dark:text-gray-400">
+            {shown.length} player{shown.length === 1 ? "" : "s"} in {teamName(team)}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => {
                 setEditing((v) => !v);
                 setEditingId(null);
               }}
-              className={`rounded-full border px-3 py-1 text-xs font-bold whitespace-nowrap cursor-pointer ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap cursor-pointer shadow-sm ${
                 editing
-                  ? "border-green-600 bg-green-600 text-white hover:bg-green-700"
-                  : "border-gray-300 bg-white text-gray-600 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/20"
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-white text-gray-700 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200"
               }`}
               title={
                 editing
@@ -1055,62 +1044,53 @@ export default function StatsTracker() {
             >
               {editing ? "Done" : "Edit"}
             </button>
+            <MoreMenu
+              title={`${teamName(team)} Stats`}
+              items={[
+                {
+                  label: "Export CSV",
+                  hint: `Download ${teamName(team)} stats as a spreadsheet`,
+                  icon: <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />,
+                  disabled: shown.length === 0,
+                  onClick: () => downloadTeamCSV(shown, team),
+                },
+                {
+                  label: "Presentation",
+                  hint: "Full-screen awards slideshow for presentation evening",
+                  icon: <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M12 16v4M8 20h8" /></>,
+                  href: `/admin/stats/presentation${keyQuery(key, `team=${team}`)}`,
+                },
+              ]}
+            />
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <label className="text-xs text-gray-500 dark:text-gray-400">
-              Sort
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "name" | StatField)}
-                className="ml-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
-              >
-                <option value="name">Name (A–Z)</option>
-                {STATS.filter((s) => squadFields.has(s.field)).map((s) => (
-                  <option key={s.field} value={s.field}>
-                    {s.short} (high–low)
-                  </option>
-                ))}
-              </select>
-            </label>
+        </div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <label className="flex items-center px-1 text-sm text-gray-500 dark:text-gray-400">
+            Sort
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "name" | StatField)}
+              className="ml-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
+            >
+              <option value="name">Name (A–Z)</option>
+              {STATS.filter((s) => squadFields.has(s.field)).map((s) => (
+                <option key={s.field} value={s.field}>
+                  {s.short} (high–low)
+                </option>
+              ))}
+            </select>
+          </label>
+          {!editing && shown.length > 0 && (
             <button
-              onClick={() => downloadTeamCSV(shown, team)}
-              disabled={shown.length === 0}
-              className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap dark:text-green-400"
-              title={`Download ${teamName(team)} stats as a CSV`}
+              onClick={() => {
+                const open = !shown.every((p) => playerOpen[p.id]);
+                setPlayerOpen(Object.fromEntries(shown.map((p) => [p.id, open])));
+              }}
+              className="px-1 text-sm font-semibold text-green-700 hover:text-green-800 cursor-pointer whitespace-nowrap dark:text-green-400"
             >
-              Export CSV
+              {shown.every((p) => playerOpen[p.id]) ? "Close All" : "Open All"}
             </button>
-            <Link
-              href={`/admin/stats/matches${keyQuery(key)}`}
-              className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
-              title="Log each game's goals and who assisted"
-            >
-              Match Log
-            </Link>
-            <Link
-              href={`/admin/stats/training${keyQuery(key)}`}
-              className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
-              title="Pick each session's best trainer"
-            >
-              Training Log
-            </Link>
-            {features.playerOfMonth && (
-              <Link
-                href={`/admin/stats/player-of-the-month${keyQuery(key)}`}
-                className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
-                title="This month's winner from the awards, with a poster"
-              >
-                Player of the Month
-              </Link>
-            )}
-            <Link
-              href={`/admin/stats/presentation${keyQuery(key, `team=${team}`)}`}
-              className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
-              title="Full-screen awards slideshow for presentation evening"
-            >
-              Presentation
-            </Link>
-          </div>
+          )}
         </div>
 
         {editing && (
