@@ -1,5 +1,6 @@
 // The signed-in person's own place at this club: their team and children.
-//   GET                          -> { club, person: { status, relation, team, children } | null, teams }
+//   GET                          -> { club, person: { status, relation, team, children } | null, teams, photos }
+//                                   (photos: each of their own children's photo version, by squad player id)
 //   PUT { children?, team? }     -> saves their children (a parent) or their own team
 // Only their own record; the club's coaches see the changes in Members.
 import { NextRequest, NextResponse } from "next/server";
@@ -7,6 +8,7 @@ import { childrenOf } from "@/lib/access";
 import { cleanChildren, currentPerson, pickTeam, updatePerson } from "@/lib/people";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
+import { playerPhotoVersions } from "@/lib/playerPhoto";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,11 @@ const view = (p: NonNullable<Awaited<ReturnType<typeof currentPerson>>>["person"
 export async function GET() {
   const ctx = await context();
   if (!ctx) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  return NextResponse.json({ club: (await getClub()).name, person: view(ctx.me.person), teams: ctx.teams });
+  // their own children's photos (only once approved: the photo API checks the same)
+  const mine = ctx.me.person?.status === "approved" ? childrenOf(ctx.me.person).flatMap((c) => (c.playerId ? [c.playerId] : [])) : [];
+  const versions = mine.length ? await playerPhotoVersions().catch(() => ({}) as Record<string, string>) : {};
+  const photos = Object.fromEntries(mine.flatMap((id) => (versions[id] ? [[id, versions[id]]] : [])));
+  return NextResponse.json({ club: (await getClub()).name, person: view(ctx.me.person), teams: ctx.teams, photos });
 }
 
 export async function PUT(req: NextRequest) {
