@@ -99,8 +99,8 @@ export default async function RootLayout({
       <body className="min-h-full bg-gray-50 font-sans antialiased">
         <ClubProvider club={club} teams={teams}>
           {children}
-          {/* the app's tab bar — not for someone a private club hasn't let in yet */}
-          {!hideTeams && <TabBar viewer={viewer} />}
+          {/* the app's tab bar — a club's hub only (not the platform's own site), and not for someone a private club hasn't let in yet */}
+          {tenant && !hideTeams && <TabBar viewer={viewer} />}
         </ClubProvider>
       </body>
     </html>
