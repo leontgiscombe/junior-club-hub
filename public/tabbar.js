@@ -17,7 +17,8 @@
     matches: '<circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 4.5h-5L8 10z"/>',
     trainingLog: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
     stats: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
-    members: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6"/>'
+    members: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
   };
   var css =
     "#hub-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;padding:0 12px max(12px,env(safe-area-inset-bottom));pointer-events:none;font-family:-apple-system,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}" +
@@ -67,7 +68,8 @@
       matches: ["/admin/stats/matches", "Match Log", "matches"],
       trainingLog: ["/admin/stats/training", "Training Log", "trainingLog"],
       stats: ["/admin/stats", "Stats", "stats"],
-      members: ["/admin/members", "Members", "members"]
+      members: ["/admin/members", "Members", "members"],
+      search: ["/search", "Search", "search"]
     };
     var can = ["home"];
     if (features.trainingHub !== false) can.push("training");
@@ -75,7 +77,7 @@
     if (features.kitSizes !== false) can.push("kit");
     if (canCoach) can.push("coach");
     if (publicResults) can.push("results");
-    can.push("account");
+    can.push("account", "search");
     if (canCoach) can.push("matches", "trainingLog", "stats", "members");
     var ids = ["home"];
     var saved = null;

@@ -197,6 +197,10 @@ export default function TrainingPlans() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
+    // opened from Search: the Drill Library, filtered to what was found
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("view") === "library") setView("library");
+    if (params.get("q")) setSearch(params.get("q")!);
     if (urlKey) {
       setKey(urlKey);
       Promise.resolve(load(urlKey)).finally(() => setChecking(false));

@@ -30,6 +30,7 @@ export const TAB_ICONS: Record<TabId, React.ReactNode> = {
   trainingLog: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
   stats: <path d="M5 20V10M12 20V4M19 20v-7" />,
   members: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
 };
 
 export function TabIcon({ id, className = "h-6 w-6" }: { id: TabId; className?: string }) {

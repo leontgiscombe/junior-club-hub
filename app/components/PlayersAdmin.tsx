@@ -51,6 +51,10 @@ export default function PlayersAdmin() {
 
   useEffect(() => {
     const urlKey = new URLSearchParams(window.location.search).get("key");
+    // opened from Search: start filtered to what was found
+    const urlQuery = new URLSearchParams(window.location.search).get("q");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address is only known in the browser
+    if (urlQuery) setSearch(urlQuery);
     let cancelled = false;
     const t = setTimeout(async () => {
       if (urlKey) {

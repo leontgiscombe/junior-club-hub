@@ -15,7 +15,8 @@ export type TabId =
   | "matches"
   | "trainingLog"
   | "stats"
-  | "members";
+  | "members"
+  | "search";
 
 export type TabContext = {
   signedIn: boolean;
@@ -65,6 +66,8 @@ export function tabDef(id: TabId, ctx: TabContext): TabDef {
       return { href: "/admin/stats", label: "Stats", match: (p) => p === "/admin/stats" };
     case "members":
       return { href: "/admin/members", label: "Members", match: (p) => p === "/admin/members" };
+    case "search":
+      return { href: "/search", label: "Search", match: (p) => p === "/search" };
   }
 }
 
@@ -76,7 +79,7 @@ export function availableTabs(ctx: TabContext): TabId[] {
   if (ctx.features.kitSizes !== false) out.push("kit");
   if (ctx.canCoach) out.push("coach");
   if (ctx.publicResults) out.push("results");
-  out.push("account");
+  out.push("account", "search");
   if (ctx.canCoach) out.push("matches", "trainingLog", "stats", "members");
   return out;
 }
