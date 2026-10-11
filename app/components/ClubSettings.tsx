@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
+import { removeBackground } from "@/lib/crestBackground";
 import { DEFAULT_TRAINING, EDITABLE, FEATURES, MAX_TRAINING_DAYS, WEEKDAYS, kitAspect, slugFor, type Feature, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
@@ -67,10 +68,24 @@ const FIELDS: { field: EditableText; label: string; hint: string }[] = [
 
 /** Shrink an image file to fit within `max` pixels and turn it into a PNG data URL. */
 /** The picture as a data: URL no bigger than `max` pixels a side: a PNG (keeps a see-through background) or a JPEG (for photos). */
+type Picture = { image: string; width: number; height: number };
+const pictureOf = (canvas: HTMLCanvasElement, type = "image/png"): Picture => ({
+  image: canvas.toDataURL(type, 0.85),
+  width: canvas.width,
+  height: canvas.height,
+});
+
 async function shrinkImage(
   file: File,
   { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
-): Promise<{ image: string; width: number; height: number }> {
+): Promise<Picture> {
+  return pictureOf(await shrinkToCanvas(file, { max, type }), type);
+}
+
+async function shrinkToCanvas(
+  file: File,
+  { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
+): Promise<HTMLCanvasElement> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -92,7 +107,7 @@ async function shrinkImage(
       ctx.fillRect(0, 0, width, height);
     }
     ctx.drawImage(img, 0, 0, width, height);
-    return { image: canvas.toDataURL(type, 0.85), width, height };
+    return canvas;
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -217,12 +232,26 @@ export default function ClubSettings() {
     kit: { name: "kit picture", shrink: { max: 1600, type: "image/jpeg" } },
   } as const;
 
-  async function uploadPicture(slot: keyof typeof PICTURES, file: File | undefined) {
-    if (!file) return;
+  // a crest with a plain background: both versions, for the coach to pick from
+  const [crestPick, setCrestPick] = useState<{ original: Picture; cleaned: Picture } | null>(null);
+
+  async function uploadPicture(slot: keyof typeof PICTURES, file: File | undefined, ready?: Picture) {
+    if (!file && !ready) return;
     const { name, shrink } = PICTURES[slot];
     setUploading(slot);
     try {
-      const body = { ...(await shrinkImage(file, shrink)), slot };
+      let picture = ready;
+      if (!picture && slot === "crest") {
+        const canvas = await shrinkToCanvas(file!, shrink);
+        const cleaned = removeBackground(canvas);
+        if (cleaned) {
+          setCrestPick({ original: pictureOf(canvas), cleaned: pictureOf(cleaned) });
+          return;
+        }
+        picture = pictureOf(canvas);
+      }
+      setCrestPick(null);
+      const body = { ...(picture ?? (await shrinkImage(file!, shrink))), slot };
       await send("POST", body, `New ${name} saved.`, { keepEdits: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : `Could not upload that ${name}`);
@@ -402,8 +431,9 @@ export default function ClubSettings() {
                 <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
                   <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🛡️ Club Crest</h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    A PNG with a see-through background looks best. It&apos;s also used for the home-screen
-                    icon when someone saves the hub to their phone.
+                    A PNG with a see-through background looks best; if yours has a plain background, the
+                    hub offers to take it off. It&apos;s also used for the home-screen icon when someone
+                    saves the hub to their phone.
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -425,7 +455,7 @@ export default function ClubSettings() {
                         }}
                       />
                     </label>
-                    {snap.crest && (
+                    {snap.crest && !crestPick && (
                       <button
                         onClick={() => resetPicture("crest")}
                         disabled={!!uploading}
@@ -435,6 +465,47 @@ export default function ClubSettings() {
                       </button>
                     )}
                   </div>
+                  {/* the crest had a plain background: with it taken off, or as it was */}
+                  {crestPick && (
+                    <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-50">Take the background off?</p>
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Your crest has a plain background. Here it is with that taken off, and as you uploaded it.
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        {(
+                          [
+                            ["cleaned", "Background Off", crestPick.cleaned],
+                            ["original", "As Uploaded", crestPick.original],
+                          ] as const
+                        ).map(([key, label, pic]) => (
+                          <button
+                            key={key}
+                            onClick={() => uploadPicture("crest", undefined, pic)}
+                            disabled={!!uploading}
+                            className={`cursor-pointer rounded-2xl border-2 p-2 text-sm font-bold disabled:opacity-50 ${
+                              key === "cleaned"
+                                ? "border-green-600 text-green-700 dark:text-green-400"
+                                : "border-gray-200 text-gray-700 dark:border-white/15 dark:text-gray-200"
+                            }`}
+                          >
+                            {/* on the dark green the home-screen icon uses, so any leftover background shows */}
+                            <span className="grid aspect-square place-items-center rounded-xl bg-[radial-gradient(circle_at_50%_46%,#1f5c2c_0%,#0b2412_55%,#060906_100%)] p-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={pic.image} alt="" className="max-h-full max-w-full object-contain" />
+                            </span>
+                            <span className="mt-2 block">Use {label}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setCrestPick(null)}
+                        className="mt-3 w-full cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </section>
               </>
             )}
