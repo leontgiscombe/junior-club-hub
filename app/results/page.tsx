@@ -4,9 +4,8 @@
 // public endpoint to widen by accident, and it only ever renders what is safe
 // to show: scores, and players by name — shortened unless the club's hub is
 // private (lib/names.ts). Nothing from the kit or camera side appears here.
-import Image from "next/image";
 import Link from "next/link";
-import BackButton from "../components/BackButton";
+import { TopBar } from "../components/SettingsUI";
 import { redirect } from "next/navigation";
 import { listPlayers, type Player } from "@/lib/statsStorage";
 import { listMatches, type Match } from "@/lib/matchStorage";
@@ -97,23 +96,11 @@ export default async function ResultsPage({
   const shownTeams = teams.filter((t) => t.slug === current);
 
   return (
-    <div className="themed flex min-h-screen flex-col bg-gray-50 dark:bg-black dark:text-gray-50">
-      <header className="relative bg-gradient-to-br from-green-900 to-green-500 px-6 pb-8 pt-10 text-center text-white">
-        <BackButton href="/" label="Team Hub" className="absolute left-4 top-4" />
-        <Image
-          src={CLUB.crest.src}
-          unoptimized
-          alt={CLUB.crest.alt}
-          width={CLUB.crest.width}
-          height={CLUB.crest.height}
-          className="mx-auto mb-3 h-20 w-auto drop-shadow-lg"
-          priority
-        />
-        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Results</h1>
-        <p className="mt-1 text-green-100">{season} season</p>
-      </header>
+    <div className="themed flex min-h-screen flex-col bg-gray-100 dark:bg-black dark:text-gray-50">
+      <TopBar title="Results" href="/" />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-5 pb-8 pt-2">
+        <p className="mb-4 text-center text-sm text-gray-500 dark:text-gray-400">{CLUB.name} · {season} season</p>
         {teams.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
             <p className="mb-3 text-4xl">⚽</p>

@@ -6,7 +6,7 @@
 // iframe, so the snippet's script can write its markup however it likes) and
 // shows the result, so it can be copied back and an import built around it.
 import { useEffect, useRef, useState } from "react";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 function snippetPage(code: string) {
   // The snippet as Full-Time hands it out, with the code dropped in.
@@ -60,14 +60,8 @@ export default function FaSnippetTest() {
   }
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <BackButton href="/admin" label="Coach Admin" />
-        <h1 className="mt-2 text-xl font-extrabold">🔌 FA Full-Time Test</h1>
-        <p className="mt-0.5 text-sm text-green-200">
-          Loads a Full-Time code snippet in your browser to see what it gives us
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50">
+      <TopBar title="FA Full-Time Test" href="/admin" />
 
       <div className="mx-auto max-w-3xl px-4 py-6">
         <form

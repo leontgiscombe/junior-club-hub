@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RELATIONS, ROLES, SESSION_KEY, childrenOf, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
 import { keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
 
@@ -182,14 +182,8 @@ export default function MembersAdmin() {
   const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10";
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-16">
-      <div className="bg-green-700 px-4 py-6 text-white">
-        <div className="mx-auto max-w-2xl">
-          <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-          <h1 className="mt-2 text-xl font-extrabold">👪 Members</h1>
-          <p className="mt-0.5 text-sm text-green-200">Who can open your club&apos;s hub, and what they can do</p>
-        </div>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-16">
+      <TopBar title="Members" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto max-w-2xl px-4">
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}

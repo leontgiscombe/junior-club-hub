@@ -22,7 +22,7 @@ import {
   type MonthStanding,
 } from "@/lib/playerOfMonth";
 import { accountKey, keyQuery } from "./coachKey";
-import BackButton from "./BackButton";
+import { TopBar } from "./SettingsUI";
 
 interface Player {
   id: string;
@@ -344,15 +344,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     navigator.canShare({ files: [image.file] });
 
   return (
-    <main className="themed min-h-screen bg-gray-50 dark:bg-black dark:text-gray-50 pb-12">
-      <div className="bg-gradient-to-br from-green-800 to-green-600 px-4 pt-6 pb-5 text-white">
-        <BackButton href={`/admin${keyQuery(key)}`} label="Coach Admin" />
-        <h1 className="text-xl font-extrabold mt-2">🌟 Player of the Month</h1>
-        <p className="text-green-100 text-sm mt-0.5">
-          Worked out from the month&apos;s best trainer, most improved and player of the match
-          awards, with a poster to share.
-        </p>
-      </div>
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black dark:text-gray-50 pb-12">
+      <TopBar title="Player of the Month" href={`/admin${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-5">
         <div className="mb-4 grid grid-cols-3 gap-2">
