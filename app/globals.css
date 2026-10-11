@@ -111,3 +111,8 @@ html[data-wallpaper] .wp-text {
     animation: none;
   }
 }
+
+/* no tab bar on sign-in screens (app/components/NoTabBar.tsx) */
+body:has(.no-tabbar) .hub-tabbar {
+  display: none;
+}

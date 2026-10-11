@@ -73,11 +73,11 @@ export default function TabBar({ viewer }: { viewer: Viewer }) {
   return (
     <>
       {/* room for the bar, so it never covers the end of the page */}
-      <div aria-hidden="true" className="h-[calc(6rem+env(safe-area-inset-bottom))]" />
+      <div aria-hidden="true" className="hub-tabbar h-[calc(6rem+env(safe-area-inset-bottom))]" />
       {/* a floating frosted bar, set in from the edges like iOS's: light on light pages, dark in dark mode */}
       <nav
         aria-label="Main"
-        className="themed fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="hub-tabbar themed fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
         <ul className="mx-auto flex max-w-xl gap-0.5 rounded-full bg-white/85 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.16)] ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150 dark:bg-[#1c1c1e]/85 dark:ring-white/10">
           {tabs.map((t) => {

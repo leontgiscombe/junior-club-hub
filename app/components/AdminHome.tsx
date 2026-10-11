@@ -1,5 +1,6 @@
 "use client";
 
+import NoTabBar from "./NoTabBar";
 import Link from "next/link";
 import Image from "next/image";
 import { Anton } from "next/font/google";
@@ -234,6 +235,7 @@ export default function AdminHome({ canResetPassword = false }: { canResetPasswo
             </p>
           </div>
           <div className="rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
+            <NoTabBar />
             <p className="mb-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">🔒 Coaches only</p>
             {account && !account.canCoach && (
               <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
