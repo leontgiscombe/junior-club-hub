@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
+import ChildPhotos from "./ChildPhotos";
 import ProfilePhoto from "./ProfilePhoto";
 import AppearancePicker, { themeLabel } from "./AppearancePicker";
 import TabBarPicker from "./TabBarPicker";
@@ -22,6 +23,8 @@ type Here = {
   club: string;
   person: { status: MemberStatus; relation: Relation | null; team: { slug: string } | null; children: Child[] } | null;
   teams: { slug: string; name: string }[];
+  /** their children's photo versions, by squad player id */
+  photos?: Record<string, string>;
 };
 
 type Account = {
@@ -219,6 +222,13 @@ export default function AccountPage() {
                     ? `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`
                     : `Your team at ${here.club}.`}
                 </p>
+                {/* a photo for each child already in the squad (approved: the photo API checks the same) */}
+                {isParent && here.person.status === "approved" && (
+                  <ChildPhotos
+                    kids={here.person.children.flatMap((c) => (c.playerId ? [{ playerId: c.playerId, name: c.name }] : []))}
+                    photos={here.photos ?? {}}
+                  />
+                )}
                 {isParent ? (
                   <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} clubDecidesTeams />
                 ) : (
