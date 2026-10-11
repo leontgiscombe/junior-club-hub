@@ -8,6 +8,7 @@ import {
   MAX_CHILDREN,
   ROLES,
   childrenOf,
+  hasOwnTeam,
   invitesKey,
   kvCall,
   peopleKey,
@@ -251,7 +252,8 @@ export async function updatePerson(
     next.children = out;
     // the one child typed before children were listed is now in the list
     delete next.child;
-    if (next.relation === "parent") delete next.team;
+    // a parent's team is their children's — unless they also coach (or play), when it's the team they coach
+    if (!hasOwnTeam(next)) delete next.team;
   }
   await save(tenant, next);
   return next;
