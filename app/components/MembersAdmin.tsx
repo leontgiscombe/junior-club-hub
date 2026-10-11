@@ -296,7 +296,6 @@ export default function MembersAdmin() {
   }
   // phones approved before accounts (and any still waiting from then)
   const phones = snap.members.filter((m) => m.status !== "declined");
-  const card = "mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10";
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16">
@@ -305,73 +304,9 @@ export default function MembersAdmin() {
       <div className="mx-auto max-w-2xl px-4">
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
-        {/* Join code */}
-        <section className={card}>
-          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Your Club Code</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Give parents, players and coaches this code, or send them the join link. They sign in with
-            their email and ask to join; you approve them below.
-            {snap.platformJoin && (
-              <>
-                {" "}They can type the code at <strong>{snap.platformJoin.replace(/^https?:\/\//, "").replace(/\/$/, "")}</strong>.
-              </>
-            )}
-          </p>
-          <p className="mt-4 select-all rounded-2xl bg-gray-50 py-4 text-center font-mono text-3xl font-extrabold tracking-[0.2em] text-gray-900 dark:bg-white/5 dark:text-gray-50">
-            {snap.code}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => copy(snap.code, "code")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
-              {copied === "code" ? "Copied ✓" : "Copy Code"}
-            </button>
-            <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
-              {copied === "link" ? "Copied ✓" : "Copy Join Link"}
-            </button>
-            {snap.canAdmin && <button
-              onClick={() => {
-                if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
-              }}
-              disabled={busy}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
-            >
-              New Code
-            </button>}
-          </div>
-        </section>
-
-        <InviteSection snap={snap} busy={busy} onAct={act} />
-
-        {/* Private hub */}
-        <section className={card}>
-          <label className="flex cursor-pointer items-start justify-between gap-4">
-            <span>
-              <span className="block font-extrabold text-gray-900 dark:text-gray-50">🔒 Only approved members</span>
-              <span className="mt-1 block text-sm text-gray-500 dark:text-gray-400">
-                {snap.private
-                  ? "On: only people you've approved can open the hub. Anyone else is asked for the club code, signs in and waits for approval."
-                  : "Off: anyone with the hub's address can open it. Turn on so only people you approve can see it."}
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={snap.private}
-              disabled={busy || !snap.canAdmin}
-              onChange={(e) => {
-                const on = e.target.checked;
-                if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them here.")) return;
-                act({ action: "private", value: on });
-              }}
-              className="mt-1 h-6 w-6 shrink-0 accent-green-600"
-            />
-          </label>
-        </section>
-
-        {snap.canAdmin && snap.sharedPassword && <PasswordSection snap={snap} busy={busy} onAct={act} />}
-
         {/* Waiting */}
-        <section className={card}>
-          <div className="flex items-center justify-between">
-            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">⏳ Waiting for Approval {pending.length > 0 && `(${pending.length})`}</h2>
+        <Fold id="waiting" title="⏳ Waiting for Approval" summary={pending.length ? String(pending.length) : "None"} alert={pending.length > 0} forceOpen={pending.length > 0}>
+          <div className="flex items-center justify-end">
             <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
               Refresh
             </button>
@@ -385,12 +320,11 @@ export default function MembersAdmin() {
               ))}
             </ul>
           )}
-        </section>
+        </Fold>
 
         {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
-        <section className={card}>
-          <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✅ Members</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <Fold id="members" title="✅ Members" summary={String(approved.length)} defaultOpen>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Each team&apos;s coaches and staff, then its players with their parents or carers (guardians). Tap a role to give
             or take it away — club admins and coaches can use Coach Admin.
           </p>
@@ -527,12 +461,72 @@ export default function MembersAdmin() {
             />
           )}
           {q && !teamGroups.length && !clubWide.length && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No one matches “{search.trim()}”.</p>}
-        </section>
+        </Fold>
+
+        {/* Join code */}
+        <Fold id="code" title="🔑 Your Club Code" summary={snap.code}>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Give parents, players and coaches this code, or send them the join link. They sign in with
+            their email and ask to join; you approve them below.
+            {snap.platformJoin && (
+              <>
+                {" "}They can type the code at <strong>{snap.platformJoin.replace(/^https?:\/\//, "").replace(/\/$/, "")}</strong>.
+              </>
+            )}
+          </p>
+          <p className="mt-4 select-all rounded-2xl bg-gray-50 py-4 text-center font-mono text-3xl font-extrabold tracking-[0.2em] text-gray-900 dark:bg-white/5 dark:text-gray-50">
+            {snap.code}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => copy(snap.code, "code")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
+              {copied === "code" ? "Copied ✓" : "Copy Code"}
+            </button>
+            <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
+              {copied === "link" ? "Copied ✓" : "Copy Join Link"}
+            </button>
+            {snap.canAdmin && <button
+              onClick={() => {
+                if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
+              }}
+              disabled={busy}
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
+            >
+              New Code
+            </button>}
+          </div>
+        </Fold>
+
+        <InviteSection snap={snap} busy={busy} onAct={act} />
+
+        {/* Private hub */}
+        <Fold id="private" title="🔒 Only Approved Members" summary={snap.private ? "On" : "Off"}>
+          <label className="flex cursor-pointer items-start justify-between gap-4">
+            <span>
+              <span className="block text-sm text-gray-500 dark:text-gray-400">
+                {snap.private
+                  ? "On: only people you've approved can open the hub. Anyone else is asked for the club code, signs in and waits for approval."
+                  : "Off: anyone with the hub's address can open it. Turn on so only people you approve can see it."}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={snap.private}
+              disabled={busy || !snap.canAdmin}
+              onChange={(e) => {
+                const on = e.target.checked;
+                if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them here.")) return;
+                act({ action: "private", value: on });
+              }}
+              className="mt-1 h-6 w-6 shrink-0 accent-green-600"
+            />
+          </label>
+        </Fold>
+
+        {snap.canAdmin && snap.sharedPassword && <PasswordSection snap={snap} busy={busy} onAct={act} />}
 
         {declined.length > 0 && (
-          <section className={card}>
-            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Declined ({declined.length})</h2>
-            <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
+          <Fold id="declined" title="Declined" summary={String(declined.length)}>
+            <ul className="divide-y divide-gray-100 dark:divide-white/10">
               {declined.map((p) => (
                 <li key={p.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
@@ -545,13 +539,12 @@ export default function MembersAdmin() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Fold>
         )}
 
         {phones.length > 0 && (
-          <section className={card}>
-            <h2 className="font-extrabold text-gray-900 dark:text-gray-50">📱 Phones Approved Before Accounts ({phones.length})</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <Fold id="phones" title="📱 Phones Approved Before Accounts" summary={String(phones.length)}>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               These still work. Ask each person to sign in and join with an account, then remove their phone here.
             </p>
             <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
@@ -577,10 +570,82 @@ export default function MembersAdmin() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Fold>
         )}
       </div>
     </main>
+  );
+}
+
+/**
+ * A section that folds away: its heading (with a short summary, e.g. the code
+ * or "On") is always there; tap it to open or close. Each one remembers on
+ * this phone whether it was left open. `forceOpen` opens it regardless (people
+ * waiting for approval).
+ */
+function Fold({
+  id,
+  title,
+  summary,
+  alert = false,
+  defaultOpen = false,
+  forceOpen = false,
+  children,
+}: {
+  id: string;
+  title: string;
+  summary?: string;
+  /** the summary in red (something needs doing) */
+  alert?: boolean;
+  defaultOpen?: boolean;
+  forceOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const storeKey = `hub_members_fold_${id}`;
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storeKey);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- this phone's choice is only known in the browser
+      if (saved) setOpen(saved === "1");
+    } catch {}
+  }, [storeKey]);
+  const shown = open || forceOpen;
+  const toggle = () => {
+    const next = !shown;
+    setOpen(next);
+    try {
+      localStorage.setItem(storeKey, next ? "1" : "0");
+    } catch {}
+  };
+  return (
+    <section className="mt-4 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+      <button onClick={toggle} aria-expanded={shown} className="flex w-full items-center gap-3 px-5 py-4 text-left">
+        <span className="min-w-0 flex-1 truncate font-extrabold text-gray-900 dark:text-gray-50">{title}</span>
+        {summary && (
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-0.5 text-sm font-bold ${
+              alert ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+            }`}
+          >
+            {summary}
+          </span>
+        )}
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${shown ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      </button>
+      {shown && <div className="px-5 pb-5">{children}</div>}
+    </section>
   );
 }
 
@@ -1091,8 +1156,7 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
   const shownRoles = snap.canAdmin ? roles : roles.filter((r) => !ADMIN_ROLES.includes(r));
   const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">✉️ Invite by Email</h2>
+    <Fold id="invite" title="✉️ Invite by Email" summary={snap.invites.length ? `${snap.invites.length} waiting` : undefined}>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         For your coaches and helpers: they get an email, sign in with that address, and they&apos;re straight in
         with the roles you choose — no code or approval needed.
@@ -1140,15 +1204,14 @@ function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; o
           ))}
         </ul>
       )}
-    </section>
+    </Fold>
   );
 }
 
 /** The club's shared coach password: on (still works) or off (everyone signs in with their own account). */
 function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔑 Shared Coach Password</h2>
+    <Fold id="password" title="🔑 Shared Coach Password" summary={snap.passwordOff ? "Off" : "On"}>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {snap.passwordOff
           ? "Off: everyone signs in with their own account. Nobody can get in with a shared password."
@@ -1173,6 +1236,6 @@ function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean;
           To change this, sign in with your own club admin account (Coach Admin → Sign In With Your Email).
         </p>
       )}
-    </section>
+    </Fold>
   );
 }
