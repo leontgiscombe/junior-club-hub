@@ -733,6 +733,8 @@ function TrainingDays({
   // the next day not taken, Monday first
   const free = [1, 2, 3, 4, 5, 6, 0].find((d) => !training.some((s) => s.day === d));
   const small = input.replace("mt-1 w-full", "w-full").replace("px-3", "px-2");
+  // iOS Safari gives time boxes a width of their own, wider than half the row: drop its styling so they fit
+  const timeBox = "block min-w-0 max-w-full appearance-none min-h-11 text-left [&::-webkit-date-and-time-value]:text-left";
   return (
     <div>
       <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Training</span>
@@ -767,7 +769,7 @@ function TrainingDays({
                   type="time"
                   value={s.start ?? ""}
                   onChange={(e) => set(n, { start: e.target.value || undefined, ...(e.target.value ? {} : { end: undefined }) })}
-                  className={`${small} bg-white dark:bg-[#1c1c1e]`}
+                  className={`${small} ${timeBox} bg-white dark:bg-[#1c1c1e]`}
                 />
               </label>
               <label className="min-w-0">
@@ -777,7 +779,7 @@ function TrainingDays({
                   value={s.end ?? ""}
                   disabled={!s.start}
                   onChange={(e) => set(n, { end: e.target.value || undefined })}
-                  className={`${small} bg-white disabled:opacity-40 dark:bg-[#1c1c1e]`}
+                  className={`${small} ${timeBox} bg-white disabled:opacity-40 dark:bg-[#1c1c1e]`}
                 />
               </label>
             </div>
