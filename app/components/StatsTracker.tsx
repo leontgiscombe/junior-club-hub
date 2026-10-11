@@ -8,7 +8,6 @@ import { useMyTeam } from "@/lib/myTeam";
 import { approachingMilestones, reachedMilestones } from "@/lib/milestones";
 import {
   isKeeperStat,
-  positionIcon,
   positionLabel,
   statsForPlayer,
   statsForSquad,
@@ -217,13 +216,11 @@ function FoldHeader({
       aria-expanded={open}
       className="flex w-full items-center gap-2 text-left cursor-pointer"
     >
-      <span className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-600 dark:text-gray-300">
-        {title}
-      </span>
+      <span className="min-w-0 flex-1 truncate text-[17px] font-bold text-gray-900 dark:text-gray-50">{title}</span>
       {summary && !open && (
         <span className="shrink-0 text-xs text-gray-400">{summary}</span>
       )}
-      <span className="shrink-0 text-xs text-gray-400">{open ? "▲" : "▼"}</span>
+      <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
     </button>
   );
 }
@@ -242,7 +239,7 @@ function winners(list: Player[], field: StatField) {
 }
 
 export default function StatsTracker() {
-  const { TEAMS, teamName, teamAccent } = useTeams();
+  const { TEAMS, teamName } = useTeams();
   const { features } = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -678,15 +675,15 @@ export default function StatsTracker() {
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}
-        <div className="flex gap-2 mb-5">
+        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
           {TEAMS.map((t) => (
             <button
               key={t.slug}
               onClick={() => setTeam(t.slug)}
-              className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
+              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
                 team === t.slug
-                  ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
+                  : "text-gray-600 dark:text-gray-300"
               }`}
             >
               {t.accent} {t.name}
@@ -697,10 +694,13 @@ export default function StatsTracker() {
         {/* Where the season's work actually goes in. Every total on this page
             is added up from the match log, and a coach landing here needs to
             know that before they start tapping steppers. */}
-        <div className="mb-4 rounded-2xl border-2 border-green-600 bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+        <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-green-50 text-2xl dark:bg-green-400/10">
-              ⚽
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-green-700 text-white">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="m12 7 4 3-1.5 4.5h-5L8 10z" />
+              </svg>
             </span>
             <div className="min-w-0">
               <p className="font-extrabold text-gray-900 dark:text-gray-50">
@@ -756,7 +756,7 @@ export default function StatsTracker() {
             href={`/admin/stats/training${keyQuery(key)}`}
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-green-600 bg-white px-5 py-2 font-bold text-green-700 hover:bg-green-50 dark:bg-[#1c1c1e] dark:text-green-400 dark:hover:bg-green-400/15"
           >
-            🏃 Open the Training Log →
+            Open the Training Log →
           </Link>
         </div>
 
@@ -764,12 +764,11 @@ export default function StatsTracker() {
         {editing && (
         <form
           onSubmit={bulk ? addMany : addPlayer}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10"
+          className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
         >
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-              ➕ Add {bulk ? "players" : "a player"} to {teamAccent(team)}{" "}
-              {teamName(team)}
+            <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">
+              Add {bulk ? "Players" : "a Player"} to {teamName(team)}
             </p>
             <button
               type="button"
@@ -836,10 +835,8 @@ export default function StatsTracker() {
             How the team has done: its record and its clean sheets, counted in
             games off the match log. Nothing here belongs to a player, and
             nothing below it belongs to the team. */}
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          🏆 Team stats — {teamName(team)}
-        </p>
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+        <h2 className="mb-2.5 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Team Stats</h2>
+        <div className="mb-6 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
           {gamesPlayed === 0 ? (
             <p className="text-sm text-gray-400">
               No games logged yet — add them in the match log and the record fills
@@ -848,14 +845,14 @@ export default function StatsTracker() {
           ) : (
             <>
               <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">League record</p>
+                <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">League Record</p>
                 {form.length > 0 && (
                   <div className="flex items-center gap-1">
                     {form.map((f, i) => (
                       <span
                         key={i}
                         className={`grid h-5 w-5 place-items-center rounded text-[11px] font-bold text-white ${
-                          f === "W" ? "bg-green-600" : f === "D" ? "bg-gray-400" : "bg-red-400"
+                          f === "W" ? "bg-green-600" : f === "D" ? "bg-amber-500" : "bg-red-600"
                         }`}
                         title={f === "W" ? "Won" : f === "D" ? "Drawn" : "Lost"}
                       >
@@ -881,7 +878,7 @@ export default function StatsTracker() {
                       <td className="px-1 py-1">{record.played}</td>
                       <td className="px-1 py-1 text-green-700 dark:text-green-400">{record.won}</td>
                       <td className="px-1 py-1">{record.drawn}</td>
-                      <td className="px-1 py-1 text-red-500">{record.lost}</td>
+                      <td className="px-1 py-1 text-red-600 dark:text-red-400">{record.lost}</td>
                       <td className="px-1 py-1">{record.scored}</td>
                       <td className="px-1 py-1">{record.conceded}</td>
                       <td className="px-1 py-1">
@@ -899,7 +896,6 @@ export default function StatsTracker() {
                   reads the same way in both places. */}
               <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  🥅{" "}
                   <span className="font-extrabold tabular-nums text-gray-900 dark:text-gray-50">
                     {teamCleanSheets} clean sheet{teamCleanSheets === 1 ? "" : "s"}
                   </span>{" "}
@@ -918,16 +914,14 @@ export default function StatsTracker() {
 
         {/* ── Player stats ────────────────────────────────────────────────
             Everything from here down belongs to individual players. */}
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          🧑‍🤝‍🧑 Player stats — {teamName(team)}
-        </p>
+        <h2 className="mb-2.5 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Player Stats</h2>
 
         {shown.length > 0 && (
           <>
             {/* Squad totals — the sum of the players' own tallies */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+            <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <FoldHeader
-                title="Σ Squad Totals"
+                title="Squad Totals"
                 open={cardIsOpen("totals")}
                 onToggle={() => toggleCard("totals")}
               />
@@ -939,7 +933,7 @@ export default function StatsTracker() {
                         {t.total}
                       </p>
                       <p className="text-[11px] text-gray-500 truncate dark:text-gray-400">
-                        {t.icon} {t.short}
+                        {t.short}
                       </p>
                     </div>
                   ))}
@@ -949,9 +943,9 @@ export default function StatsTracker() {
 
             {/* Milestones */}
             {(reached.length > 0 || approaching.length > 0) && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+              <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
                 <FoldHeader
-                  title={`🎯 Milestones — ${teamName(team)}`}
+                  title="Milestones"
                   summary={[
                     reached.length > 0 && `${reached.length} reached`,
                     approaching.length > 0 && `${approaching.length} close`,
@@ -992,9 +986,9 @@ export default function StatsTracker() {
             )}
 
             {/* Season awards */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 dark:bg-[#1c1c1e] dark:border-white/10">
+            <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <FoldHeader
-                title={`🏅 ${season} Awards — ${teamName(team)}`}
+                title={`${season} Awards`}
                 open={cardIsOpen("awards")}
                 onToggle={() => toggleCard("awards")}
               />
@@ -1006,7 +1000,6 @@ export default function StatsTracker() {
                         key={a.field}
                         className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                       >
-                        <span className="text-base shrink-0">{a.icon}</span>
                         <span className="text-xs text-gray-500 shrink-0 dark:text-gray-400">{a.label}</span>
                         <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900 text-right dark:text-gray-50">
                           {a.result.names.join(", ")}
@@ -1041,7 +1034,7 @@ export default function StatsTracker() {
                 }}
                 className="text-xs font-semibold text-green-700 hover:text-green-800 cursor-pointer whitespace-nowrap dark:text-green-400"
               >
-                {shown.every((p) => playerOpen[p.id]) ? "Close All ▲" : "Open All ▼"}
+                {shown.every((p) => playerOpen[p.id]) ? "Close All" : "Open All"}
               </button>
             )}
             <button
@@ -1060,7 +1053,7 @@ export default function StatsTracker() {
                   : "Unlock the tallies to change them"
               }
             >
-              {editing ? "✓ Done" : "✏️ Edit"}
+              {editing ? "Done" : "Edit"}
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -1085,21 +1078,21 @@ export default function StatsTracker() {
               className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap dark:text-green-400"
               title={`Download ${teamName(team)} stats as a CSV`}
             >
-              ⬇ Export <span className="hidden sm:inline">{teamName(team)} </span>CSV
+              Export CSV
             </button>
             <Link
               href={`/admin/stats/matches${keyQuery(key)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
               title="Log each game's goals and who assisted"
             >
-              ⚽ Match Log
+              Match Log
             </Link>
             <Link
               href={`/admin/stats/training${keyQuery(key)}`}
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
               title="Pick each session's best trainer"
             >
-              🏃 Training Log
+              Training Log
             </Link>
             {features.playerOfMonth && (
               <Link
@@ -1107,7 +1100,7 @@ export default function StatsTracker() {
                 className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
                 title="This month's winner from the awards, with a poster"
               >
-                🌟 Player of the Month
+                Player of the Month
               </Link>
             )}
             <Link
@@ -1115,7 +1108,7 @@ export default function StatsTracker() {
               className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
               title="Full-screen awards slideshow for presentation evening"
             >
-              🎬 Presentation
+              Presentation
             </Link>
           </div>
         </div>
@@ -1125,15 +1118,14 @@ export default function StatsTracker() {
             Tallies unlocked. Goals and assists also come from the match log, so
             only change them here to fix a mistake — press{" "}
             <span className="font-semibold">Done</span> when you&apos;ve finished.
-            Tap the <span className="font-semibold">👕 Outfield</span> /{" "}
-            <span className="font-semibold">🧤 Goalkeeper</span> badge by a name to
+            Tap the <span className="font-semibold">Outfield</span> /{" "}
+            <span className="font-semibold">Goalkeeper</span> badge by a name to
             switch what that player is tracked on.
           </p>
         )}
 
         {shown.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🧑‍🤝‍🧑</p>
+          <div className="rounded-3xl bg-white p-6 text-center text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
             <p>
               {editing
                 ? "No players yet. Add one above."
@@ -1149,7 +1141,7 @@ export default function StatsTracker() {
               return (
                 <div
                   key={p.id}
-                  className="rounded-2xl shadow-sm border border-gray-100 bg-white p-4 dark:bg-[#1c1c1e] dark:border-white/10"
+                  className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
                 >
                   <div
                     className={`flex items-center gap-2 ${isOpen ? "mb-3" : ""} ${
@@ -1210,7 +1202,7 @@ export default function StatsTracker() {
                               p.position === "goalkeeper" ? "a goalkeeper" : "outfield"
                             } — tap to switch`}
                           >
-                            {positionIcon(p.position)} {positionLabel(p.position)}
+                            {positionLabel(p.position)}
                           </button>
                         ) : (
                           p.position === "goalkeeper" && (
@@ -1218,14 +1210,12 @@ export default function StatsTracker() {
                               className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:bg-amber-400/10 dark:text-amber-300"
                               title="Goalkeeper"
                             >
-                              🧤 GK
+                              GK
                             </span>
                           )
                         )}
                         {!editing && (
-                          <span className="shrink-0 text-xs text-gray-400">
-                            {isOpen ? "▲" : "▼"}
-                          </span>
+                          <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                         )}
                         {editing && (
                           <>
@@ -1234,11 +1224,11 @@ export default function StatsTracker() {
                                 setEditingId(p.id);
                                 setEditingName(p.name);
                               }}
-                              className="text-gray-300 hover:text-green-600 text-sm leading-none cursor-pointer shrink-0"
+                              className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-green-700 dark:hover:bg-white/10"
                               title={`Rename ${p.name}`}
                               aria-label={`Rename ${p.name}`}
                             >
-                              ✏️
+                              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m14 6 4 4" /></svg>
                             </button>
                             <button
                               onClick={() => removePlayer(p)}
@@ -1258,7 +1248,7 @@ export default function StatsTracker() {
                     <p className="mt-1 text-xs text-gray-500 tabular-nums dark:text-gray-400">
                       {statsFor(p)
                         .filter((s) => p[s.field] > 0)
-                        .map((s) => `${s.icon} ${p[s.field]}`)
+                        .map((s) => `${s.short} ${p[s.field]}`)
                         .join("  ·  ") || "No stats yet"}
                     </p>
                   )}
@@ -1272,7 +1262,7 @@ export default function StatsTracker() {
                           className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:bg-white/5 dark:border-white/10"
                         >
                           <p className="text-xs font-medium text-gray-500 mb-1.5 truncate dark:text-gray-400">
-                            {s.icon} {s.label}
+                            {s.label}
                           </p>
                           {editing ? (
                             <div className="flex items-center justify-between gap-2">
@@ -1311,10 +1301,10 @@ export default function StatsTracker() {
         )}
 
         {/* Season management */}
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-4 dark:bg-[#1c1c1e] dark:border-white/15">
+        <div className="mt-8 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">⚙️ End of Season</p>
+              <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">End of Season</p>
               <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
                 Current season: <span className="font-semibold">{season}</span>
               </p>
@@ -1377,7 +1367,7 @@ export default function StatsTracker() {
                         className="text-xs font-semibold text-green-700 hover:text-green-800 whitespace-nowrap dark:text-green-400"
                         title={`Present the ${a.name} awards`}
                       >
-                        🎬 Present
+                        Present
                       </Link>
                       <button
                         onClick={() => exportArchive(a)}
@@ -1385,7 +1375,7 @@ export default function StatsTracker() {
                         className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-40 cursor-pointer whitespace-nowrap dark:text-green-400"
                         title={`Download ${a.name} stats as a CSV`}
                       >
-                        {busyId === a.id ? "…" : "⬇ CSV"}
+                        {busyId === a.id ? "…" : "CSV"}
                       </button>
                       <button
                         onClick={() => restoreArchive(a)}
@@ -1393,7 +1383,7 @@ export default function StatsTracker() {
                         className="text-xs font-semibold text-amber-700 hover:text-amber-800 disabled:opacity-40 cursor-pointer whitespace-nowrap dark:text-amber-300"
                         title={`Put ${a.name} back as the live season`}
                       >
-                        ↩ Restore
+                        Restore
                       </button>
                     </div>
                   </div>
