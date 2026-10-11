@@ -2,7 +2,7 @@
 
 // Your account, laid out like a phone's settings: your photo and name at the
 // top, then grouped rows that each open their own screen (#details, #clubs,
-// #here, #security, #alerts, #delete) — your name, your clubs and roles, your
+// #here, #security, #appearance, #alerts, #delete) — your name, your clubs and roles, your
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
 import { useCallback, useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
 import ProfilePhoto from "./ProfilePhoto";
+import AppearancePicker, { themeLabel } from "./AppearancePicker";
 import { Group, ICONS, Row, TopBar, useScreens } from "../components/SettingsUI";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
@@ -137,9 +138,9 @@ export default function AccountPage() {
   }, []);
   const { status: alerts } = useJoinRequests();
 
-  if (!account) return <main className="min-h-screen bg-gray-100" />;
+  if (!account) return <main className="themed min-h-screen bg-gray-100 dark:bg-black" />;
   const input =
-    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const isParent = !!here?.person && (here.person.relation === "parent" || here.person.children.length > 0);
   const initials = (account.user.name || account.user.email)
     .split(/\s+/)
@@ -155,26 +156,27 @@ export default function AccountPage() {
     here: isParent ? "Your Children" : "Your Team",
     security: "Sign-In & Security",
     alerts: "Notifications",
+    appearance: "Appearance",
     delete: "Delete Account",
   };
   if (screen && titles[screen]) {
     return (
-      <main className="min-h-screen bg-gray-100 pb-16">
+      <main className="themed min-h-screen bg-gray-100 dark:bg-black pb-16">
         <TopBar title={titles[screen]} onBack={closeScreen} />
         <div className="mx-auto max-w-xl px-4">
           {screen === "details" && (
             <Group>
               <div className="p-5">
                 <label className="block">
-                  <span className="text-sm font-bold text-gray-800">Your name</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
                   <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className={input} />
                 </label>
-                <p className="mt-3 text-sm text-gray-500">Email: {account.user.email}</p>
-                <button onClick={saveName} disabled={busy || !name.trim() || name === account.user.name} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40">
+                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Email: {account.user.email}</p>
+                <button onClick={saveName} disabled={busy || !name.trim() || name === account.user.name} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save Name
                 </button>
                 {message && (
-                  <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>{message.text}</p>
+                  <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>{message.text}</p>
                 )}
               </div>
             </Group>
@@ -183,13 +185,13 @@ export default function AccountPage() {
           {screen === "clubs" && (
             <Group>
               {account.clubs.length === 0 ? (
-                <p className="p-5 text-sm text-gray-500">You haven&apos;t joined a club yet. Ask your coach for the club code.</p>
+                <p className="p-5 text-sm text-gray-500 dark:text-gray-400">You haven&apos;t joined a club yet. Ask your coach for the club code.</p>
               ) : (
                 account.clubs.map((c) => (
                   <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-4">
                     <span className="min-w-0">
-                      <span className="block font-bold text-gray-900">{c.name}</span>
-                      <span className="block text-sm text-gray-500">
+                      <span className="block font-bold text-gray-900 dark:text-gray-50">{c.name}</span>
+                      <span className="block text-sm text-gray-500 dark:text-gray-400">
                         {c.status === "approved"
                           ? c.roles.map((r) => ROLES[r]).join(", ") || "Member"
                           : c.status === "pending"
@@ -198,7 +200,7 @@ export default function AccountPage() {
                       </span>
                     </span>
                     {c.status === "approved" && (
-                      <a href={c.url} className="shrink-0 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">Open</a>
+                      <a href={c.url} className="shrink-0 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">Open</a>
                     )}
                   </div>
                 ))
@@ -209,7 +211,7 @@ export default function AccountPage() {
           {screen === "here" && here?.person && (
             <Group>
               <div className="p-5">
-                <p className="mb-3 text-sm text-gray-500">
+                <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                   {isParent
                     ? `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`
                     : `Your team at ${here.club}.`}
@@ -224,10 +226,10 @@ export default function AccountPage() {
                     ))}
                   </select>
                 )}
-                <button onClick={saveHere} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40">
+                <button onClick={saveHere} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save
                 </button>
-                {hereMessage && <p className="mt-2 text-sm text-gray-600">{hereMessage}</p>}
+                {hereMessage && <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
               </div>
             </Group>
           )}
@@ -235,23 +237,23 @@ export default function AccountPage() {
           {screen === "security" && passkeys && (
             <Group>
               <div className="p-5">
-                <h2 className="font-extrabold text-gray-900">Passkeys</h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Passkeys</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Sign in with Face ID, your fingerprint or your phone&apos;s screen lock instead of an emailed code. Your phone keeps the passkey
                   (Apple and Google sync it to your other devices). Treasurers and club admins can open Financial Admin with it too.
                 </p>
                 {passkeys.length > 0 && (
-                  <ul className="mt-3 divide-y divide-gray-100">
+                  <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
                     {passkeys.map((k) => (
                       <li key={k.id} className="flex items-center justify-between gap-3 py-3">
                         <span>
-                          <span className="block font-bold text-gray-900">{k.label}</span>
-                          <span className="block text-xs text-gray-500">
+                          <span className="block font-bold text-gray-900 dark:text-gray-50">{k.label}</span>
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
                             Added {new Date(k.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                             {k.lastUsedAt && ` · last used ${new Date(k.lastUsedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
                           </span>
                         </span>
-                        <button onClick={() => deletePasskey(k.id)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-bold text-gray-600 hover:bg-gray-50">
+                        <button onClick={() => deletePasskey(k.id)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-bold text-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-300 dark:border-white/15">
                           Remove
                         </button>
                       </li>
@@ -259,34 +261,36 @@ export default function AccountPage() {
                   </ul>
                 )}
                 {canPasskey ? (
-                  <button onClick={newPasskey} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40">
+                  <button onClick={newPasskey} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                     {passkeys.length ? "Add Another Passkey" : "Add a Passkey"}
                   </button>
                 ) : (
-                  <p className="mt-3 text-sm text-gray-500">This browser can&apos;t use passkeys — try Safari or Chrome.</p>
+                  <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">This browser can&apos;t use passkeys — try Safari or Chrome.</p>
                 )}
                 {passkeyMessage && (
-                  <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${passkeyMessage.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>{passkeyMessage.text}</p>
+                  <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${passkeyMessage.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>{passkeyMessage.text}</p>
                 )}
               </div>
             </Group>
           )}
 
-          {screen === "alerts" && <AlertsSettings className="rounded-3xl bg-white p-5 shadow-sm" />}
+          {screen === "appearance" && <AppearancePicker />}
+
+          {screen === "alerts" && <AlertsSettings className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]" />}
 
           {screen === "delete" && (
             <Group>
               <div className="p-5">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Deletes your account and takes you out of every club. Your clubs keep their own records (like match logs). Type DELETE to confirm.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <input value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} placeholder="DELETE" aria-label="Type DELETE to confirm" className="min-w-0 flex-1 basis-32 rounded-lg border border-red-200 px-3 py-2 text-gray-900 focus:outline-none" />
+                  <input value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} placeholder="DELETE" aria-label="Type DELETE to confirm" className="min-w-0 flex-1 basis-32 rounded-lg border border-red-200 px-3 py-2 text-gray-900 focus:outline-none dark:text-gray-50 dark:border-red-400/30" />
                   <button onClick={deleteAccount} disabled={busy || confirmDelete !== "DELETE"} className="rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50">
                     Delete My Account
                   </button>
                 </div>
-                {message && !message.ok && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{message.text}</p>}
+                {message && !message.ok && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{message.text}</p>}
               </div>
             </Group>
           )}
@@ -297,13 +301,13 @@ export default function AccountPage() {
 
   // the main list
   return (
-    <main className="min-h-screen bg-gray-100 pb-16">
+    <main className="themed min-h-screen bg-gray-100 dark:bg-black pb-16">
       <TopBar title="Your Account" onBack={leave} />
       <div className="mx-auto max-w-xl px-4">
         <div className="flex flex-col items-center pb-6 pt-2 text-center">
           <ProfilePhoto initials={initials} />
-          <h1 className="mt-4 text-3xl font-semibold text-gray-900">{account.user.name || account.user.email.split("@")[0]}</h1>
-          <p className="mt-0.5 text-sm text-gray-500">{account.user.email}</p>
+          <h1 className="mt-4 text-3xl font-semibold text-gray-900 dark:text-gray-50">{account.user.name || account.user.email.split("@")[0]}</h1>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{account.user.email}</p>
         </div>
 
         <Group>
@@ -318,11 +322,12 @@ export default function AccountPage() {
           </Group>
         )}
 
-        {alerts?.pushAvailable && (
-          <Group>
+        <Group>
+          <Row icon={ICONS.moon} label="Appearance" detail={themeLabel()} onClick={() => open("appearance")} />
+          {alerts?.pushAvailable && (
             <Row icon={ICONS.bell} label="Notifications" detail={alerts.alerts ? "On" : "Off"} onClick={() => open("alerts")} />
-          </Group>
-        )}
+          )}
+        </Group>
 
         <Group>
           <Row icon={ICONS.shield} label="Privacy Policy" href="/privacy" />

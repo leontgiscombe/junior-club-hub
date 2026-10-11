@@ -83,7 +83,7 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
           onClick={() => input.current?.click()}
           disabled={busy}
           aria-label={src ? "Change your photo" : "Add a photo"}
-          className="absolute -right-3 -top-3 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-lg ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-50"
+          className="absolute -right-3 -top-3 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-lg ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10"
         >
           {busy ? (
             <span className="text-sm font-bold">…</span>
@@ -100,7 +100,7 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
           Remove photo
         </button>
       )}
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
       <input ref={input} type="file" accept="image/*" className="hidden" onChange={(e) => choose(e.target.files?.[0])} />
     </div>
   );

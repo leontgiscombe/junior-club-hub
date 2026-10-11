@@ -60,6 +60,7 @@ export const ICONS = {
   team: svg(<><circle cx="12" cy="7" r="3" /><circle cx="5" cy="10" r="2" /><circle cx="19" cy="10" r="2" /><path d="M7 20a5 5 0 0 1 10 0M1.5 19a3.5 3.5 0 0 1 6-2.5M22.5 19a3.5 3.5 0 0 0-6-2.5" /></>),
   grid: svg(<><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" /></>),
   money: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>),
+  moon: svg(<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />),
   lock: svg(<><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>),
 };
 
@@ -71,9 +72,9 @@ const BACK_ARROW = (
 
 /** The bar at the top: a round back button (a link, or a function) and the screen's title. */
 export function TopBar({ title, onBack, href }: { title: string; onBack?: () => void; href?: string }) {
-  const button = "absolute left-0 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50";
+  const button = "absolute left-0 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10";
   return (
-    <div className="sticky top-0 z-30 bg-gray-100/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
+    <div className="sticky top-0 z-30 bg-gray-100/90 dark:bg-black/80 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
       <div className="relative mx-auto flex h-12 max-w-xl items-center justify-center">
         {href ? (
           <Link href={href} aria-label="Back" className={button}>
@@ -84,7 +85,7 @@ export function TopBar({ title, onBack, href }: { title: string; onBack?: () => 
             {BACK_ARROW}
           </button>
         )}
-        <h1 className="max-w-[70%] truncate text-lg font-semibold text-gray-900">{title}</h1>
+        <h1 className="max-w-[70%] truncate text-lg font-semibold text-gray-900 dark:text-gray-50">{title}</h1>
       </div>
     </div>
   );
@@ -92,7 +93,7 @@ export function TopBar({ title, onBack, href }: { title: string; onBack?: () => 
 
 /** A rounded group of rows. */
 export function Group({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm">{children}</div>;
+  return <div className="mt-4 divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e] dark:divide-white/10">{children}</div>;
 }
 
 /** One row: an icon, a label, maybe a detail, and an arrow. */
@@ -113,15 +114,15 @@ export function Row({
 }) {
   const inner = (
     <>
-      <span className={danger ? "text-red-600" : "text-gray-700"}>{icon}</span>
-      <span className={`flex-1 text-left text-[17px] ${danger ? "text-red-600" : "text-gray-900"}`}>{label}</span>
+      <span className={danger ? "text-red-600 dark:text-red-400" : "text-gray-700 dark:text-gray-200"}>{icon}</span>
+      <span className={`flex-1 text-left text-[17px] ${danger ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-gray-50"}`}>{label}</span>
       {detail && <span className="max-w-[40%] truncate text-[15px] text-gray-400">{detail}</span>}
-      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300" aria-hidden="true" {...stroke} strokeWidth={2.2}>
+      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden="true" {...stroke} strokeWidth={2.2}>
         <path d="M9 5l7 7-7 7" />
       </svg>
     </>
   );
-  const className = "flex w-full items-center gap-4 px-5 py-4 hover:bg-gray-50 active:bg-gray-100";
+  const className = "flex w-full items-center gap-4 px-5 py-4 hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-white/5 dark:active:bg-white/10";
   return href ? (
     <Link href={href} className={className}>
       {inner}

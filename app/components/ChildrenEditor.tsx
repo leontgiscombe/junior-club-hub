@@ -45,7 +45,7 @@ export default function ChildrenEditor({
 }) {
   const set = (i: number, change: Partial<ChildDraft>) => onChange(value.map((c, j) => (j === i ? { ...c, ...change } : c)));
   const field =
-    "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400";
+    "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   return (
     <div className="flex flex-col gap-2">
       {value.map((c, i) => (
@@ -59,7 +59,7 @@ export default function ChildrenEditor({
             className={`${field} min-w-0 flex-1 basis-32`}
           />
           {clubDecidesTeams && c.linked ? (
-            <span className="flex basis-32 items-center text-sm text-gray-500">{c.teamLabel}</span>
+            <span className="flex basis-32 items-center text-sm text-gray-500 dark:text-gray-400">{c.teamLabel}</span>
           ) : teams.length > 0 && (
             <select value={c.team} onChange={(e) => set(i, { team: e.target.value })} aria-label={`Child ${i + 1}'s team`} className={`${field} basis-32`}>
               <option value="">Team…</option>
@@ -78,7 +78,7 @@ export default function ChildrenEditor({
         </div>
       ))}
       {value.length < MAX_CHILDREN && (
-        <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="self-start text-sm font-semibold text-green-700 hover:underline">
+        <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="self-start text-sm font-semibold text-green-700 hover:underline dark:text-green-400">
           + Add another child
         </button>
       )}
