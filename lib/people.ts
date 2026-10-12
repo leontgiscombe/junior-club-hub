@@ -22,6 +22,7 @@ import { addPlayer, deletePlayer, listPlayers, setPlayerTeam, updatePlayer, type
 import { currentUser, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
+import { removeAllPlayerDevices } from "./playerDevices";
 
 export const isRole = (r: unknown): r is Role => typeof r === "string" && r in ROLES;
 
@@ -342,6 +343,8 @@ export async function decideChild(
 /** Take a player out of the squad, and off their parents' lists of children. */
 export async function deleteSquadPlayer(tenant: string, playerId: string): Promise<void> {
   await deletePlayer(playerId);
+  // their own devices are signed out, and their Training Hub progress goes too
+  await removeAllPlayerDevices(tenant, playerId);
   for (const person of await listPeople(tenant)) {
     const kids = childrenOf(person);
     if (!kids.some((c) => c.playerId === playerId)) continue;

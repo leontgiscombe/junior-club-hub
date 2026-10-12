@@ -104,8 +104,16 @@ export default function PrivacyPage() {
               notification address (no personal details).
             </>,
             <>
-              <strong>Kept only on your own device, never sent to us:</strong> the players&apos;
-              Training Hub quiz scores and challenge ticks, photos added to Player of the Month
+              <strong>Players&apos; own devices:</strong> if a parent or coach sets up a child&apos;s own
+              phone or tablet for the Training Hub, a cookie on that device that says which squad player
+              it&apos;s for, the kind of device (like &ldquo;iPad&rdquo;) and when and by whom it was set up,
+              and that child&apos;s Training Hub quiz scores and challenge ticks, so they follow them to a
+              new device. The child gives no email, password or other details. Their parents and the
+              club&apos;s coaches can remove the device at any time, and it all goes when the child leaves the squad.
+            </>,
+            <>
+              <strong>Kept only on your own device, never sent to us:</strong> on other devices, the
+              Training Hub&apos;s quiz scores and challenge ticks; photos added to Player of the Month
               posters, and small settings like which team a coach looks after.
             </>,
             <>
@@ -141,8 +149,10 @@ export default function PrivacyPage() {
         <p>
           The hub is used by coaches and parents. Children&apos;s information is entered by adults
           and kept to what a club needs to run its teams: names and football information. The
-          players&apos; Training Hub doesn&apos;t ask for or send any personal information. Clubs
-          should only add photos of a child with the parent&apos;s permission.
+          players&apos; Training Hub doesn&apos;t ask for or send any personal information. A child can
+          only use it on their own device once one of their parents (or a coach) has set it up for
+          them, and that device then opens only the Training Hub — nothing else in the club&apos;s hub.
+          Clubs should only add photos of a child with the parent&apos;s permission.
         </p>
       </Part>
 
