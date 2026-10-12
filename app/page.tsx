@@ -148,7 +148,6 @@ export default async function Home() {
     ...(CLUB.features.trainingPlans ? (["plans"] as const) : []),
     ...(CLUB.features.cameraRegister ? (["camera"] as const) : []),
     ...(CLUB.features.kitSizes ? (["kitResponses"] as const) : []),
-    "players",
     "members",
     "settings",
     "help",
