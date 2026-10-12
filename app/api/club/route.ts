@@ -2,6 +2,7 @@
 // Training Hub): name, crest, slogan, teams and the public key for reminders.
 import { NextResponse } from "next/server";
 import { getClub, getTeams } from "@/lib/settings";
+import { teamFormat } from "@/lib/clubSettings";
 import { clubColourVars } from "@/lib/palette";
 import { getTenant } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
@@ -28,6 +29,8 @@ export async function GET() {
       name: `${CLUB.name} ${t.squadName ?? t.name}`,
       // just the team, e.g. "U10 Greens" (the Training Hub's header)
       short: t.name,
+      // which Training Hub content its players see
+      format: teamFormat(t),
     })),
     vapidPublicKey: (await vapidKeys())?.publicKey ?? null,
     colourVars: clubColourVars(CLUB.colour),
