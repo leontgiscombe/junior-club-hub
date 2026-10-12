@@ -140,6 +140,9 @@ export default function JoinForm({
         <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
           I&apos;m a coach — sign in
         </a>
+        <a href="/player" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
+          I&apos;m a player — set up my device with a code
+        </a>
       </form>
     );
   }

@@ -16,6 +16,16 @@ export const MEMBER_COOKIE_MAX_AGE = 400 * 24 * 3600;
 
 /** Signed-in people's session cookie (lib/auth.ts). */
 export const SESSION_COOKIE = "gch_session";
+/**
+ * A player's own device (lib/playerDevices.ts): set up once with a code from a
+ * parent or coach, it opens only the Training Hub (proxy.ts).
+ */
+export const PLAYER_COOKIE = "gch_player";
+export const PLAYER_COOKIE_MAX_AGE = 365 * 24 * 3600;
+/** A player device's sign-in, kept by the SHA-256 of its token. */
+export const playerTokenKey = (hash: string) => `platform:player-device:${hash}`;
+export type PlayerSession = { tenant: string; playerId: string; deviceId: string };
+
 /** What the coach screens send in place of the coach password when someone's signed in with an account. */
 export const SESSION_KEY = "~account";
 
@@ -122,6 +132,8 @@ const prefix = (tenant: string) => `${tenant === DEFAULT_TENANT ? "" : `t:${tena
 export const accessKey = (tenant: string) => `${prefix(tenant)}:settings:access`;
 export const membersKey = (tenant: string) => `${prefix(tenant)}:members`;
 export const peopleKey = (tenant: string) => `${prefix(tenant)}:people`;
+/** One of the club's own records, by name: "player-devices:<id>" → "club:player-devices:<id>". */
+export const clubKey = (tenant: string, name: string) => `${prefix(tenant)}:${name}`;
 export const invitesKey = (tenant: string) => `${prefix(tenant)}:invites`;
 /** Phones of club admins and coaches that get an alert when someone asks to join (lib/notify.ts). */
 export const joinAlertsKey = (tenant: string) => `${prefix(tenant)}:join-alerts`;
@@ -231,4 +243,11 @@ export async function isApprovedPerson(tenant: string, sessionToken: string): Pr
   if (ok) personCache.set(k, { at: Date.now() });
   else personCache.delete(k);
   return ok;
+}
+
+/** The player device signed in with `token` at this club, if it still is. */
+export async function playerSession(tenant: string, token: string): Promise<PlayerSession | null> {
+  if (!token) return null;
+  const s = parse<PlayerSession>(await kvCall(["GET", playerTokenKey(await hashToken(token))]));
+  return s && s.tenant === tenant && typeof s.playerId === "string" ? s : null;
 }

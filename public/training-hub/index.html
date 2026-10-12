@@ -219,6 +219,9 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .home-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in oklch,var(--color-green-950,#052e16) 35%,transparent),transparent 40%,color-mix(in oklch,var(--color-green-950,#052e16) 85%,transparent))}
 .home-hero>*{position:relative;z-index:1}
 .home-back{align-self:flex-start;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);box-shadow:0 4px 14px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:0;text-decoration:none;margin-bottom:10px}
+/* a player's own device: just the Training Hub — no tab bar, no Search */
+html.player-mode #hub-tabbar,html.player-mode .hub-search{display:none!important}
+html.player-mode body{padding-bottom:max(24px,env(safe-area-inset-bottom))!important}
 /* the header row, as on Home: your photo, Search and the crest */
 .hub-head{align-self:stretch;display:flex;align-items:center;justify-content:space-between;padding-top:max(0px,env(safe-area-inset-top));margin-bottom:6px}
 .hub-head-right{display:flex;align-items:center;gap:12px}
@@ -3711,6 +3714,61 @@ fetch('/api/club').then(function(r){ return r.json(); }).then(function(c){
 
 /* The player's own team where it says which squad this is for, e.g. "U10 Greens · 7v7 · 2-3-1". */
 /* The header's profile button: your photo or initials (Your Account), else Sign In. */
+/* A player's own device (set up with a code at /player): it opens only this
+   hub, as them — their initials, their team, their progress kept with them. */
+var HUB_PLAYER = fetch('/api/player/me', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d){ return (d && d.player) || null; }).catch(function(){ return null; });
+HUB_PLAYER.then(function(pl){
+  if(!pl) return;
+  document.documentElement.classList.add('player-mode');
+  var a = document.getElementById('hub-me');
+  a.href = '#'; a.setAttribute('aria-label', 'This is ' + pl.firstName + "'s device");
+  a.textContent = pl.initials;
+  a.onclick = function(e){
+    e.preventDefault();
+    if(!confirm('This device is set up for ' + pl.firstName + '.\n\nSign out of it? A grown-up will need to set it up again.')) return;
+    fetch('/api/player/signout', { method:'POST' }).finally(function(){ location.href = '/player'; });
+  };
+  syncPlayerProgress();
+});
+/* Their quiz bests and ticked challenges, kept with them so a new device has them too */
+function readLocalProgress(){
+  var week = Math.floor(Date.now()/604800000), bests = {};
+  try {
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf('pj_best_') === 0){ try { bests[k.slice(8)] = JSON.parse(localStorage.getItem(k)); } catch(e){} }
+    }
+  } catch(e){}
+  return { week: week, skills: getSkillsData(), bests: bests };
+}
+var progressTimer = null;
+function pushPlayerProgress(){
+  if(!document.documentElement.classList.contains('player-mode')) return;
+  clearTimeout(progressTimer);
+  progressTimer = setTimeout(function(){
+    fetch('/api/player/progress', { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({ progress: readLocalProgress() }) }).catch(function(){});
+  }, 600);
+}
+function syncPlayerProgress(){
+  fetch('/api/player/progress', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    var p = d && d.progress;
+    if(!p){ pushPlayerProgress(); return; }   // nothing kept yet: keep what's on this device
+    try {
+      var week = Math.floor(Date.now()/604800000);
+      if(p.week === week){ localStorage.setItem('pj_skills_week', String(week)); localStorage.setItem('pj_skills', JSON.stringify(p.skills || {})); }
+      Object.keys(p.bests || {}).forEach(function(k){ localStorage.setItem('pj_best_' + k, JSON.stringify(p.bests[k])); });
+    } catch(e){}
+    refreshHomeProgress(); refreshPBDisplay();
+  }).catch(function(){});
+}
+(function(){
+  var save0 = saveSkillsData, setPB0 = setPB, reset0 = resetSkills;
+  saveSkillsData = function(d){ save0(d); pushPlayerProgress(); };
+  setPB = function(l, sc, t){ setPB0(l, sc, t); pushPlayerProgress(); };
+  resetSkills = function(){ reset0(); pushPlayerProgress(); };
+})();
+
 fetch('/api/auth/me', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
   var u = me && me.user; if(!u) return;
   var a = document.getElementById('hub-me');
@@ -3730,11 +3788,15 @@ function showTeam(teams){
     chooseHubFormat(t && t.format);
   };
   var onThisPhone = function(){ try { return find(localStorage.getItem('club:my-team') || ''); } catch(e){ return null; } };
-  fetch('/api/me/club', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
+  HUB_PLAYER.then(function(pl){
+    // a player's device: their own team
+    if(pl){ put(pl.team ? find(pl.team.slug) : null); return; }
+    fetch('/api/me/club', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
     var p = me && me.person;
     var mine = p && p.status === 'approved' ? (p.team || ((p.children || []).find(function(k){ return k.team; }) || {}).team) : null;
     put((mine && find(mine.slug)) || onThisPhone());
   }).catch(function(){ put(onThisPhone()); });
+  });
 }
 </script>
 <script src="/tabbar.js" defer></script>

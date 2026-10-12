@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { squarePhoto } from "../account/ProfilePhoto";
 import { RELATIONS, ROLES, childrenOf, hasOwnTeam, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
+import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
@@ -1091,6 +1092,14 @@ function PlayerProfile({
                 </div>
               );
             })}
+          </div>
+
+          <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Player&apos;s Own Devices
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 dark:bg-black/40">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Their own phone or tablet, for the Training Hub only.</span>
+            <PlayerDevices playerId={player.id} name={player.name} adminKey={adminKey} className="shrink-0 text-sm font-semibold text-green-700 dark:text-green-400" />
           </div>
 
           {snap.canAdmin && (
