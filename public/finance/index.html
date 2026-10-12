@@ -253,7 +253,6 @@
   .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
   body.locked .gate { display: flex; }
   .gate-card { width: 100%; max-width: 400px; text-align: center; margin: auto; }
-  .gate-back { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; z-index: 1; }
   .gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 10px; }
   .gate-kicker { font-size: 30px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
   .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
@@ -290,9 +289,6 @@
 </head>
 <body class="locked">
 <div class="gate" id="gate">
-  <a class="round-btn gate-back" data-back href="/" aria-label="Back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-  </a>
   <div class="gate-card">
     <img class="gate-logo" id="gate-crest" src="/club-crest.png" alt="">
     <p class="gate-kicker">Finances</p>
@@ -329,10 +325,6 @@
   <!-- like Home's header: your photo (Your Account), Lock, Search, the club's crest -->
   <div class="hub-head">
     <span class="hub-head-left">
-    <!-- back to the page you came from (or Home), like the hub's round back buttons -->
-    <a class="round-btn" id="back-btn" data-back href="/" aria-label="Back">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-    </a>
     <a class="hub-me" id="hub-me" href="/account" aria-label="Your account">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
     </a>
@@ -1341,21 +1333,9 @@
     if(e.target.closest('.tab')) fsShow('');
   });
   window.addEventListener('popstate', ()=> fsShow(history.state && history.state.fs || ''));
-  // the back arrow: to the hub page this was opened from (past any Settings panel
-  // opened here), or Home when it was opened from a link or the Home Screen
-  // opened from one of Home's shortcuts (?view=): that tab once the team's open,
-  // and the back arrow goes Home, whichever tabs were looked at here
+  // opened from one of Home's shortcuts (?view=): that tab once the team's open
   const params = new URLSearchParams(location.search);
   let openOnView = ['subs','outstanding','expenses','settings'].includes(params.get('view')) ? params.get('view') : null;
-  const fromShortcut = !!openOnView;
-  $$('[data-back]').forEach(b=> b.addEventListener('click', e=>{
-    if(fromShortcut){ e.preventDefault(); location.replace('/'); return; }
-    let fromHub = false;
-    try { fromHub = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch(err){}
-    if(!fromHub || history.length < 2) return;
-    e.preventDefault();
-    history.go(history.state && history.state.fs ? -2 : -1);
-  }));
 
   function switchView(name){
     $$('.tab').forEach(t=>{ t.classList.toggle('active', t.dataset.view===name); t.setAttribute('aria-selected', t.dataset.view===name); });
