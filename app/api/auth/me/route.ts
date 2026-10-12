@@ -8,6 +8,7 @@ import { getTenant } from "@/lib/tenant";
 import { currentUser } from "@/lib/auth";
 import { photoUrl } from "@/lib/userPhoto";
 import { financeTeamsOf } from "@/lib/financeDevices";
+import { hasOwnTeam } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,16 @@ export async function GET() {
           .slice(0, 2)
           .join("") || "?",
     },
-    // financeTeams: the teams their account opens in Financial Admin (null: every team)
-    person: me.person ? { status: me.person.status, roles: me.person.roles, financeTeams: financeTeamsOf(me.person) } : null,
+    // financeTeams: the teams their account opens in Financial Admin (null: every team);
+    // treasurerOf: the team they're treasurer for, which a password two teams share opens
+    person: me.person
+      ? {
+          status: me.person.status,
+          roles: me.person.roles,
+          financeTeams: financeTeamsOf(me.person),
+          treasurerOf: me.person.roles.includes("treasurer") && hasOwnTeam(me.person) && me.person.team ? me.person.team.slug : null,
+        }
+      : null,
     canCoach: canCoach(me.person),
     passwordSignIn,
   });

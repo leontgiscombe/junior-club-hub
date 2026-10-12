@@ -1459,19 +1459,24 @@
   async function tryUnlock(pass){
     const records = await fetchAllRecords();
     let matchedId = null, matchedAuth = null;
+    // A password two teams share opens the signed-in person's own team: the
+    // one they're treasurer for, then the others their account opens that
+    // still need the password once, then the rest of theirs.
+    const rank = id=> id === treasurerOf ? 0 : !accountFor(id) ? 3 : escrowReady[id] ? 2 : 1;
+    const order = [...TEAM_IDS].sort((a, b)=> rank(a) - rank(b));
     // Teams whose whole record is here already (a signed-in treasurer's own
-    // team, teams from before write tokens, copies kept offline) are checked
-    // here first, so a password two teams share opens the treasurer's own.
-    for(const id of TEAM_IDS){
+    // team, teams from before write tokens, copies kept offline) are checked here.
+    const alsoHere = [];
+    for(const id of order){
       const auth = effAuth(id, records); if(!auth || auth.locked) continue;
       const v = await deriveVerify(pass, ub64(auth.verifySalt));
-      if(v === auth.verifyHash){ matchedId = id; matchedAuth = auth; break; }
+      if(v !== auth.verifyHash) continue;
+      if(matchedId) alsoHere.push(id); else { matchedId = id; matchedAuth = auth; }
     }
+    if(alsoHere.length) sharedWith = alsoHere;
     // Teams whose login the server keeps back: the password's write token for
     // each, checked by the server, which sends the matching team's record.
     const tokens = {};
-    // the signed-in treasurer's own team first, so a password two teams share opens theirs
-    const order = [...TEAM_IDS].sort((a, b)=> Number(accountFor(b)) - Number(accountFor(a)));
     for(const id of order){
       const auth = effAuth(id, records);
       if(auth && auth.locked && auth.writeSalt) tokens[id] = await deriveVerify(pass, ub64(auth.writeSalt));
@@ -1904,6 +1909,8 @@
   let account = null;        // { name } when signed in as a treasurer or club admin
   let financeTeams = null;   // the teams that account opens (null: every team); others need their password
   const accountFor = id => !!account && (financeTeams === null || financeTeams.includes(id));
+  let treasurerOf = null;    // the team the signed-in person is treasurer for
+  const escrowReady = {};    // their teams that already open without the password
   const whose = name => name + (/s$/i.test(name) ? '\u2019' : '\u2019s');
   let accountWrites = false; // this team was opened with the account, not its password
   const ECDH = { name:'ECDH', namedCurve:'P-256' };
@@ -1999,6 +2006,7 @@
     if(!roles.includes('treasurer') && !roles.includes('admin')) return;
     account = { name: me.user.name || me.user.email };
     financeTeams = Array.isArray(me.person.financeTeams) ? me.person.financeTeams : null;
+    treasurerOf = me.person.treasurerOf || null;
     // setting their own team up needs no Coach Admin password when signed in like this
     if(financeTeams === null) $("#setup-admin").style.display = 'none';
     else $("#setup-admin").placeholder = 'Coach Admin password (for a team that isn\u2019t yours)';
@@ -2013,13 +2021,15 @@
   async function renderAccountTeams(){
     await teamsChecked;
     // a team with no password yet is set up from the list above, not opened
-    const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id));
+    const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id))
+      .sort((a, b)=> Number(b === treasurerOf) - Number(a === treasurerOf)); // their own team first
     let faceId = false;
     const rows = await Promise.all(ids.map(async id=>{
       try {
         const r = await fetch('/api/finance/escrow?team=' + encodeURIComponent(id), { cache:'no-store' });
         const d = r.ok ? await r.json() : null;
         if(d && d.faceId) faceId = true;
+        escrowReady[id] = !!(d && d.ready);
         return { id, ready: !!(d && d.ready), faceId: !!(d && d.faceId) };
       } catch(e){ return { id, ready: false }; }
     }));
@@ -2129,7 +2139,7 @@
     if(!shared.length && faceId === null) return;
     const parts = [];
     if(shared.length) parts.push('<div class="hint" style="background:var(--red-bg);color:var(--red)">This password opens <strong>' + esc([currentTeam, ...shared].map(teamName).join(' and ')) + '</strong>. Give each team its own password (Settings → Security &amp; Sync → Change Team Password), so each opens only its own.</div>');
-    if(faceId === true) parts.push('<p style="margin:0 0 6px"><strong>No password next time</strong></p><p class="muted" style="font-size:14px;margin:0">You’re ' + esc(whose(teamName(currentTeam))) + ' treasurer, so from now on it opens with Face ID on any of your devices.</p>');
+    if(faceId === true) parts.push('<p style="margin:0 0 6px"><strong>No password next time</strong></p><p class="muted" style="font-size:14px;margin:0">' + (currentTeam === treasurerOf ? 'You’re ' + esc(whose(teamName(currentTeam))) + ' treasurer, so from now on it' : 'From now on ' + esc(teamName(currentTeam))) + ' opens with Face ID on any of your devices.</p>');
     else if(faceId === false) parts.push('<p style="margin:0 0 6px"><strong>No password next time</strong></p><p class="muted" style="font-size:14px;margin:0">From now on your account opens ' + esc(teamName(currentTeam)) + ' without its password. For Face ID, <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> in Your Account → Sign-In &amp; Security.</p>');
     openModal(faceId !== null ? 'All Set' : 'One Password, Two Teams', parts.join(''), [{ label:'OK', cls:'btn-primary', act: closeModal }], true);
   }
