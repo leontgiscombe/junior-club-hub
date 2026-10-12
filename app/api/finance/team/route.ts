@@ -1,13 +1,14 @@
 // The subs tracker's data: one encrypted blob per team, plus the team's login
 // record (encryption salt and password verifier — never the password itself),
 // so a password change reaches every device.
-import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isCoach } from "@/lib/adminAuth";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
 import { cleanAuth, type Auth } from "@/lib/financeAuth";
 import { financeUser } from "@/lib/financeDevices";
+import { atLimit, overLimit } from "@/lib/rateLimit";
+import { UNLOCK_FAILS, lockedAuth, sameToken, teamRecord, tokenMatches } from "@/lib/financeTeam";
 import {
   financeConfigured,
   financeKeys,
@@ -33,25 +34,29 @@ async function team(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const keys = financeKeys(await requireTenant());
+  const tenant = await requireTenant();
   const id = await team(req);
   if (!id) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
+  const noStore = { headers: { "cache-control": "no-store" } };
   try {
-    const [val, authVal] = await Promise.all([
-      redis(["GET", keys.data(id)]),
-      redis(["GET", keys.auth(id)]),
-    ]);
-    const rec = parse<{ blob?: unknown; rev?: number; updatedAt?: string }>(val) ?? {};
-    return NextResponse.json(
-      {
-        blob: rec.blob ?? null,
-        rev: rec.rev ?? 0,
-        updatedAt: rec.updatedAt ?? null,
-        auth: parse(authVal),
-      },
-      { headers: { "cache-control": "no-store" } },
-    );
+    const record = await teamRecord(tenant, id);
+    const { auth } = record;
+    // no password yet, or a team from before write tokens (it gets one the
+    // next time it's unlocked): nothing to check against
+    if (!auth || !auth.writeHash) return NextResponse.json(record, noStore);
+    // a signed-in treasurer or club admin
+    if (await financeUser(tenant)) return NextResponse.json(record, noStore);
+    // someone who knows the team password
+    const token = req.headers.get("x-write-token") ?? "";
+    if (token) {
+      if (await atLimit("finance-unlock", UNLOCK_FAILS)) {
+        return NextResponse.json({ error: "Too many wrong passwords — try again in an hour" }, { status: 429 });
+      }
+      if (tokenMatches(auth, token)) return NextResponse.json(record, noStore);
+      await overLimit("finance-unlock", UNLOCK_FAILS, 3600);
+    }
+    return NextResponse.json({ blob: null, rev: record.rev, updatedAt: record.updatedAt, auth: lockedAuth(auth) }, noStore);
   } catch (e) {
     return NextResponse.json({ error: String((e as Error)?.message ?? e) }, { status: 500 });
   }
@@ -62,9 +67,6 @@ type Body = {
   auth?: Record<string, unknown>;
 };
 
-const sha256 = (s: string) => createHash("sha256").update(s).digest("base64");
-const same = (a: string, b: string) =>
-  a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 async function put(req: NextRequest) {
   const keys = financeKeys(await requireTenant());
@@ -95,7 +97,7 @@ async function put(req: NextRequest) {
     const auth = cleanAuth(body.auth);
     if (current?.writeHash) {
       const token = req.headers.get("x-write-token") ?? "";
-      const tokenOk = !!token && same(sha256(token), current.writeHash);
+      const tokenOk = sameToken(token, current.writeHash);
       // A device opened with an account (lib/financeDevices.ts) has no team
       // password to work the token out from: a signed-in treasurer or club
       // admin can save the team's records instead — but not change its login.
