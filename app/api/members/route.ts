@@ -14,6 +14,7 @@
 //                                            squad as player `link`, or as a new player in `team`)
 //   POST ?key=… { action: "declineChild", userId, childId }
 //   POST ?key=… { action: "approve" | "decline" | "remove", id }        (phones approved before accounts)
+//   POST ?key=… { action: "dismissRemoval", id }  -> clears the note that a parent took a player off their account
 //   POST ?key=… { action: "newCode" }             -> a new join code (the old one stops working)
 //   POST ?key=… { action: "private", value }      -> only approved members can open the hub (or anyone)
 //   POST ?key=… { action: "invite", email, roles, team?, name? }  -> emails an invitation; signing in with
@@ -22,7 +23,7 @@
 //   POST ?key=… { action: "password", off }       -> switch the shared coach password off (or on); only
 //                                                    a club admin signed in with their account
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_KEY, readPerson, showCode, type Role } from "@/lib/access";
+import { SESSION_KEY, childrenOf, readPerson, showCode, type Role } from "@/lib/access";
 import { isClubAdmin, isCoach } from "@/lib/adminAuth";
 import { EMAIL, cleanEmail } from "@/lib/auth";
 import { sendEmail, simpleEmail } from "@/lib/email";
@@ -43,6 +44,7 @@ import {
 } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
+import { clearRemoval, listRemovals } from "@/lib/childRemovals";
 import { playerPhotoVersions } from "@/lib/playerPhoto";
 import { getTeams } from "@/lib/settings";
 import { getTenantRecord } from "@/lib/tenants";
@@ -57,7 +59,7 @@ const adminsOnly = () =>
 export const dynamic = "force-dynamic";
 
 async function snapshot(tenant: string, key: string) {
-  const [access, members, people, teams, players, invites, canAdmin, me, photos] = await Promise.all([
+  const [access, members, people, teams, players, invites, canAdmin, me, photos, removals] = await Promise.all([
     getAccess(tenant),
     listMembers(tenant),
     listPeople(tenant),
@@ -67,7 +69,15 @@ async function snapshot(tenant: string, key: string) {
     isClubAdmin(key),
     currentPerson(tenant).catch(() => null),
     playerPhotoVersions().catch(() => ({}) as Record<string, string>),
+    listRemovals(tenant).catch(() => ({}) as Awaited<ReturnType<typeof listRemovals>>),
   ]);
+  // a parent who took a child off their account (unless they've linked them again since)
+  const removedBy = (playerId: string) => {
+    const r = removals[playerId];
+    if (!r) return null;
+    const back = people.some((p) => p.userId === r.userId && childrenOf(p).some((c) => c.playerId === playerId));
+    return back ? null : { by: r.by, at: r.at };
+  };
   return {
     canAdmin,
     passwordOff: !!access.passwordOff,
@@ -87,7 +97,10 @@ async function snapshot(tenant: string, key: string) {
     // the squad, for linking a new parent's children to players already there
     // (and each player's photo version, for their profile picture)
     players: players
-      .map((p) => ({ id: p.id, name: p.name, team: p.team, position: p.position, ...(photos[p.id] ? { photo: photos[p.id] } : {}) }))
+      .map((p) => {
+        const removed = removedBy(p.id);
+        return { id: p.id, name: p.name, team: p.team, position: p.position, ...(photos[p.id] ? { photo: photos[p.id] } : {}), ...(removed ? { removed } : {}) };
+      })
       .sort((a, b) => a.name.localeCompare(b.name)),
   };
 }
@@ -148,6 +161,10 @@ export async function POST(req: NextRequest) {
     if (!(await decide(tenant, String(body?.id ?? ""), action))) {
       return NextResponse.json({ error: "That person isn't on the list any more" }, { status: 404 });
     }
+  } else if (action === "dismissRemoval") {
+    // a coach has seen that a parent took this child off their account
+    if (typeof body?.id !== "string") return NextResponse.json({ error: "Which player?" }, { status: 400 });
+    await clearRemoval(tenant, body.id);
   } else if (action === "newCode") {
     if (!canAdmin) return adminsOnly();
     await renewCode(tenant);

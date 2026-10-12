@@ -9,7 +9,8 @@ import { cleanChildren, currentPerson, pickTeam, updatePerson } from "@/lib/peop
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { playerPhotoVersions } from "@/lib/playerPhoto";
-import { notifyChildRequest } from "@/lib/notify";
+import { notifyChildRemoved, notifyChildRequest } from "@/lib/notify";
+import { recordRemoval } from "@/lib/childRemovals";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,8 @@ export async function PUT(req: NextRequest) {
   if (!ctx) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   if (!ctx.me.person) return NextResponse.json({ error: "Join the club first" }, { status: 404 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  const waitingBefore = new Set(childrenOf(ctx.me.person).flatMap((c) => (c.pending ? [c.id] : [])));
+  const before = childrenOf(ctx.me.person);
+  const waitingBefore = new Set(before.flatMap((c) => (c.pending ? [c.id] : [])));
   const person = await updatePerson(ctx.tenant, ctx.me.user.id, {
     ...(body && "children" in body ? { children: cleanChildren(body.children, ctx.teams) } : {}),
     ...(body && "team" in body ? { team: pickTeam(body.team, ctx.teams) ?? null } : {}),
@@ -53,6 +55,20 @@ export async function PUT(req: NextRequest) {
       parentName: person.name,
       childNames: added.map((c) => c.name),
       teams: [...new Set(added.flatMap((c) => (c.requestedTeam ? [c.requestedTeam.slug] : [])))],
+      clubName: (await getClub()).name,
+    });
+  }
+  // a child in the squad taken off their account: noted for the coaches, who hear about it
+  const still = new Set(person ? childrenOf(person).flatMap((c) => (c.playerId ? [c.playerId] : [])) : []);
+  const removed = person?.status === "approved" ? before.filter((c) => c.playerId && !still.has(c.playerId)) : [];
+  if (removed.length && person) {
+    const at = new Date().toISOString();
+    for (const c of removed) await recordRemoval(ctx.tenant, c.playerId!, { userId: person.userId, by: person.name, at });
+    await notifyChildRemoved(ctx.tenant, {
+      userId: person.userId,
+      parentName: person.name,
+      playerIds: removed.map((c) => c.playerId!),
+      teams: [...new Set(removed.flatMap((c) => (c.team ? [c.team.slug] : [])))],
       clubName: (await getClub()).name,
     });
   }

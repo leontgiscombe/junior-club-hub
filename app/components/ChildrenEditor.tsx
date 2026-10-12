@@ -47,6 +47,7 @@ export default function ChildrenEditor({
   clubDecidesTeams = false,
   required = false,
   photo,
+  confirmRemove = false,
 }: {
   value: ChildDraft[];
   teams: TeamOption[];
@@ -60,13 +61,32 @@ export default function ChildrenEditor({
    * renders the photo, with `info` (their name and team) beside it
    */
   photo?: (child: ChildDraft, info: ReactNode) => ReactNode;
+  /** a parent's own account: check before taking off a child already saved */
+  confirmRemove?: boolean;
 }) {
   const set = (i: number, change: Partial<ChildDraft>) => onChange(value.map((c, j) => (j === i ? { ...c, ...change } : c)));
   const field =
     "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const remove = (i: number) =>
     value.length > 1 && (
-      <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label={`Remove child ${i + 1}`} className="px-2 text-lg text-gray-400 hover:text-red-600">
+      <button
+        type="button"
+        onClick={() => {
+          const c = value[i];
+          const first = c.name.trim().split(/\s+/)[0] || "this child";
+          const question = !confirmRemove || !c.id
+            ? null
+            : c.linked
+              ? `Remove ${first} from your account?\n\nYou'll stop seeing their photo, devices and medical details here. They stay in the club's squad, and the club's coaches are told.\n\nTap Save afterwards to finish.`
+              : c.pending
+                ? `Cancel your request to add ${first}?\n\nTap Save afterwards to finish.`
+                : null;
+          if (question && !confirm(question)) return;
+          onChange(value.filter((_, j) => j !== i));
+        }}
+        aria-label={`Remove child ${i + 1}`}
+        className="px-2 text-lg text-gray-400 hover:text-red-600"
+      >
         ×
       </button>
     );
