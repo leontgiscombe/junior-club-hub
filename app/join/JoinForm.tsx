@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { RELATIONS, type Relation } from "@/lib/access";
 import ChildrenEditor, { type ChildDraft } from "../components/ChildrenEditor";
+import NameFields from "../components/NameFields";
 import SignInForm from "../components/SignInForm";
 
 type Status = "none" | "pending" | "approved" | "declined";
@@ -170,7 +171,7 @@ export default function JoinForm({
       {account && <p className="text-center text-xs text-gray-400">Signed in as {account.email}</p>}
       <label>
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoComplete="name" className={input} />
+        <NameFields value={name} onChange={setName} label="Your" required autoComplete className={input} />
       </label>
       <label>
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">You are a…</span>
@@ -189,7 +190,7 @@ export default function JoinForm({
           <span className="mb-2 block text-xs text-gray-400">
             Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
           </span>
-          <ChildrenEditor value={children} teams={teams} onChange={setChildren} />
+          <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
         </div>
       ) : (
         teams.length > 0 && (
