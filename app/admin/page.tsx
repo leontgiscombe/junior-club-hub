@@ -2,7 +2,8 @@ import AdminHome from "../components/AdminHome";
 import { getClub } from "@/lib/settings";
 import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
-import { currentPerson } from "@/lib/people";
+import { redirect } from "next/navigation";
+import { canCoach, currentPerson } from "@/lib/people";
 import { setupFor } from "@/lib/setupChecklist";
 
 export async function generateMetadata() {
@@ -17,6 +18,8 @@ export default async function CoachAdminPage() {
   const tenant = await getTenant();
   const viewer = await getViewer(tenant).catch(() => SIGNED_OUT);
   const me = tenant ? await currentPerson(tenant).catch(() => null) : null;
+  // a member it isn't for (a parent, a treasurer) goes to Home — an old invite's link led here
+  if (me?.person?.status === "approved" && !canCoach(me.person)) redirect("/");
   const setup = tenant && me ? await setupFor(tenant, me.user, me.person).catch(() => null) : null;
   return (
     <AdminHome
