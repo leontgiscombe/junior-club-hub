@@ -47,7 +47,7 @@
   /* ── header: like Home's (your photo, Search, the club's crest), then the title ── */
   header.app { padding-top: max(16px, env(safe-area-inset-top)); }
   .hub-head { display: flex; align-items: center; justify-content: space-between; }
-  .hub-head-right { display: flex; align-items: center; gap: 12px; }
+  .hub-head-right, .hub-head-left { display: flex; align-items: center; gap: 12px; }
   .hub-me { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #15803d; color: #fff; font-weight: 800; font-size: 16px; text-decoration: none; box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.2); }
   .hub-me svg { width: 24px; height: 24px; }
   .hub-me img { width: 100%; height: 100%; object-fit: cover; }
@@ -253,6 +253,7 @@
   .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
   body.locked .gate { display: flex; }
   .gate-card { width: 100%; max-width: 400px; text-align: center; margin: auto; }
+  .gate-back { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; z-index: 1; }
   .gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 10px; }
   .gate-kicker { font-size: 30px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
   .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
@@ -284,6 +285,9 @@
 </head>
 <body class="locked">
 <div class="gate" id="gate">
+  <a class="round-btn gate-back" data-back href="/" aria-label="Back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
   <div class="gate-card">
     <img class="gate-logo" id="gate-crest" src="/club-crest.png" alt="">
     <p class="gate-kicker">Finances</p>
@@ -316,9 +320,15 @@
 <header class="app wrap">
   <!-- like Home's header: your photo (Your Account), Lock, Search, the club's crest -->
   <div class="hub-head">
+    <span class="hub-head-left">
+    <!-- back to the page you came from (or Home), like the hub's round back buttons -->
+    <a class="round-btn" id="back-btn" data-back href="/" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
     <a class="hub-me" id="hub-me" href="/account" aria-label="Your account">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
     </a>
+    </span>
     <span class="hub-head-right">
       <button class="round-btn" id="lock-btn" aria-label="Lock" title="Lock">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -440,7 +450,7 @@
     </div>
     <div class="panel fs-panel" data-fs="security">
       <div class="panel-head"><h3>Security &amp; Sync</h3></div>
-      <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. If the password is ever forgotten, a coach can reset it in Coach Admin → Settings with the team's recovery code.</p>
+      <p class="muted" style="font-size:13px;margin-top:0">Each team's data is encrypted in your browser with the team password <em>before</em> it is saved to the club database, so only someone with the password can read it. Changes sync automatically across devices. You can change this team's password below — it updates for everyone on their next login. If the password is ever forgotten, a club admin can reset it in Coach Admin → Settings → Sign-In &amp; Passwords with the team's recovery code.</p>
       <div class="toolbar">
         <button class="btn" id="change-pass-btn">Change Team Password</button>
         <button class="btn" id="new-code-btn">New Recovery Code</button>
@@ -573,7 +583,7 @@
     openModal('Your Team\u2019s Recovery Code', `
       <p class="muted" style="font-size:13px;margin-top:0">${esc(intro)}</p>
       <p style="font:700 16px/1.4 ui-monospace,Menlo,monospace;white-space:nowrap;overflow-x:auto;text-align:center;background:var(--card);border-radius:12px;padding:14px;margin:12px 0;user-select:all">${esc(code)}</p>
-      <p class="muted" style="font-size:13px">If the team password is ever forgotten, a coach can reset it in <strong>Coach Admin \u2192 Settings</strong> with this code and keep all the data. Keep it somewhere safe and private, like a password manager \u2014 not with the password. It won\u2019t be shown again.</p>
+      <p class="muted" style="font-size:13px">If the team password is ever forgotten, a club admin can reset it in <strong>Coach Admin \u2192 Settings \u2192 Sign-In &amp; Passwords</strong> with this code and keep all the data. Keep it somewhere safe and private, like a password manager \u2014 not with the password. It won\u2019t be shown again.</p>
     `, [
       {label:'Copy Code', act: ()=>{ try { navigator.clipboard.writeText(code); flash('Recovery code copied'); } catch(e){} }},
       {label:'I\u2019ve Saved It', cls:'btn-primary', act: closeModal},
@@ -1319,6 +1329,15 @@
     if(e.target.closest('.tab')) fsShow('');
   });
   window.addEventListener('popstate', ()=> fsShow(history.state && history.state.fs || ''));
+  // the back arrow: to the hub page this was opened from (past any Settings panel
+  // opened here), or Home when it was opened from a link or the Home Screen
+  $$('[data-back]').forEach(b=> b.addEventListener('click', e=>{
+    let fromHub = false;
+    try { fromHub = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch(err){}
+    if(!fromHub || history.length < 2) return;
+    e.preventDefault();
+    history.go(history.state && history.state.fs ? -2 : -1);
+  }));
 
   function switchView(name){
     $$('.tab').forEach(t=>{ t.classList.toggle('active', t.dataset.view===name); t.setAttribute('aria-selected', t.dataset.view===name); });
@@ -1410,7 +1429,7 @@
     $("#gate-pass2").style.display = 'none';
     $("#gate-pass").value=''; $("#gate-err").textContent='';
     $("#gate-btn").textContent = 'Unlock';
-    $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. Forgotten it? A coach can reset it in Coach Admin \u2192 Settings.';
+    $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. Forgotten it? A club admin can reset it in Coach Admin \u2192 Settings \u2192 Sign-In &amp; Passwords.';
     setTimeout(()=>$("#gate-pass").focus(), 50);
   }
   // The current auth for a team is the server's value if set, else the baked default.
