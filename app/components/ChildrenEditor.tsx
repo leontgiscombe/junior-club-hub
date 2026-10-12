@@ -141,7 +141,7 @@ export default function ChildrenEditor({
         })}
         {value.length < MAX_CHILDREN && (
           <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="mt-3 self-start text-sm font-semibold text-green-700 hover:underline dark:text-green-400">
-            + Add another child
+            {value.length ? "+ Add another child" : "+ Add a child"}
           </button>
         )}
       </div>
@@ -163,7 +163,7 @@ export default function ChildrenEditor({
       ))}
       {value.length < MAX_CHILDREN && (
         <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="self-start text-sm font-semibold text-green-700 hover:underline dark:text-green-400">
-          + Add another child
+          {value.length ? "+ Add another child" : "+ Add a child"}
         </button>
       )}
     </div>
