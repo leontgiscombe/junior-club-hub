@@ -26,6 +26,8 @@ export async function GET() {
     teams: TEAMS.map((t) => ({
       id: t.slug,
       name: `${CLUB.name} ${t.squadName ?? t.name}`,
+      // just the team, e.g. "U10 Greens" (the Training Hub's header)
+      short: t.name,
     })),
     vapidPublicKey: (await vapidKeys())?.publicKey ?? null,
     colourVars: clubColourVars(CLUB.colour),

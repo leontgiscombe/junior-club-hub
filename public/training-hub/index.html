@@ -290,6 +290,31 @@ html.dark .pb-pill.beg .pb-lv{color:#86efac}
 html.dark .home-body .tod-text{color:#e5e7eb}
 html.dark .home-foot{color:#4ade80}
 }
+
+/* ── Inner screens in the hub's look: Home's background, frosted top bar with a
+   round back button, rounded cards and plain bold headings. The bright banners
+   and tiles stay — it's for the players. ── */
+body,#app-home,#app-guide,#app-skills,#app-positions,#screen-quiz{background:#f2f2f7}
+.guide-topbar,.skills-topbar,.pos-learn-topbar{background:rgba(242,242,247,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:none;padding:max(12px,env(safe-area-inset-top)) 16px 12px}
+/* centred: the 48px back button is balanced by the bar's 44px spacer on the right, plus 4px */
+.guide-topbar-title,.skills-topbar-title,.pos-learn-topbar-title{font-family:inherit;font-weight:700;font-size:18px;color:#111827;margin-right:4px}
+.guide-topbar .back-btn,.skills-topbar .back-btn,.pos-learn-topbar .back-btn{position:relative;width:48px;height:48px;background:#fff;border:none;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.05)}
+/* the arrow in the middle of the circle (the button's hidden words would push it up) */
+.guide-topbar .back-btn::before,.skills-topbar .back-btn::before,.pos-learn-topbar .back-btn::before{position:absolute;left:50%;top:50%;transform:translate(-35%,-50%) rotate(45deg)}
+.guide-hero,.skills-hero,.pos-learn-hero{margin:4px 16px 16px;border-radius:24px;border-bottom:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.diagram-key{background:#fff;color:#333}
+html.dark .diagram-key{background:#1c1c1e;color:#e5e7eb}
+.section-header{background:none;color:#111827;border-left:none;border-radius:0;padding:0 4px;margin:28px 16px 10px;font-size:20px;font-weight:800}
+.card{border-radius:24px;border:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.skill-item{border-radius:18px;border-color:transparent;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.gloss-item{border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.skills-cat-title{color:#111827;font-size:18px;border-bottom:none;padding:20px 4px 8px}
+.guide-cat-tile,.app-btn{border-radius:20px}
+.guide-footer{background:none;color:#6b7280}
+html.dark .guide-topbar,html.dark .skills-topbar,html.dark .pos-learn-topbar{background:rgba(0,0,0,.8)}
+html.dark .guide-topbar-title,html.dark .skills-topbar-title,html.dark .pos-learn-topbar-title,html.dark .section-header,html.dark .skills-cat-title{color:#f5f5f7}
+html.dark .guide-topbar .back-btn,html.dark .skills-topbar .back-btn,html.dark .pos-learn-topbar .back-btn{background:#1c1c1e;color:#f5f5f7;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+html.dark .guide-footer{color:#9ca3af}
 </style>
 </head>
 <body>
@@ -300,7 +325,7 @@ html.dark .home-foot{color:#4ade80}
     <img class="main-badge" src="/club-crest.png" alt="">
     <h1 class="home-title"><span data-club="name">Your Club</span></h1>
     <p class="home-title2">Training Hub</p>
-    <p class="home-sub">Under 10s &middot; 7v7 &middot; 2-3-1</p>
+    <p class="home-sub"><span class="team-age"></span>7v7 &middot; 2-3-1</p>
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>
     </div>
@@ -358,7 +383,7 @@ html.dark .home-foot{color:#4ade80}
   <div id="guide-cat-home">
   <div class="guide-hero">
     <h1><span data-club="name">Your Club</span></h1>
-    <p>How We Play &mdash; Under 10s Visual Guide (7v7 &middot; 2-3-1)</p>
+    <p>How We Play &mdash; <span class="team-age"></span>Visual Guide (7v7 &middot; 2-3-1)</p>
     <div class="mottos">
       <div class="motto">&#x26BD; <span data-club="slogan"></span></div>
     </div>
@@ -378,7 +403,7 @@ html.dark .home-foot{color:#4ade80}
   </div>
 
   <div id="guide-content" style="display:none">
-  <div style="background:white;margin:12px 16px 4px;border-radius:12px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);font-size:11px;font-weight:700;color:#333;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+  <div class="diagram-key" style="margin:12px 16px 4px;border-radius:18px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-size:11px;font-weight:700;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
     <span style="color:#888;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;width:100%">Diagram Key</span>
     <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;background:#f9a825;border:2px solid #e65100;display:inline-block"></span>GK</span>
     <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;background:#4caf50;border:2px solid #1b5e20;display:inline-block"></span>Defender</span>
@@ -2276,7 +2301,7 @@ html.dark .home-foot{color:#4ade80}
   </div>
 
   <footer class="guide-footer">
-    <span data-club="fullName">Your Club</span> &middot; Under 10s &middot; 7v7 &middot; 2-3-1 Formation
+    <span data-club="fullName">Your Club</span> &middot; <span class="team-age"></span>7v7 &middot; 2-3-1 Formation
   </footer>
   </div><!-- /guide-content -->
 
@@ -2295,7 +2320,7 @@ html.dark .home-foot{color:#4ade80}
   <div id="screen-home">
     <img class="quiz-badge" src="/club-crest.png" alt="">
     <h1 class="quiz-home-title">How We Play<br><span>Quiz</span></h1>
-    <p class="quiz-home-sub">Under 10s &middot; 7v7 &middot; 2-3-1</p>
+    <p class="quiz-home-sub"><span class="team-age"></span>7v7 &middot; 2-3-1</p>
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>
     </div>
@@ -2370,7 +2395,7 @@ html.dark .home-foot{color:#4ade80}
       <button class="btn-restart" id="btn-restart" onclick="restartLevel()">&#x1F504; Try Again</button>
       <button class="btn-home" onclick="goHome()">&#x1F3E0; Choose Level</button>
     </div>
-    <p class="result-footer"><span data-club="fullName">Your Club</span> &middot; Under 10s</p>
+    <p class="result-footer"><span data-club="fullName">Your Club</span><span class="team-age-after"></span></p>
   </div>
 
 </div>
@@ -3628,7 +3653,24 @@ fetch('/api/club').then(function(r){ return r.json(); }).then(function(c){
   document.querySelectorAll('[data-club]').forEach(function(el){ el.textContent = c.club[el.dataset.club] || el.textContent; });
   document.querySelectorAll('.main-badge,.quiz-badge').forEach(function(img){ img.src = c.club.crest; img.alt = c.club.name; });
   document.title = c.club.name + ' \u2014 Training Hub';
+  showTeam(c.teams || []);
 }).catch(function(){});
+
+/* The player's own team where it says which squad this is for, e.g. "U10 Greens · 7v7 · 2-3-1". */
+function showTeam(teams){
+  var label = function(slug){ var t = teams.find(function(x){ return x.id === slug; }); return t ? (t.short || t.name) : ''; };
+  var put = function(name){
+    if(!name) return;
+    document.querySelectorAll('.team-age').forEach(function(el){ el.textContent = name + ' \u00b7 '; });
+    document.querySelectorAll('.team-age-after').forEach(function(el){ el.textContent = ' \u00b7 ' + name; });
+  };
+  var onThisPhone = function(){ try { return label(localStorage.getItem('club:my-team') || ''); } catch(e){ return ''; } };
+  fetch('/api/me/club', { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
+    var p = me && me.person;
+    var mine = p && p.status === 'approved' ? (p.team || ((p.children || []).find(function(k){ return k.team; }) || {}).team) : null;
+    put((mine && label(mine.slug)) || onThisPhone());
+  }).catch(function(){ put(onThisPhone()); });
+}
 </script>
 <script src="/tabbar.js" defer></script>
 </body>
