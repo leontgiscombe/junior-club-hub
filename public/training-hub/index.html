@@ -317,20 +317,6 @@ html.dark .quiz-choose{color:#9ca3af}
 .quiz-topbar,.guide-topbar,.skills-topbar,.pos-learn-topbar{background:rgba(242,242,247,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:none;padding:max(12px,env(safe-area-inset-top)) 16px 12px}
 /* the other formats' diagrams, drawn on the same solid pitch as the 7v7 ones */
 #guide-gen svg.pitch,#pos-gen svg.pitch{background:#2e7d32}
-/* the age group: a small button under the format, and a sheet to choose one */
-.fmt-change{margin-top:8px;background:none;border:none;color:rgba(255,255,255,.8);font:inherit;font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.fmt-sheet{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
-.fmt-panel{width:100%;max-width:440px;background:#f2f2f7;border-radius:24px 24px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom));text-align:center}
-.fmt-panel h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:#111827}
-.fmt-panel p{font-size:13px;color:#6b7280;margin:4px 0 14px}
-.fmt-option{display:flex;width:100%;justify-content:space-between;align-items:center;background:#fff;border:2px solid transparent;border-radius:18px;padding:14px 16px;margin-bottom:8px;font:inherit;font-size:15px;color:#111827;cursor:pointer}
-.fmt-option span{font-weight:800;color:#15803d}
-.fmt-option.on{border-color:#16a34a}
-.fmt-reset{background:none;border:none;font:inherit;font-weight:700;color:#6b7280;margin-top:6px;cursor:pointer}
-html.dark .fmt-panel{background:#1c1c1e}
-html.dark .fmt-panel h2,html.dark .fmt-option{color:#f5f5f7}
-html.dark .fmt-option{background:#2c2c2e}
-html.dark .fmt-option span{color:#4ade80}
 /* centred: the 48px back button is balanced by the bar's 44px spacer on the right, plus 4px */
 .quiz-topbar-title,.guide-topbar-title,.skills-topbar-title,.pos-learn-topbar-title{font-family:inherit;font-weight:700;font-size:18px;color:#111827;margin-right:4px}
 .quiz-topbar .back-btn,.guide-topbar .back-btn,.skills-topbar .back-btn,.pos-learn-topbar .back-btn{position:relative;width:48px;height:48px;background:#fff;border:none;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.05)}
@@ -373,7 +359,6 @@ html.dark .guide-footer{color:#9ca3af}
     <h1 class="home-title"><span data-club="name">Your Club</span></h1>
     <p class="home-title2">Training Hub</p>
     <p class="home-sub"><span class="team-age"></span><span class="fmt-shape">7v7 &middot; 2-3-1</span></p>
-    <button class="fmt-change" onclick="openFormatPicker()">Under 9s &amp; 10s &middot; change</button>
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>
     </div>

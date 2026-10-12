@@ -691,7 +691,6 @@ const HUB_7V7 = {
   shape: "2-3-1",
 };
 var HUB_FMT = "7v7";
-const FMT_AGES = { "5v5": "Under 7s & 8s", "7v7": "Under 9s & 10s", "9v9": "Under 11s & 12s", "11v11": "Under 13s and up" };
 
 function fmtData(){ return HUB_FORMATS[HUB_FMT] || null; }
 
@@ -712,8 +711,6 @@ function applyHubFormat(f){
   document.querySelectorAll(".lev-count").forEach(function(e){ e.textContent = String(LEVELS[e.dataset.level].questions.length); });
   const tip = document.getElementById("tod-text");
   if(tip && TIPS.length) tip.textContent = TIPS[Math.floor(Date.now()/86400000) % TIPS.length];
-  const btn = document.querySelector(".fmt-change");
-  if(btn) btn.textContent = FMT_AGES[f] + " · change";
   if(typeof refreshHomeProgress === "function") refreshHomeProgress();
   // the guide and positions are drawn when opened
   const gen = document.getElementById("guide-gen"); if(gen) gen.remove();
@@ -871,50 +868,10 @@ function genPositions(){
   };
 })();
 
-/* ── Choosing the age group on this phone ── */
-function openFormatPicker(){
-  let sheet = document.getElementById("fmt-sheet");
-  if(sheet){ sheet.remove(); }
-  sheet = document.createElement("div");
-  sheet.id = "fmt-sheet";
-  sheet.className = "fmt-sheet";
-  sheet.onclick = function(e){ if(e.target === sheet) sheet.remove(); };
-  const panel = document.createElement("div");
-  panel.className = "fmt-panel";
-  panel.innerHTML = '<h2>Which age group are you?</h2><p>The guide, quiz and challenges change to match.</p>';
-  ["5v5","7v7","9v9","11v11"].forEach(function(f){
-    const b = document.createElement("button");
-    b.className = "fmt-option" + (f === HUB_FMT ? " on" : "");
-    b.innerHTML = '<strong>'+FMT_AGES[f]+'</strong><span>'+f+'</span>';
-    b.onclick = function(){
-      // remembered with the team's age group at the time, so a club change still comes through
-      try { localStorage.setItem("hub_format", f); localStorage.setItem("hub_format_team", window.HUB_TEAM_FORMAT || ""); } catch(e){}
-      applyHubFormat(f);
-      sheet.remove();
-    };
-    panel.appendChild(b);
-  });
-  const team = document.createElement("button");
-  team.className = "fmt-reset";
-  team.textContent = "Use my team's";
-  team.onclick = function(){ try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); } catch(e){} applyHubFormat(window.HUB_TEAM_FORMAT); sheet.remove(); };
-  panel.appendChild(team);
-  sheet.appendChild(panel);
-  document.body.appendChild(sheet);
-}
-/** The format to show: one picked on this phone, else the player's team's. */
+/* ── The format: always the club's ── */
+/** The player's team's format, as the club set it (Coach Admin → Settings → the team's age group). Players can't change it. */
 function chooseHubFormat(teamFormat){
-  window.HUB_TEAM_FORMAT = teamFormat || "7v7";
-  let picked = null;
-  try {
-    picked = localStorage.getItem("hub_format");
-    // the club has changed the team's age group since this phone picked one: the club's wins
-    if(picked && teamFormat && localStorage.getItem("hub_format_team") !== teamFormat){
-      localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); picked = null;
-    }
-  } catch(e){}
-  applyHubFormat(picked || teamFormat || "7v7");
+  // an age group once picked on a phone (earlier versions let players choose) no longer counts
+  try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); } catch(e){}
+  applyHubFormat(teamFormat || "7v7");
 }
-
-// one picked on this phone shows straight away, before the team is known
-try { if(localStorage.getItem("hub_format")) applyHubFormat(localStorage.getItem("hub_format")); } catch(e){}
