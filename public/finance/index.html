@@ -414,7 +414,7 @@
     </div>
     <div class="panel fs-panel" data-fs="left">
       <div class="panel-head"><h3>Players Who&rsquo;ve Left</h3></div>
-      <p class="muted" style="font-size:13px;margin-top:0">Players taken out of the hub&rsquo;s Members tab, or marked as left on their card. They aren&rsquo;t charged, and their payment history is kept. Tap a name to open their card.</p>
+      <p class="muted" style="font-size:13px;margin-top:0">Players taken out of the hub&rsquo;s Members tab, or marked as left on their card. They aren&rsquo;t charged, and their payment history is kept. Tap a name to open their card, or Delete to remove them for good.</p>
       <div id="left-list"></div>
     </div>
     <div class="panel fs-panel" data-fs="backup">
@@ -738,10 +738,12 @@
   }
   // Months a given player is liable for (from their join month) that count toward
   // what's owed — capped at the current month via seasonMonths().
+  // ...and up to the month before they left, if they have
   function playerMonths(pid){
     const pl = state.players.find(p=>p.id===pid);
     const joinM = pl && pl.joined ? pl.joined.slice(0,7) : null;
-    return seasonMonths().filter(m => !joinM || m >= joinM);
+    const leftM = pl && pl.archived && pl.leftOn ? pl.leftOn : null;
+    return seasonMonths().filter(m => (!joinM || m >= joinM) && (!leftM || m < leftM));
   }
   // Whether a player is liable for a specific month (used by the Subs tab so a future
   // month can still be viewed/pre-collected without counting toward what's owed).
@@ -765,9 +767,10 @@
     });
     return { owed, paid, monthsBehind };
   }
+  // money received, from everyone (a player who's left paid it too)
   function totalCollectedSubs(){
     let t = 0;
-    activePlayers().forEach(pl=>{
+    state.players.forEach(pl=>{
       playerMonths(pl.id).forEach(m=>{
         const p = getPay(m, pl.id);
         if(p && p.status==='paid') t += fee(m);
@@ -1020,7 +1023,8 @@
         <label class="field"><span>Parent phone (for WhatsApp reminders)</span><input id="pf-phone" type="tel" value="${esc(p.parentPhone||'')}"></label>
         <label class="field"><span>Parent email</span><input id="pf-email" type="email" value="${esc(p.parentEmail||'')}"></label>
       </div>
-      <label class="checkline"><input type="checkbox" id="pf-archived" ${p.archived?'checked':''}> Left the team &mdash; stop charging (payment history is kept)</label>
+      <label class="checkline"><input type="checkbox" id="pf-archived" ${p.archived?'checked':''} onchange="document.getElementById('pf-left-wrap').style.display=this.checked?'':'none'"> Left the team &mdash; stop charging (payment history is kept)</label>
+      <label class="field" id="pf-left-wrap" style="${p.archived?'':'display:none'}"><span>Left in (not charged from this month)</span><input id="pf-left" type="month" value="${esc(p.leftOn || thisMonth())}"></label>
       ${p.squadId ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Name, team and medical details are kept in the hub&rsquo;s Members tab.</p>' : ''}
       ${old.length ? `<div class="pc-old">
         <strong>From the old Players tab</strong>
@@ -1034,7 +1038,8 @@
     if(!p) return;
     openModal(p.name, playerCard(p), [
       // one added here by hand can be deleted; a Members player is taken out in Members
-      p.squadId ? null : {label:'Delete', cls:'btn-danger', act:()=>{ if(confirm('Delete '+p.name+'? This removes their payment history too.')){ deletePlayer(p.id); closeModal(); }}},
+      // one added by hand, or one who's left; a Members player still here is taken out in Members
+      p.squadId && !p.archived ? null : {label:'Delete', cls:'btn-danger', act:()=>{ if(confirmDelete(p)){ deletePlayer(p.id); closeModal(); }}},
       {label:'Cancel', act:closeModal},
       {label:'Save', cls:'btn-primary', act:()=>{
         const nameIn = $("#pf-name");
@@ -1045,9 +1050,10 @@
           name, joined: $("#pf-joined").value||'', parentName:$("#pf-parent").value.trim(),
           parentPhone:$("#pf-phone").value.trim(), parentEmail:$("#pf-email").value.trim(),
           archived,
-          // the treasurer's own choice now, not one made because they left Members
-          autoArchived: false
+          // still the one made because they left Members, unless the treasurer changed it
+          autoArchived: !!(archived && p.archived && p.autoArchived)
         });
+        if(archived) p.leftOn = $("#pf-left").value || thisMonth(); else delete p.leftOn;
         save(); closeModal(); renderAll();
       }}
     ].filter(Boolean), true);
@@ -1063,11 +1069,18 @@
       save(); openPlayerModal(p.id);
     };
   }
+  // deleting takes their payments with it: say what comes off the totals
+  function confirmDelete(p){
+    const paid = playerBalance(p.id).paid;
+    return confirm('Delete ' + p.name + ' from Financial Admin?\n\nTheir payment history goes too'
+      + (paid > 0 ? ', and the ' + money(paid) + ' they paid this season comes off your totals' : '')
+      + '. This can\u2019t be undone (except from a backup).');
+  }
   function renderLeft(){
     const left = state.players.filter(p=>p.archived).sort((a,b)=>a.name.localeCompare(b.name));
     const d = $("#fs-detail-left"); if(d) d.textContent = left.length ? String(left.length) : '';
     $("#left-list").innerHTML = left.length
-      ? `<div class="group" style="margin:0 -18px -18px;border-radius:0 0 var(--radius) var(--radius);border-top:1px solid var(--sep)">${left.map(p=>{ const b = playerBalance(p.id); return `<div class="row">${playerLead(p, p.autoArchived?'Taken out of Members':'Marked as left')}<span class="row-end">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:'<span class="clear">Clear</span>'}</span></div>`; }).join('')}</div>`
+      ? `<div class="group" style="margin:0 -18px -18px;border-radius:0 0 var(--radius) var(--radius);border-top:1px solid var(--sep)">${left.map(p=>{ const b = playerBalance(p.id); return `<div class="row">${playerLead(p, (p.leftOn ? 'Left ' + fmtMonthShort(p.leftOn) : p.autoArchived ? 'Out of Members' : 'Marked as left') + ' \u00b7 ' + (b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:'nothing owed'))}<button class="btn btn-sm btn-danger" data-delete-left="${p.id}">Delete</button></div>`; }).join('')}</div>`
       : emptyMsg("👋","Nobody has left","Players taken out of Members show here.");
   }
   function deletePlayer(id){
@@ -1323,6 +1336,8 @@
     if(mb){ mb.parentElement.classList.toggle('open'); return; }
     const ep = e.target.closest('[data-edit-player]'); if(ep){ openPlayerModal(ep.dataset.editPlayer); return; }
     const ee = e.target.closest('[data-edit-expense]'); if(ee){ openExpenseModal(ee.dataset.editExpense); return; }
+    const dl = e.target.closest('[data-delete-left]');
+    if(dl){ const p = state.players.find(x=>x.id===dl.dataset.deleteLeft); if(p && confirmDelete(p)){ deletePlayer(p.id); flash(p.name + ' deleted'); } return; }
   });
   $("#modal-x").onclick = closeModal;
   $("#modal-backdrop").addEventListener('click', e=>{ if(e.target===$("#modal-backdrop")) closeModal(); });
@@ -1607,7 +1622,7 @@
         const phone = (sp.guardians || []).map(x => x.phone).find(Boolean);
         if(phone && !p.parentPhone){ p.parentPhone = phone; changed++; }
         // back in Members after being taken out
-        if(p.archived && p.autoArchived){ p.archived = false; p.autoArchived = false; changed++; }
+        if(p.archived && p.autoArchived){ p.archived = false; p.autoArchived = false; delete p.leftOn; changed++; }
         // the name as it is in Members, which keeps it now
         if(p.name !== sp.name){ p.name = sp.name; changed++; }
         // one added from Members before join dates came across
@@ -1625,7 +1640,7 @@
     }
     const inSquad = new Set(squad.map(sp => sp.id));
     for(const p of state.players){
-      if(p.squadId && !p.archived && !inSquad.has(p.squadId)){ p.archived = true; p.autoArchived = true; changed++; }
+      if(p.squadId && !p.archived && !inSquad.has(p.squadId)){ p.archived = true; p.autoArchived = true; p.leftOn = thisMonth(); changed++; }
     }
     if(added || changed){ save(); renderAll(); }
     if(added) flash(added === 1 ? 'Added 1 player from Members' : 'Added ' + added + ' players from Members');
