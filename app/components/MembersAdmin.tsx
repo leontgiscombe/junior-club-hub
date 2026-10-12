@@ -228,12 +228,16 @@ export default function MembersAdmin() {
   const hit = (...texts: (string | undefined)[]) => !q || texts.some((t) => t?.toLowerCase().includes(q));
   const guardiansOf = new Map<string, Person[]>();
   const unmatched: { person: Person; child: ReturnType<typeof childrenOf>[number] }[] = [];
+  // children approved parents have added since, for a coach to approve
+  const waitingKids: { person: Person; child: ReturnType<typeof childrenOf>[number] }[] = [];
   for (const p of approved) {
     for (const c of childrenOf(p)) {
       if (c.playerId) guardiansOf.set(c.playerId, [...(guardiansOf.get(c.playerId) ?? []), p]);
+      else if (c.pending) waitingKids.push({ person: p, child: c });
       else unmatched.push({ person: p, child: c });
     }
   }
+  const waitingCount = pending.length + waitingKids.length;
   const isStaff = (p: Person) => p.roles.some((r) => ADMIN_ROLES.includes(r));
   const ownTeamSlug = (p: Person) => (hasOwnTeam(p) && p.team && snap.teams.some((t) => t.slug === p.team!.slug) ? p.team.slug : "");
   const personHit = (p: Person) => hit(p.name, p.email);
@@ -306,18 +310,21 @@ export default function MembersAdmin() {
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
         {/* Waiting */}
-        <Fold id="waiting" title="Waiting for Approval" summary={pending.length ? String(pending.length) : "None"} alert={pending.length > 0} forceOpen={pending.length > 0}>
+        <Fold id="waiting" title="Waiting for Approval" summary={waitingCount ? String(waitingCount) : "None"} alert={waitingCount > 0} forceOpen={waitingCount > 0}>
           <div className="flex items-center justify-end">
             <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
               Refresh
             </button>
           </div>
-          {pending.length === 0 ? (
+          {waitingCount === 0 ? (
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No one is waiting.</p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
               {pending.map((p) => (
                 <PendingPerson key={p.userId} person={p} players={snap.players} canAdmin={snap.canAdmin} busy={busy} onDecide={act} />
+              ))}
+              {waitingKids.map(({ person, child }) => (
+                <PendingChild key={`${person.userId}:${child.id}`} person={person} child={child} teams={snap.teams} players={snap.players} busy={busy} onDecide={act} />
               ))}
             </ul>
           )}
@@ -761,6 +768,78 @@ function PendingPerson({
           Approve
         </button>
         <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
+          Decline
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/** A child an approved parent has added: into the squad (new, or an existing player), or declined. */
+function PendingChild({
+  person,
+  child,
+  teams,
+  players,
+  busy,
+  onDecide,
+}: {
+  person: Person;
+  child: ReturnType<typeof childrenOf>[number];
+  teams: { slug: string; name: string }[];
+  players: SquadPlayer[];
+  busy: boolean;
+  onDecide: (body: Record<string, unknown>) => void;
+}) {
+  const [team, setTeam] = useState(child.requestedTeam?.slug ?? "");
+  const [link, setLink] = useState(() => likelyPlayer({ name: child.name, ...(team ? { team: { slug: team } } : {}) }, players));
+  const field = "rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15";
+  return (
+    <li className="py-3">
+      <span className="block font-bold text-gray-900 dark:text-gray-50">{child.name}</span>
+      <span className="block text-sm text-gray-500 dark:text-gray-400">
+        {[`New child of ${person.name}`, child.requestedTeam ? `asks for ${child.requestedTeam.name}` : ""].filter(Boolean).join(" · ")}
+      </span>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <select
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          aria-label={`Squad player for ${child.name}`}
+          className={field}
+        >
+          <option value="new">Add as a new player</option>
+          {players
+            .filter((pl) => !team || pl.team === team)
+            .map((pl) => (
+              <option key={pl.id} value={pl.id}>
+                Is {pl.name}
+              </option>
+            ))}
+        </select>
+        {link === "new" && (
+          <select value={team} onChange={(e) => setTeam(e.target.value)} aria-label={`Team for ${child.name}`} className={field}>
+            <option value="">No team yet</option>
+            {teams.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button
+          onClick={() => onDecide({ action: "approveChild", userId: person.userId, childId: child.id, link, team })}
+          disabled={busy}
+          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
+        >
+          Add to Squad
+        </button>
+        <button
+          onClick={() => confirm(`Decline ${child.name}? They'll come off ${person.name}'s list of children.`) && onDecide({ action: "declineChild", userId: person.userId, childId: child.id })}
+          disabled={busy}
+          className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
+        >
           Decline
         </button>
       </div>

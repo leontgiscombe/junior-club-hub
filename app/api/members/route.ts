@@ -10,6 +10,9 @@
 //                                            maps a child to an existing squad player instead)
 //   POST ?key=… { action: "declinePerson" | "removePerson", userId }
 //   POST ?key=… { action: "editPerson", userId, team?, children? }      (fix someone's team or children)
+//   POST ?key=… { action: "approveChild", userId, childId, link?, team? }  (a child a parent added: into the
+//                                            squad as player `link`, or as a new player in `team`)
+//   POST ?key=… { action: "declineChild", userId, childId }
 //   POST ?key=… { action: "approve" | "decline" | "remove", id }        (phones approved before accounts)
 //   POST ?key=… { action: "newCode" }             -> a new join code (the old one stops working)
 //   POST ?key=… { action: "private", value }      -> only approved members can open the hub (or anyone)
@@ -30,6 +33,7 @@ import {
   cleanChildren,
   createInvite,
   currentPerson,
+  decideChild,
   decidePerson,
   isRole,
   listInvites,
@@ -104,7 +108,17 @@ export async function POST(req: NextRequest) {
   const canAdmin = await isClubAdmin(key);
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const action = body?.action;
-  if (action === "editPerson") {
+  if (action === "approveChild" || action === "declineChild") {
+    const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
+    const link = typeof body?.link === "string" && body.link !== "new" ? body.link : undefined;
+    const done = await decideChild(
+      tenant,
+      String(body?.userId ?? ""),
+      String(body?.childId ?? ""),
+      action === "approveChild" ? { approve: true, link, team: pickTeam(body?.team, teams) } : { approve: false },
+    );
+    if (!done) return NextResponse.json({ error: "That child isn't waiting any more" }, { status: 404 });
+  } else if (action === "editPerson") {
     const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
     const done = await updatePerson(tenant, String(body?.userId ?? ""), {
       ...(body && "team" in body ? { team: pickTeam(body.team, teams) ?? null } : {}),

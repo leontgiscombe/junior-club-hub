@@ -42,6 +42,12 @@ export type Child = {
   team?: { slug: string; name: string };
   playerId?: string;
   requestedTeam?: { slug: string; name: string };
+  /**
+   * added by an approved parent and waiting for a coach to approve it into the
+   * squad (Members → Waiting for Approval); it has no team until then, so it
+   * opens none of the club's teams to the parent
+   */
+  pending?: boolean;
 };
 export const MAX_CHILDREN = 8;
 
