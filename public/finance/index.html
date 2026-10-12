@@ -635,8 +635,12 @@
   }
 
   // ---- Server (Upstash-backed API) with local cache fallback ----
+  // The server keeps a team's data and password checks back until the page
+  // shows it knows the password (the write token) or a treasurer is signed in.
   async function serverGet(id){
-    const res = await fetch(API_BASE + "?id=" + id, { cache:'no-store' });
+    const headers = {};
+    if(writeToken && id === currentTeam) headers['x-write-token'] = writeToken;
+    const res = await fetch(API_BASE + "?id=" + id, { cache:'no-store', headers });
     if(!res.ok) throw new Error('GET ' + res.status);
     return res.json();
   }
@@ -1407,8 +1411,24 @@
   async function tryUnlock(pass){
     const records = await fetchAllRecords();
     let matchedId = null, matchedAuth = null;
+    // Teams whose login the server keeps back: the password's write token for
+    // each, checked by the server, which sends the matching team's record.
+    const tokens = {};
     for(const id of TEAM_IDS){
-      const auth = effAuth(id, records); if(!auth) continue;
+      const auth = effAuth(id, records);
+      if(auth && auth.locked && auth.writeSalt) tokens[id] = await deriveVerify(pass, ub64(auth.writeSalt));
+    }
+    if(Object.keys(tokens).length){
+      const res = await fetch('/api/finance/unlock', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ tokens }) });
+      if(res.status === 429){
+        const err = new Error((await res.json().catch(()=>({}))).error || 'Too many wrong passwords \u2014 try again later');
+        err.limited = true; throw err;
+      }
+      if(res.ok){ const d = await res.json(); records[d.id] = d.record; matchedId = d.id; matchedAuth = d.record.auth; }
+    }
+    // teams from before write tokens, and the copies kept on this device when offline
+    if(!matchedId) for(const id of TEAM_IDS){
+      const auth = effAuth(id, records); if(!auth || auth.locked) continue;
       const v = await deriveVerify(pass, ub64(auth.verifySalt));
       if(v === auth.verifyHash){ matchedId = id; matchedAuth = auth; break; }
     }
@@ -1514,14 +1534,14 @@
     if(!pass) return;
     $("#gate-err").textContent='';
     const btn = $("#gate-btn"); const label = btn.textContent; btn.disabled = true; btn.textContent = 'Checking\u2026';
-    let ok=false; try { ok = await tryUnlock(pass); } catch(e){ console.error(e); }
+    let ok=false, limited=null; try { ok = await tryUnlock(pass); } catch(e){ console.error(e); if(e && e.limited) limited = e.message; }
     btn.disabled = false; btn.textContent = label;
     if(ok){
       unlockApp();
       if(pendingRecoveryUpgrade){ const p = pendingRecoveryUpgrade; pendingRecoveryUpgrade = null; await upgradeToRecovery(p); }
       if(account && dataKeyRaw) rememberThisDevice();
     }
-    else { $("#gate-err").textContent = 'Password not recognised.'; $("#gate-pass").select(); }
+    else { $("#gate-err").textContent = limited || 'Password not recognised.'; $("#gate-pass").select(); }
   }
   function applyTeamBranding(){
     // Banner stays club green for every team; the team is shown by name only.
@@ -1550,7 +1570,8 @@
     if($("#modal-backdrop").classList.contains('open')) return; // don't disrupt an open form
     try {
       const rec = await serverGet(currentTeam); apiAvailable = true;
-      if(rec && rec.auth && currentAuth && rec.auth.verifyHash !== currentAuth.verifyHash){
+      // kept back (the password changed, so the write token no longer works) or changed
+      if(rec && rec.auth && currentAuth && (rec.auth.locked || rec.auth.verifyHash !== currentAuth.verifyHash)){
         stopPolling();
         alert('This team\u2019s login was changed on another device. Please unlock it again (with the new password, if it was changed).');
         lock();
