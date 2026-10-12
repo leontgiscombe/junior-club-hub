@@ -1842,6 +1842,21 @@
     for(let i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
     return arr;
   }
+  // An alert from the rest of the hub tapped while Finances was on screen: the
+  // hub's service worker keeps the page it's for (public/hub-sw.js), so go there.
+  async function openPendingAlert(){
+    if(document.visibilityState !== 'visible' || typeof caches === 'undefined') return;
+    try {
+      const c = await caches.open('hub-open'); const hit = await c.match('/__hub-open');
+      if(!hit) return;
+      await c.delete('/__hub-open');
+      const d = await hit.json();
+      if(typeof d.url === 'string' && d.url.startsWith('/') && !d.url.startsWith('//') && (d.url.split(/[?#]/)[0].replace(/\/$/, '') !== location.pathname.replace(/\/$/, '')) && Date.now() - d.at < 120000) location.href = d.url;
+    } catch(e){}
+  }
+  openPendingAlert();
+  document.addEventListener('visibilitychange', openPendingAlert);
+  window.addEventListener('pageshow', openPendingAlert);
   async function registerSW(){
     if(!('serviceWorker' in navigator)) return;
     try { await navigator.serviceWorker.register('/finance-sw.js', { scope: '/finance' }); } catch(e){ /* e.g. opened as a file */ }

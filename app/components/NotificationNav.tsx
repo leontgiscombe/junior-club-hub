@@ -1,22 +1,64 @@
 "use client";
 
-// Opens the page an alert points to when it's tapped while the app is already
-// open — the service worker (public/hub-sw.js) asks, since an iPhone won't let
-// it move the window itself. Draws nothing.
+// Opens the page a tapped alert points to. The service worker (public/hub-sw.js)
+// asks when the app's already open, since an iPhone won't let it move the window
+// itself; and it keeps the page for a couple of minutes, which the app checks
+// when it opens or comes back on screen — an iPhone often opens the app on its
+// last page instead of the alert's. Draws nothing.
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+
+const OPEN_CACHE = "hub-open";
+const OPEN_KEY = "/__hub-open";
+const FRESH = 2 * 60 * 1000;
+// only pages of this hub
+const ours = (url: unknown): url is string => typeof url === "string" && url.startsWith("/") && !url.startsWith("//");
+
+/** The page a just-tapped alert is for, if there is one (taken, so it's used once). */
+async function takePending(): Promise<string | null> {
+  if (typeof caches === "undefined") return null;
+  try {
+    const c = await caches.open(OPEN_CACHE);
+    const hit = await c.match(OPEN_KEY);
+    if (!hit) return null;
+    await c.delete(OPEN_KEY);
+    const { url, at } = (await hit.json()) as { url?: unknown; at?: number };
+    return ours(url) && typeof at === "number" && Date.now() - at < FRESH ? url : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function NotificationNav() {
   const router = useRouter();
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    const onMessage = (e: MessageEvent) => {
-      const url = e.data?.type === "hub-open" && typeof e.data.url === "string" ? e.data.url : null;
-      // only pages of this hub
-      if (url && url.startsWith("/") && !url.startsWith("//")) router.push(url);
+    const go = (url: string) => {
+      if (url === window.location.pathname + window.location.search + window.location.hash) return;
+      // Finances is a page of its own, not one of the app's
+      if (url.startsWith("/finance")) window.location.href = url;
+      else router.push(url);
     };
-    navigator.serviceWorker.addEventListener("message", onMessage);
-    return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+    const check = () => {
+      if (document.visibilityState === "visible") takePending().then((url) => url && go(url));
+    };
+    const onMessage = (e: MessageEvent) => {
+      const url = e.data?.type === "hub-open" ? e.data.url : null;
+      if (ours(url)) {
+        takePending();
+        go(url);
+      }
+    };
+    check();
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    window.addEventListener("pageshow", check);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", onMessage);
+    return () => {
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+      window.removeEventListener("pageshow", check);
+      if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("message", onMessage);
+    };
   }, [router]);
   return null;
 }
