@@ -77,7 +77,8 @@
     if (features.kitSizes !== false) can.push("kit");
     if (canCoach) can.push("coach");
     if (publicResults) can.push("results");
-    can.push("account", "search");
+    // not Account: your photo, top left of every main page, opens it
+    can.push("search");
     if (canCoach) can.push("matches", "trainingLog", "stats", "members");
     var ids = ["home"];
     var saved = null;
@@ -86,7 +87,6 @@
       saved.forEach(function (id) { if (id !== "home" && can.indexOf(id) >= 0 && ids.indexOf(id) < 0) ids.push(id); });
     } else {
       ["training", "finances", "kit", "coach"].forEach(function (id) { if (can.indexOf(id) >= 0) ids.push(id); });
-      if (!signedIn || ids.length < 5) ids.push("account");
     }
     var tabs = ids.slice(0, 5).map(function (id) {
       var d = DEFS[id];
