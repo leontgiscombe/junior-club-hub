@@ -1,7 +1,8 @@
 "use client";
 
-// Coach Admin → Members: the club's join code and link, whether only approved
-// members can open the hub, and approving (or not) the people who ask to join.
+// Coach Admin → Members: the club's people — approving (or not) those who ask to
+// join, and each team's coaches, players and their parents. How people get in
+// (the club code, invites, passwords) is in Settings (ClubAccess.tsx).
 import Link from "next/link";
 import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -37,7 +38,7 @@ type Snapshot = {
 };
 
 /** The roles only a club admin can give or take away. */
-const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
+export const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
 type SquadPlayer = {
   id: string;
   name: string;
@@ -111,7 +112,6 @@ export default function MembersAdmin() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   // the player whose profile is open
   const [profile, setProfile] = useState<string | null>(null);
@@ -177,14 +177,6 @@ export default function MembersAdmin() {
     } finally {
       setBusy(false);
     }
-  }
-
-  async function copy(text: string, what: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(what);
-      setTimeout(() => setCopied(null), 2000);
-    } catch {}
   }
 
   if (!authed || !snap) {
@@ -303,8 +295,6 @@ export default function MembersAdmin() {
       setBusy(false);
     }
   }
-  // phones approved before accounts (and any still waiting from then)
-  const phones = snap.members.filter((m) => m.status !== "declined");
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16">
@@ -475,66 +465,21 @@ export default function MembersAdmin() {
           {q && !teamGroups.length && !clubWide.length && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No one matches “{search.trim()}”.</p>}
         </Fold>
 
-        {/* Join code */}
-        <Fold id="code" title="Your Club Code" summary={snap.code}>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Give parents, players and coaches this code, or send them the join link. They sign in with
-            their email and ask to join; you approve them below.
-            {snap.platformJoin && (
-              <>
-                {" "}They can type the code at <strong>{snap.platformJoin.replace(/^https?:\/\//, "").replace(/\/$/, "")}</strong>.
-              </>
-            )}
-          </p>
-          <p className="mt-4 select-all rounded-2xl bg-gray-50 py-4 text-center font-mono text-3xl font-extrabold tracking-[0.2em] text-gray-900 dark:bg-white/5 dark:text-gray-50">
-            {snap.code}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => copy(snap.code, "code")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
-              {copied === "code" ? "Copied ✓" : "Copy Code"}
-            </button>
-            <button onClick={() => copy(snap.joinUrl, "link")} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
-              {copied === "link" ? "Copied ✓" : "Copy Join Link"}
-            </button>
-            {snap.canAdmin && <button
-              onClick={() => {
-                if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
-              }}
-              disabled={busy}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
-            >
-              New Code
-            </button>}
-          </div>
-        </Fold>
-
-        <InviteSection snap={snap} busy={busy} onAct={act} />
-
-        {/* Private hub */}
-        <Fold id="private" title="Only Approved Members" summary={snap.private ? "On" : "Off"}>
-          <label className="flex cursor-pointer items-start justify-between gap-4">
-            <span>
-              <span className="block text-sm text-gray-500 dark:text-gray-400">
-                {snap.private
-                  ? "On: only people you've approved can open the hub. Anyone else is asked for the club code, signs in and waits for approval."
-                  : "Off: anyone with the hub's address can open it. Turn on so only people you approve can see it."}
-              </span>
+        {/* how people get in: the club code, invites, who's allowed in, passwords */}
+        <Link
+          href={`/admin/settings${keyQuery(key)}#joining`}
+          className="press mt-4 flex items-center gap-3 rounded-3xl bg-white px-5 py-4 shadow-sm dark:bg-[#1c1c1e]"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-gray-900 dark:text-gray-50">Club Code &amp; Invites</span>
+            <span className="block text-sm text-gray-500 dark:text-gray-400">
+              Code <span className="font-mono font-bold">{snap.code}</span> · in Settings → Joining the Club
             </span>
-            <input
-              type="checkbox"
-              checked={snap.private}
-              disabled={busy || !snap.canAdmin}
-              onChange={(e) => {
-                const on = e.target.checked;
-                if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them here.")) return;
-                act({ action: "private", value: on });
-              }}
-              className="mt-1 h-6 w-6 shrink-0 accent-green-600"
-            />
-          </label>
-        </Fold>
-
-        {snap.canAdmin && snap.sharedPassword && <PasswordSection snap={snap} busy={busy} onAct={act} />}
+          </span>
+          <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </Link>
 
         {declined.length > 0 && (
           <Fold id="declined" title="Declined" summary={String(declined.length)}>
@@ -554,36 +499,6 @@ export default function MembersAdmin() {
           </Fold>
         )}
 
-        {phones.length > 0 && (
-          <Fold id="phones" title="Phones Approved Before Accounts" summary={String(phones.length)}>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              These still work. Ask each person to sign in and join with an account, then remove their phone here.
-            </p>
-            <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
-              {phones.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <span className="min-w-0">
-                    <span className="block font-bold text-gray-900 dark:text-gray-50">
-                      {m.name}
-                      {m.role === "coach" && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600 dark:text-gray-300 dark:bg-white/10">Coach</span>}
-                    </span>
-                    <span className="block text-sm text-gray-500 dark:text-gray-400">{describe(m) || (m.status === "pending" ? "waiting" : "")}</span>
-                  </span>
-                  <span className="flex gap-3">
-                    {m.status === "pending" && (
-                      <button onClick={() => act({ action: "approve", id: m.id })} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
-                        Approve
-                      </button>
-                    )}
-                    <button onClick={() => act({ action: "remove", id: m.id })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
-                      Remove
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Fold>
-        )}
       </div>
     </main>
   );
@@ -664,7 +579,7 @@ function Fold({
 const ALL_ROLES = Object.keys(ROLES) as Role[];
 
 /** A person's roles as chips to tap on and off. */
-function RoleChips({
+export function RoleChips({
   roles,
   disabled,
   onChange,
@@ -1258,98 +1173,5 @@ function MemberRow({
         </div>
       )}
     </li>
-  );
-}
-
-/** Invite someone by email: signing in with that email makes them a member, with the roles chosen here. */
-function InviteSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [roles, setRoles] = useState<Role[]>(["coach"]);
-  const [team, setTeam] = useState("");
-  const shownRoles = snap.canAdmin ? roles : roles.filter((r) => !ADMIN_ROLES.includes(r));
-  const field = "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
-  return (
-    <Fold id="invite" title="Invite by Email" summary={snap.invites.length ? `${snap.invites.length} waiting` : undefined}>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        For your coaches and helpers: they get an email, sign in with that address, and they&apos;re straight in
-        with the roles you choose — no code or approval needed.
-      </p>
-      <div className="mt-3 flex flex-col gap-2">
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="their@email.com" className={field} />
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Their name (optional)" maxLength={60} className={field} />
-        {snap.teams.length > 0 && (
-          <select value={team} onChange={(e) => setTeam(e.target.value)} className={field}>
-            <option value="">Team (optional)</option>
-            {snap.teams.map((t) => (
-              <option key={t.slug} value={t.slug}>{t.name}</option>
-            ))}
-          </select>
-        )}
-      </div>
-      <RoleChips roles={shownRoles} disabled={busy} onChange={setRoles} canAdmin={snap.canAdmin} />
-      <button
-        onClick={() => {
-          onAct({ action: "invite", email, name, roles: shownRoles, team });
-          setEmail("");
-          setName("");
-        }}
-        disabled={busy || !email.includes("@") || !shownRoles.length}
-        className="mt-3 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
-      >
-        Send Invite
-      </button>
-      {snap.invites.length > 0 && (
-        <ul className="mt-4 divide-y divide-gray-100 border-t border-gray-100 dark:border-white/10 dark:divide-white/10">
-          {snap.invites.map((i) => (
-            <li key={i.email} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-              <span className="min-w-0">
-                <span className="block font-semibold text-gray-900 dark:text-gray-50">{i.name || i.email}</span>
-                <span className="block text-sm text-gray-500 dark:text-gray-400">
-                  {[i.name ? i.email : "", i.roles.map((r) => ROLES[r]).join(", "), i.team?.name, `invited ${when(i.createdAt)}`].filter(Boolean).join(" · ")}
-                </span>
-              </span>
-              {(snap.canAdmin || !i.roles.some((r) => ADMIN_ROLES.includes(r))) && (
-                <button onClick={() => onAct({ action: "cancelInvite", email: i.email })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
-                  Cancel
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Fold>
-  );
-}
-
-/** The club's shared coach password: on (still works) or off (everyone signs in with their own account). */
-function PasswordSection({ snap, busy, onAct }: { snap: Snapshot; busy: boolean; onAct: (body: Record<string, unknown>) => void }) {
-  return (
-    <Fold id="password" title="Shared Coach Password" summary={snap.passwordOff ? "Off" : "On"}>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {snap.passwordOff
-          ? "Off: everyone signs in with their own account. Nobody can get in with a shared password."
-          : "On: anyone with the club's coach password can still use Coach Admin. Once your coaches have their own accounts, switch it off — then removing someone from Members takes away their access straight away."}
-      </p>
-      {snap.accountAdmin ? (
-        <button
-          onClick={() => {
-            if (snap.passwordOff || confirm("Switch the shared coach password off? Only people with their own account and the Club admin or Coach role will be able to use Coach Admin.")) {
-              onAct({ action: "password", off: !snap.passwordOff });
-            }
-          }}
-          disabled={busy}
-          className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-40 ${
-            snap.passwordOff ? "border border-gray-200 text-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15" : "bg-gray-900 text-white hover:bg-black dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
-          }`}
-        >
-          {snap.passwordOff ? "Switch the Password Back On" : "Switch the Password Off"}
-        </button>
-      ) : (
-        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-          To change this, sign in with your own club admin account (Coach Admin → Sign In With Your Email).
-        </p>
-      )}
-    </Fold>
   );
 }

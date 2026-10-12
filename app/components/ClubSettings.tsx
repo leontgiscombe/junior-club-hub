@@ -13,6 +13,7 @@ import { removeBackground } from "@/lib/crestBackground";
 import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
+import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { Group, ICONS, Row, TopBar, useScreens } from "./SettingsUI";
@@ -147,7 +148,11 @@ export default function ClubSettings() {
   // coaches can look; only club admins can change Settings
   const [canAdmin, setCanAdmin] = useState(true);
   // which setting is open (its own screen), or "" for the list
-  const { screen, open, close: closeScreen } = useScreens("/admin/settings");
+  const { screen: rawScreen, open, close: closeScreen } = useScreens("/admin/settings");
+  // old links: Share Your Hub and the finance passwords had screens of their own
+  const screen = ({ share: "joining", finance: "signin" } as Record<string, string>)[rawScreen] ?? rawScreen;
+  // the club code, for the Joining the Club row
+  const access = useClubAccess(authed ? key : "");
 
   // keepEdits: after uploading a picture, so changes not yet saved stay as they are
   const take = useCallback((data: Snapshot, keepEdits = false) => {
@@ -343,15 +348,14 @@ export default function ClubSettings() {
 
   // the settings that open on their own screen, by their # (useScreens)
   const SCREENS: Record<string, string> = {
-    share: "Share Your Hub",
+    joining: "Joining the Club",
     details: "Club Details",
     colour: "Club Colour",
     crest: "Club Crest",
     kit: "Kit",
     teams: "Teams",
     parts: "Parts of the Hub",
-    ...(canAdmin && snap.club.features.financialAdmin ? { finance: "Financial Admin Passwords" } : {}),
-    ...(canAdmin && snap.account ? { signin: "Sign-In" } : {}),
+    signin: "Sign-In & Passwords",
   };
   // screens whose changes wait for Save Changes (pictures and passwords save as they go)
   const EDITS = ["details", "colour", "teams", "parts", "kit"];
@@ -368,7 +372,8 @@ export default function ClubSettings() {
         <>
           <TopBar title={SCREENS[screen]} onBack={closeScreen} />
           <div className="mx-auto max-w-xl px-4">
-            {!canAdmin && (
+            {/* who can change what on Joining and Sign-In is said there, item by item */}
+            {!canAdmin && !["joining", "signin"].includes(screen) && (
               <div className="mt-4">
                 <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
                   You can look, but only a <strong>club admin</strong> can change Settings.
@@ -401,7 +406,7 @@ export default function ClubSettings() {
                 <p className="mt-2 text-center text-xs text-gray-400">Preview of the top of the home page</p>
               </>
             )}
-            {screen === "share" && <ShareHub clubName={shown("name")} />}
+            {screen === "joining" && <JoiningScreen adminKey={key} clubName={shown("name")} />}
             {screen === "colour" && (
               <>
                 {/* Colour */}
@@ -642,15 +647,8 @@ export default function ClubSettings() {
                 <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
               </>
             )}
-            {screen === "finance" && (
-              <>
-                {canAdmin && snap.club.features.financialAdmin && (
-                  <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
-                )}
-              </>
-            )}
             {screen === "signin" && (
-              <>
+              <SignInScreen adminKey={key}>
                 {canAdmin && snap.account && (
                   <AccountSection
                     email={snap.account.email}
@@ -664,7 +662,15 @@ export default function ClubSettings() {
                     }}
                   />
                 )}
-              </>
+                {canAdmin && snap.club.features.financialAdmin && (
+                  <FinancePasswords adminKey={key} teams={snap.teams.filter((t) => !t.archived)} />
+                )}
+                {!canAdmin && (
+                  <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+                    Only a <strong>club admin</strong> can change the club&apos;s passwords.
+                  </p>
+                )}
+              </SignInScreen>
             )}
             {EDITS.includes(screen) && (
               <>
@@ -704,7 +710,8 @@ export default function ClubSettings() {
             {notice && <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{notice}</p>}
 
             <Group>
-              <Row icon={ICONS.share} label="Share Your Hub" onClick={() => open("share")} />
+              <Row icon={ICONS.share} label="Joining the Club" detail={access.snap?.code} onClick={() => open("joining")} />
+              <Row icon={ICONS.lock} label="Sign-In & Passwords" onClick={() => open("signin")} />
             </Group>
 
             <Group>
@@ -719,12 +726,6 @@ export default function ClubSettings() {
               <Row icon={ICONS.grid} label="Parts of the Hub" onClick={() => open("parts")} />
             </Group>
 
-            {(SCREENS.finance || SCREENS.signin) && (
-              <Group>
-                {SCREENS.finance && <Row icon={ICONS.money} label="Financial Admin Passwords" onClick={() => open("finance")} />}
-                {SCREENS.signin && <Row icon={ICONS.lock} label="Sign-In" onClick={() => open("signin")} />}
-              </Group>
-            )}
 
             {/* changes made on a screen and not saved yet */}
             {dirty && (
@@ -1204,7 +1205,7 @@ function AccountSection({
     "mt-2 cursor-pointer rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900";
   return (
     <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Sign-In</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Club Admin Sign-In</h2>
       <label className="mt-4 block">
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Club email</span>
         <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={input} />
@@ -1230,57 +1231,3 @@ function AccountSection({
   );
 }
 
-/** The hub's own link, to send to parents and coaches: clubs aren't listed anywhere, so this is how people find it. */
-function ShareHub({ clubName }: { clubName: string }) {
-  const [copied, setCopied] = useState(false);
-  const [url, setUrl] = useState("");
-  const [canShare, setCanShare] = useState(false);
-  // the address the coach is using now, and whether the phone can share it
-  // (after the first render, as the server knows neither)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setUrl(window.location.origin);
-      setCanShare("share" in navigator);
-    }, 0);
-    return () => clearTimeout(t);
-  }, []);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  }
-
-  return (
-    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Share Your Hub</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Your hub isn&apos;t listed anywhere, so send this link to your parents and coaches — by
-        WhatsApp, email or your club&apos;s app. They can save it to their phone&apos;s home screen.
-        Your club code, and who&apos;s allowed in, are in{" "}
-        <Link href="/admin/members" className="font-semibold text-green-700 underline dark:text-green-400">Coach Admin → Members</Link>.
-      </p>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-800 dark:bg-white/5 dark:text-gray-100">{url || "…"}</code>
-        <button
-          onClick={copy}
-          disabled={!url}
-          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
-        >
-          {copied ? "Copied ✓" : "Copy Link"}
-        </button>
-        {canShare && (
-          <button
-            onClick={() => navigator.share({ title: `${clubName} Team Hub`, url }).catch(() => {})}
-            disabled={!url}
-            className="cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
-          >
-            Share
-          </button>
-        )}
-      </div>
-    </section>
-  );
-}

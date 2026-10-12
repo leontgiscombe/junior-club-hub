@@ -474,11 +474,20 @@ export default function HelpManual() {
             Training Plans or the Camera Register. It leaves the home page and Coach Admin, and
             whatever was saved in it stays for when it&apos;s switched back on.
           </p>
-          <H3>Sign-In</H3>
+          <H3>Joining the Club</H3>
           <p>
-            Under <B>🔑 Sign-In</B>, change the club&apos;s email or its coach password. If the
-            password is ever forgotten, tap <B>Forgot the password?</B> on the Coach Admin sign-in
-            page: a reset link goes to the club&apos;s email and works once, for an hour.
+            Under <B>Joining the Club</B> is your <B>club code</B>, the join link and a QR code to
+            share with parents, players and coaches; whether <B>only approved members</B> can open the
+            hub; and <B>Invite by Email</B>, for coaches and helpers to come straight in with the roles
+            you choose. People who ask to join wait in <B>Members</B> for you to approve them.
+          </p>
+          <H3>Sign-In &amp; Passwords</H3>
+          <p>
+            Under <B>Sign-In &amp; Passwords</B>: switch the shared coach password off once your
+            coaches have their own accounts, change the club&apos;s email or coach password, and set up
+            or reset a team&apos;s Finances password. If the coach password is ever forgotten, tap{" "}
+            <B>Forgot the password?</B> on the Coach Admin sign-in page: a reset link goes to the
+            club&apos;s email and works once, for an hour.
           </p>
           <H3>Teams</H3>
           <p>
