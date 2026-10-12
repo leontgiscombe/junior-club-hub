@@ -22,7 +22,7 @@ async function clubsOf(userId: string) {
   for (const id of ids) {
     const person = await readPerson(id, userId);
     if (!person) continue;
-    out.push({ id, name: (await getClubFor(id)).name, url: tenantUrl(id), roles: person.roles, status: person.status });
+    out.push({ id, name: (await getClubFor(id)).name, url: tenantUrl(id), roles: person.roles, status: person.status, person: person.name });
   }
   return out;
 }
@@ -30,7 +30,12 @@ async function clubsOf(userId: string) {
 export async function GET() {
   const user = await currentUser();
   if (!user) return notSignedIn();
-  return NextResponse.json({ user: { email: user.email, name: user.name, phone: user.phone ?? "" }, clubs: await clubsOf(user.id) });
+  const clubs = await clubsOf(user.id);
+  // an account with no name yet (someone invited by email) takes the name a club knows them by
+  let name = user.name;
+  const known = clubs.find((c) => c.person && c.person !== user.email.split("@")[0])?.person;
+  if (!name && known) name = (await setUserName(user.id, known))?.name ?? known;
+  return NextResponse.json({ user: { email: user.email, name, phone: user.phone ?? "" }, clubs: clubs.map((c) => ({ id: c.id, name: c.name, url: c.url, roles: c.roles, status: c.status })) });
 }
 
 export async function PATCH(req: NextRequest) {
