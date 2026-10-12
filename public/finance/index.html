@@ -1343,7 +1343,13 @@
   window.addEventListener('popstate', ()=> fsShow(history.state && history.state.fs || ''));
   // the back arrow: to the hub page this was opened from (past any Settings panel
   // opened here), or Home when it was opened from a link or the Home Screen
+  // opened from one of Home's shortcuts (?view=): that tab once the team's open,
+  // and the back arrow goes Home, whichever tabs were looked at here
+  const params = new URLSearchParams(location.search);
+  let openOnView = ['subs','outstanding','expenses','settings'].includes(params.get('view')) ? params.get('view') : null;
+  const fromShortcut = !!openOnView;
   $$('[data-back]').forEach(b=> b.addEventListener('click', e=>{
+    if(fromShortcut){ e.preventDefault(); location.replace('/'); return; }
     let fromHub = false;
     try { fromHub = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch(err){}
     if(!fromHub || history.length < 2) return;
@@ -1665,6 +1671,7 @@
     document.body.classList.remove('locked');
     keepTeamKey();
     renderAll();
+    if(openOnView){ switchView(openOnView); openOnView = null; }
     startPolling();
     if(accountFor(currentTeam)) renderDevices();
     syncSquad(true);

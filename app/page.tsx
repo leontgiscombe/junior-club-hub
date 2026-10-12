@@ -143,6 +143,8 @@ export default async function Home() {
   const many = viewer.canCoach ? TEAMS.length > 1 && !person?.team : familyTeams.length > 1;
 
 
+  // Finances' tabs, for treasurers and club admins (a treasurer who doesn't coach has just these)
+  const finShortcuts: ShortcutId[] = viewer.canFinance && CLUB.features.financialAdmin ? ["finSubs", "finOwes", "finSpending", "finSettings"] : [];
   // the coach tools this person can use, for their shortcuts (they pick which, on the page)
   const available: ShortcutId[] = [
     "matches",
@@ -158,6 +160,7 @@ export default async function Home() {
     ...(CLUB.publicResults ? (["results"] as const) : []),
     ...(CLUB.features.trainingHub ? (["hub"] as const) : []),
     ...(CLUB.features.kitSizes ? (["kit"] as const) : []),
+    ...finShortcuts,
   ];
   const defaults = available.filter((id) => ["matches", "training", "stats", "potm"].includes(id)).slice(0, 4);
 
@@ -309,6 +312,7 @@ export default async function Home() {
 
         {/* coaches: shortcuts to the tools */}
         {viewer.canCoach && <HomeShortcuts available={available} defaults={defaults} />}
+        {!viewer.canCoach && finShortcuts.length > 0 && <HomeShortcuts available={finShortcuts} defaults={finShortcuts} />}
 
         {/* signed out: the Training Hub and kit sizes (signed in, they're on the tab bar);
             parents and players: a kit reminder while sizes are still to send */}
