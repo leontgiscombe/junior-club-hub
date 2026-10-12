@@ -448,13 +448,14 @@ export default function HelpManual() {
         <Section id="settings" title="Settings">
           <p>
             <B>Settings</B> in Coach Admin is where the club&apos;s details live: its name, full
-            name, initials, slogan, season and crest, and whether parents can see results. Every
-            page shows a change as soon as you tap <B>Save Changes</B>.
+            name, initials, slogan, season and crest, and whether parents can see results. Changes save
+            by themselves a moment after you make them (you&apos;ll see <B>Saved ✓</B>), and every page
+            shows them straight away.
           </p>
           <Steps>
             <li>Tap <B>Upload Crest</B> and pick the club&apos;s badge. A PNG with a see-through background looks best; it also becomes the home-screen icon.</li>
             <li>Fill in any of the boxes. An empty box uses the default shown in it.</li>
-            <li>Tap <B>Save Changes</B>. The preview at the top shows how the home page will look.</li>
+            <li>Wait for <B>Saved ✓</B>. The preview at the top shows how the home page will look.</li>
           </Steps>
           <p>
             Phones that already saved the hub to their home screen keep the old icon until it&apos;s
@@ -463,7 +464,7 @@ export default function HelpManual() {
           <H3>Club Colour</H3>
           <p>
             Under <B>🎨 Club Colour</B>, pick one of the ready-made colours or <B>Your own</B>. The
-            Settings page shows it straight away; once you tap <B>Save Changes</B>, every
+            Settings page shows it straight away, and once it&apos;s saved every
             page&apos;s buttons, banners and highlights take it. <B>Hub green</B> goes back to the
             original look.
           </p>
@@ -495,7 +496,7 @@ export default function HelpManual() {
             used on posters, its FA Full-Time code (so fixtures arrive by themselves) and its league
             opponents. <B>+ Add Team</B> adds one, and the arrows change the order the tabs appear
             in. <B>Archive Team</B> hides a team everywhere but keeps its kit sizes, stats, logs and
-            subs; <B>Bring Back</B> restores it. Tap <B>Save Changes</B> when you&apos;re done.
+            subs; <B>Bring Back</B> restores it. Changes save by themselves; a new team saves once it has a name.
           </p>
         </Section>
 

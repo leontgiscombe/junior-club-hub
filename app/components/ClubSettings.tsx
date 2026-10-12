@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
 import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
@@ -142,7 +142,6 @@ export default function ClubSettings() {
   const [notice, setNotice] = useState<string | null>(null);
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState<ClubChanges>({});
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"crest" | "kit" | null>(null);
   const [teams, setTeams] = useState<TeamDraft[]>([]);
   // coaches can look; only club admins can change Settings
@@ -228,25 +227,46 @@ export default function ClubSettings() {
     router.refresh();
   }
 
-  async function save() {
-    const unnamed = teams.find((t) => !t.name.trim());
-    if (unnamed) {
-      setError("Give every team a name before saving.");
-      return;
-    }
-    setSaving(true);
+  // Changes save by themselves, a moment after the last one (no Save button):
+  // what's typed meanwhile is kept, and the same changes aren't sent twice.
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "unnamed">("idle");
+  const lastSent = useRef("");
+  async function autoSave(body: string) {
+    lastSent.current = body;
+    setSaveState("saving");
+    setError(null);
+    setNotice(null);
     try {
-      await send(
-        "PUT",
-        { changes: draft, teams: fromDrafts(teams) },
-        "Saved — every page now shows the new details.",
-      );
+      const res = await fetch(`/api/settings?key=${encodeURIComponent(key)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "That didn't save");
+      take(data, true);
+      // a new team has its address now
+      setTeams((prev) => prev.map((t, i) => (t.slug || data.teams?.[i]?.name !== t.name.trim() ? t : { ...t, slug: data.teams[i].slug })));
+      setSaveState("saved");
+      // every page picks the new settings up
+      router.refresh();
     } catch (e) {
+      lastSent.current = "";
+      setSaveState("idle");
       setError(e instanceof Error ? e.message : "That didn't save");
-    } finally {
-      setSaving(false);
     }
   }
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!snap || !canAdmin) return;
+    const body = JSON.stringify({ changes: draft, teams: fromDrafts(teams) });
+    const saved = JSON.stringify({ changes: snap.changes, teams: fromDrafts(snap.teams.map(toDraft)) });
+    if (body === saved || body === lastSent.current) return;
+    if (teams.some((t) => !t.name.trim())) {
+      setSaveState("unnamed");
+      return;
+    }
+    const t = setTimeout(() => autoSave(body), 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, teams, snap, canAdmin]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // the pictures save straight away, without touching changes not yet saved
   const PICTURES = {
@@ -342,9 +362,6 @@ export default function ClubSettings() {
   const value = (f: EditableText) => draft[f] ?? "";
   const shown = (f: EditableText) => (draft[f]?.trim() ? draft[f]!.trim() : defaults[f]);
   const publicResults = draft.publicResults ?? defaults.publicResults;
-  const dirty =
-    JSON.stringify(draft) !== JSON.stringify(snap.changes) ||
-    JSON.stringify(fromDrafts(teams)) !== JSON.stringify(fromDrafts(snap.teams.map(toDraft)));
 
   // the settings that open on their own screen, by their # (useScreens)
   const SCREENS: Record<string, string> = {
@@ -357,7 +374,7 @@ export default function ClubSettings() {
     parts: "Parts of the Hub",
     signin: "Sign-In & Passwords",
   };
-  // screens whose changes wait for Save Changes (pictures and passwords save as they go)
+  // screens whose changes save a moment after they're made (pictures and passwords save as they go)
   const EDITS = ["details", "colour", "teams", "parts", "kit"];
   const kitExtras = draft.kitExtras ?? defaults.kitExtras ?? [];
   const liveTeams = teams.filter((t) => !t.archived).length;
@@ -672,18 +689,16 @@ export default function ClubSettings() {
                 )}
               </SignInScreen>
             )}
-            {EDITS.includes(screen) && (
-              <>
-                {canAdmin && <div className="sticky bottom-4 mt-6">
-                  <button
-                    onClick={save}
-                    disabled={saving || !dirty}
-                    className="w-full cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white shadow-lg hover:bg-green-700 disabled:cursor-default disabled:opacity-50"
-                  >
-                    {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
-                  </button>
-                </div>}
-              </>
+            {EDITS.includes(screen) && canAdmin && (
+              // how the changes are getting on: they save by themselves
+              <p
+                aria-live="polite"
+                className={`pointer-events-none fixed left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-40 w-max max-w-[90vw] -translate-x-1/2 rounded-full px-4 py-1.5 text-sm font-semibold shadow-md transition-opacity ${
+                  saveState === "idle" ? "opacity-0" : "opacity-100"
+                } ${saveState === "unnamed" ? "bg-amber-50 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" : "bg-white text-gray-600 dark:bg-[#1c1c1e] dark:text-gray-300"}`}
+              >
+                {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : saveState === "unnamed" ? "Give the new team a name to save it" : "\u00a0"}
+              </p>
             )}
           </div>
         </>
@@ -727,20 +742,6 @@ export default function ClubSettings() {
             </Group>
 
 
-            {/* changes made on a screen and not saved yet */}
-            {dirty && (
-              <>
-                {canAdmin && <div className="sticky bottom-4 mt-6">
-                  <button
-                    onClick={save}
-                    disabled={saving || !dirty}
-                    className="w-full cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white shadow-lg hover:bg-green-700 disabled:cursor-default disabled:opacity-50"
-                  >
-                    {saving ? "Saving…" : dirty ? "Save Changes" : "All Changes Saved"}
-                  </button>
-                </div>}
-              </>
-            )}
           </div>
         </>
       )}
