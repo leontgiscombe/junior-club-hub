@@ -56,7 +56,7 @@ export const PAGES: PageEntry[] = [
   { title: "Drill Library", where: "Training Plans", href: "/admin/training/plans?view=library", words: "drills warm up technical game exercises", who: "coach", feature: "trainingPlans" },
   { title: "Camera Register", where: "Coach Admin", href: "/admin/camera", words: "camera filming footage veo upload", who: "coach", feature: "cameraRegister" },
   { title: "Kit Responses", where: "Coach Admin", href: "/admin/kit", words: "kit sizes responses requests csv order still to send", who: "coach", feature: "kitSizes" },
-  { title: "Members", where: "Coach Admin", href: "/admin/members", words: "members join requests approve roles coach treasurer admin parents guardians players squad add player move team medical emergency phone", who: "coach" },
+  { title: "Members", where: "Coach Admin", href: "/admin/members", words: "members join requests approve decline roles coach treasurer admin parents guardians players squad add player move team medical emergency phone", who: "coach" },
   { title: "Help", where: "Coach Admin", href: "/admin/help", words: "help guide manual how to", who: "coach" },
   { title: "Club Settings", where: "Coach Admin", href: "/admin/settings", words: "settings club", who: "coach" },
   { title: "Club Details", where: "Settings", href: "/admin/settings#details", words: "club name initials slogan season", who: "coach" },
@@ -66,7 +66,10 @@ export const PAGES: PageEntry[] = [
   { title: "Teams", where: "Settings", href: "/admin/settings#teams", words: "teams add team archive training days times fa full-time code opponents", who: "coach" },
   { title: "Training Days & Times", where: "Settings → Teams", href: "/admin/settings#teams", words: "training day time schedule when monday tuesday wednesday thursday friday", who: "coach" },
   { title: "Parts of the Hub", where: "Settings", href: "/admin/settings#parts", words: "features switch off results for parents training hub kit finance", who: "coach" },
-  { title: "Share Your Hub", where: "Settings", href: "/admin/settings#share", words: "share link qr code invite parents", who: "coach" },
+  { title: "Joining the Club", where: "Settings", href: "/admin/settings#joining", words: "club code join link qr share hub invite email coaches helpers only approved members private who can join", who: "coach" },
+  { title: "Club Code", where: "Settings → Joining the Club", href: "/admin/settings#joining", words: "code join new code", who: "coach" },
+  { title: "Invite by Email", where: "Settings → Joining the Club", href: "/admin/settings#joining", words: "invite coach helper email", who: "coach" },
+  { title: "Sign-In & Passwords", where: "Settings", href: "/admin/settings#signin", words: "password coach password shared switch off club email sign in finance password reset recovery code forgotten", who: "coach" },
 ];
 
 /** Help's sections, by their # on the Help page (app/components/HelpManual.tsx). */

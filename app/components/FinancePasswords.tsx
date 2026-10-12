@@ -96,12 +96,12 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   return (
-    <section className="mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">💷 Financial Admin Passwords</h2>
+    <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]">
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Finances Passwords</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Set up a team&apos;s Financial Admin password, or reset a forgotten one with the team&apos;s
-        recovery code and keep all its records. The code is shown when the team is set up, and can be
-        remade in Financial Admin → Settings by anyone who knows the password.
+        Set up a team&apos;s Finances password, or reset a forgotten one with the team&apos;s recovery
+        code and keep all its records. To change a password you know, or make a new recovery code, use
+        Finances → Settings → Security &amp; Sync.
       </p>
 
       <label className="mt-4 block">
