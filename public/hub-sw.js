@@ -19,19 +19,32 @@ self.addEventListener('push', (event) => {
   }));
 });
 
+// The page a tapped alert is for, kept for a couple of minutes: an iPhone often
+// opens (or brings back) the app on its last page whatever it's asked, so the
+// app looks here itself when it opens or comes back on screen (NotificationNav).
+const OPEN_CACHE = 'hub-open';
+const OPEN_KEY = '/__hub-open';
+async function rememberOpen(url) {
+  try {
+    const c = await caches.open(OPEN_CACHE);
+    await c.put(OPEN_KEY, new Response(JSON.stringify({ url, at: Date.now() }), { headers: { 'content-type': 'application/json' } }));
+  } catch {}
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/admin/members';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (list) => {
-      const c = list[0];
-      if (!c) return self.clients.openWindow ? self.clients.openWindow(url) : undefined;
-      // the app's already open: bring it forward, then take it to the page. An iPhone can't
-      // move a window itself (navigate), so the page is also asked to go there (NotificationNav).
-      try { await c.focus(); } catch {}
-      let moved = null;
-      if ('navigate' in c) { try { moved = await c.navigate(url); } catch { moved = null; } }
-      if (!moved) c.postMessage({ type: 'hub-open', url });
-    })
-  );
+  event.waitUntil((async () => {
+    await rememberOpen(url);
+    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // the window on screen if there is one, else any of the app's
+    const c = list.find((w) => w.focused) || list.find((w) => w.visibilityState === 'visible') || list[0];
+    if (!c) { if (self.clients.openWindow) await self.clients.openWindow(url); return; }
+    // the app's already open: bring it forward, then take it to the page. An iPhone can't
+    // move a window itself (navigate), so the page is also asked to go there (NotificationNav).
+    try { await c.focus(); } catch {}
+    let moved = null;
+    if ('navigate' in c) { try { moved = await c.navigate(url); } catch { moved = null; } }
+    if (!moved) c.postMessage({ type: 'hub-open', url });
+  })());
 });
