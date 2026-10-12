@@ -1137,10 +1137,18 @@ function MemberRow({
       />
       {editing && (
         <div className="mt-3 rounded-xl bg-gray-50 p-3 dark:bg-white/5">
-          {/* their own team (the one they coach, or play for) — a parent who also coaches has both */}
+          {/* their own team (the one they coach, look after the money for, or play for) — a parent who also coaches has both */}
           {ownTeam && (
             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">
-              {isParent ? "Their own team (the one they coach)" : "Team"}
+              {person.roles.includes("coach")
+                ? "The team they coach"
+                : person.roles.includes("treasurer")
+                  ? "The team they're treasurer for"
+                  : person.roles.includes("player")
+                    ? "The team they play for"
+                    : isParent
+                      ? "Their own team"
+                      : "Team"}
               <select value={team} onChange={(e) => setTeam(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15">
                 <option value="">No team</option>
                 {teams.map((t) => (
