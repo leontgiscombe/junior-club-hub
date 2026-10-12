@@ -3,8 +3,10 @@
 // The home screen's shortcuts, which each person picks for themselves (kept on
 // this phone): Edit opens a list of every tool they can use, to tick up to
 // MAX and put in order. Until they do, the page's own default four show.
+// A long press on one works like a phone's home screen: they wiggle, each with
+// a − to take it off, a + to add more, and Done.
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export type ShortcutId =
@@ -69,6 +71,40 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
   const [chosen, setChosen] = useState<ShortcutId[]>(defaults);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<ShortcutId[]>([]);
+  // wiggling, after a long press: − takes one off, + adds
+  const [arranging, setArranging] = useState(false);
+  const press = useRef<{ timer: number; x: number; y: number } | null>(null);
+  // the tap that ends a long press doesn't open the shortcut
+  const swallowClick = useRef(false);
+
+  function pressStart(e: React.PointerEvent) {
+    if (arranging) return;
+    const x = e.clientX, y = e.clientY;
+    press.current = {
+      x,
+      y,
+      timer: window.setTimeout(() => {
+        press.current = null;
+        swallowClick.current = true;
+        setArranging(true);
+        try {
+          navigator.vibrate?.(10);
+        } catch {}
+      }, 500),
+    };
+  }
+  function pressEnd() {
+    if (press.current) window.clearTimeout(press.current.timer);
+    press.current = null;
+  }
+  function pressMove(e: React.PointerEvent) {
+    // a scroll, not a press
+    if (press.current && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) pressEnd();
+  }
+  function tileClick(e: React.MouseEvent) {
+    if (arranging || swallowClick.current) e.preventDefault();
+    swallowClick.current = false;
+  }
 
   // this phone's own choice, if it has one (only tools this person can still use)
   useEffect(() => {
@@ -100,6 +136,18 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
     setChosen(next ?? defaults);
     setEditing(false);
   }
+  const remove = (id: ShortcutId) => {
+    const next = chosen.filter((x) => x !== id);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {}
+    setChosen(next);
+  };
+  const openList = () => {
+    setDraft(chosen);
+    setEditing(true);
+  };
+  const more = chosen.length < MAX && available.some((id) => !chosen.includes(id));
 
   const toggle = (id: ShortcutId) =>
     setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : d.length < MAX ? [...d, id] : d));
@@ -117,41 +165,76 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
     <section className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between px-1">
         <h2 className="wp-text text-xl font-bold">Shortcuts</h2>
-        <button
-          onClick={() => {
-            setDraft(chosen);
-            setEditing(true);
-          }}
-          className="wp-text press text-[15px] font-semibold text-green-700 dark:text-green-400"
-        >
-          Edit
-        </button>
+        {arranging ? (
+          <button onClick={() => setArranging(false)} className="wp-text press text-[15px] font-bold text-green-700 dark:text-green-400">
+            Done
+          </button>
+        ) : (
+          <button onClick={openList} className="wp-text press text-[15px] font-semibold text-green-700 dark:text-green-400">
+            Edit
+          </button>
+        )}
       </div>
-      {chosen.length > 0 ? (
+      <style>{`@keyframes hub-wiggle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}`}</style>
+      {chosen.length > 0 || arranging ? (
         <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-          {chosen.map((id) => {
+          {chosen.map((id, i) => {
             const tool = TOOLS[id];
             const inner = (
               <>
-                <Tile tool={tool} />
+                <span className="relative" style={arranging ? { animation: `hub-wiggle .3s ease-in-out ${i % 2 ? "-.15s" : "0s"} infinite` } : undefined}>
+                  <Tile tool={tool} />
+                </span>
                 {tool.label}
               </>
             );
-            const className = "wp-text press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight";
-            return tool.external ? (
-              <a key={id} href={tool.href} className={className}>
+            const className = "wp-text press flex select-none flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight [-webkit-touch-callout:none]";
+            const handlers = {
+              onPointerDown: pressStart,
+              onPointerUp: pressEnd,
+              onPointerLeave: pressEnd,
+              onPointerCancel: pressEnd,
+              onPointerMove: pressMove,
+              onClick: tileClick,
+              onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+            };
+            const link = tool.external ? (
+              <a href={tool.href} className={className} {...handlers}>
                 {inner}
               </a>
             ) : (
-              <Link key={id} href={tool.href} className={className}>
+              <Link href={tool.href} className={className} {...handlers}>
                 {inner}
               </Link>
             );
+            return (
+              <div key={id} className="relative">
+                {link}
+                {arranging && (
+                  <button
+                    onClick={() => remove(id)}
+                    aria-label={`Remove ${tool.label}`}
+                    className="absolute -top-1.5 left-1 z-10 grid h-6 w-6 place-items-center rounded-full bg-gray-500 text-white shadow ring-2 ring-white dark:bg-gray-400 dark:text-gray-900 dark:ring-black"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" aria-hidden="true"><path d="M6 12h12" /></svg>
+                  </button>
+                )}
+              </div>
+            );
           })}
+          {arranging && more && (
+            <button onClick={openList} className="wp-text press flex flex-col items-center gap-1.5 text-center text-xs font-semibold leading-tight">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-dashed border-gray-300 text-gray-400 dark:border-white/25 dark:text-gray-500">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              </span>
+              Add
+            </button>
+          )}
         </div>
       ) : (
         <p className="wp-text px-1 text-sm text-gray-500 dark:text-gray-400">No shortcuts — tap Edit to add some.</p>
       )}
+      {arranging && <p className="wp-text px-1 text-center text-xs text-gray-500 dark:text-gray-400">Tap − to remove one, or + to add. Tap Done when you&apos;re finished.</p>}
 
       {/* on the page's body, not in here: the page's slide-in wrapper would keep it under the tab bar */}
       {editing && createPortal(
