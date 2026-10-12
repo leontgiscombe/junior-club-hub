@@ -12,4 +12,5 @@ export function cleanPhone(v: unknown): string | null {
   return digits >= 7 && digits <= 15 ? s.slice(0, 24) : null;
 }
 
-export const BAD_PHONE = "That doesn't look like a phone number — check it, or leave it empty";
+export const BAD_PHONE = "That doesn't look like a phone number — check it and try again";
+export const NEED_PHONE = "Enter your mobile number, so the club can reach you";
