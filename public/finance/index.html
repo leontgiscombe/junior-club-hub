@@ -1577,6 +1577,7 @@
     if(pass !== pass2){ err.textContent = 'The two passwords don\u2019t match.'; return; }
     // signed in as a treasurer or club admin, the account is enough
     if(!admin && !account){ err.textContent = 'Enter the Coach Admin password \u2014 or sign in as a treasurer or club admin.'; return; }
+    if(!admin && !accountFor(id)){ err.textContent = 'You\u2019re not ' + whose(teamName(id)) + ' treasurer \u2014 enter the Coach Admin password to set it up.'; return; }
     const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
     try {
       const raw = crypto.getRandomValues(new Uint8Array(32));
@@ -1598,7 +1599,7 @@
       unlockApp();
       flash('Team set up \u2014 share its password with whoever looks after its subs');
       showRecoveryCode(rec.code, 'The team is set up. Here is its recovery code.');
-      if(account) rememberThisDevice();
+      if(accountFor(currentTeam)) rememberThisDevice();
     } catch(e){ console.error(e); err.textContent = 'Could not set up the team. Check you\u2019re online and try again.'; cryptoKey = null; currentTeam = null; }
     finally { btn.disabled = false; btn.textContent = 'Set Up Team'; }
   }
@@ -1612,7 +1613,7 @@
     if(ok){
       unlockApp();
       if(pendingRecoveryUpgrade){ const p = pendingRecoveryUpgrade; pendingRecoveryUpgrade = null; await upgradeToRecovery(p); }
-      if(account && dataKeyRaw) rememberThisDevice();
+      if(accountFor(currentTeam) && dataKeyRaw) rememberThisDevice();
     }
     else { $("#gate-err").textContent = limited || 'Password not recognised.'; $("#gate-pass").select(); }
   }
@@ -1631,7 +1632,7 @@
     document.body.classList.remove('locked');
     renderAll();
     startPolling();
-    if(account) renderDevices();
+    if(accountFor(currentTeam)) renderDevices();
     syncSquad(true);
   }
   function lock(){ cryptoKey=null; currentTeam=null; stopPolling(); location.reload(); }
@@ -1889,6 +1890,9 @@
   // copy of the team's data key, locked to its public key. From then on it
   // opens the team with the account alone. The server only keeps locked copies.
   let account = null;        // { name } when signed in as a treasurer or club admin
+  let financeTeams = null;   // the teams that account opens (null: every team); others need their password
+  const accountFor = id => !!account && (financeTeams === null || financeTeams.includes(id));
+  const whose = name => name + (/s$/i.test(name) ? '\u2019' : '\u2019s');
   let accountWrites = false; // this team was opened with the account, not its password
   const ECDH = { name:'ECDH', namedCurve:'P-256' };
   function idb(){
@@ -1982,10 +1986,13 @@
     const roles = (me.person && me.person.status === 'approved' && me.person.roles) || [];
     if(!roles.includes('treasurer') && !roles.includes('admin')) return;
     account = { name: me.user.name || me.user.email };
-    // setting a team up needs no Coach Admin password when signed in like this
-    $("#setup-admin").style.display = 'none';
+    financeTeams = Array.isArray(me.person.financeTeams) ? me.person.financeTeams : null;
+    // setting their own team up needs no Coach Admin password when signed in like this
+    if(financeTeams === null) $("#setup-admin").style.display = 'none';
+    else $("#setup-admin").placeholder = 'Coach Admin password (for a team that isn\u2019t yours)';
     box.style.display = ''; $("#account-or").style.display = '';
-    $("#account-who").textContent = 'Signed in as ' + account.name + '.';
+    $("#account-who").textContent = 'Signed in as ' + account.name + '.'
+      + (financeTeams && financeTeams.length ? ' As ' + whose(financeTeams.map(teamName).join(', ')) + ' treasurer, you open ' + (financeTeams.length === 1 ? 'it' : 'them') + ' here; other teams need their own password.' : '');
     await renderAccountTeams();
   }
   async function renderAccountTeams(){
@@ -1993,7 +2000,7 @@
     let anyPasskey = false;
     await teamsChecked;
     // a team with no password yet is set up from the list above, not opened
-    const ids = TEAM_IDS.filter(id=> !teamsSetUp || teamsSetUp[id]);
+    const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id));
     const rows = await Promise.all(ids.map(async id=>{
       try {
         const d = await devicesOf(id);

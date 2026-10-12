@@ -32,9 +32,10 @@ export const dynamic = "force-dynamic";
 async function context(team: unknown) {
   if (!(await getClub()).features.financialAdmin) return { error: "Financial Admin is off", status: 400 } as const;
   const tenant = await requireTenant();
-  const user = await financeUser(tenant);
-  if (!user) return { error: "Only treasurers and club admins can do this", status: 403 } as const;
   if (typeof team !== "string" || !(await isTeam(team))) return { error: "unknown team", status: 400 } as const;
+  // a treasurer with a team of their own opens just that one with their account
+  const user = await financeUser(tenant, team);
+  if (!user) return { error: "Only this team's treasurer or a club admin can do this", status: 403 } as const;
   return { tenant, user, team };
 }
 

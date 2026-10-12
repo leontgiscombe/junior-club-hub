@@ -7,6 +7,7 @@ import { canCoach, currentPerson } from "@/lib/people";
 import { getTenant } from "@/lib/tenant";
 import { currentUser } from "@/lib/auth";
 import { photoUrl } from "@/lib/userPhoto";
+import { financeTeamsOf } from "@/lib/financeDevices";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export async function GET() {
           .slice(0, 2)
           .join("") || "?",
     },
-    person: me.person ? { status: me.person.status, roles: me.person.roles } : null,
+    // financeTeams: the teams their account opens in Financial Admin (null: every team)
+    person: me.person ? { status: me.person.status, roles: me.person.roles, financeTeams: financeTeamsOf(me.person) } : null,
     canCoach: canCoach(me.person),
     passwordSignIn,
   });
