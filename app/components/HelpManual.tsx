@@ -187,6 +187,13 @@ export default function HelpManual() {
             tap away, use your browser&apos;s Share menu, then <B>Add to Home Screen</B>.
           </p>
           <p>
+            A new club&apos;s admin sees <B>Set Up Your Club</B> at the top of Home and Coach Admin:
+            your crest, your teams, the parts of the hub you&apos;ll use, inviting coaches, getting
+            parents to join and logging your first session. Each step ticks itself off once it&apos;s
+            done (tap <B>Done</B> on the ones that are just a check), and the card goes when
+            they&apos;re all done, or tap <B>Hide</B>.
+          </p>
+          <p>
             The home page has two cards: <B>Kit Sizes</B> for parents, and <B>Coach Admin</B> for
             coaches, behind a password.
           </p>
