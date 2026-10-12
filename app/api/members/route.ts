@@ -191,7 +191,6 @@ export async function POST(req: NextRequest) {
       invitedBy,
       createdAt: new Date().toISOString(),
     });
-    const toCoachAdmin = privileged(roles);
     await sendEmail({
       to: email,
       subject: `You're invited to ${club.name} on ${PLATFORM_NAME}`,
@@ -201,7 +200,8 @@ export async function POST(req: NextRequest) {
           `${invitedBy} has invited you to ${club.name}'s team hub${team ? ` (${team.name})` : ""}.`,
           "Tap the button and sign in with this email address — we'll send you a code, there's no password. You'll be straight in.",
         ],
-        button: { label: toCoachAdmin ? "Open Coach Admin" : "Open the Hub", url: tenantUrl(tenant, `/signin?next=${toCoachAdmin ? "/admin" : "/"}`) },
+        // everyone starts on Home, whatever their roles: Coach Admin is a tap away for those it's for
+        button: { label: "Open the Hub", url: tenantUrl(tenant, "/signin?next=/") },
         footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
       }),
     });
