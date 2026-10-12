@@ -22,7 +22,7 @@ export type SetupStep = {
   external?: boolean;
 };
 
-export const MANUAL_STEPS = ["teams", "parts", "coaches", "share", "finance", "phone"] as const;
+export const MANUAL_STEPS = ["teams", "parts", "coaches", "share", "first", "finance", "phone"] as const;
 const setupKey = (tenant: string) => clubKey(tenant, "setup");
 type Stored = { ticked: string[]; hidden: string[] };
 
@@ -143,7 +143,9 @@ export async function setupFor(tenant: string, user: User, person: Person | null
       title: "Log your first training session or game",
       hint: "Attendance, scorers and awards build each player's season stats.",
       href: "/admin/stats/training",
-      done: Number(matches) + Number(training) > 0,
+      // a club that doesn't log sessions here can tick it
+      done: ticked("first") || Number(matches) + Number(training) > 0,
+      manual: true,
     },
     ...(club.features.financialAdmin
       ? [
