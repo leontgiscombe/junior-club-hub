@@ -234,6 +234,10 @@ export async function updatePerson(
           team = c.team;
         }
         out.push({ id: old.id, name: c.name, playerId: old.playerId, ...(team ? { team } : {}) });
+      } else if (person.status === "approved" && !opts.byCoach) {
+        // a parent adding a child (or changing one still waiting): a coach approves it first
+        const requestedTeam = c.team ?? old?.requestedTeam;
+        out.push({ id: c.id, name: c.name, pending: true, ...(requestedTeam ? { requestedTeam } : {}) });
       } else if (person.status === "approved") {
         const team = opts.byCoach ? c.team : undefined;
         const { player } = await addPlayer({ team: team?.slug ?? "", name: c.name });
@@ -292,6 +296,47 @@ export async function addChildrenToSquad(tenant: string, userId: string, links: 
   const next: Person = { ...person, children: out };
   delete next.child;
   await save(tenant, next);
+}
+
+/**
+ * A coach's answer to a child a parent added (one waiting, `pending`): into the
+ * squad — as the existing squad player `link`, or as a new player in `team` —
+ * or off the parent's list. False if there's no such child waiting.
+ */
+export async function decideChild(
+  tenant: string,
+  userId: string,
+  childId: string,
+  answer: { approve: true; link?: string; team?: TeamRef } | { approve: false },
+): Promise<boolean> {
+  const person = await readPerson(tenant, userId);
+  if (!person) return false;
+  const kids = childrenOf(person);
+  const child = kids.find((c) => c.id === childId && c.pending);
+  if (!child) return false;
+  let out: Child[];
+  if (!answer.approve) {
+    out = kids.filter((c) => c.id !== childId);
+  } else {
+    const players = await listPlayers();
+    const existing = answer.link ? players.find((p) => p.id === answer.link) : undefined;
+    let playerId: string;
+    let team: TeamRef | undefined;
+    if (existing) {
+      playerId = existing.id;
+      const teams = await getTeams();
+      const t = teams.find((x) => x.slug === existing.team);
+      team = t ? { slug: t.slug, name: t.name } : undefined;
+    } else {
+      team = answer.team;
+      playerId = (await addPlayer({ team: team?.slug ?? "", name: child.name })).player.id;
+    }
+    out = kids.map((c) => (c.id === childId ? { id: c.id, name: c.name, playerId, ...(team ? { team } : {}) } : c));
+  }
+  const next: Person = { ...person, children: out };
+  delete next.child;
+  await save(tenant, next);
+  return true;
 }
 
 /** Take a player out of the squad, and off their parents' lists of children. */

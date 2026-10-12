@@ -96,6 +96,38 @@ export async function notifyJoinRequest(
   }
 }
 
+/** Let the right admins and coaches know an approved parent has added a child to approve. Never throws. */
+export async function notifyChildRequest(
+  tenant: string,
+  request: { userId: string; parentName: string; teams: string[]; clubName: string },
+): Promise<void> {
+  try {
+    const kv = await rawKv();
+    if (kv && !(await kv.set(`platform:child-alert:${tenant}:${request.userId}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) return;
+    const people = (await listPeople(tenant)).filter((p) => wantsToHear(p, request.teams));
+    // no children's names in emails or alerts
+    const line = `${request.parentName} has added a child to ${request.clubName}'s hub.`;
+    const membersUrl = tenantUrl(tenant, "/admin/members");
+    const emails = new Set(people.map((p) => p.email.toLowerCase()));
+    const message = simpleEmail({
+      heading: "A child to approve",
+      paragraphs: [line, "Add them to the squad, or decline, in Coach Admin → Members."],
+      button: { label: "Open Members", url: membersUrl },
+      footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
+    });
+    await Promise.all(
+      [...emails].map((to) => sendEmail({ to, subject: `A child to approve at ${request.clubName}`, ...message }).catch(() => false)),
+    );
+    await pushTo(tenant, people, emails.size, "Child request", {
+      title: "A child to approve",
+      body: `${line} Tap to approve or decline.`,
+      url: "/admin/members",
+    });
+  } catch (e) {
+    console.error("Child request alerts not sent:", e);
+  }
+}
+
 /** Alerts on the phones `people` have turned alerts on for; `what` names it in the log. */
 async function pushTo(
   tenant: string,

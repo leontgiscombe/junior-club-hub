@@ -10,7 +10,7 @@ import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import NameFields from "../components/NameFields";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
-import ChildPhotos from "./ChildPhotos";
+import { ChildAvatar } from "./ChildPhotos";
 import ProfilePhoto from "./ProfilePhoto";
 import AppearancePicker, { themeLabel } from "./AppearancePicker";
 import TabBarPicker from "./TabBarPicker";
@@ -42,6 +42,8 @@ export default function AccountPage() {
   // this club (on a club's own address): your children, or your team
   const [here, setHere] = useState<Here | null>(null);
   const [kids, setKids] = useState<ChildDraft[]>([]);
+  // each child's photo version, by squad player id
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [myTeam, setMyTeam] = useState("");
   const [hereMessage, setHereMessage] = useState<string | null>(null);
   const [passkeys, setPasskeys] = useState<PasskeyRow[] | null>(null);
@@ -66,6 +68,7 @@ export default function AccountPage() {
       const hd = (await h.json()) as Here;
       if (!hd.person) return;
       setHere(hd);
+      setPhotos(hd.photos ?? {});
       setKids(hd.person.children.length ? toDrafts(hd.person.children) : [{ name: "", team: "" }]);
       setMyTeam(hd.person.team?.slug ?? "");
     });
@@ -81,7 +84,17 @@ export default function AccountPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(isParent ? { children: kids.filter((k) => k.name.trim()) } : { team: myTeam }),
     });
-    setHereMessage(res.ok ? "Saved — the club's coaches will see it." : "That didn't save — try again");
+    if (res.ok) {
+      const saved = ((await res.json().catch(() => null)) as { person?: Here["person"] } | null)?.person;
+      if (saved) {
+        setHere({ ...here, person: saved });
+        if (isParent) setKids(saved.children.length ? toDrafts(saved.children) : [{ name: "", team: "" }]);
+      }
+      const waiting = saved?.children.some((c) => c.pending);
+      setHereMessage(waiting ? "Saved. A coach will add any new children to the squad." : "Saved — the club's coaches will see it.");
+    } else {
+      setHereMessage("That didn't save — try again");
+    }
     setBusy(false);
   }
 
@@ -223,15 +236,32 @@ export default function AccountPage() {
                     ? `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`
                     : `Your team at ${here.club}.`}
                 </p>
-                {/* a photo for each child already in the squad (approved: the photo API checks the same) */}
-                {isParent && here.person.status === "approved" && (
-                  <ChildPhotos
-                    kids={here.person.children.flatMap((c) => (c.playerId ? [{ playerId: c.playerId, name: c.name }] : []))}
-                    photos={here.photos ?? {}}
-                  />
-                )}
                 {isParent ? (
-                  <ChildrenEditor value={kids} teams={here.teams} onChange={setKids} clubDecidesTeams />
+                  <ChildrenEditor
+                    value={kids}
+                    teams={here.teams}
+                    onChange={setKids}
+                    clubDecidesTeams
+                    // each child's card is headed by their photo, once they're in the squad
+                    photo={(c, info) => (
+                      <ChildAvatar
+                        playerId={here.person?.status === "approved" ? c.playerId : undefined}
+                        name={c.name}
+                        version={c.playerId ? photos[c.playerId] : undefined}
+                        onChange={(v) =>
+                          c.playerId &&
+                          setPhotos((all) => {
+                            const next = { ...all };
+                            if (v) next[c.playerId!] = v;
+                            else delete next[c.playerId!];
+                            return next;
+                          })
+                        }
+                      >
+                        {info}
+                      </ChildAvatar>
+                    )}
+                  />
                 ) : (
                   <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={input}>
                     <option value="">Not sure / more than one</option>
