@@ -316,7 +316,8 @@
       <select id="setup-team" style="margin-bottom:12px"></select>
       <input type="password" id="setup-pass" placeholder="New team password (8+ characters)" autocomplete="new-password">
       <input type="password" id="setup-pass2" placeholder="Confirm the team password" autocomplete="new-password">
-      <input type="password" id="setup-admin" placeholder="Coach Admin password" autocomplete="off">
+      <input type="password" id="setup-admin" placeholder="Coach Admin password" autocomplete="off" style="display:none">
+      <p class="gate-sub" id="setup-signin" style="display:none;font-size:13px;margin:0 0 10px">Treasurer or club admin? <a href="/signin?next=/finance" style="color:var(--green);font-weight:700">Sign in</a> and you won’t need a password here.</p>
       <div class="gate-err" id="setup-err"></div>
       <button class="btn btn-primary" id="setup-btn" type="submit" style="width:100%">Set Up Team</button>
     </form>
@@ -1562,6 +1563,17 @@
     box.innerHTML = '<p class="gate-sub" style="margin:0 0 6px">' + (todo.length === TEAM_IDS.length ? 'No team has a Finances password yet. Set one up to start tracking its subs.' : 'Not set up yet:') + '</p>'
       + todo.map(id=>'<div class="ts-row"><span><b>'+esc(teamName(id))+'</b><span>Not set up yet</span></span><button class="btn btn-sm btn-primary" data-setup-team="'+esc(id)+'">Set Up</button></div>').join('');
   }
+  // The Coach Admin password is only for setting up a team without an account
+  // that covers it: not signed in as a treasurer or club admin, or a treasurer
+  // setting up a team that isn't theirs.
+  function updateSetupAdmin(){
+    const id = $("#setup-team").value;
+    const need = accountChecked && (!account || (!!id && !accountFor(id)));
+    $("#setup-admin").style.display = need ? '' : 'none';
+    $("#setup-signin").style.display = accountChecked && !account ? '' : 'none';
+    if(!need) $("#setup-admin").value = '';
+  }
+  $("#setup-team").addEventListener('change', updateSetupAdmin);
   async function toggleSetup(e, team){
     if(e) e.preventDefault();
     setupShown = !setupShown;
@@ -1582,12 +1594,17 @@
       : '<option value="">Every team already has a password</option>';
     sel.disabled = !open.length;
     if(team && open.includes(team)) sel.value = team;
+    // a treasurer's own team first, chosen for them
+    else if(treasurerOf && open.includes(treasurerOf)) sel.value = treasurerOf;
+    updateSetupAdmin();
     setTimeout(()=>$("#setup-pass").focus(), 50);
   }
   async function setupSubmit(){
     const id = $("#setup-team").value, pass = $("#setup-pass").value, pass2 = $("#setup-pass2").value, admin = $("#setup-admin").value;
     const err = $("#setup-err"); err.textContent = '';
     if(!id){ err.textContent = 'Choose the team first.'; return; }
+    // still finding out who's signed in: wait, rather than ask for a password they don't need
+    if(!accountChecked && accountGate) await accountGate;
     if(pass.length < 8){ err.textContent = 'The team password needs at least 8 characters.'; return; }
     if(pass !== pass2){ err.textContent = 'The two passwords don\u2019t match.'; return; }
     // signed in as a treasurer or club admin, the account is enough
@@ -1922,6 +1939,8 @@
   // copy of the team's data key, locked to its public key. From then on it
   // opens the team with the account alone. The server only keeps locked copies.
   let account = null;        // { name } when signed in as a treasurer or club admin
+  let accountChecked = false; // set once we know whether they are
+  let accountGate = null;     // that check, while it runs
   let financeTeams = null;   // the teams that account opens (null: every team); others need their password
   const accountFor = id => !!account && (financeTeams === null || financeTeams.includes(id));
   let treasurerOf = null;    // the team the signed-in person is treasurer for
@@ -2009,6 +2028,9 @@
 
   /** The "open with your account" part of the gate. */
   async function setupAccountGate(){
+    try { await setupAccountGateNow(); } finally { accountChecked = true; updateSetupAdmin(); }
+  }
+  async function setupAccountGateNow(){
     const box = $("#account-box");
     let me = null;
     try { me = await (await fetch('/api/auth/me', { cache:'no-store' })).json(); } catch(e){}
@@ -2023,8 +2045,7 @@
     financeTeams = Array.isArray(me.person.financeTeams) ? me.person.financeTeams : null;
     treasurerOf = me.person.treasurerOf || null;
     // setting their own team up needs no Coach Admin password when signed in like this
-    if(financeTeams === null) $("#setup-admin").style.display = 'none';
-    else $("#setup-admin").placeholder = 'Coach Admin password (for a team that isn\u2019t yours)';
+    $("#setup-admin").placeholder = 'Coach Admin password (this team isn\u2019t yours)';
     box.style.display = ''; $("#account-or").style.display = '';
     $("#account-who").textContent = 'Signed in as ' + account.name + '.'
       + (financeTeams && financeTeams.length ? ' As ' + whose(financeTeams.map(teamName).join(', ')) + ' treasurer, you open ' + (financeTeams.length === 1 ? 'it' : 'them') + ' here; other teams need their own password.' : '');
@@ -2257,7 +2278,7 @@
         return;
       }
       setupGate(); registerSW();
-      setupAccountGate().catch(e=> console.warn('account sign-in', e));
+      accountGate = setupAccountGate().catch(e=> console.warn('account sign-in', e));
     }).catch(e=>{
       console.error(e);
       $("#gate-sub").textContent = 'Could not reach the hub. Check your connection and reload.';
