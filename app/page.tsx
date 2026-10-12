@@ -156,7 +156,6 @@ export default async function Home() {
     "settings",
     "help",
     ...(CLUB.publicResults ? (["results"] as const) : []),
-    ...(viewer.canFinance && CLUB.features.financialAdmin ? (["finances"] as const) : []),
     ...(CLUB.features.trainingHub ? (["hub"] as const) : []),
     ...(CLUB.features.kitSizes ? (["kit"] as const) : []),
   ];
@@ -292,15 +291,20 @@ export default async function Home() {
           </section>
         )}
 
-        {/* a treasurer who isn't a coach: the subs (coaches have Finances on the tab bar and in shortcuts) */}
-        {viewer.canFinance && !viewer.canCoach && CLUB.features.financialAdmin && (
-          <div className="grid grid-cols-2 gap-3">
-            <a href="/finance" className={`press ${card} flex flex-col p-4`}>
-              <Tile colour="bg-emerald-700">{ICON.money}</Tile>
-              <span className="mt-3 block font-bold">Finances</span>
-              <span className={`block text-[13px] ${sub}`}>Subs and spending</span>
-            </a>
-          </div>
+        {/* treasurers and club admins: the subs, a long row like Up next's */}
+        {viewer.canFinance && CLUB.features.financialAdmin && (
+          <a href="/finance" className={`press ${card} flex items-center gap-4 px-4 py-3.5`}>
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {ICON.money}
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold">Finances</span>
+              <span className={`block text-sm ${sub}`}>Subs and spending</span>
+            </span>
+            <Chevron />
+          </a>
         )}
 
         {/* coaches: shortcuts to the tools */}
