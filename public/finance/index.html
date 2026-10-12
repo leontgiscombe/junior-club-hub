@@ -253,6 +253,7 @@
   .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
   body.locked .gate { display: flex; }
   .gate-card { width: 100%; max-width: 400px; text-align: center; margin: auto; }
+  .gate-head { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 20px; right: 20px; z-index: 1; display: flex; align-items: center; justify-content: space-between; max-width: 560px; margin: 0 auto; }
   .gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 10px; }
   .gate-kicker { font-size: 30px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
   .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
@@ -289,6 +290,15 @@
 </head>
 <body class="locked">
 <div class="gate" id="gate">
+  <!-- like every main page: your photo (Your Account, or Sign In) and Search -->
+  <div class="gate-head">
+    <a class="hub-me" id="gate-me" href="/signin?next=/finance" aria-label="Sign in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+    </a>
+    <a class="round-btn" href="/search" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </a>
+  </div>
   <div class="gate-card">
     <img class="gate-logo" id="gate-crest" src="/club-crest.png" alt="">
     <p class="gate-kicker">Finances</p>
@@ -524,9 +534,13 @@
   }
   // the header's profile button: your photo or initials (Your Account)
   fetch('/api/auth/me', { cache:'no-store' }).then(r=> r.ok ? r.json() : null).then(me=>{
-    const u = me && me.user; const a = document.getElementById('hub-me'); if(!u || !a) return;
-    if(u.photo){ a.innerHTML = '<img alt="" src="' + String(u.photo).replace(/"/g, '') + '">'; return; }
-    a.textContent = u.initials || '?';
+    const u = me && me.user; if(!u) return;
+    ['hub-me', 'gate-me'].forEach(id=>{
+      const a = document.getElementById(id); if(!a) return;
+      a.href = '/account'; a.setAttribute('aria-label', 'Your account');
+      if(u.photo) a.innerHTML = '<img alt="" src="' + String(u.photo).replace(/"/g, '') + '">';
+      else a.textContent = u.initials || '?';
+    });
   }).catch(()=>{});
   const teamName = (id) => (TEAMS[id] && TEAMS[id].name) || CLUB.name;
 
