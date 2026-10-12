@@ -15,6 +15,7 @@ import { createHash } from "crypto";
 import { financeKeys, redis } from "./financeStorage";
 import { currentPerson } from "./people";
 import type { User } from "./auth";
+import { hasOwnTeam, type Person } from "./access";
 
 export type Wrapped = { epk: JsonWebKey; iv: string; ct: string };
 /** the data key locked with a passkey's secret */
@@ -39,11 +40,29 @@ export type FinanceDevice = {
 export const FINANCE_ROLES = ["treasurer", "admin"] as const;
 export const DEVICE_ID = /^[\w-]{8,40}$/;
 
-/** The signed-in person (with their name at this club), if they can use Financial Admin with their account here. */
-export async function financeUser(tenant: string): Promise<User | null> {
+/**
+ * The teams a person can open Financial Admin for with their account: null
+ * for every team (a club admin, or a treasurer with no team of their own),
+ * just their own team for a treasurer who has one (Members), none for anyone
+ * else. Anyone can still open any team with its password.
+ */
+export function financeTeamsOf(person: Person | null): string[] | null {
+  if (!person || person.status !== "approved") return [];
+  if (person.roles.includes("admin")) return null;
+  if (!person.roles.includes("treasurer")) return [];
+  return hasOwnTeam(person) && person.team ? [person.team.slug] : null;
+}
+
+/**
+ * The signed-in person (with their name at this club), if they can use
+ * Financial Admin with their account here — for `team`, when it's given.
+ */
+export async function financeUser(tenant: string, team?: string): Promise<User | null> {
   const me = await currentPerson(tenant).catch(() => null);
   if (!me?.person || me.person.status !== "approved") return null;
   if (!me.person.roles.some((r) => (FINANCE_ROLES as readonly string[]).includes(r))) return null;
+  const teams = financeTeamsOf(me.person);
+  if (team !== undefined && teams && !teams.includes(team)) return null;
   return { ...me.user, name: me.person.name || me.user.name };
 }
 

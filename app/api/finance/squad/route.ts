@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
   if (!(await isTeam(id))) return NextResponse.json({ error: "unknown team" }, { status: 400 });
 
-  if (!(await financeUser(tenant))) {
+  if (!(await financeUser(tenant, id))) {
     if (await atLimit("finance-unlock", UNLOCK_FAILS)) {
       return NextResponse.json({ error: "Too many wrong passwords — try again in an hour" }, { status: 429 });
     }

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     // next time it's unlocked): nothing to check against
     if (!auth || !auth.writeHash) return NextResponse.json(record, noStore);
     // a signed-in treasurer or club admin
-    if (await financeUser(tenant)) return NextResponse.json(record, noStore);
+    if (await financeUser(tenant, id)) return NextResponse.json(record, noStore);
     // someone who knows the team password
     const token = req.headers.get("x-write-token") ?? "";
     if (token) {
@@ -86,7 +86,7 @@ async function put(req: NextRequest) {
     const setupKey = req.headers.get("x-admin-key");
     if (!hasAuth || setupKey !== null) {
       if (hasAuth) return NextResponse.json({ error: "team already set up" }, { status: 409 });
-      const allowed = setupKey ? await isCoach(setupKey) : !!(await financeUser(await requireTenant()));
+      const allowed = setupKey ? await isCoach(setupKey) : !!(await financeUser(await requireTenant(), id));
       if (!body.auth || !allowed) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
@@ -102,7 +102,7 @@ async function put(req: NextRequest) {
       // password to work the token out from: a signed-in treasurer or club
       // admin can save the team's records instead — but not change its login.
       const accountOk =
-        !tokenOk && !body.auth && req.headers.get("x-finance-account") === "1" && !!(await financeUser(await requireTenant()));
+        !tokenOk && !body.auth && req.headers.get("x-finance-account") === "1" && !!(await financeUser(await requireTenant(), id));
       if (!tokenOk && !accountOk) {
         return NextResponse.json({ error: "not allowed" }, { status: 403 });
       }

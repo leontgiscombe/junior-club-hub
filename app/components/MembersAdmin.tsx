@@ -1155,6 +1155,11 @@ function MemberRow({
                   <option key={t.slug} value={t.slug}>{t.name}</option>
                 ))}
               </select>
+              {person.roles.includes("treasurer") && !person.roles.includes("admin") && (
+                <span className="mt-1 block font-normal text-gray-400">
+                  Their account opens just this team in Finances (No team: every team). Any team still opens with its own password.
+                </span>
+              )}
             </label>
           )}
           {isParent && (
