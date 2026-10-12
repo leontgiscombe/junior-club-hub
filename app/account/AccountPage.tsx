@@ -5,7 +5,7 @@
 // #here, #team, #security, #appearance, #tabs, #alerts, #delete) — your name, your clubs and roles, your
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import NameFields from "../components/NameFields";
@@ -64,6 +64,42 @@ export default function AccountPage() {
   const [passkeys, setPasskeys] = useState<PasskeyRow[] | null>(null);
   const [canPasskey, setCanPasskey] = useState(false);
   const [passkeyMessage, setPasskeyMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  // the children and team last shown from the server: a newer copy replaces them unless they've been edited since
+  const shownKids = useRef("");
+  const shownTeam = useRef("");
+
+  /** This club's copy of your children and team — again whenever it may have changed (a coach approving a child). */
+  const loadHere = useCallback(async (force = false) => {
+    const h = await fetch("/api/me/club", { cache: "no-store" }).catch(() => null);
+    if (!h?.ok) return;
+    const hd = (await h.json()) as Here;
+    if (!hd.person) return;
+    setHere(hd);
+    setPhotos(hd.photos ?? {});
+    const k = startKids(hd.person);
+    setKids((prev) => {
+      if (force || JSON.stringify(prev) === shownKids.current) {
+        shownKids.current = JSON.stringify(k);
+        return k;
+      }
+      // being edited: what you've typed stays, and each child's place in the
+      // squad (waiting, or in with their team) comes up to date
+      const fresh = new Map(k.flatMap((c) => (c.id ? [[c.id, c]] : [])));
+      return prev.map((c) => {
+        const f = c.id ? fresh.get(c.id) : undefined;
+        if (!f) return c;
+        return f.playerId
+          ? { id: c.id, name: c.name, team: f.team, playerId: f.playerId, linked: true, teamLabel: f.teamLabel }
+          : { id: c.id, name: c.name, team: c.team, ...(f.pending ? { pending: true } : {}) };
+      });
+    });
+    const t = hd.person.team?.slug ?? "";
+    setMyTeam((prev) => {
+      if (!force && prev !== shownTeam.current) return prev;
+      shownTeam.current = t;
+      return t;
+    });
+  }, []);
 
   useEffect(() => {
     fetch("/api/account", { cache: "no-store" }).then(async (res) => {
@@ -79,16 +115,9 @@ export default function AccountPage() {
       fetch("/api/auth/passkey", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : { passkeys: [] }))
         .then((d) => setPasskeys(d.passkeys));
-      const h = await fetch("/api/me/club", { cache: "no-store" });
-      if (!h.ok) return;
-      const hd = (await h.json()) as Here;
-      if (!hd.person) return;
-      setHere(hd);
-      setPhotos(hd.photos ?? {});
-      setKids(startKids(hd.person));
-      setMyTeam(hd.person.team?.slug ?? "");
+      await loadHere(true);
     });
-  }, []);
+  }, [loadHere]);
 
   async function saveHere(part: "kids" | "team") {
     if (!here?.person) return;
@@ -103,7 +132,11 @@ export default function AccountPage() {
       const saved = ((await res.json().catch(() => null)) as { person?: Here["person"] } | null)?.person;
       if (saved) {
         setHere({ ...here, person: saved });
-        if (part === "kids") setKids(startKids(saved));
+        if (part === "kids") {
+          const k = startKids(saved);
+          shownKids.current = JSON.stringify(k);
+          setKids(k);
+        } else shownTeam.current = myTeam;
       }
       const waiting = part === "kids" && saved?.children.some((c) => c.pending);
       const straightIn = part === "kids" && saved?.children.some((c) => c.playerId && !here.person!.children.some((o) => o.id === c.id && o.playerId));
@@ -183,6 +216,29 @@ export default function AccountPage() {
     else window.location.href = "/";
   }, []);
   const { status: alerts } = useJoinRequests();
+
+  // kept up to date without going out and back in: on opening your children or
+  // team, on coming back to the app, and every few seconds while a child waits
+  // for a coach
+  useEffect(() => {
+    if (screen !== "here" && screen !== "team") return;
+    const t = window.setTimeout(() => loadHere(), 0);
+    return () => window.clearTimeout(t);
+  }, [screen, loadHere]);
+  const waiting = !!here?.person?.children.some((c) => c.pending);
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadHere();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    const every = waiting ? window.setInterval(() => document.visibilityState === "visible" && loadHere(), 10000) : 0;
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      if (every) window.clearInterval(every);
+    };
+  }, [waiting, loadHere]);
 
   if (!account) return <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black" />;
   const input =
