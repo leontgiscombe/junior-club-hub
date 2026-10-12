@@ -19,6 +19,8 @@ export type TenantRecord = {
   passwordHash: string;
   /** signed up with accounts only: the club never had a coach password anyone knows */
   noPassword?: true;
+  /** paused by the platform admin: its hub shows a "paused" page; nothing is deleted */
+  paused?: { at: string; reason?: string };
 };
 
 /** A club as the public can see it (find-your-club): no email or password. */
@@ -116,6 +118,16 @@ export async function setTenantPassword(id: string, password: string): Promise<v
 }
 
 /** Change a club's contact email. */
+/** Pause a club (its hub shows a "paused" page, its data kept), or (null) bring it back. */
+export async function setTenantPaused(id: string, paused: { at: string; reason?: string } | null): Promise<void> {
+  const record = await getTenantRecord(id);
+  if (!record) throw new Error("No such club");
+  const next: TenantRecord = { ...record };
+  if (paused) next.paused = paused;
+  else delete next.paused;
+  await saveRecord(next);
+}
+
 export async function setTenantEmail(id: string, email: string): Promise<void> {
   const record = await getTenantRecord(id);
   if (!record) throw new Error("No such club");
@@ -160,7 +172,7 @@ export async function listTenantsForAdmin(): Promise<AdminTenant[]> {
   const all = (await kv.hgetall<Record<string, TenantRecord | string>>(TENANTS_KEY)) ?? {};
   return Object.values(all)
     .map((r) => (typeof r === "string" ? (JSON.parse(r) as TenantRecord) : r))
-    .map(({ id, name, email, createdAt }) => ({ id, name, email, createdAt }))
+    .map(({ id, name, email, createdAt, paused }) => ({ id, name, email, createdAt, ...(paused ? { paused } : {}) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

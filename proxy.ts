@@ -20,6 +20,7 @@ import {
   playerSession,
   sessionUserId,
 } from "./lib/access";
+import { noteActive, pausedClub } from "./lib/clubStatus";
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
@@ -71,6 +72,23 @@ export async function proxy(req: NextRequest) {
   const headers = new Headers(req.headers);
   headers.set(PATH_HEADER, pathname);
   const pass = () => NextResponse.next({ request: { headers } });
+
+  // pictures and files are always served (the paused page uses them)
+  const asset = /\.(png|jpe?g|svg|webp|ico|js|css|woff2?|txt|webmanifest)$/.test(pathname) || pathname.startsWith("/poster/");
+  // paused by the platform admin (nothing deleted): every page says so, and the APIs refuse
+  if (!asset && pathname !== "/api/health") {
+    let paused = null;
+    try {
+      paused = await pausedClub(tenant);
+    } catch {}
+    if (paused) {
+      if (pathname.startsWith("/api/")) return NextResponse.json({ error: "This club's hub is paused" }, { status: 423 });
+      headers.set(PATH_HEADER, "/paused");
+      return NextResponse.rewrite(new URL("/paused", req.url), { request: { headers } });
+    }
+    // when the club was last used, for the platform admin (pages only, at most hourly)
+    if (!pathname.startsWith("/api/")) noteActive(tenant);
+  }
 
   // A player's own device, with no grown-up signed in on it, keeps to the
   // Training Hub: other pages go back there and other APIs are refused.

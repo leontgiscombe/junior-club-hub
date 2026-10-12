@@ -7,12 +7,12 @@ export const metadata = { title: `Platform Admin – ${PLATFORM_NAME}`, robots: 
 export default function PlatformAdminPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         <Link href="/" className="text-sm font-semibold text-gray-500 hover:text-green-700">
           ← {PLATFORM_NAME}
         </Link>
         <h1 className="mt-3 text-3xl font-extrabold text-gray-900">Platform Admin</h1>
-        <p className="mt-1 text-gray-500">Every club on {PLATFORM_NAME}.</p>
+        <p className="mt-1 text-gray-500">Every club on {PLATFORM_NAME}: how each is getting on, and what you can do for it.</p>
         <PlatformAdmin rootDomain={rootDomain()} />
       </div>
     </main>

@@ -25,6 +25,8 @@ export const dynamic = "force-dynamic";
 async function teamsHidden(tenant: string | null): Promise<boolean> {
   if (!tenant) return false;
   const h = await headers();
+  // a paused club (proxy.ts) shows nothing of its teams
+  if (h.get(PATH_HEADER) === "/paused") return true;
   if ((h.get(PATH_HEADER) ?? "").startsWith("/admin")) return false;
   try {
     if (!(await readAccess(tenant)).private) return false;
