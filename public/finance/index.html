@@ -1459,26 +1459,33 @@
   async function tryUnlock(pass){
     const records = await fetchAllRecords();
     let matchedId = null, matchedAuth = null;
+    // Teams whose whole record is here already (a signed-in treasurer's own
+    // team, teams from before write tokens, copies kept offline) are checked
+    // here first, so a password two teams share opens the treasurer's own.
+    for(const id of TEAM_IDS){
+      const auth = effAuth(id, records); if(!auth || auth.locked) continue;
+      const v = await deriveVerify(pass, ub64(auth.verifySalt));
+      if(v === auth.verifyHash){ matchedId = id; matchedAuth = auth; break; }
+    }
     // Teams whose login the server keeps back: the password's write token for
     // each, checked by the server, which sends the matching team's record.
     const tokens = {};
-    for(const id of TEAM_IDS){
+    // the signed-in treasurer's own team first, so a password two teams share opens theirs
+    const order = [...TEAM_IDS].sort((a, b)=> Number(accountFor(b)) - Number(accountFor(a)));
+    for(const id of order){
       const auth = effAuth(id, records);
       if(auth && auth.locked && auth.writeSalt) tokens[id] = await deriveVerify(pass, ub64(auth.writeSalt));
     }
-    if(Object.keys(tokens).length){
+    if(!matchedId && Object.keys(tokens).length){
       const res = await fetch('/api/finance/unlock', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ tokens }) });
       if(res.status === 429){
         const err = new Error((await res.json().catch(()=>({}))).error || 'Too many wrong passwords \u2014 try again later');
         err.limited = true; throw err;
       }
-      if(res.ok){ const d = await res.json(); records[d.id] = d.record; matchedId = d.id; matchedAuth = d.record.auth; }
-    }
-    // teams from before write tokens, and the copies kept on this device when offline
-    if(!matchedId) for(const id of TEAM_IDS){
-      const auth = effAuth(id, records); if(!auth || auth.locked) continue;
-      const v = await deriveVerify(pass, ub64(auth.verifySalt));
-      if(v === auth.verifyHash){ matchedId = id; matchedAuth = auth; break; }
+      if(res.ok){
+        const d = await res.json(); records[d.id] = d.record; matchedId = d.id; matchedAuth = d.record.auth;
+        if(d.also && d.also.length) sharedWith = d.also;
+      }
     }
     if(!matchedId) return false;
     currentTeam = matchedId;
@@ -1499,6 +1506,8 @@
     return true;
   }
   let pendingRecoveryUpgrade = null;
+  // other teams the password just used also opens: they should each have their own
+  let sharedWith = [];
   async function upgradeToRecovery(pass){
     const raw = crypto.getRandomValues(new Uint8Array(32));
     const rec = await newRecoveryLock(raw);
@@ -1613,6 +1622,7 @@
     if(ok){
       unlockApp();
       if(pendingRecoveryUpgrade){ const p = pendingRecoveryUpgrade; pendingRecoveryUpgrade = null; await upgradeToRecovery(p); }
+      else afterPasswordUnlock();
       if(accountFor(currentTeam) && dataKeyRaw) rememberThisDevice();
     }
     else { $("#gate-err").textContent = limited || 'Password not recognised.'; $("#gate-pass").select(); }
@@ -2013,7 +2023,7 @@
       const name = esc(teamName(r.id));
       if(r.mine && r.mine.wrapped) return '<button class="btn btn-primary" data-open-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+'</button>';
       if(r.pk) return '<button class="btn btn-primary" data-pk-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+' with Your Passkey</button>';
-      if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px">'+name+': waiting for another treasurer or club admin to approve this device (Financial Admin \u2192 Settings \u2192 Devices) \u2014 or unlock it once with the team password below. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a></p>';
+      if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+name+'</strong>: type its password below once on this device \u2014 after that your account opens it here, and you can add Face ID. (Or another treasurer or club admin can approve this device in Settings \u2192 Devices. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a>)</p>';
       return '<button class="btn" data-ask-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Use This Device for '+name+'</button>';
     }).join('') + (!anyPasskey && canPasskey() ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, then open your teams with Face ID or a fingerprint on any of your devices.</p>' : '');
   }
@@ -2059,6 +2069,31 @@
     await postDevices({ action:'passkey', team: currentTeam, credId, wrapped: await wrapBytes(key, dataKeyRaw) });
     flash('Your passkey opens ' + teamName(currentTeam) + ' now');
     renderDevices();
+  }
+  /**
+   * Just unlocked with a team password: say if that password opens another team
+   * too, and offer the signed-in treasurer Face ID (their passkey) for next time.
+   */
+  async function afterPasswordUnlock(){
+    const shared = sharedWith; sharedWith = [];
+    let pkOffer = false, needsPasskey = false;
+    if(accountFor(currentTeam) && canPasskey() && dataKeyRaw){
+      try {
+        const d = await devicesOf(currentTeam);
+        const usable = (d.passkeys || []).filter(k=> k.prf !== false);
+        if(!myPasskeyCopies(d).length){ pkOffer = usable.length > 0; needsPasskey = !(d.passkeys || []).length; }
+      } catch(e){}
+    }
+    if(!shared.length && !pkOffer && !needsPasskey) return;
+    const parts = [];
+    if(shared.length) parts.push('<div class="hint" style="background:var(--red-bg);color:var(--red)">This password opens <strong>' + esc([currentTeam, ...shared].map(teamName).join(' and ')) + '</strong>. Give each team its own password (Settings \u2192 Security &amp; Sync \u2192 Change Team Password), so each opens only its own.</div>');
+    if(pkOffer) parts.push('<p style="margin:0 0 6px"><strong>Open ' + esc(teamName(currentTeam)) + ' with Face ID next time?</strong></p><p class="muted" style="font-size:14px;margin:0">Your passkey will open it on any of your devices \u2014 no team password needed.</p>');
+    else if(needsPasskey) parts.push('<p style="margin:0 0 6px"><strong>Open ' + esc(teamName(currentTeam)) + ' with Face ID next time</strong></p><p class="muted" style="font-size:14px;margin:0">First add a passkey to your account in <a href="/account#security" style="color:var(--green);font-weight:700">Your Account \u2192 Sign-In &amp; Security</a>, then come back: Finances will offer it.</p>');
+    openModal(pkOffer || needsPasskey ? 'Next Time' : 'One Password, Two Teams', parts.join(''), pkOffer
+      ? [{ label:'Not Now', act: closeModal }, { label:'Use Face ID', cls:'btn-primary', act: async ()=>{
+          try { await addPasskeyToTeam(); closeModal(); } catch(e){ flash(e && e.message ? e.message : 'That didn\u2019t work \u2014 try again in Settings \u2192 Devices'); }
+        } }]
+      : [{ label:'OK', cls:'btn-primary', act: closeModal }], true);
   }
   /** After unlocking with the team password: this device opens the team with the account from now on. */
   async function rememberThisDevice(){
