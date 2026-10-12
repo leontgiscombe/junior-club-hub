@@ -25,6 +25,9 @@ import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import HomeWallpaper from "./components/HomeWallpaper";
 import AppHeader from "./components/AppHeader";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
+import HomeWidgets from "./components/HomeWidgets";
+import { HIDDEN_COOKIE } from "@/lib/homeWidgets";
+import { cookies } from "next/headers";
 import RefreshOnReturn from "./components/RefreshOnReturn";
 import SetupCard from "./components/SetupCard";
 import { setupFor } from "@/lib/setupChecklist";
@@ -69,6 +72,8 @@ const ICON = {
 };
 
 export default async function Home() {
+  // the cards this phone has hidden (HomeWidgets)
+  const hiddenWidgets = ((await cookies()).get(HIDDEN_COOKIE)?.value ?? "").split(".").filter(Boolean);
   const tenant = await getTenant();
   const [CLUB, TEAMS, viewer, me] = await Promise.all([
     getClub(),
@@ -221,12 +226,14 @@ export default async function Home() {
           </Link>
         )}
 
-        {/* what's next: coaches' teams, or a parent's or player's own */}
-        {showNext && (
-          <section className="flex flex-col gap-2.5">
-            <h2 className="wp-text px-1 text-xl font-bold">Up next</h2>
-            <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
-              {nextTraining && (
+        {/* the cards — next training and match (Up next), the last result, Finances:
+            each can be hidden on this phone with a long press (HomeWidgets) */}
+        <HomeWidgets
+          hidden={hiddenWidgets}
+          upNextClass={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}
+          widgets={[
+            ...(showNext && nextTraining
+              ? [{ id: "training" as const, label: "Next training", node: (
                 <NextRow link={viewer.canCoach} href="/admin/stats/training">
                   <DateBadge date={nextTraining.date} />
                   <span className="min-w-0 flex-1">
@@ -237,8 +244,10 @@ export default async function Home() {
                     </span>
                   </span>
                 </NextRow>
-              )}
-              {nextMatch && (
+                ) }]
+              : []),
+            ...(showNext
+              ? [{ id: "match" as const, label: "Next match", node: nextMatch ? (
                 <NextRow link={viewer.canCoach} href="/admin/stats/matches">
                   <DateBadge date={nextMatch.date} />
                   <span className="min-w-0 flex-1">
@@ -251,9 +260,7 @@ export default async function Home() {
                     </span>
                   </span>
                 </NextRow>
-              )}
-              {/* no match entered yet: where coaches add one */}
-              {!nextMatch && (
+                ) : (
                 <NextRow link={viewer.canCoach} href="/admin/stats/matches">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700 dark:bg-green-400/10 dark:text-green-400">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -265,13 +272,10 @@ export default async function Home() {
                     <span className={`block text-sm ${sub}`}>{viewer.canCoach ? "Add one in the Match Log" : "It'll show here once it's arranged"}</span>
                   </span>
                 </NextRow>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* the last result, a long row like Up next's (coaches tap through; parents and players just see the score) */}
-        {lastResult && (
+                ) }]
+              : []),
+            ...(lastResult
+              ? [{ id: "result" as const, label: "Last result", node: (
           <section className="flex flex-col gap-2.5">
             <h2 className="wp-text px-1 text-xl font-bold">Last result</h2>
             <div className={`${card} overflow-hidden`}>
@@ -292,10 +296,10 @@ export default async function Home() {
               </NextRow>
             </div>
           </section>
-        )}
-
-        {/* treasurers and club admins: the subs, a long row like Up next's */}
-        {viewer.canFinance && CLUB.features.financialAdmin && (
+                ) }]
+              : []),
+            ...(viewer.canFinance && CLUB.features.financialAdmin
+              ? [{ id: "finances" as const, label: "Finances", node: (
           <a href="/finance" className={`press ${card} flex items-center gap-4 px-4 py-3.5`}>
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -308,7 +312,10 @@ export default async function Home() {
             </span>
             <Chevron />
           </a>
-        )}
+                ) }]
+              : []),
+          ]}
+        />
 
         {/* coaches: shortcuts to the tools */}
         {viewer.canCoach && <HomeShortcuts available={available} defaults={defaults} />}
