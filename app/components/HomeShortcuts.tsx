@@ -15,7 +15,6 @@ export type ShortcutId =
   | "plans"
   | "camera"
   | "kitResponses"
-  | "players"
   | "members"
   | "settings"
   | "help"
@@ -35,7 +34,6 @@ const TOOLS: Record<ShortcutId, Tool> = {
   plans: { href: "/admin/training/plans", label: "Training Plans", colour: "bg-blue-700", icon: svg(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></>) },
   camera: { href: "/admin/camera", label: "Camera", colour: "bg-rose-700", icon: svg(<><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>) },
   kitResponses: { href: "/admin/kit", label: "Kit Responses", colour: "bg-orange-700", icon: svg(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>) },
-  players: { href: "/admin/members", label: "Players", colour: "bg-lime-700", icon: svg(<><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /></>) },
   members: { href: "/admin/members", label: "Members", colour: "bg-emerald-700", icon: svg(<><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>) },
   settings: { href: "/admin/settings", label: "Settings", colour: "bg-gray-600", icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>) },
   help: { href: "/admin/help", label: "Help", colour: "bg-slate-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></>) },
@@ -66,9 +64,11 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
   // this phone's own choice, if it has one (only tools this person can still use)
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(KEY) ?? "null") as ShortcutId[] | null;
+      const saved = JSON.parse(localStorage.getItem(KEY) ?? "null") as string[] | null;
+      // the old Players shortcut is Members now (the squad lives there)
+      const ids = Array.isArray(saved) ? [...new Set(saved.map((id) => (id === "players" ? "members" : id)))] : null;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved choice is only known in the browser
-      if (Array.isArray(saved)) setChosen(saved.filter((id) => available.includes(id)).slice(0, MAX));
+      if (ids) setChosen(ids.filter((id): id is ShortcutId => available.includes(id as ShortcutId)).slice(0, MAX));
     } catch {}
   }, [available]);
 
