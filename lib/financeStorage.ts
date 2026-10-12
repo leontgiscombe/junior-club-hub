@@ -17,6 +17,8 @@ export function financeKeys(tenant: string) {
     auth: (team: string) => `${p}:v1:auth:${team}`,
     // devices that can open the team without its password (lib/financeDevices.ts)
     devices: (team: string) => `${p}:v1:devices:${team}`,
+    // the team's data key, locked with the server's own key, for its treasurer's account (lib/financeEscrow.ts)
+    escrow: (team: string) => `${p}:v1:escrow:${team}`,
     pushSubs: `${p}:push:subs`,
   };
 }
