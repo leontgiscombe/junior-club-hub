@@ -2,7 +2,7 @@
 
 // Your account, laid out like a phone's settings: your photo and name at the
 // top, then grouped rows that each open their own screen (#details, #clubs,
-// #here, #security, #appearance, #tabs, #alerts, #delete) — your name, your clubs and roles, your
+// #here, #team, #security, #appearance, #tabs, #alerts, #delete) — your name, your clubs and roles, your
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
 import { useCallback, useEffect, useState } from "react";
@@ -21,9 +21,10 @@ import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
 
-// What "Your Team"/"Your Children" shows: a parent's children, the team of
-// anyone who isn't only a parent (a coach), and both for a coach who's a parent
-// too — any club staff can add a child of theirs who plays.
+// "Your Children" (#here) for a parent, as any parent sees it; "Your Team"
+// (#team, or #here for someone with no children to list) for anyone who isn't
+// only a parent — so a coach who's a parent has both. Any club staff can add a
+// child of theirs who plays.
 const STAFF: Role[] = ["admin", "coach", "treasurer"];
 function hereShows(p: NonNullable<Here["person"]>) {
   const parent = p.relation === "parent" || p.children.length > 0 || (p.roles ?? []).includes("parent");
@@ -89,29 +90,31 @@ export default function AccountPage() {
     });
   }, []);
 
-  async function saveHere() {
+  async function saveHere(part: "kids" | "team") {
     if (!here?.person) return;
     setBusy(true);
     setHereMessage(null);
-    const shows = hereShows(here.person);
     const res = await fetch("/api/me/club", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...(shows.kids ? { children: kids.filter((k) => k.name.trim()) } : {}), ...(shows.team ? { team: myTeam } : {}) }),
+      body: JSON.stringify(part === "kids" ? { children: kids.filter((k) => k.name.trim()) } : { team: myTeam }),
     });
     if (res.ok) {
       const saved = ((await res.json().catch(() => null)) as { person?: Here["person"] } | null)?.person;
       if (saved) {
         setHere({ ...here, person: saved });
-        if (shows.kids) setKids(startKids(saved));
+        if (part === "kids") setKids(startKids(saved));
       }
-      const waiting = saved?.children.some((c) => c.pending);
+      const waiting = part === "kids" && saved?.children.some((c) => c.pending);
+      const straightIn = part === "kids" && saved?.children.some((c) => c.playerId && !here.person!.children.some((o) => o.id === c.id && o.playerId));
       const kept = new Set((saved?.children ?? []).flatMap((c) => (c.playerId ? [c.playerId] : [])));
       const removed = here.person.children.some((c) => c.playerId && !kept.has(c.playerId));
       setHereMessage(
         waiting
           ? "Saved. A coach will add any new children to the squad."
-          : removed
+          : straightIn
+            ? "Saved — they're in the squad."
+            : removed
             ? "Saved. The club's coaches have been told."
             : "Saved — the club's coaches will see it.",
       );
@@ -196,7 +199,8 @@ export default function AccountPage() {
   const titles: Record<string, string> = {
     details: "Your Details",
     clubs: "Your Clubs",
-    here: shows.kids && shows.team ? "Your Team & Children" : shows.kids ? "Your Children" : "Your Team",
+    here: shows.kids ? "Your Children" : "Your Team",
+    team: "Your Team",
     security: "Sign-In & Security",
     alerts: "Notifications",
     appearance: "Appearance",
@@ -270,56 +274,57 @@ export default function AccountPage() {
             </Group>
           )}
 
-          {screen === "here" && here?.person && (
+          {screen === "here" && shows.kids && here?.person && (
             <Group>
               <div className="p-5">
-                {shows.team && (
-                  <>
-                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">Your team at {here.club}.</p>
-                    <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={input}>
-                      <option value="">Not sure / more than one</option>
-                      {here.teams.map((t) => (
-                        <option key={t.slug} value={t.slug}>{t.name}</option>
-                      ))}
-                    </select>
-                  </>
-                )}
-                {shows.kids && (
-                  <>
-                    <p className={`mb-3 text-sm text-gray-500 dark:text-gray-400 ${shows.team ? "mt-5" : ""}`}>
-                      {shows.team
-                        ? `Your children at ${here.club}, if any play here: their full name and team, for the club's squad.`
-                        : `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`}
-                    </p>
-                    <ChildrenEditor
-                      value={kids}
-                      teams={here.teams}
-                      onChange={setKids}
-                      clubDecidesTeams
-                      confirmRemove
-                      // each child's card is headed by their photo, once they're in the squad
-                      photo={(c, info) => (
-                        <ChildAvatar
-                          playerId={here.person?.status === "approved" ? c.playerId : undefined}
-                          name={c.name}
-                          version={c.playerId ? photos[c.playerId] : undefined}
-                          onChange={(v) =>
-                            c.playerId &&
-                            setPhotos((all) => {
-                              const next = { ...all };
-                              if (v) next[c.playerId!] = v;
-                              else delete next[c.playerId!];
-                              return next;
-                            })
-                          }
-                        >
-                          {info}
-                        </ChildAvatar>
-                      )}
-                    />
-                  </>
-                )}
-                <button onClick={saveHere} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
+                <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                  {`Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`}
+                </p>
+                <ChildrenEditor
+                  value={kids}
+                  teams={here.teams}
+                  onChange={setKids}
+                  clubDecidesTeams
+                  confirmRemove
+                  // each child's card is headed by their photo, once they're in the squad
+                  photo={(c, info) => (
+                    <ChildAvatar
+                      playerId={here.person?.status === "approved" ? c.playerId : undefined}
+                      name={c.name}
+                      version={c.playerId ? photos[c.playerId] : undefined}
+                      onChange={(v) =>
+                        c.playerId &&
+                        setPhotos((all) => {
+                          const next = { ...all };
+                          if (v) next[c.playerId!] = v;
+                          else delete next[c.playerId!];
+                          return next;
+                        })
+                      }
+                    >
+                      {info}
+                    </ChildAvatar>
+                  )}
+                />
+                <button onClick={() => saveHere("kids")} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
+                  Save
+                </button>
+                {hereMessage && <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
+              </div>
+            </Group>
+          )}
+
+          {(screen === "team" || (screen === "here" && !shows.kids)) && here?.person && (
+            <Group>
+              <div className="p-5">
+                <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Your team at {here.club}.</p>
+                <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={input}>
+                  <option value="">Not sure / more than one</option>
+                  {here.teams.map((t) => (
+                    <option key={t.slug} value={t.slug}>{t.name}</option>
+                  ))}
+                </select>
+                <button onClick={() => saveHere("team")} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save
                 </button>
                 {hereMessage && <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
@@ -409,6 +414,7 @@ export default function AccountPage() {
           <Row icon={ICONS.person} label="Your Details" onClick={() => open("details")} />
           <Row icon={ICONS.clubs} label="Your Clubs" detail={String(account.clubs.length)} onClick={() => open("clubs")} />
           {here?.person && <Row icon={ICONS.child} label={titles.here} onClick={() => open("here")} />}
+          {here?.person && shows.kids && shows.team && <Row icon={ICONS.clubs} label="Your Team" onClick={() => open("team")} />}
         </Group>
 
         {passkeys && (
