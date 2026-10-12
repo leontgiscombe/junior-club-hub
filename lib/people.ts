@@ -24,6 +24,7 @@ import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
 import { removeAllPlayerDevices } from "./playerDevices";
 import { removeCare } from "./playerCare";
+import { clearRemoval } from "./childRemovals";
 
 export const isRole = (r: unknown): r is Role => typeof r === "string" && r in ROLES;
 
@@ -348,6 +349,7 @@ export async function deleteSquadPlayer(tenant: string, playerId: string): Promi
   // their own devices are signed out, and their Training Hub progress and medical details go too
   await removeAllPlayerDevices(tenant, playerId);
   await removeCare(tenant, playerId);
+  await clearRemoval(tenant, playerId);
   for (const person of await listPeople(tenant)) {
     const kids = childrenOf(person);
     if (!kids.some((c) => c.playerId === playerId)) continue;

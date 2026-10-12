@@ -93,7 +93,15 @@ export default function AccountPage() {
         if (isParent) setKids(saved.children.length ? toDrafts(saved.children) : [{ name: "", team: "" }]);
       }
       const waiting = saved?.children.some((c) => c.pending);
-      setHereMessage(waiting ? "Saved. A coach will add any new children to the squad." : "Saved — the club's coaches will see it.");
+      const kept = new Set((saved?.children ?? []).flatMap((c) => (c.playerId ? [c.playerId] : [])));
+      const removed = here.person.children.some((c) => c.playerId && !kept.has(c.playerId));
+      setHereMessage(
+        waiting
+          ? "Saved. A coach will add any new children to the squad."
+          : removed
+            ? "Saved. The club's coaches have been told."
+            : "Saved — the club's coaches will see it.",
+      );
     } else {
       setHereMessage("That didn't save — try again");
     }
@@ -259,6 +267,7 @@ export default function AccountPage() {
                     teams={here.teams}
                     onChange={setKids}
                     clubDecidesTeams
+                    confirmRemove
                     // each child's card is headed by their photo, once they're in the squad
                     photo={(c, info) => (
                       <ChildAvatar

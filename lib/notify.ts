@@ -98,6 +98,46 @@ export async function notifyJoinRequest(
 }
 
 /** Let the right admins and coaches know an approved parent has added a child to approve. Never throws. */
+/** A parent has taken a child (a squad player) off their account: the child may have left the club. */
+export async function notifyChildRemoved(
+  tenant: string,
+  request: { userId: string; parentName: string; playerIds: string[]; teams: string[]; clubName: string },
+): Promise<void> {
+  try {
+    // each child once in half an hour (saving again isn't news)
+    const kv = await rawKv();
+    let fresh = 0;
+    for (const id of request.playerIds) {
+      if (!kv || (await kv.set(`platform:child-removed:${tenant}:${request.userId}:${id}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) fresh++;
+    }
+    if (!fresh) return;
+    const people = (await listPeople(tenant)).filter((p) => p.userId !== request.userId && wantsToHear(p, request.teams));
+    // no children's names in emails or alerts
+    const line = `${request.parentName} has removed ${fresh === 1 ? "a child" : `${fresh} children`} from their account at ${request.clubName}.`;
+    const membersUrl = tenantUrl(tenant, "/admin/members");
+    const emails = new Set(people.map((p) => p.email.toLowerCase()));
+    const message = simpleEmail({
+      heading: "A child removed from a parent's account",
+      paragraphs: [
+        line,
+        "They're still in the squad. If they've left the club, delete them from the squad in Coach Admin → Members (that stops their subs too); otherwise there's nothing to do.",
+      ],
+      button: { label: "Open Members", url: membersUrl },
+      footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
+    });
+    await Promise.all(
+      [...emails].map((to) => sendEmail({ to, subject: `A child removed from a parent's account at ${request.clubName}`, ...message }).catch(() => false)),
+    );
+    await pushTo(tenant, people, emails.size, "Child removed", {
+      title: "A child removed from a parent's account",
+      body: `${line} Tap to check Members.`,
+      url: "/admin/members",
+    });
+  } catch (e) {
+    console.error("Child removed alerts not sent:", e);
+  }
+}
+
 export async function notifyChildRequest(
   tenant: string,
   request: { userId: string; parentName: string; childNames: string[]; teams: string[]; clubName: string },

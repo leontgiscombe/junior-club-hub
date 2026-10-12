@@ -45,6 +45,8 @@ type SquadPlayer = {
   position?: "outfield" | "goalkeeper";
   /** their photo's version, if they have one */
   photo?: string;
+  /** a parent took them off their account (they may have left the club) */
+  removed?: { by: string; at: string };
 };
 
 /** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
@@ -887,9 +889,13 @@ function PlayerRow({ player, guardians, adminKey, onOpen }: { player: SquadPlaye
         <PlayerPhoto player={player} adminKey={adminKey} size="row" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-gray-900 dark:text-gray-50">{player.name}</span>
-          <span className="block truncate text-sm text-gray-500 dark:text-gray-400">
-            {guardians.length ? `Guardian: ${guardians.map((g) => g.name).join(", ")}` : "No parent or carer account yet"}
-          </span>
+          {player.removed ? (
+            <span className="block truncate text-sm font-semibold text-amber-700 dark:text-amber-300">Removed from {player.removed.by}&apos;s account</span>
+          ) : (
+            <span className="block truncate text-sm text-gray-500 dark:text-gray-400">
+              {guardians.length ? `Guardian: ${guardians.map((g) => g.name).join(", ")}` : "No parent or carer account yet"}
+            </span>
+          )}
         </span>
         <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m9 6 6 6-6 6" />
@@ -996,6 +1002,19 @@ function PlayerProfile({
             <h2 className="mt-3 text-2xl font-extrabold">{player.name}</h2>
             <p className="text-[15px] text-gray-500 dark:text-gray-400">{teamName ?? "No team yet"}</p>
           </div>
+
+          {player.removed && (
+            <div className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">
+              <p>
+                <strong>{player.removed.by}</strong> removed {player.name.split(/\s+/)[0]} from their account on{" "}
+                {new Date(player.removed.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}. If they&apos;ve left the club,
+                delete them from the squad below — that stops their subs too.
+              </p>
+              <button onClick={() => onAct({ action: "dismissRemoval", id: player.id })} disabled={busy} className="mt-2 font-bold text-amber-800 disabled:opacity-40 dark:text-amber-200">
+                They&apos;re Staying — Dismiss
+              </button>
+            </div>
+          )}
 
           <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Details</p>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white dark:divide-white/10 dark:bg-black/40">
