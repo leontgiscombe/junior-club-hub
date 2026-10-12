@@ -3,7 +3,9 @@
 // team's writeSalt) and sends them all; the team whose token matches gets its
 // whole record back. Wrong passwords are counted per address — one per try,
 // however many teams there are.
-//   POST { tokens: { [teamId]: token } } -> { id, record } | 401
+//   POST { tokens: { [teamId]: token } } -> { id, record, also } | 401
+// `also`: any other teams the same password opens (two teams given the same
+// password), so the page can open the right one and say so.
 import { NextRequest, NextResponse } from "next/server";
 import { getClub, isTeam } from "@/lib/settings";
 import { requireTenant } from "@/lib/tenant";
@@ -26,12 +28,16 @@ export async function POST(req: NextRequest) {
   if (await atLimit("finance-unlock", UNLOCK_FAILS)) {
     return NextResponse.json({ error: "Too many wrong passwords — try again in an hour" }, { status: 429 });
   }
+  const matches: { id: string; record: Awaited<ReturnType<typeof teamRecord>> }[] = [];
   for (const [id, token] of tries) {
     if (!(await isTeam(id))) continue;
     const record = await teamRecord(tenant, id);
-    if (tokenMatches(record.auth, token)) {
-      return NextResponse.json({ id, record }, { headers: { "cache-control": "no-store" } });
-    }
+    if (tokenMatches(record.auth, token)) matches.push({ id, record });
+  }
+  // the first the page asked about (it puts the person's own team first)
+  if (matches.length) {
+    const [{ id, record }, ...rest] = matches;
+    return NextResponse.json({ id, record, also: rest.map((m) => m.id) }, { headers: { "cache-control": "no-store" } });
   }
   await overLimit("finance-unlock", UNLOCK_FAILS, 3600);
   return NextResponse.json({ error: "Wrong password" }, { status: 401 });
