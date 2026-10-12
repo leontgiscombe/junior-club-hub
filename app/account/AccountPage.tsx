@@ -29,13 +29,14 @@ type Here = {
 };
 
 type Account = {
-  user: { email: string; name: string };
+  user: { email: string; name: string; phone?: string };
   clubs: { id: string; name: string; url: string; roles: Role[]; status: MemberStatus }[];
 };
 
 export default function AccountPage() {
   const [account, setAccount] = useState<Account | null>(null);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState("");
@@ -59,6 +60,7 @@ export default function AccountPage() {
       const data = (await res.json()) as Account;
       setAccount(data);
       setName(data.user.name);
+      setPhone(data.user.phone ?? "");
       setCanPasskey(supportsPasskeys());
       fetch("/api/auth/passkey", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : { passkeys: [] }))
@@ -101,9 +103,10 @@ export default function AccountPage() {
   async function saveName() {
     setBusy(true);
     setMessage(null);
-    const res = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+    const res = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone }) });
     const data = await res.json().catch(() => ({}));
-    setMessage(res.ok ? { ok: true, text: "Name saved." } : { ok: false, text: data.error ?? "That didn't save" });
+    if (res.ok) setAccount((a) => (a ? { ...a, user: { ...a.user, name, phone: phone.trim() } } : a));
+    setMessage(res.ok ? { ok: true, text: "Saved." } : { ok: false, text: data.error ?? "That didn't save" });
     setBusy(false);
   }
 
@@ -191,9 +194,23 @@ export default function AccountPage() {
                   <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
                   <NameFields value={name} onChange={setName} label="Your" autoComplete className={input} />
                 </label>
+                <label className="mt-4 block">
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Mobile number</span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    maxLength={24}
+                    placeholder="e.g. 07700 900123"
+                    className={input}
+                  />
+                  <span className="mt-1 block text-xs text-gray-400">For WhatsApp reminders about subs. Only your club&apos;s coaches and treasurer see it.</span>
+                </label>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Email: {account.user.email}</p>
-                <button onClick={saveName} disabled={busy || !name.trim() || name === account.user.name} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
-                  Save Name
+                <button onClick={saveName} disabled={busy || !name.trim() || (name === account.user.name && phone.trim() === (account.user.phone ?? ""))} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
+                  Save
                 </button>
                 {message && (
                   <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>{message.text}</p>

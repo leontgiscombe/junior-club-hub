@@ -2,18 +2,19 @@
 //   GET                          -> { private, status: "none" | "pending" | "approved" | "declined" }
 //   POST { code }                -> checks the club code: { status: "open" } if the hub is open to
 //                                   all, otherwise { status: "ok", teams } for the rest of the form
-//   POST { code, name, relation, team?, children?: [{ name, team }], note? }   (signed in)
+//   POST { code, name, phone?, relation, team?, children?: [{ name, team }], note? }   (signed in)
 //                                -> { status: "pending" }; the club's admins and coaches hear
 //                                   there's someone to approve (lib/notify.ts)
 // The teams are only shown once the code is right, and a parent types their
 // own children's names: nobody who isn't approved sees the club's players.
 import { NextRequest, NextResponse } from "next/server";
 import { MEMBER_COOKIE, RELATIONS, normaliseCode, readMember, type Relation } from "@/lib/access";
-import { currentUser, setUserName } from "@/lib/auth";
+import { currentUser, setUserName, setUserPhone } from "@/lib/auth";
 import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
 import { getAccess } from "@/lib/members";
 import { notifyJoinRequest } from "@/lib/notify";
+import { BAD_PHONE, cleanPhone } from "@/lib/phone";
 import { cleanChildren, currentPerson, pickTeam, requestToJoinAsPerson } from "@/lib/people";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
@@ -74,11 +75,14 @@ export async function POST(req: NextRequest) {
   const note = text(body.note, 120);
   if (!name) return NextResponse.json({ error: "Enter your name, so the coaches know who you are" }, { status: 400 });
   if (!relation) return NextResponse.json({ error: "Choose who you are" }, { status: 400 });
+  const phone = cleanPhone(body.phone);
+  if (phone === null) return NextResponse.json({ error: BAD_PHONE }, { status: 400 });
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
   if (!user.name) await setUserName(user.id, name);
+  if (phone && phone !== user.phone) await setUserPhone(user.id, phone);
 
-  const person = await requestToJoinAsPerson(tenant, user, { name, relation, team, children, note });
+  const person = await requestToJoinAsPerson(tenant, user, { name, phone: phone || user.phone, relation, team, children, note });
   const res = NextResponse.json({ status: person.status });
   if (person.status === "approved") return res;
 

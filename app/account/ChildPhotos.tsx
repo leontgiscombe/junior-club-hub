@@ -6,6 +6,7 @@
 // photo once they're in the club's squad (they have a squad player).
 import { useRef, useState, type ReactNode } from "react";
 import { squarePhoto } from "./ProfilePhoto";
+import PlayerCare from "../components/PlayerCare";
 import PlayerDevices from "../components/PlayerDevices";
 
 export function ChildAvatar({
@@ -85,6 +86,8 @@ export function ChildAvatar({
             )}
             {/* their own phone or tablet, for the Training Hub */}
             <PlayerDevices playerId={playerId} name={name} />
+            {/* their medical notes and emergency contact, for the coaches */}
+            <PlayerCare playerId={playerId} name={name} />
           </span>
         )}
         {error && <span className="block text-sm text-red-600 dark:text-red-400">{error}</span>}

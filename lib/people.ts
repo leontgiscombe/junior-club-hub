@@ -23,6 +23,7 @@ import { currentUser, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
 import { removeAllPlayerDevices } from "./playerDevices";
+import { removeCare } from "./playerCare";
 
 export const isRole = (r: unknown): r is Role => typeof r === "string" && r in ROLES;
 
@@ -155,7 +156,7 @@ export const canCoach = (p: Person | null) => p?.status === "approved" && p.role
 export async function requestToJoinAsPerson(
   tenant: string,
   user: User,
-  details: Pick<Person, "name" | "relation" | "team" | "children" | "note">,
+  details: Pick<Person, "name" | "phone" | "relation" | "team" | "children" | "note">,
 ): Promise<Person> {
   const existing = await personFor(tenant, user);
   if (existing?.status === "approved") return existing;
@@ -163,6 +164,7 @@ export async function requestToJoinAsPerson(
     userId: user.id,
     email: user.email,
     name: details.name,
+    ...(details.phone ? { phone: details.phone } : {}),
     roles: [],
     status: "pending",
     ...(details.relation ? { relation: details.relation } : {}),
@@ -343,8 +345,9 @@ export async function decideChild(
 /** Take a player out of the squad, and off their parents' lists of children. */
 export async function deleteSquadPlayer(tenant: string, playerId: string): Promise<void> {
   await deletePlayer(playerId);
-  // their own devices are signed out, and their Training Hub progress goes too
+  // their own devices are signed out, and their Training Hub progress and medical details go too
   await removeAllPlayerDevices(tenant, playerId);
+  await removeCare(tenant, playerId);
   for (const person of await listPeople(tenant)) {
     const kids = childrenOf(person);
     if (!kids.some((c) => c.playerId === playerId)) continue;

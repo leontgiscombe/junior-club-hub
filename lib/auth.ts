@@ -16,7 +16,7 @@ import { SESSION_COOKIE, kvCall, sessionKey, hashToken, sessionUserId } from "./
 import { forgetPasskeys } from "./passkeys";
 import { rootDomain } from "./tenantHost";
 
-export type User = { id: string; email: string; name: string; createdAt: string };
+export type User = { id: string; email: string; name: string; phone?: string; createdAt: string };
 
 const SESSION_DAYS = 90;
 const LOGIN_SECONDS = 15 * 60;
@@ -60,6 +60,16 @@ async function findOrCreateUser(email: string): Promise<User> {
   if ((await kvCall<number>(["HSETNX", USERS_BY_EMAIL, email, user.id])) !== 1) return (await userByEmail(email))!;
   await kvCall(["SET", userKey(user.id), JSON.stringify(user)]);
   return user;
+}
+
+/** Their mobile number ("" takes it off). */
+export async function setUserPhone(id: string, phone: string): Promise<User | null> {
+  const user = await getUser(id);
+  if (!user) return null;
+  const next: User = { ...user, phone };
+  if (!phone) delete next.phone;
+  await kvCall(["SET", userKey(id), JSON.stringify(next)]);
+  return next;
 }
 
 export async function setUserName(id: string, name: string): Promise<User | null> {

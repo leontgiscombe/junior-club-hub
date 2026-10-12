@@ -1,8 +1,10 @@
-// A team's squad from Members, for Financial Admin's Players tab: each child
+// A team's squad from Members, for Financial Admin's players: each child
 // with their approved parents and carers. The finance records are encrypted in
 // the browser, so the page adds anyone missing itself. Only for someone who
 // knows the team password (its write token) or a signed-in treasurer or admin.
-//   GET ?id=team  (header x-write-token) -> { players: [{ id, name, createdAt, guardians: [{ name, email }] }] }
+//   GET ?id=team  (header x-write-token) -> { players: [{ id, name, createdAt, guardians: [{ name, email, phone }] }] }
+// A player missing from the list has left the team (or moved to another), so
+// the page stops charging them.
 import { NextRequest, NextResponse } from "next/server";
 import { childrenOf } from "@/lib/access";
 import { financeUser } from "@/lib/financeDevices";
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
       createdAt: p.createdAt,
       guardians: people
         .filter((person) => person.status === "approved" && childrenOf(person).some((c) => c.playerId === p.id))
-        .map((person) => ({ name: person.name, email: person.email })),
+        .map((person) => ({ name: person.name, email: person.email, phone: person.phone ?? "" })),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return NextResponse.json({ players: squad }, { headers: { "cache-control": "no-store" } });
