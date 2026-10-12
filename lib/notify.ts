@@ -5,6 +5,7 @@
 // every one, if they have no team). Kit requests go to the team's own coaches
 // (the admins only if it has none). No message has children's names in it.
 // Server only.
+import { createHash } from "crypto";
 import webpush from "web-push";
 import { joinAlertsKey, kvCall, type Person } from "./access";
 import { sendEmail, simpleEmail } from "./email";
@@ -99,11 +100,21 @@ export async function notifyJoinRequest(
 /** Let the right admins and coaches know an approved parent has added a child to approve. Never throws. */
 export async function notifyChildRequest(
   tenant: string,
-  request: { userId: string; parentName: string; teams: string[]; clubName: string },
+  request: { userId: string; parentName: string; childNames: string[]; teams: string[]; clubName: string },
 ): Promise<void> {
   try {
+    // each child once in half an hour (a parent saving the same child again
+    // isn't news), but a second child added straight after still is
     const kv = await rawKv();
-    if (kv && !(await kv.set(`platform:child-alert:${tenant}:${request.userId}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) return;
+    const fresh: string[] = [];
+    for (const name of request.childNames) {
+      const key = `platform:child-alert:${tenant}:${request.userId}:${createHash("sha256").update(name.trim().toLowerCase()).digest("hex").slice(0, 16)}`;
+      if (!kv || (await kv.set(key, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) fresh.push(name);
+    }
+    if (!fresh.length) {
+      console.log(`Child request alerts (${tenant}): not sent — the same child was added in the last ${REPEAT_GAP_SECONDS / 60} minutes`);
+      return;
+    }
     const people = (await listPeople(tenant)).filter((p) => wantsToHear(p, request.teams));
     // no children's names in emails or alerts
     const line = `${request.parentName} has added a child to ${request.clubName}'s hub.`;
