@@ -1,7 +1,11 @@
 // The platform admin's API, on the platform's own site only. Every request
 // carries the admin key in the "x-platform-key" header.
-//   GET                                   -> { clubs, emailConfigured, backups, separateBackups }
+//   GET                                   -> { clubs (with their counts, last use and setup: lib/platformStats.ts),
+//                                             log, emailConfigured, backups, separateBackups }
 //   POST { action: "reset", id }          -> emails the club a password-reset link
+//   POST { action: "pause", id, reason? } -> the club's hub shows a "paused" page; nothing is deleted
+//   POST { action: "resume", id }         -> opens it again
+//   POST { action: "notes", id, text }    -> the platform admin's own notes on the club
 //   POST { action: "delete", id, confirm } -> deletes the club and all its data
 //                                            (confirm must repeat the id)
 //   POST { action: "restore", id, date, confirm } -> puts a club back as it was in
@@ -12,7 +16,8 @@ import { emailConfigured } from "@/lib/email";
 import { platformAdminProblem } from "@/lib/platformAdmin";
 import { sendResetEmail } from "@/lib/resetEmail";
 import { getTenant } from "@/lib/tenant";
-import { deleteTenant, getTenantRecord, listTenantsForAdmin } from "@/lib/tenants";
+import { adminLog, clubStats, forgetClubExtras, logAdmin, setNotes } from "@/lib/platformStats";
+import { deleteTenant, getTenantRecord, listTenantsForAdmin, setTenantPaused } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +30,12 @@ async function refuse(req: NextRequest): Promise<NextResponse | null> {
 export async function GET(req: NextRequest) {
   const refused = await refuse(req);
   if (refused) return refused;
-  const [clubs, backups] = await Promise.all([listTenantsForAdmin(), listBackups().catch(() => [])]);
-  return NextResponse.json({ clubs, emailConfigured: emailConfigured(), backups, separateBackups: separateBackupDb() });
+  const [records, backups, log] = await Promise.all([listTenantsForAdmin(), listBackups().catch(() => []), adminLog()]);
+  const clubs = await Promise.all(records.map(clubStats));
+  return NextResponse.json(
+    { clubs, log, emailConfigured: emailConfigured(), backups, separateBackups: separateBackupDb() },
+    { headers: { "cache-control": "no-store" } },
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -39,6 +48,7 @@ export async function POST(req: NextRequest) {
     const record = await getTenantRecord(id);
     if (!record) return NextResponse.json({ error: "No such club" }, { status: 404 });
     await sendResetEmail(record);
+    await logAdmin("Password reset sent", id, record.email);
     return NextResponse.json({
       message: emailConfigured()
         ? `Reset link sent to ${record.email}`
@@ -53,6 +63,8 @@ export async function POST(req: NextRequest) {
     const deleted = await deleteTenant(id);
     if (deleted === null) return NextResponse.json({ error: "No such club" }, { status: 404 });
     console.log(`platform admin deleted club "${id}" (${deleted} records)`);
+    await forgetClubExtras(id);
+    await logAdmin("Deleted", id, `${deleted} records`);
     return NextResponse.json({ message: `Deleted ${id} and ${deleted} records` });
   }
 
@@ -64,7 +76,25 @@ export async function POST(req: NextRequest) {
     const restored = await restoreClub(id, date);
     if (restored === null) return NextResponse.json({ error: `The ${date} backup doesn't have a club at "${id}"` }, { status: 404 });
     console.log(`platform admin restored club "${id}" from ${date} (${restored} records)`);
+    await logAdmin("Restored", id, `from the ${date} backup`);
     return NextResponse.json({ message: `Restored ${id} as it was on ${date} (${restored} records)` });
+  }
+
+  if (body?.action === "pause" || body?.action === "resume") {
+    const record = await getTenantRecord(id);
+    if (!record) return NextResponse.json({ error: "No such club" }, { status: 404 });
+    const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 200) : "";
+    await setTenantPaused(id, body.action === "pause" ? { at: new Date().toISOString(), ...(reason ? { reason } : {}) } : null);
+    await logAdmin(body.action === "pause" ? "Paused" : "Resumed", id, reason || undefined);
+    return NextResponse.json({
+      message: body.action === "pause" ? `${record.name} is paused — its hub now says so (within 30 seconds)` : `${record.name} is open again`,
+    });
+  }
+
+  if (body?.action === "notes") {
+    if (!(await getTenantRecord(id))) return NextResponse.json({ error: "No such club" }, { status: 404 });
+    await setNotes(id, typeof body.text === "string" ? body.text : "");
+    return NextResponse.json({ message: "Notes saved" });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
