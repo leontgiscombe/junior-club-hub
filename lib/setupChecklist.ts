@@ -1,8 +1,8 @@
 // "Set up your club": the steps a new club's admin works through, shown on
 // Home and Coach Admin until they're done (or the admin hides them). Each
 // step ticks itself when it's actually done — the same signals the platform
-// admin sees (lib/platformStats.ts) — and the few that are about checking
-// something can be ticked by hand. Server only.
+// admin sees (lib/platformStats.ts) — and the ones a club might not need, or
+// that are about checking something, can be ticked by hand. Server only.
 import { childrenOf, clubKey, invitesKey, joinAlertsKey, kvCall, peopleKey, type Person } from "./access";
 import type { User } from "./auth";
 import { financeKeys } from "./financeStorage";
@@ -22,7 +22,7 @@ export type SetupStep = {
   external?: boolean;
 };
 
-export const MANUAL_STEPS = ["teams", "parts", "share", "phone"] as const;
+export const MANUAL_STEPS = ["teams", "parts", "coaches", "share", "finance", "phone"] as const;
 const setupKey = (tenant: string) => clubKey(tenant, "setup");
 type Stored = { ticked: string[]; hidden: string[] };
 
@@ -119,7 +119,9 @@ export async function setupFor(tenant: string, user: User, person: Person | null
       title: "Invite your coaches",
       hint: "They get an email and come straight in, no code or approval needed.",
       href: "/admin/settings#joining",
-      done: Number(invites) > 0 || others.some((p) => p.status === "approved" && isStaff(p)),
+      // a club with just the one coach ticks it
+      done: ticked("coaches") || Number(invites) > 0 || others.some((p) => p.status === "approved" && isStaff(p)),
+      manual: true,
     },
     {
       id: "share",
@@ -150,8 +152,10 @@ export async function setupFor(tenant: string, user: User, person: Person | null
             title: "Set up Finances for each team",
             hint: "Give each team its subs password, then add the monthly fee.",
             href: "/finance",
-            done: financeReady,
+            // a club where only some teams pay subs ticks it
+            done: ticked("finance") || financeReady,
             external: true,
+            manual: true,
           },
         ]
       : []),
