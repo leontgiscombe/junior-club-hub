@@ -13,334 +13,280 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Finance">
 <link rel="icon" type="image/svg+xml" href="/finance/logo.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
 <style>
+  /* Laid out like the hub's own pages (Home, Your Account): a large title, a
+     segmented control, and rounded white groups of rows on a light grey page. */
   :root {
     /* the club's colour, set from /api/club when one is chosen */
-    --green: var(--color-green-700, #1f7a3d);
-    --green-dark: var(--color-green-800, #155c2d);
-    --green-light: var(--color-green-50, #e7f4ec);
-    --amber: #b8860b;
-    --amber-bg: #fdf6e3;
-    --red: #c0392b;
-    --red-bg: #fdeceb;
-    --ink: #1c2a22;
-    --muted: #5f6f66;
-    --line: #dfe7e2;
-    --bg: #f4f7f5;
+    --green: var(--color-green-700, #15803d);
+    --green-dark: var(--color-green-800, #166534);
+    --green-btn: var(--color-green-600, #16a34a);
+    --green-light: var(--color-green-50, #f0fdf4);
+    --amber: #b45309;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --wa: #25D366;
+    --ink: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --sep: #f1f2f4;
+    --bg: #f2f2f7;
     --card: #ffffff;
-    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-    --radius: 12px;
+    --fill: rgba(118,118,128,.12);
+    --radius: 24px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    background: var(--bg); color: var(--ink); line-height: 1.4; -webkit-font-smoothing: antialiased;
   }
-  header.app {
-    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
-    color: #fff;
-    padding: 18px 20px;
-  }
-  /* the round back arrow, like the hub's */
-  .hub-back { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); box-shadow: 0 4px 14px rgba(0,0,0,.25); color: #fff; text-decoration: none; }
-  .hub-back::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
-  .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .badge {
-    width: 50px; height: 50px; border-radius: 12px;
-    background: #fff; overflow: hidden;
-    display: grid; place-items: center;
-    flex: 0 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,.2); padding: 3px;
-  }
-  .badge img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .header-titles h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
-  .header-titles p { margin: 2px 0 0; font-size: 13px; opacity: .9; }
-  .header-spacer { flex: 1; }
-  nav.tabs {
-    background: var(--card);
-    border-bottom: 1px solid var(--line);
-    position: sticky; top: 0; z-index: 20;
-  }
-  .tabs-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 2px; overflow-x: auto; }
-  .tab {
-    appearance: none; border: none; background: none; cursor: pointer;
-    padding: 14px 16px; font-size: 14px; font-weight: 600; color: var(--muted);
-    border-bottom: 3px solid transparent; white-space: nowrap; font-family: inherit;
-  }
-  .tab:hover { color: var(--ink); }
-  .tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
-  main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 60px; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+
+  /* ── header: like Home's (your photo, Search, the club's crest), then the title ── */
+  header.app { padding-top: max(16px, env(safe-area-inset-top)); }
+  .hub-head { display: flex; align-items: center; justify-content: space-between; }
+  .hub-head-right { display: flex; align-items: center; gap: 12px; }
+  .hub-me { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #15803d; color: #fff; font-weight: 800; font-size: 16px; text-decoration: none; box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.2); }
+  .hub-me svg { width: 24px; height: 24px; }
+  .hub-me img { width: 100%; height: 100%; object-fit: cover; }
+  .round-btn { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0; background: rgba(255,255,255,.85); color: #374151; box-shadow: 0 1px 3px rgba(0,0,0,.15); cursor: pointer; text-decoration: none; }
+  .round-btn svg { width: 20px; height: 20px; }
+  .hub-crest { height: 44px; width: auto; }
+  .fin-title { margin: 14px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; }
+  .fin-sub { margin: 2px 0 0; font-size: 15px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  #sync-status { font-size: 12px; font-weight: 600; color: var(--muted); }
+  #sync-status:empty { display: none; }
+
+  /* ── the sections: a segmented control, stuck to the top ── */
+  nav.tabs { position: sticky; top: 0; z-index: 20; padding: 12px 16px 10px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .tabs-inner { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--fill); }
+  .tab { flex: 1; min-width: 0; border: 0; background: none; border-radius: 8px; padding: 7px 4px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tab.active { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.04); }
+  main { padding-bottom: 32px; }
   .view { display: none; }
   .view.active { display: block; animation: fade .2s ease; }
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-  h2.section { font-size: 18px; margin: 0 0 4px; }
-  .section-sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  /* ── cards and groups of rows ── */
+  .card { background: var(--card); border-radius: var(--radius); padding: 18px; margin-top: 12px; }
+  .group-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 4px 6px; }
+  .group-head span { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+  .group { background: var(--card); border-radius: var(--radius); overflow: hidden; margin-top: 12px; }
+  .group-head + .group { margin-top: 0; }
+  .foot-note { margin: 6px 4px 0; font-size: 12px; color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 16px; border: 0; border-top: 1px solid var(--sep); background: none; text-align: left; color: var(--ink); text-decoration: none; }
+  .row:first-child { border-top: 0; }
+  button.row { cursor: pointer; }
+  button.row:hover { background: rgba(0,0,0,.02); }
+  .row-lead { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; }
+  .av { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #e5e7eb; color: #374151; font-size: 14px; font-weight: 700; }
+  .av.in { background: var(--green-light); color: var(--green); }
+  .av.out { background: var(--red-bg); color: var(--red); }
+  .av svg { width: 20px; height: 20px; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { display: block; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-sub { display: block; margin-top: 1px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-end { flex-shrink: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .chev { flex-shrink: 0; color: #c7c7cc; }
+  .chev svg { width: 16px; height: 16px; display: block; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
-  .stat {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 16px; box-shadow: var(--shadow);
-  }
-  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 600; }
-  .stat .value { font-size: 28px; font-weight: 800; margin-top: 6px; }
-  .stat .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .stat.good .value { color: var(--green-dark); }
-  .stat.warn .value { color: var(--amber); }
-  .stat.bad .value { color: var(--red); }
+  /* the season's numbers */
+  .sum3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sum3 > div { min-width: 0; }
+  .sum3 span { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .sum3 b { display: block; margin-top: 2px; font-size: 21px; font-weight: 800; letter-spacing: -.3px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { height: 8px; border-radius: 99px; background: var(--fill); overflow: hidden; margin-top: 14px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; background: var(--green-btn); transition: width .3s; }
+  .sum-note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .big-owe { font-size: 34px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
 
-  .panel {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    box-shadow: var(--shadow); padding: 18px; margin-bottom: 18px;
-  }
-  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  .panel-head h3 { margin: 0; font-size: 15px; }
+  /* the month being collected */
+  .month-nav { display: flex; align-items: center; gap: 8px; }
+  .month-nav > div { flex: 1; text-align: center; min-width: 0; }
+  .month-nav h2 { margin: 0; font-size: 20px; font-weight: 700; }
+  .month-nav p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .icon-btn { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: 0; background: var(--fill); color: var(--ink); cursor: pointer; padding: 0; }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .link-btn { border: 0; background: none; padding: 0; font-size: 15px; font-weight: 600; color: var(--green); cursor: pointer; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  th { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
-  tbody tr:hover { background: #fafbfa; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-  .pill.paid { background: var(--green-light); color: var(--green-dark); }
+  /* paid / unpaid / exempt */
+  .pill { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 0; cursor: pointer; white-space: nowrap; }
+  .pill.paid { background: var(--green-light); color: var(--green); }
   .pill.unpaid { background: var(--red-bg); color: var(--red); }
-  .pill.exempt { background: #eef1ff; color: #4453b8; }
-
-  button, .btn {
-    appearance: none; font-family: inherit; font-size: 14px; font-weight: 600;
-    padding: 9px 15px; border-radius: 9px; border: 1px solid var(--line);
-    background: var(--card); color: var(--ink); cursor: pointer; transition: .12s;
-  }
-  button:hover, .btn:hover { border-color: #c3d0c8; background: #f7faf8; }
-  .btn-primary { background: var(--green); border-color: var(--green); color: #fff; }
-  .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
-  .btn-sm { padding: 5px 10px; font-size: 13px; }
-  .btn-danger { color: var(--red); border-color: #ecc6c2; }
-  .btn-danger:hover { background: var(--red-bg); }
-  .btn-ghost { border-color: transparent; background: transparent; }
-
-  input, select, textarea {
-    font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line);
-    border-radius: 9px; background: #fff; color: var(--ink); width: 100%;
-  }
-  /* iOS gives date and month fields a minimum width and centred text, so they
-     spill past the form's edge; keep them to the width of the other fields */
-  input[type=date], input[type=month] {
-    -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%;
-    display: block; text-align: left; min-height: 40px;
-  }
-  input[type=date]::-webkit-date-and-time-value, input[type=month]::-webkit-date-and-time-value { text-align: left; }
-  .form-grid > * { min-width: 0; }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: var(--green); }
-  label.field { display: block; margin-bottom: 12px; }
-  label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--muted); }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
-  @media (max-width: 620px){ .form-grid { grid-template-columns: 1fr; } }
-
-  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .toolbar .grow { flex: 1; min-width: 140px; }
-
-  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
-  .empty .big { font-size: 40px; margin-bottom: 8px; }
-
-  /* Modal */
-  .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(15,25,20,.5); display: none;
-    align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50; overflow-y: auto;
-  }
-  .modal-backdrop.open { display: flex; }
-  .modal {
-    background: var(--card); border-radius: 14px; width: 100%; max-width: 560px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; animation: pop .15s ease;
-  }
-  @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
-  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
-  .modal-head h3 { margin: 0; font-size: 16px; }
-  .modal-body { padding: 20px; }
-  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; background: #fafbfa; }
-
-  .subs-grid-wrap { overflow-x: auto; }
-  .month-picker { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .pill.exempt { background: #eef2ff; color: #4338ca; }
+  .wa { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: var(--wa); color: #fff; text-decoration: none; }
+  .wa svg { width: 18px; height: 18px; }
+  .no-num { flex-shrink: 0; font-size: 12px; color: var(--muted); }
   .money { font-variant-numeric: tabular-nums; font-weight: 700; }
   .owe { color: var(--red); font-weight: 700; }
-  .clear { color: var(--green-dark); font-weight: 700; }
+  .clear { color: var(--green); font-weight: 700; }
   .muted { color: var(--muted); }
-  /* a table cell, not a flex box, so it lines up with the rest of its row */
-  .row-actions { text-align: right; white-space: nowrap; vertical-align: middle; }
-  .row-actions .btn + .btn { margin-left: 6px; }
-  /* a player's name: tap it for their card (balance, joined, parent's phone) */
-  .name-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
-  .name-btn:hover { text-decoration-color: currentColor; }
-  .pc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-  .pc-stats div { background: var(--green-light); border-radius: 8px; padding: 8px 10px; }
-  .pc-stats b { display: block; font-size: 16px; }
-  .pc-stats span { font-size: 11px; color: var(--muted); }
-  .pc-old { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
-  .pc-old p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .checkline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .checkline input[type=checkbox] { width: auto; }
-  .hint { font-size: 12px; color: var(--muted); background: var(--green-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
-  .flag { font-size: 11px; background: var(--red-bg); color: var(--red); padding: 2px 7px; border-radius: 6px; font-weight: 600; margin-left: 6px; }
-  .monthlbl { font-weight: 700; font-size: 15px; min-width: 150px; text-align: center; }
-  .report-overlay { position: fixed; inset: 0; background: #fff; z-index: 80; overflow-y: auto; display: none; }
-  .report-overlay.open { display: block; }
-  .report-actions { position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--line); padding: 12px 20px; display: flex; gap: 8px; justify-content: flex-end; }
-  .report-body { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; }
-  .report-body h1 { font-size: 22px; margin: 0 0 2px; }
-  .report-body .report-meta { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
-  .report-body h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 2px solid var(--green); padding-bottom: 4px; color: var(--green-dark); }
-  .report-body table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .report-body th, .report-body td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
-  .report-body td.num, .report-body th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .report-body tr.tot td { font-weight: 800; border-top: 2px solid var(--ink); border-bottom: none; }
-  .report-body .pos { color: var(--green-dark); font-weight: 700; }
-  .report-body .neg { color: var(--red); font-weight: 700; }
-  @media print {
-    nav.tabs, .toolbar, .row-actions, header.app .header-spacer, .hub-link { display: none !important; }
-    body { background: #fff; }
-    body.report-open header.app, body.report-open nav.tabs, body.report-open main, body.report-open .modal-backdrop { display: none !important; }
-    body.report-open .report-overlay { position: static; display: block; }
-    .report-actions { display: none !important; }
-  }
-  /* Login gate */
-  body.locked header.app, body.locked nav.tabs, body.locked main { display: none !important; }
-  .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
-    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); }
-  body.locked .gate { display: flex; }
-  .gate-card { background: var(--card); border-radius: 16px; padding: 28px 26px; width: 100%; max-width: 380px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.3); text-align: center; }
-  .gate-lock { width: 56px; height: 56px; border-radius: 50%; background: var(--green-light); color: var(--green-dark);
-    display: grid; place-items: center; font-size: 26px; margin: 0 auto 14px; }
-  .gate-card h2 { margin: 0 0 4px; font-size: 19px; }
-  .gate-card p.gate-sub { margin: 0 0 18px; font-size: 13px; color: var(--muted); }
-  .gate-card input { margin-bottom: 12px; text-align: center; }
-  .gate-err { color: var(--red); font-size: 13px; margin-bottom: 10px; min-height: 17px; }
-  .gate-note { margin-top: 14px; font-size: 12px; color: var(--muted); line-height: 1.45; }
-  .wa-btn { display:inline-block; background:#25D366; color:#fff; border:1px solid #1da851; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap; line-height:1.3; }
-  .wa-btn:hover { background:#1da851; color:#fff; }
 
-  /* ── Team Hub look: paint-stroke banner, Anton lettering, club colours ── */
-  :root { --pitch: var(--club-bright, #3ee04f); --night: var(--club-night, #060906); --radius: 18px; --shadow: 0 4px 18px rgba(6,9,6,.07), 0 1px 3px rgba(6,9,6,.05); --bg: #f1f5f2; }
-  .display { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .4px; }
-  header.app { position: relative; overflow: hidden; background: var(--night); padding: 20px 20px 26px; }
-  header.app::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center 30%/cover; opacity: .7; filter: var(--club-brush-filter, none); }
-  header.app::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in oklch, var(--green-dark) 35%, transparent), color-mix(in oklch, var(--green-dark) 85%, black)); }
-  header.app > * { position: relative; z-index: 1; }
-  .badge { width: 58px; height: 58px; border-radius: 16px; background: transparent; box-shadow: none; padding: 0; }
-  .badge img { filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
-  .header-titles h1 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; font-size: 26px; line-height: 1.05; letter-spacing: .5px; text-shadow: 3px 3px 0 rgba(0,0,0,.7); }
-  .header-titles p { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #dcfce7; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 3px 10px; opacity: 1; }
-  header.app .btn-sm { border-radius: 999px; padding: 6px 12px; backdrop-filter: blur(4px); }
-  nav.tabs { background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); box-shadow: 0 2px 10px rgba(6,9,6,.04); }
-  .tabs-inner { padding: 8px 12px; gap: 6px; scrollbar-width: none; }
-  .tabs-inner::-webkit-scrollbar { display: none; }
-  .tab { border: none; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 13.5px; }
-  .tab:hover { background: var(--green-light); border-color: transparent; }
-  .tab.active { background: var(--green); color: #fff; border-bottom-color: transparent; box-shadow: 0 3px 10px color-mix(in oklch, var(--green) 30%, transparent); }
-  h2.section { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .5px; font-size: 26px; color: var(--green-dark); line-height: 1.1; }
-  .stat { position: relative; overflow: hidden; border: none; padding: 18px 18px 16px; }
-  .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--line); }
-  .stat.good::before { background: linear-gradient(180deg, #3ee04f, var(--green)); }
-  .stat.warn::before { background: linear-gradient(180deg, #f9c74f, var(--amber)); }
-  .stat.bad::before { background: linear-gradient(180deg, #f28b82, var(--red)); }
-  .stat .value { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 36px; letter-spacing: .5px; line-height: 1.1; }
-  .panel { border: none; padding: 20px; }
-  .panel-head h3 { font-size: 16px; font-weight: 800; }
-  th { background: #f6f9f7; }
-  th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
-  button, .btn { border-radius: 12px; }
-  .btn-primary { background: linear-gradient(135deg, var(--green), var(--green-dark)); box-shadow: 0 3px 10px color-mix(in oklch, var(--green) 25%, transparent); }
-  .pill { font-weight: 700; }
-  .modal { border-radius: 20px; }
-  .modal-head h3 { font-weight: 800; }
-  .gate { background: var(--night); }
-  .gate::before { content: ""; position: absolute; inset: 0; background: url(/poster/brush-background.jpg) center/cover; opacity: .7; filter: var(--club-brush-filter, none); }
-  .gate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in oklch, var(--green-dark) 30%, transparent), color-mix(in oklch, var(--green-dark) 90%, black)); }
-  .gate-card { position: relative; z-index: 1; border-radius: 24px; padding: 30px 26px 24px; }
-  .gate-logo { width: 84px; height: 84px; border-radius: 22px; display: block; margin: -72px auto 14px; box-shadow: 0 10px 24px rgba(0,0,0,.35); border: 4px solid #fff; }
-  .gate-kicker { font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; font-size: 28px; letter-spacing: .5px; color: var(--green-dark); line-height: 1; margin: 0 0 10px; }
-  .gate-card h2 { font-size: 16px; }
-  .gate-card input { border-radius: 12px; padding: 12px; font-size: 16px; }
-  .gate-card .btn-primary { padding: 12px; font-size: 15px; }
-  .app-foot { text-align: center; padding: 28px 20px 34px; background: var(--night); }
-  .app-foot p { margin: 0; font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; color: var(--pitch); font-size: 17px; letter-spacing: .5px; }
-  .app-foot small { display: block; margin-top: 6px; color: #9ca3af; font-size: 12px; }
-  body.locked .app-foot { display: none; }
-  @media (max-width: 620px) {
-    .header-inner { gap: 10px; }
-    .header-titles h1 { font-size: 22px; }
-    .stat .value { font-size: 30px; }
-    .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .stat { padding: 14px 12px 12px 16px; }
-    .stat .label { font-size: 10.5px; }
-    main { padding: 18px 12px 48px; }
-    .panel { padding: 14px 12px; }
-    table { font-size: 13px; }
-    th, td { padding: 9px 6px; }
-    th { font-size: 10.5px; letter-spacing: .3px; }
-    td select { padding: 7px 4px; min-width: 0; }
-    td .pill, td button .pill { padding: 3px 8px; }
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 14px; padding: 12px 16px; font-size: 15px; font-weight: 700; background: var(--fill); color: var(--ink); cursor: pointer; text-decoration: none; }
+  .btn:disabled { opacity: .45; }
+  .btn-primary { background: var(--green-btn); color: #fff; }
+  .btn-primary:hover, .btn-wa:hover { filter: brightness(.94); }
+  .btn-wa { background: var(--wa); color: #fff; }
+  .btn-sm { padding: 8px 12px; font-size: 14px; border-radius: 12px; }
+  .btn-danger { color: var(--red); }
+  .btn-ghost { background: none; }
+  .actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+  .actions .grow { flex: 1; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* a ••• menu */
+  .more { position: relative; flex-shrink: 0; }
+  .more-btn { width: 46px; height: 46px; font-weight: 800; letter-spacing: 1px; }
+  .more-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; background: var(--card); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.04); overflow: hidden; }
+  .more.open .more-menu { display: block; }
+  .more-menu button { display: block; width: 100%; padding: 13px 16px; border: 0; border-top: 1px solid var(--sep); background: none; text-align: left; font-size: 16px; cursor: pointer; }
+  .more-menu button:first-child { border-top: 0; }
+
+  /* forms */
+  input, select, textarea { font-family: inherit; font-size: 16px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); width: 100%; }
+  /* iOS gives date and month fields a minimum width and centred text, so they
+     spill past the form's edge; keep them to the width of the other fields */
+  input[type=date], input[type=month] { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%; display: block; text-align: left; min-height: 46px; }
+  input[type=date]::-webkit-date-and-time-value, input[type=month]::-webkit-date-and-time-value { text-align: left; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--green-btn); outline-offset: 0; border-color: transparent; }
+  label.field { display: block; margin-bottom: 12px; }
+  label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--muted); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .form-grid > * { min-width: 0; }
+  @media (max-width: 620px){ .form-grid { grid-template-columns: 1fr; } }
+  .checkline { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 15px; }
+  .checkline input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--green-btn); }
+  .hint { font-size: 13px; color: var(--muted); background: var(--green-light); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; }
+
+  .empty { text-align: center; padding: 36px 20px; color: var(--muted); }
+  .empty .big { font-size: 36px; margin-bottom: 6px; }
+  .empty strong { color: var(--ink); font-size: 16px; }
+
+  /* a player's card */
+  .pc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .pc-stats div { background: var(--fill); border-radius: 14px; padding: 10px 12px; }
+  .pc-stats b { display: block; font-size: 17px; }
+  .pc-stats span { font-size: 12px; color: var(--muted); }
+  .pc-old { border-radius: 14px; background: var(--fill); padding: 12px 14px; margin-top: 12px; font-size: 13px; }
+  .pc-old p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* sheets: from the bottom on a phone, in the middle on a computer */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; padding: 24px 16px; z-index: 50; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--bg); border-radius: 24px; width: 100%; max-width: 520px; max-height: calc(100dvh - 48px); display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .18s ease; }
+  @keyframes pop { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 6px; }
+  .modal-head h3 { margin: 0; font-size: 17px; font-weight: 700; flex: 1; text-align: center; padding-left: 36px; }
+  #modal-x { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--fill); color: var(--muted); cursor: pointer; font-size: 15px; }
+  .modal-body { padding: 10px 18px 6px; overflow-y: auto; overscroll-behavior: contain; }
+  .modal-foot { display: flex; gap: 8px; padding: 10px 18px max(16px, env(safe-area-inset-bottom)); }
+  .modal-foot:empty { display: none; }
+  .modal-foot button { flex: 1; }
+  .modal-foot .btn-danger { flex: 0 0 auto; }
+  @media (max-width: 620px){
+    .modal-backdrop { align-items: flex-end; padding: 0; }
+    .modal { border-radius: 24px 24px 0 0; max-width: none; max-height: 92dvh; }
+    @keyframes pop { from { transform: translateY(40px); } to { transform: none; } }
   }
-  @media print { .app-foot { display: none !important; } header.app::before, header.app::after { display: none; } header.app { background: var(--green); } }
-  /* Settings laid out like a phone's (and the hub's Your Account): rounded groups of rows, each opening its panel */
-  #fs-list .fs-group { background: #fff; border-radius: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 14px; }
-  .fs-row { display: flex; align-items: center; gap: 16px; width: 100%; padding: 16px 20px; background: none; border: 0; border-top: 1px solid #f1f2f4; font: inherit; color: #111827; cursor: pointer; text-align: left; }
+  /* a list of choices in a sheet */
+  .choices { background: var(--card); border-radius: 16px; overflow: hidden; margin-bottom: 10px; }
+  .choices button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px 16px; border: 0; border-top: 1px solid var(--sep); background: none; font-size: 16px; text-align: left; cursor: pointer; }
+  .choices button:first-child { border-top: 0; }
+  .choices button.on::after { content: "✓"; color: var(--green-btn); font-weight: 800; }
+  .choices button.danger { color: var(--red); }
+
+  /* Settings: rows, each opening its own panel (with the phone's back gesture) */
+  #fs-list .fs-group { background: var(--card); border-radius: var(--radius); overflow: hidden; margin-top: 12px; }
+  .fs-row { display: flex; align-items: center; gap: 16px; width: 100%; padding: 15px 18px; background: none; border: 0; border-top: 1px solid var(--sep); font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
   .fs-group .fs-row:first-child { border-top: 0; }
-  .fs-row:hover { background: #f9fafb; }
+  .fs-row:hover { background: rgba(0,0,0,.02); }
   .fs-ico svg, .fs-chev svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
   .fs-ico { color: #374151; }
   .fs-label { flex: 1; font-size: 17px; }
   .fs-detail { color: #9ca3af; font-size: 15px; }
-  .fs-chev { color: #d1d5db; }
-  .fs-chev svg { width: 20px; height: 20px; stroke-width: 2.2; }
-  .fs-top { display: none; align-items: center; justify-content: space-between; margin: 0 0 14px; }
-  .fs-top h2 { margin: 0; font-size: 18px; font-weight: 700; color: #111827; text-align: center; flex: 1; }
+  .fs-chev { color: #c7c7cc; }
+  .fs-chev svg { width: 18px; height: 18px; stroke-width: 2.2; }
+  .fs-top { display: none; align-items: center; justify-content: space-between; margin: 4px 0 4px; }
+  .fs-top h2 { margin: 0; font-size: 17px; font-weight: 700; text-align: center; flex: 1; }
   .fs-top span { width: 44px; }
-  .fs-back { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: grid; place-items: center; cursor: pointer; color: #111827; flex-shrink: 0; }
+  .fs-back { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.12); display: grid; place-items: center; cursor: pointer; color: var(--ink); flex-shrink: 0; }
   .fs-back::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
-  #view-settings.fs-open #fs-list, #view-settings.fs-open #fs-heading, #view-settings.fs-open #fs-sub { display: none; }
+  #view-settings.fs-open #fs-list { display: none; }
   #view-settings.fs-open .fs-top { display: flex; }
   #view-settings:not(.fs-open) .fs-panel, #view-settings.fs-open .fs-panel:not(.fs-on) { display: none !important; }
   #view-settings .fs-panel .panel-head { display: none; }
+  .panel { background: var(--card); border-radius: var(--radius); padding: 18px; margin-top: 12px; }
+  .panel > p:first-of-type { margin-top: 0; }
+
+  /* the season report, to print */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .report-overlay { position: fixed; inset: 0; background: #fff; color: #111827; z-index: 80; overflow-y: auto; display: none; }
+  .report-overlay.open { display: block; }
+  .report-actions { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; padding-top: max(12px, env(safe-area-inset-top)); display: flex; gap: 8px; justify-content: flex-end; }
+  .report-actions .btn:not(.btn-primary) { background: #f3f4f6; color: #111827; }
+  .report-body { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; }
+  .report-body h1 { font-size: 22px; margin: 0 0 2px; }
+  .report-body .report-meta { color: #6b7280; font-size: 13px; margin: 0 0 6px; }
+  .report-body h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 2px solid var(--green); padding-bottom: 4px; color: var(--green-dark); }
+  .report-body table { font-size: 13px; }
+  .report-body th, .report-body td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; color: #111827; }
+  .report-body tr.tot td { font-weight: 800; border-top: 2px solid #111827; border-bottom: none; }
+  .report-body .pos { color: #166534; font-weight: 700; }
+  .report-body .neg { color: #dc2626; font-weight: 700; }
+  @media print {
+    nav.tabs, .actions, .round-btn, .hub-head, .wa, .no-num { display: none !important; }
+    body { background: #fff; }
+    .group, .card { border: 1px solid #e5e7eb; }
+    body.report-open header.app, body.report-open nav.tabs, body.report-open main, body.report-open .modal-backdrop { display: none !important; }
+    body.report-open .report-overlay { position: static; display: block; }
+    .report-actions { display: none !important; }
+  }
+
+  /* ── locked: the team password, or opening with your account ── */
+  body.locked header.app, body.locked nav.tabs, body.locked main { display: none !important; }
+  .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
+  body.locked .gate { display: flex; }
+  .gate-card { width: 100%; max-width: 400px; text-align: center; margin: auto; }
+  .gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 10px; }
+  .gate-kicker { font-size: 30px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
+  .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
+  .gate-card p.gate-sub { margin: 4px 0 18px; font-size: 14px; color: var(--muted); }
+  .gate-card form, #account-box { background: var(--card); border-radius: var(--radius); padding: 18px; text-align: left; }
+  .gate-card input, .gate-card select { margin-bottom: 10px; }
+  .gate-card .btn-primary { width: 100%; padding: 14px; font-size: 16px; }
+  .gate-err { color: var(--red); font-size: 13px; margin-bottom: 8px; }
+  .gate-err:empty { margin: 0; }
+  .gate-note { margin-top: 14px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+  #setup-toggle { color: var(--green); font-weight: 700; font-size: 14px; text-decoration: none; }
+
   /* Dark mode (the hub's Your Account → Appearance; the script in <head> sets html.dark). Screen only: printing stays light. */
   @media screen {
     html.dark { color-scheme: dark;
-      --ink: #f5f5f7; --muted: #a1a1a8; --line: #2c2c2e; --bg: #000; --card: #1c1c1e;
-      --green-light: rgba(74,222,128,.14); --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12); --red: #f87171; --red-bg: rgba(248,113,113,.12);
-      --shadow: none; }
-    html.dark body { background: #000; }
-    html.dark h2.section { color: var(--pitch); }
-    html.dark nav.tabs { background: rgba(28,28,30,.92); }
-    html.dark .tab:not(.active) { background: transparent; color: #d1d5db; }
-    html.dark .pill.paid { color: #86efac; }
-    html.dark .pill.exempt { background: rgba(129,140,248,.16); color: #a5b4fc; }
-    html.dark tbody tr:hover { background: #242426; }
-    html.dark th { background: #242426; }
-    html.dark button:hover, html.dark .btn:hover { border-color: #3a3a3c; background: #2c2c2e; }
-    html.dark .btn-primary:hover { background: var(--green-dark); }
-    html.dark .btn-danger { border-color: rgba(248,113,113,.4); }
-    html.dark input, html.dark select, html.dark textarea { background: #2c2c2e; border-color: #3a3a3c; }
-    html.dark .modal-foot { background: #242426; }
-    html.dark #fs-list .fs-group, html.dark .fs-back { background: var(--card); color: var(--ink); }
-    html.dark .fs-row { color: var(--ink); border-top-color: #2c2c2e; }
-    html.dark .fs-row:hover { background: #2c2c2e; }
+      --ink: #f5f5f7; --muted: #98989f; --line: #3a3a3c; --sep: #2c2c2e; --bg: #000; --card: #1c1c1e; --fill: rgba(118,118,128,.24);
+      --green: #4ade80; --green-light: rgba(74,222,128,.14); --red: #f87171; --red-bg: rgba(248,113,113,.14); --amber: #fbbf24; }
+    html.dark .round-btn { background: rgba(28,28,30,.85); color: #e5e7eb; }
+    html.dark .tab.active { background: #636366; }
+    html.dark .av { background: #2c2c2e; color: #e5e7eb; }
+    html.dark .pill.exempt { background: rgba(129,140,248,.18); color: #a5b4fc; }
     html.dark .fs-ico { color: #d1d5db; }
-    html.dark .fs-chev { color: #5a5a60; }
-    html.dark .fs-top h2 { color: var(--ink); }
+    html.dark .chev, html.dark .fs-chev { color: #5a5a60; }
+    html.dark .modal { background: #000; }
+    html.dark button.row:hover, html.dark .fs-row:hover { background: rgba(255,255,255,.04); }
+    html.dark .more-menu { box-shadow: 0 10px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
   }
 </style>
 </head>
 <body class="locked">
 <div class="gate" id="gate">
   <div class="gate-card">
-    <img class="gate-logo" src="/finance/icon-192.png" alt="">
-    <p class="gate-kicker">Financial Admin</p>
+    <img class="gate-logo" id="gate-crest" src="/club-crest.png" alt="">
+    <p class="gate-kicker">Finances</p>
     <h2 id="gate-title">Enter Password</h2>
     <p class="gate-sub" id="gate-sub">This tracker is password protected.</p>
     <div id="account-box" style="display:none;margin-bottom:14px">
@@ -367,89 +313,85 @@
     <p class="gate-note" id="gate-note"></p>
   </div>
 </div>
-<header class="app">
-  <div class="header-inner">
-    <div class="badge"><img id="club-badge" src="" alt=""></div>
-    <div class="header-titles">
-      <h1 id="app-title">Financial Admin</h1>
-      <p>Financial Admin &middot; subs &amp; spending</p>
-    </div>
-    <div class="header-spacer"></div>
-    <span id="sync-status" title="Sync status" style="color:#fff;font-size:12px;font-weight:600;opacity:.9;margin-right:4px;white-space:nowrap"></span>
-    <button class="btn btn-sm" id="lock-btn" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff">🔒 Lock</button>
+<header class="app wrap">
+  <!-- like Home's header: your photo (Your Account), Lock, Search, the club's crest -->
+  <div class="hub-head">
+    <a class="hub-me" id="hub-me" href="/account" aria-label="Your account">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+    </a>
+    <span class="hub-head-right">
+      <button class="round-btn" id="lock-btn" aria-label="Lock" title="Lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
+      <a class="round-btn" href="/search" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </a>
+      <img class="hub-crest" id="club-badge" src="/club-crest.png" alt="">
+    </span>
   </div>
+  <h1 class="fin-title">Finances</h1>
+  <p class="fin-sub"><span><span id="app-title">Team</span><span id="season-lbl"></span></span><span id="sync-status" title="Sync status"></span></p>
 </header>
 
-<nav class="tabs">
-  <div class="tabs-inner" id="tabs">
-    <button class="tab active" data-view="dashboard">📊 Dashboard</button>
-    <button class="tab" data-view="subs">💷 Monthly Subs</button>
-    <button class="tab" data-view="outstanding">📋 Who Owes</button>
-    <button class="tab" data-view="expenses">🧾 Expenses</button>
-    <button class="tab" data-view="settings">⚙️ Settings</button>
+<nav class="tabs wrap">
+  <div class="tabs-inner" id="tabs" role="tablist">
+    <button class="tab active" data-view="subs" role="tab">Subs</button>
+    <button class="tab" data-view="outstanding" role="tab">Who Owes</button>
+    <button class="tab" data-view="expenses" role="tab">Spending</button>
+    <button class="tab" data-view="settings" role="tab">Settings</button>
   </div>
 </nav>
 
-<main>
-  <!-- DASHBOARD -->
-  <section class="view active" id="view-dashboard">
-    <h2 class="section">Season Overview</h2>
-    <p class="section-sub" id="dash-season-line"></p>
-    <div class="cards" id="dash-cards"></div>
-    <div class="panel">
-      <div class="panel-head"><h3>Monthly Collection</h3><button class="btn btn-sm" data-goto="subs">Collect Subs →</button></div>
-      <div id="dash-months"></div>
+<main class="wrap">
+  <!-- SUBS: the season so far, then a month's players, ticked off as they pay -->
+  <section class="view active" id="view-subs">
+    <div class="card" id="dash-cards"></div>
+    <div class="card">
+      <div class="month-nav">
+        <button class="icon-btn" id="prev-month" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div><h2 id="cur-month-lbl"></h2><p id="month-progress"></p></div>
+        <button class="icon-btn" id="next-month" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div class="bar"><i id="month-bar" style="width:0"></i></div>
     </div>
-    <div class="panel">
-      <div class="panel-head"><h3>Top Outstanding Balances</h3><button class="btn btn-sm" data-goto="outstanding">View All →</button></div>
-      <div id="dash-owes"></div>
-    </div>
+    <div class="group-head"><span>Players</span><button class="link-btn" id="mark-all-paid">Mark All Paid</button></div>
+    <div class="group" id="subs-table"></div>
+    <p class="foot-note">Tap <strong>Unpaid</strong> when they pay. Tap <strong>Paid</strong> to change how, or to exempt them this month. Tap a name for their card.</p>
+    <div class="group-head"><span>This Season</span></div>
+    <div class="group" id="dash-months"></div>
   </section>
 
-  <!-- MONTHLY SUBS -->
-  <section class="view" id="view-subs">
-    <h2 class="section">Monthly Subs</h2>
-    <p class="section-sub">Pick a month, then tick off who has paid their monthly fee.</p>
-    <div class="hint">💡 Tip: tap a player's status to cycle Paid → Unpaid → Exempt. Exempt is handy for a player who's away or on a free trial that month.</div>
-    <div class="month-picker">
-      <button class="btn" id="prev-month">‹ Prev</button>
-      <span class="monthlbl" id="cur-month-lbl"></span>
-      <button class="btn" id="next-month">Next ›</button>
-      <button class="btn btn-sm" id="mark-all-paid" style="margin-left:auto">Mark All Paid</button>
-    </div>
-    <div class="panel" id="subs-panel">
-      <div class="subs-grid-wrap" id="subs-table"></div>
-    </div>
-  </section>
-
-  <!-- OUTSTANDING -->
+  <!-- WHO OWES: everyone behind, to chase -->
   <section class="view" id="view-outstanding">
-    <h2 class="section">Who Owes Money</h2>
-    <p class="section-sub">Outstanding monthly subs across the season — your chase-up list.</p>
-    <div class="toolbar" style="margin-bottom:16px">
-      <button class="btn btn-sm btn-primary" id="wa-remind-all">💬 Remind All Unpaid</button>
-      <button class="btn btn-sm" id="copy-chase">Copy Chase-Up List</button>
-      <button class="btn btn-sm" id="print-owes">Print</button>
+    <div class="card">
+      <div id="owes-total"></div>
+      <div class="actions" id="owes-actions">
+        <button class="btn btn-wa grow" id="wa-remind-all">Remind All on WhatsApp</button>
+        <div class="more"><button class="icon-btn more-btn" aria-label="More" aria-haspopup="true">&bull;&bull;&bull;</button>
+          <div class="more-menu"><button id="copy-chase">Copy Chase-Up List</button><button id="print-owes">Print</button></div>
+        </div>
+      </div>
     </div>
-    <div class="panel"><div class="subs-grid-wrap" id="owes-table"></div></div>
+    <div class="group" id="owes-table"></div>
   </section>
 
-  <!-- EXPENSES -->
+  <!-- SPENDING: money in and out besides subs -->
   <section class="view" id="view-expenses">
-    <h2 class="section">Expenses &amp; Other Income</h2>
-    <p class="section-sub">Pitch hire, referees, kit, tournament fees, fundraising — track the full picture.</p>
-    <div class="toolbar" style="margin-bottom:16px">
-      <button class="btn btn-primary" id="add-expense-btn">+ Add Entry</button>
-      <button class="btn" id="season-report-btn">📄 Season Report</button>
+    <div class="card">
+      <div id="expense-cards"></div>
+      <div class="actions">
+        <button class="btn btn-primary grow" id="add-expense-btn">Add Money In or Out</button>
+        <div class="more"><button class="icon-btn more-btn" aria-label="More" aria-haspopup="true">&bull;&bull;&bull;</button>
+          <div class="more-menu"><button id="season-report-btn">Season Report</button></div>
+        </div>
+      </div>
     </div>
-    <div class="cards" id="expense-cards"></div>
-    <div class="panel"><div class="subs-grid-wrap" id="expenses-table"></div></div>
+    <div class="group-head"><span>Entries</span></div>
+    <div class="group" id="expenses-table"></div>
   </section>
 
   <!-- SETTINGS -->
   <section class="view" id="view-settings">
-    <h2 class="section" id="fs-heading">Settings &amp; Backup</h2>
-    <p class="section-sub" id="fs-sub">Set your monthly fee, season and start month, and keep a backup of your data.</p>
     <!-- the settings as a phone's: a list of rows, each opening its panel on its own -->
     <div class="fs-top" id="fs-top"><button class="fs-back" id="fs-back" aria-label="Back to Settings"></button><h2 id="fs-title"></h2><span></span></div>
     <div id="fs-list">
@@ -520,7 +462,6 @@
     </div>
   </section>
 </main>
-<footer class="app-foot"><p id="foot-slogan"></p><small><span id="foot-club"></span> &middot; Financial Admin</small></footer>
 
 <!-- MODAL -->
 <div class="report-overlay" id="report-overlay">
@@ -567,10 +508,14 @@
     Object.entries(c.colourVars || {}).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
     TEAM_IDS = c.teams.map(t=>t.id);
     TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.name }]));
-    const slogan = $("#foot-slogan"); if(slogan) slogan.textContent = CLUB.slogan || '';
-    const club = $("#foot-club"); if(club) club.textContent = CLUB.fullName;
-    const badge = $("#club-badge"); if(badge){ badge.src = CLUB.crest; badge.alt = CLUB.name; }
+    ['#club-badge', '#gate-crest'].forEach(sel=>{ const img = $(sel); if(img){ img.src = CLUB.crest; img.alt = CLUB.name; } });
   }
+  // the header's profile button: your photo or initials (Your Account)
+  fetch('/api/auth/me', { cache:'no-store' }).then(r=> r.ok ? r.json() : null).then(me=>{
+    const u = me && me.user; const a = document.getElementById('hub-me'); if(!u || !a) return;
+    if(u.photo){ a.innerHTML = '<img alt="" src="' + String(u.photo).replace(/"/g, '') + '">'; return; }
+    a.textContent = u.initials || '?';
+  }).catch(()=>{});
   const teamName = (id) => (TEAMS[id] && TEAMS[id].name) || CLUB.name;
 
   const API_BASE = "/api/finance/team";
@@ -629,7 +574,7 @@
   function showRecoveryCode(code, intro){
     openModal('Your Team\u2019s Recovery Code', `
       <p class="muted" style="font-size:13px;margin-top:0">${esc(intro)}</p>
-      <p style="font:700 16px/1.4 ui-monospace,Menlo,monospace;white-space:nowrap;overflow-x:auto;text-align:center;background:#f3f4f6;border-radius:12px;padding:14px;margin:12px 0;user-select:all">${esc(code)}</p>
+      <p style="font:700 16px/1.4 ui-monospace,Menlo,monospace;white-space:nowrap;overflow-x:auto;text-align:center;background:var(--card);border-radius:12px;padding:14px;margin:12px 0;user-select:all">${esc(code)}</p>
       <p class="muted" style="font-size:13px">If the team password is ever forgotten, a coach can reset it in <strong>Coach Admin \u2192 Settings</strong> with this code and keep all the data. Keep it somewhere safe and private, like a password manager \u2014 not with the password. It won\u2019t be shown again.</p>
     `, [
       {label:'Copy Code', act: ()=>{ try { navigator.clipboard.writeText(code); flash('Recovery code copied'); } catch(e){} }},
@@ -929,6 +874,7 @@
     renderDashboard(); renderSubs(); renderOutstanding(); renderExpenses(); renderSettings();
   }
 
+  // The season so far, at the top of Subs, and each of its months below the players.
   function renderDashboard(){
     const collected = totalCollectedSubs();
     const outstanding = totalOutstanding();
@@ -948,44 +894,45 @@
       });
     });
     const rate = due>0 ? Math.round(got/due*100) : 100;
+    const sl = $("#season-lbl"); if(sl) sl.textContent = state.settings.season ? ' · ' + state.settings.season : '';
 
-    $("#dash-season-line").textContent = `${state.settings.team} · Season ${state.settings.season} · ${money(fee())}/month per player`;
     $("#dash-cards").innerHTML = `
-      <div class="stat good"><div class="label">Subs collected</div><div class="value">${money(collected)}</div><div class="sub">${nPlayers} players · ${months.length} month${months.length!==1?'s':''}</div></div>
-      <div class="stat ${outstanding>0?'bad':'good'}"><div class="label">Outstanding subs</div><div class="value">${money(outstanding)}</div><div class="sub">${outstanding>0?'To be chased':'All square 🎉'}</div></div>
-      <div class="stat ${rate>=90?'good':rate>=70?'warn':'bad'}"><div class="label">Collection rate</div><div class="value">${rate}%</div><div class="sub">${money(got)} of ${money(due)} due</div></div>
-      <div class="stat ${balance>=0?'good':'bad'}"><div class="label">Club balance</div><div class="value">${money(balance)}</div><div class="sub">Subs + income − expenses</div></div>`;
+      <div class="sum3">
+        <div><span>Collected</span><b class="clear">${money(collected)}</b></div>
+        <div><span>Outstanding</span><b class="${outstanding>0?'owe':''}">${money(outstanding)}</b></div>
+        <div><span>Balance</span><b class="${balance<0?'owe':''}">${money(balance)}</b></div>
+      </div>
+      <div class="bar"><i style="width:${Math.min(100,rate)}%"></i></div>
+      <p class="sum-note">${due>0 ? `${rate}% of this season’s subs collected (${money(got)} of ${money(due)})` : 'Nothing due yet this season'} · ${money(fee())} a month</p>`;
 
-    // monthly breakdown
-    const recent = [...months].reverse().slice(0,6);
-    if(!recent.length || !nPlayers){ $("#dash-months").innerHTML = emptyMsg("⚽", nPlayers?"No months yet":"No players yet", nPlayers?"Set a subs start month in Settings.":"Players in the hub\u2019s Members tab appear here automatically."); }
-    else {
-      $("#dash-months").innerHTML = `<table><thead><tr><th>Month</th><th class="num">Paid</th><th class="num">Unpaid</th><th class="num">Collected</th></tr></thead><tbody>${
-        recent.map(m=>{
-          let paid=0,unpaid=0;
-          activePlayers().forEach(pl=>{
-            if(!playerMonths(pl.id).includes(m)) return;
-            const p=getPay(m,pl.id);
-            if(p&&p.status==='paid') paid++;
-            else if(p&&p.status==='exempt'){}
-            else unpaid++;
-          });
-          return `<tr><td>${fmtMonth(m)}</td><td class="num clear">${paid}</td><td class="num ${unpaid?'owe':''}">${unpaid}</td><td class="num money">${money(paid*fee(m))}</td></tr>`;
-        }).join('')
-      }</tbody></table>`;
-    }
-    // top owes
-    const owes = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed).slice(0,6);
-    if(!owes.length){ $("#dash-owes").innerHTML = emptyMsg("✅","Everyone's paid up","No outstanding subs. Nice work!"); }
-    else {
-      $("#dash-owes").innerHTML = `<table><thead><tr><th>Player</th><th>Parent contact</th><th class="num">Owes</th></tr></thead><tbody>${
-        owes.map(x=>`<tr><td>${nameBtn(x.p)}<div class="muted" style="font-size:12px">${x.b.monthsBehind.length} month${x.b.monthsBehind.length!==1?'s':''} behind</div></td><td class="muted">${esc(x.p.parentName||'')} ${x.p.parentPhone?'· '+esc(x.p.parentPhone):''}</td><td class="num owe">${money(x.b.owed)}</td></tr>`).join('')
-      }</tbody></table>`;
-    }
+    // each month of the season, latest first: tap one to collect it
+    if(!months.length || !nPlayers){ $("#dash-months").innerHTML = emptyMsg("⚽", nPlayers?"No months yet":"No players yet", nPlayers?"Set a subs start month in Settings.":"Players in the hub’s Members tab appear here automatically."); return; }
+    $("#dash-months").innerHTML = [...months].reverse().map(m=>{
+      let paid=0, liable=0;
+      activePlayers().forEach(pl=>{
+        if(!playerMonths(pl.id).includes(m)) return;
+        const p=getPay(m,pl.id);
+        if(p&&p.status==='exempt') return;
+        liable++;
+        if(p&&p.status==='paid') paid++;
+      });
+      const all = paid === liable;
+      return `<button class="row" data-month="${m}">
+        <span class="row-main"><span class="row-title">${fmtMonth(m)}</span><span class="row-sub">${paid} of ${liable} paid${all?' ✓':''}</span></span>
+        <span class="row-end"><span class="money">${money(paid*fee(m))}</span>${all?'':`<span class="row-sub owe">${money((liable-paid)*fee(m))} to come</span>`}</span>
+        <span class="chev">${CHEV}</span>
+      </button>`;
+    }).join('');
   }
 
   function emptyMsg(icon,title,sub){
     return `<div class="empty"><div class="big">${icon}</div><strong>${title}</strong><br><span class="muted">${sub}</span></div>`;
+  }
+  const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+  const initials = name => String(name||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('') || '?';
+  // a player's initials and name (tap for their card), with a line under it
+  function playerLead(p, sub){
+    return `<button class="row-lead" data-edit-player="${p.id}" aria-label="${esc(p.name)}’s card"><span class="av">${esc(initials(p.name))}</span><span class="row-main"><span class="row-title">${esc(p.name)}</span>${sub?`<span class="row-sub">${sub}</span>`:''}</span></button>`;
   }
 
   // ---- MONTHLY SUBS ----
@@ -993,51 +940,67 @@
   function renderSubs(){
     $("#cur-month-lbl").textContent = fmtMonth(currentMonth);
     const f = fee(currentMonth);
-    const players = activePlayers().filter(p=>liableInMonth(p, currentMonth));
-    if(!activePlayers().length){ $("#subs-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub\u2019s Members tab appear here automatically."); return; }
-    if(!players.length){ $("#subs-table").innerHTML = emptyMsg("📅","No players for this month","Everyone joined after this month, or it's before your subs start month."); return; }
-    let collected=0;
-    const rows = players.map(pl=>{
+    const players = activePlayers().filter(p=>liableInMonth(p, currentMonth)).sort((a,b)=>a.name.localeCompare(b.name));
+    const progress = (txt, pct)=>{ $("#month-progress").textContent = txt; $("#month-bar").style.width = pct + '%'; };
+    if(!activePlayers().length){ progress('', 0); $("#subs-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub’s Members tab appear here automatically."); return; }
+    if(!players.length){ progress('', 0); $("#subs-table").innerHTML = emptyMsg("📅","No players for this month","Everyone joined after this month, or it’s before your subs start month."); return; }
+    let paidCount = 0, liable = 0;
+    $("#subs-table").innerHTML = players.map(pl=>{
       const p = getPay(currentMonth, pl.id) || {status:'unpaid'};
-      if(p.status==='paid') collected += f;
-      const statusPill = {
-        paid:`<span class="pill paid">Paid</span>`,
-        unpaid:`<span class="pill unpaid">Unpaid</span>`,
-        exempt:`<span class="pill exempt">Exempt</span>`
-      }[p.status] || `<span class="pill unpaid">Unpaid</span>`;
-      return `<tr>
-        <td>${nameBtn(pl)}${(p.status!=='paid' && p.status!=='exempt')?' '+waButton(pl, monthMessage(pl)):''}</td>
-        <td><button class="btn btn-sm status-btn" data-pid="${pl.id}">${statusPill}</button></td>
-        <td>
-          <select class="method-sel" data-pid="${pl.id}" style="max-width:130px">
-            ${['—','Cash','Bank transfer','Card','Standing order','Other'].map(m=>`<option ${(p.method||'—')===m?'selected':''}>${m}</option>`).join('')}
-          </select>
-        </td>
-        <td class="num money">${p.status==='paid'?money(f):p.status==='exempt'?'—':`<span class="muted">${money(f)} due</span>`}</td>
-      </tr>`;
+      if(p.status !== 'exempt') liable++;
+      if(p.status === 'paid') paidCount++;
+      const sub = p.status==='paid' ? [p.method && p.method!=='—' ? p.method : 'Paid', p.date ? fmtDay(p.date) : ''].filter(Boolean).join(' · ')
+        : p.status==='exempt' ? 'Exempt this month' : f > 0 ? `${money(f)} due` : 'Not paid';
+      const label = {paid:'Paid', exempt:'Exempt'}[p.status] || 'Unpaid';
+      return `<div class="row">
+        ${playerLead(pl, sub)}
+        ${p.status==='unpaid' ? waButton(pl, monthMessage(pl), true) : ''}
+        <button class="pill ${p.status in {paid:1,exempt:1} ? p.status : 'unpaid'} status-btn" data-pid="${pl.id}">${label}</button>
+      </div>`;
     }).join('');
-    const paidCount = players.filter(pl=>{const p=getPay(currentMonth,pl.id); return p&&p.status==='paid';}).length;
-    $("#subs-table").innerHTML = `
-      <div style="margin-bottom:10px" class="muted">Monthly fee: <strong>${money(f)}</strong> · Collected <strong class="clear">${money(collected)}</strong> · ${paidCount}/${players.length} paid</div>
-      <table><thead><tr><th>Player</th><th>Status</th><th>Method</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table>`;
+    progress(`${paidCount} of ${liable} paid · ${money(paidCount*f)} of ${money(liable*f)}`, liable ? Math.round(paidCount/liable*100) : 100);
   }
+  function fmtDay(iso){ return new Date(iso+"T00:00:00").toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
 
-  function cycleStatus(pid){
+  const METHODS = ['Cash','Bank transfer','Card','Standing order','Other'];
+  // Unpaid: one tap marks them paid (the way the last one paid). Paid or
+  // exempt: a sheet to change how they paid, exempt them, or undo it.
+  function tapStatus(pid){
+    const k = payKey(currentMonth,pid);
+    const cur = state.payments[k];
+    if(!cur || cur.status === 'unpaid'){
+      const method = state.settings.lastMethod || 'Cash';
+      state.payments[k] = {status:'paid', method, date:todayISO()};
+      save(); renderSubs(); renderDashboard();
+      flash('Paid · ' + method + ' — tap Paid to change');
+      return;
+    }
+    openStatusSheet(pid);
+  }
+  function openStatusSheet(pid){
+    const pl = state.players.find(x=>x.id===pid); if(!pl) return;
     const k = payKey(currentMonth,pid);
     const cur = state.payments[k] || {status:'unpaid'};
-    const order = ['unpaid','paid','exempt'];
-    let next = order[(order.indexOf(cur.status)+1)%order.length];
-    if(next==='paid'){ state.payments[k] = {status:'paid', method:cur.method||'Cash', date:todayISO()}; }
-    else if(next==='exempt'){ state.payments[k] = {status:'exempt', method:cur.method||'—'}; }
-    else { delete state.payments[k]; }
-    save(); renderSubs(); renderDashboard();
+    openModal(pl.name + ' · ' + fmtMonth(currentMonth), `
+      <div class="group-head" style="margin-top:4px"><span>Paid by</span></div>
+      <div class="choices">${METHODS.map(m=>`<button data-set-status="paid" data-method="${m}" class="${cur.status==='paid'&&cur.method===m?'on':''}">${m}</button>`).join('')}</div>
+      <div class="choices">
+        <button data-set-status="exempt" class="${cur.status==='exempt'?'on':''}">Exempt this month</button>
+        <button data-set-status="unpaid" class="danger">Not paid</button>
+      </div>`, [], true);
+    $$('#modal-body [data-set-status]').forEach(b=> b.onclick = ()=>{
+      const st = b.dataset.setStatus;
+      if(st==='paid'){ state.payments[k] = {status:'paid', method:b.dataset.method, date:(cur.status==='paid'&&cur.date)||todayISO()}; state.settings.lastMethod = b.dataset.method; }
+      else if(st==='exempt'){ state.payments[k] = {status:'exempt'}; }
+      else { delete state.payments[k]; }
+      save(); closeModal(); renderSubs(); renderDashboard();
+    });
   }
 
   // ---- A player's card ----
   // The squad is kept in the hub's Members tab (synced in by syncSquad); here
   // are only what the treasurer needs: the balance, the month subs start, the
   // parent's phone for reminders, and whether they've left.
-  function nameBtn(p){ return `<button class="name-btn" data-edit-player="${p.id}">${esc(p.name)}</button>`; }
   function playerCard(p){
     const b = playerBalance(p.id);
     const months = playerMonths(p.id).length;
@@ -1104,7 +1067,7 @@
     const left = state.players.filter(p=>p.archived).sort((a,b)=>a.name.localeCompare(b.name));
     const d = $("#fs-detail-left"); if(d) d.textContent = left.length ? String(left.length) : '';
     $("#left-list").innerHTML = left.length
-      ? `<table><tbody>${left.map(p=>{ const b = playerBalance(p.id); return `<tr><td>${nameBtn(p)}<div class="muted" style="font-size:12px">${p.autoArchived?'taken out of Members':'marked as left'}</div></td><td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:'<span class="clear">Clear</span>'}</td></tr>`; }).join('')}</tbody></table>`
+      ? `<div class="group" style="margin:0 -18px -18px;border-radius:0 0 var(--radius) var(--radius);border-top:1px solid var(--sep)">${left.map(p=>{ const b = playerBalance(p.id); return `<div class="row">${playerLead(p, p.autoArchived?'Taken out of Members':'Marked as left')}<span class="row-end">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:'<span class="clear">Clear</span>'}</span></div>`; }).join('')}</div>`
       : emptyMsg("👋","Nobody has left","Players taken out of Members show here.");
   }
   function deletePlayer(id){
@@ -1128,11 +1091,13 @@
     if(str.charAt(0) === '0') return DEFAULT_CC + str.slice(1); // UK national -> +44
     return str;
   }
-  function waButton(player, message){
+  const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.7 11.7 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
+  // a WhatsApp reminder to their parent, or (quiet) a note that there's no number
+  function waButton(player, message, quiet){
     const num = normalizePhone(player.parentPhone);
-    if(!num) return '<span class="muted" style="font-size:11px" title="No phone number on file for this parent">no number</span>';
+    if(!num) return quiet ? '' : `<button class="no-num" data-edit-player="${player.id}" style="border:0;background:none;cursor:pointer">No number</button>`;
     const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(message);
-    return '<a class="wa-btn" href="' + url + '" target="_blank" rel="noopener" title="Send a WhatsApp reminder">\uD83D\uDCAC WhatsApp</a>';
+    return '<a class="wa" href="' + url + '" target="_blank" rel="noopener" aria-label="Remind ' + esc(player.parentName || 'their parent') + ' on WhatsApp" title="Remind on WhatsApp">' + WA_ICON + '</a>';
   }
   function teamLabel(){ return (state.settings && state.settings.team) || (teamName(currentTeam)); }
   function owesMessage(p, b){
@@ -1159,7 +1124,7 @@
         + '<div style="font-weight:700;font-size:16px">' + esc(x.p.name) + ' <span class="owe" style="font-size:14px">' + money(x.b.owed) + '</span></div>'
         + '<div class="muted" style="font-size:13px;margin-bottom:10px">' + esc(x.p.parentName || 'Parent') + (num ? ' \u00b7 ' + esc(x.p.parentPhone) : '') + '</div>'
         + (num
-            ? '<div style="background:#f4f7f5;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;white-space:pre-wrap">' + esc(msg) + '</div>'
+            ? '<div style="background:var(--card);border-radius:14px;padding:12px 14px;font-size:14px;white-space:pre-wrap">' + esc(msg) + '</div>'
             : '<div class="hint" style="background:var(--red-bg);color:var(--red)">No phone number on file \u2014 tap the player\u2019s name to add one.</div>');
       const buttons = [];
       if(url) buttons.push({ label: '\uD83D\uDCAC Open WhatsApp', cls: 'btn-primary', act: ()=>{ window.open(url, '_blank', 'noopener'); } });
@@ -1173,36 +1138,42 @@
   // ---- OUTSTANDING ----
   function renderOutstanding(){
     const rows = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed);
-    if(!rows.length){ $("#owes-table").innerHTML = emptyMsg("✅","All paid up!","No outstanding subs across the whole squad."); return; }
     const total = rows.reduce((s,x)=>s+x.b.owed,0);
-    const showWA = true;
-    $("#owes-table").innerHTML = `
-      <div style="margin-bottom:10px"><strong class="owe">${money(total)}</strong> <span class="muted">outstanding across ${rows.length} player${rows.length!==1?'s':''}</span></div>
-      <table><thead><tr><th>Player</th><th>Months owed</th><th>Parent</th><th>Phone</th><th class="num">Owes</th>${showWA?'<th>Remind</th>':''}</tr></thead><tbody>${
-        rows.map(x=>`<tr><td>${nameBtn(x.p)}</td><td class="muted">${x.b.monthsBehind.map(fmtMonthShort).join(', ')}</td><td>${esc(x.p.parentName||'—')}</td><td class="muted">${esc(x.p.parentPhone||'—')}</td><td class="num owe">${money(x.b.owed)}</td>${showWA?`<td>${waButton(x.p, owesMessage(x.p, x.b))}</td>`:''}</tr>`).join('')
-      }</tbody></table>`;
+    $("#owes-total").innerHTML = rows.length
+      ? `<div class="big-owe owe">${money(total)}</div><div class="muted">outstanding from ${rows.length} player${rows.length!==1?'s':''} this season</div>`
+      : `<div class="big-owe clear">All paid up</div><div class="muted">Nobody owes any subs this season 🎉</div>`;
+    $("#owes-actions").style.display = rows.length ? '' : 'none';
+    $("#owes-table").style.display = rows.length ? '' : 'none';
+    $("#owes-table").innerHTML = rows.map(x=>`<div class="row">
+        ${playerLead(x.p, esc(x.b.monthsBehind.map(fmtMonthShort).join(', ')) + (x.p.parentName ? ' · ' + esc(x.p.parentName) : ''))}
+        <span class="row-end owe">${money(x.b.owed)}</span>
+        ${waButton(x.p, owesMessage(x.p, x.b))}
+      </div>`).join('');
   }
 
   // ---- EXPENSES ----
   function renderExpenses(){
     const {income, expense} = expenseTotals();
     const subs = totalCollectedSubs();
+    const net = subs+income-expense;
     $("#expense-cards").innerHTML = `
-      <div class="stat good"><div class="label">Total income</div><div class="value">${money(subs+income)}</div><div class="sub">Subs ${money(subs)} + other ${money(income)}</div></div>
-      <div class="stat bad"><div class="label">Total expenses</div><div class="value">${money(expense)}</div></div>
-      <div class="stat ${subs+income-expense>=0?'good':'bad'}"><div class="label">Net balance</div><div class="value">${money(subs+income-expense)}</div></div>`;
-    if(!state.expenses.length){ $("#expenses-table").innerHTML = emptyMsg("🧾","No entries yet","Add pitch hire, referee fees, kit purchases, tournament fees or fundraising income."); return; }
+      <div class="sum3">
+        <div><span>Money in</span><b class="clear">${money(subs+income)}</b></div>
+        <div><span>Money out</span><b class="${expense>0?'owe':''}">${money(expense)}</b></div>
+        <div><span>Balance</span><b class="${net<0?'owe':''}">${money(net)}</b></div>
+      </div>
+      <p class="sum-note">Money in is ${money(subs)} of subs${income?` and ${money(income)} other income`:''}.</p>`;
+    if(!state.expenses.length){ $("#expenses-table").innerHTML = emptyMsg("🧾","Nothing yet","Add pitch hire, referee fees, kit, tournament fees, or money in from fundraising."); return; }
     const list = [...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
-    $("#expenses-table").innerHTML = `<table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead><tbody>${
-      list.map(e=>`<tr>
-        <td>${fmtDate(e.date)}</td>
-        <td>${e.type==='income'?'<span class="pill paid">Income</span>':'<span class="pill unpaid">Expense</span>'}</td>
-        <td>${esc(e.category||'—')}</td>
-        <td>${esc(e.desc||'')}</td>
-        <td class="num money ${e.type==='income'?'clear':'owe'}">${e.type==='income'?'+':'−'}${money(e.amount)}</td>
-        <td class="row-actions"><button class="btn btn-sm" data-edit-expense="${e.id}">Edit</button></td>
-      </tr>`).join('')
-    }</tbody></table>`;
+    const arrow = up => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${up?'M12 19V5M6 11l6-6 6 6':'M12 5v14M6 13l6 6 6-6'}"/></svg>`;
+    $("#expenses-table").innerHTML = list.map(e=>{
+      const inc = e.type==='income';
+      return `<button class="row" data-edit-expense="${e.id}">
+        <span class="av ${inc?'in':'out'}">${arrow(!inc)}</span>
+        <span class="row-main"><span class="row-title">${esc(e.desc || e.category || (inc?'Income':'Expense'))}</span><span class="row-sub">${esc([e.desc ? e.category : '', fmtDate(e.date)].filter(Boolean).join(' · '))}</span></span>
+        <span class="row-end money ${inc?'clear':''}">${inc?'+':'−'}${money(e.amount)}</span>
+      </button>`;
+    }).join('');
   }
   function fmtDate(iso){
     if(!iso) return '';
@@ -1211,7 +1182,7 @@
   function openExpenseModal(id){
     const e = id ? state.expenses.find(x=>x.id===id) : {type:'expense', date:todayISO()};
     const cats = ['Pitch hire','Referee','Kit & equipment','League fees','Tournament','Insurance','First aid','Coaching course','Fundraising','Sponsorship','Other'];
-    openModal(id?'Edit Entry':'Add Entry', `
+    openModal(id?'Edit Entry':'Money In or Out', `
       <div class="form-grid">
         <label class="field"><span>Type</span><select id="ef-type"><option value="expense" ${e.type==='expense'?'selected':''}>Expense (money out)</option><option value="income" ${e.type==='income'?'selected':''}>Income (money in)</option></select></label>
         <label class="field"><span>Date</span><input id="ef-date" type="date" value="${esc(e.date||todayISO())}"></label>
@@ -1252,7 +1223,7 @@
     const foot = $("#modal-foot"); foot.innerHTML = '';
     (buttons||[]).forEach(b=>{
       const btn = document.createElement('button');
-      btn.textContent = b.label; if(b.cls) btn.className = b.cls;
+      btn.textContent = b.label; btn.className = 'btn ' + (b.cls || '');
       btn.onclick = b.act; foot.appendChild(btn);
     });
     $("#modal-backdrop").classList.add('open');
@@ -1306,7 +1277,7 @@
   }
 
   // ---------- Events ----------
-  const viewRenderers = { dashboard:renderDashboard, subs:renderSubs, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
+  const viewRenderers = { subs:()=>{ renderDashboard(); renderSubs(); }, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
   // ---- Settings as a list of rows, each opening its panel on its own (with the phone's back gesture) ----
   function fsSync(){
     const dev = $("#devices-panel");
@@ -1335,7 +1306,7 @@
   window.addEventListener('popstate', ()=> fsShow(history.state && history.state.fs || ''));
 
   function switchView(name){
-    $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
+    $$('.tab').forEach(t=>{ t.classList.toggle('active', t.dataset.view===name); t.setAttribute('aria-selected', t.dataset.view===name); });
     $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
     if(viewRenderers[name]) viewRenderers[name](); // always show fresh data
     syncSquad(false); // anyone new in Members, or gone from it
@@ -1344,7 +1315,12 @@
   document.addEventListener('click', e=>{
     const tab = e.target.closest('.tab'); if(tab){ switchView(tab.dataset.view); return; }
     const goto = e.target.closest('[data-goto]'); if(goto){ switchView(goto.dataset.goto); return; }
-    const sb = e.target.closest('.status-btn'); if(sb){ cycleStatus(sb.dataset.pid); return; }
+    const sb = e.target.closest('.status-btn'); if(sb){ tapStatus(sb.dataset.pid); return; }
+    const mo = e.target.closest('[data-month]'); if(mo){ currentMonth = mo.dataset.month; renderSubs(); window.scrollTo({top:0, behavior:'smooth'}); return; }
+    // the ••• menus: open one, or close them
+    const mb = e.target.closest('.more-btn');
+    $$('.more.open').forEach(m=>{ if(!mb || m !== mb.parentElement) m.classList.remove('open'); });
+    if(mb){ mb.parentElement.classList.toggle('open'); return; }
     const ep = e.target.closest('[data-edit-player]'); if(ep){ openPlayerModal(ep.dataset.editPlayer); return; }
     const ee = e.target.closest('[data-edit-expense]'); if(ee){ openExpenseModal(ee.dataset.editExpense); return; }
   });
@@ -1355,15 +1331,6 @@
   $("#add-expense-btn").onclick = ()=>openExpenseModal();
   $("#prev-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,-1); renderSubs(); };
   $("#next-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,1); renderSubs(); };
-
-  document.addEventListener('change', e=>{
-    const ms = e.target.closest('.method-sel');
-    if(ms){
-      const k = payKey(currentMonth, ms.dataset.pid);
-      const p = state.payments[k] || {status:'unpaid'};
-      p.method = ms.value; state.payments[k]=p; save();
-    }
-  });
 
   $("#mark-all-paid").onclick = ()=>{
     activePlayers().forEach(pl=>{
@@ -1415,7 +1382,7 @@
   // small toast
   let toastEl;
   function flash(msg){
-    if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1c2a22;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
+    if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:rgba(28,28,30,.94);color:#fff;padding:10px 18px;border-radius:999px;white-space:nowrap;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
     toastEl.textContent = msg; toastEl.style.opacity='1';
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.opacity='0', 2200);
   }
