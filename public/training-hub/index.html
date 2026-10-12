@@ -219,6 +219,9 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .home-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in oklch,var(--color-green-950,#052e16) 35%,transparent),transparent 40%,color-mix(in oklch,var(--color-green-950,#052e16) 85%,transparent))}
 .home-hero>*{position:relative;z-index:1}
 .home-back{align-self:flex-start;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);box-shadow:0 4px 14px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:0;text-decoration:none;margin-bottom:10px}
+/* over the banner's top-left corner, like the other screens' back arrows */
+.home-hero .home-back{position:absolute;top:max(14px,env(safe-area-inset-top));left:16px;z-index:2;width:48px;height:48px;margin:0}
+.home-hero .home-back::before{position:absolute;left:50%;top:50%;transform:translate(-35%,-50%) rotate(45deg)}
 .home-back::before{content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px}
 .home-hero .main-badge{width:116px;margin:4px auto 14px}
 .home-title{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;font-size:44px;line-height:1;letter-spacing:.5px;text-shadow:4px 4px 0 rgba(0,0,0,.8)}
@@ -347,6 +350,7 @@ html.dark .guide-footer{color:#9ca3af}
 <!-- ===== APP HOME ===== -->
 <div id="app-home">
   <div class="home-hero">
+    <a class="home-back" href="/" onclick="hubBack(event)" aria-label="Back">Back</a>
     <img class="main-badge" src="/club-crest.png" alt="">
     <h1 class="home-title"><span data-club="name">Your Club</span></h1>
     <p class="home-title2">Training Hub</p>
@@ -2713,6 +2717,16 @@ html.dark .guide-footer{color:#9ca3af}
 
 <script>
 /* ── APP NAVIGATION ── */
+/* The hub home's back arrow: back to the page you came from in the hub, like
+   the app's round back buttons (lib/back.ts); opened on its own, to Home. */
+function hubBack(e){
+  try{
+    const nav=window.navigation;
+    const can=nav&&typeof nav.canGoBack==="boolean"?nav.canGoBack
+      :history.length>1&&(!!sessionStorage.getItem("hub_moved")||document.referrer.indexOf(location.origin)===0);
+    if(can){e.preventDefault();history.back();}
+  }catch(x){}
+}
 function showAppHome(){
   document.getElementById('app-home').style.display='flex';
   refreshHomeProgress();
