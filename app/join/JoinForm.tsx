@@ -27,6 +27,7 @@ export default function JoinForm({
   const [code, setCode] = useState(initialCode);
   const [signedIn, setSignedIn] = useState(!!account);
   const [name, setName] = useState(account?.name ?? "");
+  const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [relation, setRelation] = useState<Relation | "">("");
   const [team, setTeam] = useState("");
@@ -59,7 +60,7 @@ export default function JoinForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           teams
-            ? { code, name, relation, team, children: children.filter((c) => c.name.trim()), note }
+            ? { code, name, phone, relation, team, children: children.filter((c) => c.name.trim()), note }
             : { code },
         ),
       });
@@ -210,6 +211,27 @@ export default function JoinForm({
           </label>
         )
       )}
+      <label>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+          Mobile number{relation === "parent" ? "" : " (optional)"}
+        </span>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required={relation === "parent"}
+          autoComplete="tel"
+          inputMode="tel"
+          maxLength={24}
+          placeholder="e.g. 07700 900123"
+          className={input}
+        />
+        <span className="mt-1 block text-xs text-gray-400">
+          {relation === "parent"
+            ? "So the team's treasurer can send you a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
+            : "Only the club's coaches and treasurer see it."}
+        </span>
+      </label>
       <label>
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Anything else? (optional)</span>
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="e.g. new this season" className={input} />

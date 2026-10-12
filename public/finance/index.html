@@ -174,13 +174,15 @@
   /* a table cell, not a flex box, so it lines up with the rest of its row */
   .row-actions { text-align: right; white-space: nowrap; vertical-align: middle; }
   .row-actions .btn + .btn { margin-left: 6px; }
-  /* the players table on a phone: parent and contact under the name, so the
-     balance and Edit fit without scrolling sideways */
-  .narrow-only { display: none; }
-  @media (max-width: 620px){
-    .players-list .wide-only { display: none; }
-    .players-list .narrow-only { display: block; }
-  }
+  /* a player's name: tap it for their card (balance, joined, parent's phone) */
+  .name-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .name-btn:hover { text-decoration-color: currentColor; }
+  .pc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .pc-stats div { background: var(--green-light); border-radius: 8px; padding: 8px 10px; }
+  .pc-stats b { display: block; font-size: 16px; }
+  .pc-stats span { font-size: 11px; color: var(--muted); }
+  .pc-old { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
+  .pc-old p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .checkline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .checkline input[type=checkbox] { width: auto; }
   .hint { font-size: 12px; color: var(--muted); background: var(--green-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
@@ -382,7 +384,6 @@
   <div class="tabs-inner" id="tabs">
     <button class="tab active" data-view="dashboard">📊 Dashboard</button>
     <button class="tab" data-view="subs">💷 Monthly Subs</button>
-    <button class="tab" data-view="players">👥 Players</button>
     <button class="tab" data-view="outstanding">📋 Who Owes</button>
     <button class="tab" data-view="expenses">🧾 Expenses</button>
     <button class="tab" data-view="settings">⚙️ Settings</button>
@@ -421,17 +422,6 @@
     </div>
   </section>
 
-  <!-- PLAYERS -->
-  <section class="view" id="view-players">
-    <h2 class="section">Players &amp; Parents</h2>
-    <p class="section-sub">Squad list with parent contacts and emergency / medical info.</p>
-    <div class="toolbar" style="margin-bottom:16px">
-      <input class="grow" id="player-search" placeholder="Search players or parents…">
-      <button class="btn btn-primary" id="add-player-btn">+ Add Player</button>
-    </div>
-    <div class="panel"><div class="subs-grid-wrap" id="players-table"></div></div>
-  </section>
-
   <!-- OUTSTANDING -->
   <section class="view" id="view-outstanding">
     <h2 class="section">Who Owes Money</h2>
@@ -464,6 +454,7 @@
     <div class="fs-top" id="fs-top"><button class="fs-back" id="fs-back" aria-label="Back to Settings"></button><h2 id="fs-title"></h2><span></span></div>
     <div id="fs-list">
       <div class="fs-group"><button class="fs-row" data-fs-open="team"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/><path d="M7 20a5 5 0 0 1 10 0M1.5 19a3.5 3.5 0 0 1 6-2.5M22.5 19a3.5 3.5 0 0 0-6-2.5"/></svg></span><span class="fs-label">Team &amp; Subs</span><span class="fs-detail" id="fs-detail-team"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+      <div class="fs-group"><button class="fs-row" data-fs-open="left"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0M17 11h5"/></svg></span><span class="fs-label">Players Who&rsquo;ve Left</span><span class="fs-detail" id="fs-detail-left"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="backup"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 15v5h14v-5"/></svg></span><span class="fs-label">Backup &amp; Restore</span><span class="fs-detail" id="fs-detail-backup"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="reminders"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="fs-label">Monthly Reminders</span><span class="fs-detail" id="fs-detail-reminders"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="security"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="fs-label">Security &amp; Sync</span><span class="fs-detail" id="fs-detail-security"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="devices"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><span class="fs-label">Devices &amp; Passkeys</span><span class="fs-detail" id="fs-detail-devices"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="about"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></span><span class="fs-label">About &amp; Privacy</span><span class="fs-detail" id="fs-detail-about"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
@@ -478,6 +469,11 @@
         <label class="field"><span>Subs start month</span><input id="set-start" type="month"></label>
       </div>
       <button class="btn btn-primary" id="save-settings">Save Settings</button>
+    </div>
+    <div class="panel fs-panel" data-fs="left">
+      <div class="panel-head"><h3>Players Who&rsquo;ve Left</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">Players taken out of the hub&rsquo;s Members tab, or marked as left on their card. They aren&rsquo;t charged, and their payment history is kept. Tap a name to open their card.</p>
+      <div id="left-list"></div>
     </div>
     <div class="panel fs-panel" data-fs="backup">
       <div class="panel-head"><h3>Backup &amp; Restore</h3></div>
@@ -930,7 +926,7 @@
   const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 
   function renderAll(){
-    renderDashboard(); renderSubs(); renderPlayers(); renderOutstanding(); renderExpenses(); renderSettings();
+    renderDashboard(); renderSubs(); renderOutstanding(); renderExpenses(); renderSettings();
   }
 
   function renderDashboard(){
@@ -962,7 +958,7 @@
 
     // monthly breakdown
     const recent = [...months].reverse().slice(0,6);
-    if(!recent.length || !nPlayers){ $("#dash-months").innerHTML = emptyMsg("⚽", nPlayers?"No months yet":"No players yet", nPlayers?"Set a subs start month in Settings.":"Add players on the Players tab to begin."); }
+    if(!recent.length || !nPlayers){ $("#dash-months").innerHTML = emptyMsg("⚽", nPlayers?"No months yet":"No players yet", nPlayers?"Set a subs start month in Settings.":"Players in the hub\u2019s Members tab appear here automatically."); }
     else {
       $("#dash-months").innerHTML = `<table><thead><tr><th>Month</th><th class="num">Paid</th><th class="num">Unpaid</th><th class="num">Collected</th></tr></thead><tbody>${
         recent.map(m=>{
@@ -983,7 +979,7 @@
     if(!owes.length){ $("#dash-owes").innerHTML = emptyMsg("✅","Everyone's paid up","No outstanding subs. Nice work!"); }
     else {
       $("#dash-owes").innerHTML = `<table><thead><tr><th>Player</th><th>Parent contact</th><th class="num">Owes</th></tr></thead><tbody>${
-        owes.map(x=>`<tr><td>${esc(x.p.name)}<div class="muted" style="font-size:12px">${x.b.monthsBehind.length} month${x.b.monthsBehind.length!==1?'s':''} behind</div></td><td class="muted">${esc(x.p.parentName||'')} ${x.p.parentPhone?'· '+esc(x.p.parentPhone):''}</td><td class="num owe">${money(x.b.owed)}</td></tr>`).join('')
+        owes.map(x=>`<tr><td>${nameBtn(x.p)}<div class="muted" style="font-size:12px">${x.b.monthsBehind.length} month${x.b.monthsBehind.length!==1?'s':''} behind</div></td><td class="muted">${esc(x.p.parentName||'')} ${x.p.parentPhone?'· '+esc(x.p.parentPhone):''}</td><td class="num owe">${money(x.b.owed)}</td></tr>`).join('')
       }</tbody></table>`;
     }
   }
@@ -998,7 +994,7 @@
     $("#cur-month-lbl").textContent = fmtMonth(currentMonth);
     const f = fee(currentMonth);
     const players = activePlayers().filter(p=>liableInMonth(p, currentMonth));
-    if(!activePlayers().length){ $("#subs-table").innerHTML = emptyMsg("🧒","No players yet","Add players first on the Players tab."); return; }
+    if(!activePlayers().length){ $("#subs-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub\u2019s Members tab appear here automatically."); return; }
     if(!players.length){ $("#subs-table").innerHTML = emptyMsg("📅","No players for this month","Everyone joined after this month, or it's before your subs start month."); return; }
     let collected=0;
     const rows = players.map(pl=>{
@@ -1010,7 +1006,7 @@
         exempt:`<span class="pill exempt">Exempt</span>`
       }[p.status] || `<span class="pill unpaid">Unpaid</span>`;
       return `<tr>
-        <td><strong>${esc(pl.name)}</strong>${pl.medical?`<span class="flag" title="${esc(pl.medical)}">⚕ medical</span>`:''}${(p.status!=='paid' && p.status!=='exempt')?' '+waButton(pl, monthMessage(pl)):''}</td>
+        <td>${nameBtn(pl)}${(p.status!=='paid' && p.status!=='exempt')?' '+waButton(pl, monthMessage(pl)):''}</td>
         <td><button class="btn btn-sm status-btn" data-pid="${pl.id}">${statusPill}</button></td>
         <td>
           <select class="method-sel" data-pid="${pl.id}" style="max-width:130px">
@@ -1037,61 +1033,79 @@
     save(); renderSubs(); renderDashboard();
   }
 
-  // ---- PLAYERS ----
-  function renderPlayers(){
-    const q = ($("#player-search").value||'').toLowerCase();
-    let list = state.players.filter(p=>!p.archived);
-    if(q) list = list.filter(p=> (p.name+' '+(p.parentName||'')+' '+(p.parentPhone||'')+' '+(p.parentEmail||'')).toLowerCase().includes(q));
-    list.sort((a,b)=>a.name.localeCompare(b.name));
-    if(!state.players.length){ $("#players-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub\u2019s Members tab are added here automatically, or click \u201c+ Add Player\u201d."); return; }
-    $("#players-table").innerHTML = `<table class="players-list"><thead><tr><th>Player</th><th class="wide-only">Parent / guardian</th><th class="wide-only">Contact</th><th class="num">Balance</th><th></th></tr></thead><tbody>${
-      list.map(p=>{
-        const b = playerBalance(p.id);
-        return `<tr>
-          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${(p.parentName||p.parentPhone||p.parentEmail)?`<div class="narrow-only muted" style="font-size:12px;overflow-wrap:anywhere">${esc([p.parentName, p.parentPhone, p.parentEmail].filter(Boolean).join(' · '))}</div>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${p.joined.length >= 10 ? fmtDate(p.joined.slice(0,10)) : fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
-          <td class="wide-only">${esc(p.parentName||'—')}</td>
-          <td class="muted wide-only">${p.parentPhone?esc(p.parentPhone):''}${p.parentPhone&&p.parentEmail?'<br>':''}${p.parentEmail?esc(p.parentEmail):''}${!p.parentPhone&&!p.parentEmail?'—':''}</td>
-          <td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:`<span class="clear">Clear</span>`}</td>
-          <td class="row-actions"><button class="btn btn-sm" data-edit-player="${p.id}">Edit</button></td>
-        </tr>`;
-      }).join('')
-    }</tbody></table>`;
-  }
-
-  function playerForm(p){
-    p = p || {};
+  // ---- A player's card ----
+  // The squad is kept in the hub's Members tab (synced in by syncSquad); here
+  // are only what the treasurer needs: the balance, the month subs start, the
+  // parent's phone for reminders, and whether they've left.
+  function nameBtn(p){ return `<button class="name-btn" data-edit-player="${p.id}">${esc(p.name)}</button>`; }
+  function playerCard(p){
+    const b = playerBalance(p.id);
+    const months = playerMonths(p.id).length;
+    const joinedVal = !p.joined ? '' : p.joined.length >= 10 ? p.joined.slice(0,10) : p.joined.slice(0,7) + '-01';
+    // what was typed on the old Players tab, to move across to Members
+    const old = [['Medical notes', p.medical], ['Emergency contact', p.emergency], ['Notes', p.notes]].filter(x=>x[1]);
     return `
-      <div class="form-grid">
-        <label class="field"><span>Child's name *</span><input id="pf-name" value="${esc(p.name||'')}"></label>
-        <label class="field"><span>Date joined</span><input id="pf-joined" type="date" value="${esc(!p.joined ? '' : p.joined.length >= 10 ? p.joined.slice(0,10) : p.joined.slice(0,7) + '-01')}"></label>
-        <label class="field"><span>Parent / guardian name</span><input id="pf-parent" value="${esc(p.parentName||'')}"></label>
-        <label class="field"><span>Parent phone</span><input id="pf-phone" value="${esc(p.parentPhone||'')}"></label>
-        <label class="field"><span>Parent email</span><input id="pf-email" type="email" value="${esc(p.parentEmail||'')}"></label>
-        <label class="field"><span>Emergency contact</span><input id="pf-emergency" value="${esc(p.emergency||'')}"></label>
+      <div class="pc-stats">
+        <div><b class="${b.owed>0?'owe':'clear'}">${b.owed>0?money(b.owed):'Clear'}</b><span>${b.owed>0?'owed':'nothing owed'}</span></div>
+        <div><b>${money(b.paid)}</b><span>paid this season</span></div>
+        <div><b>${b.monthsBehind.length}</b><span>of ${months} month${months!==1?'s':''} unpaid</span></div>
       </div>
-      <label class="field"><span>Medical notes / allergies</span><textarea id="pf-medical" rows="2" placeholder="e.g. asthma — inhaler in kit bag">${esc(p.medical||'')}</textarea></label>
-      <label class="field"><span>Notes</span><textarea id="pf-notes" rows="2">${esc(p.notes||'')}</textarea></label>
-      ${p.id?`<label class="checkline"><input type="checkbox" id="pf-archived" ${p.archived?'checked':''}> Archive (left the team — hide from lists)</label>`:''}`;
+      ${p.squadId ? '' : `<label class="field"><span>Child's name *</span><input id="pf-name" value="${esc(p.name||'')}"></label>`}
+      <div class="form-grid">
+        <label class="field"><span>Date joined (subs start)</span><input id="pf-joined" type="date" value="${esc(joinedVal)}"></label>
+        <label class="field"><span>Parent / guardian</span><input id="pf-parent" value="${esc(p.parentName||'')}"></label>
+        <label class="field"><span>Parent phone (for WhatsApp reminders)</span><input id="pf-phone" type="tel" value="${esc(p.parentPhone||'')}"></label>
+        <label class="field"><span>Parent email</span><input id="pf-email" type="email" value="${esc(p.parentEmail||'')}"></label>
+      </div>
+      <label class="checkline"><input type="checkbox" id="pf-archived" ${p.archived?'checked':''}> Left the team &mdash; stop charging (payment history is kept)</label>
+      ${p.squadId ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Name, team and medical details are kept in the hub&rsquo;s Members tab.</p>' : ''}
+      ${old.length ? `<div class="pc-old">
+        <strong>From the old Players tab</strong>
+        <div class="muted" style="font-size:12px">Medical and emergency details now live with the player in the hub&rsquo;s Members tab, where coaches can see them. Copy these across, then clear them here.</div>
+        ${old.map(x=>`<p><span class="muted">${x[0]}:</span> ${esc(x[1])}</p>`).join('')}
+        <div class="toolbar" style="margin-top:8px"><button class="btn btn-sm" id="pf-copy-old">Copy</button><button class="btn btn-sm btn-danger" id="pf-clear-old">Clear</button></div>
+      </div>` : ''}`;
   }
   function openPlayerModal(id){
-    const p = id ? state.players.find(x=>x.id===id) : null;
-    openModal(p?'Edit Player':'Add Player', playerForm(p), [
-      p ? {label:'Delete', cls:'btn-danger', act:()=>{ if(confirm('Delete '+p.name+'? This removes their payment history too.')){ deletePlayer(p.id); closeModal(); }}} : null,
+    const p = state.players.find(x=>x.id===id);
+    if(!p) return;
+    openModal(p.name, playerCard(p), [
+      // one added here by hand can be deleted; a Members player is taken out in Members
+      p.squadId ? null : {label:'Delete', cls:'btn-danger', act:()=>{ if(confirm('Delete '+p.name+'? This removes their payment history too.')){ deletePlayer(p.id); closeModal(); }}},
       {label:'Cancel', act:closeModal},
       {label:'Save', cls:'btn-primary', act:()=>{
-        const name = $("#pf-name").value.trim();
+        const nameIn = $("#pf-name");
+        const name = nameIn ? nameIn.value.trim() : p.name;
         if(!name){ alert('Please enter a name'); return; }
-        const data = {
+        const archived = $("#pf-archived").checked;
+        Object.assign(p, {
           name, joined: $("#pf-joined").value||'', parentName:$("#pf-parent").value.trim(),
           parentPhone:$("#pf-phone").value.trim(), parentEmail:$("#pf-email").value.trim(),
-          emergency:$("#pf-emergency").value.trim(), medical:$("#pf-medical").value.trim(),
-          notes:$("#pf-notes").value.trim(), archived: id ? $("#pf-archived").checked : false
-        };
-        if(id){ Object.assign(state.players.find(x=>x.id===id), data); }
-        else { state.players.push(Object.assign({id:uid()}, data)); }
+          archived,
+          // the treasurer's own choice now, not one made because they left Members
+          autoArchived: false
+        });
         save(); closeModal(); renderAll();
       }}
-    ].filter(Boolean));
+    ].filter(Boolean), true);
+    const copy = $("#pf-copy-old");
+    if(copy) copy.onclick = ()=>{
+      const text = p.name + '\n' + [['Medical notes', p.medical], ['Emergency contact', p.emergency], ['Notes', p.notes]].filter(x=>x[1]).map(x=>x[0]+': '+x[1]).join('\n');
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(()=>flash('Copied'), ()=>prompt('Copy this:', text));
+    };
+    const clear = $("#pf-clear-old");
+    if(clear) clear.onclick = ()=>{
+      if(!confirm('Clear the medical, emergency and notes kept here for '+p.name+'? Make sure they’re in Members first.')) return;
+      p.medical = ''; p.emergency = ''; p.notes = '';
+      save(); openPlayerModal(p.id);
+    };
+  }
+  function renderLeft(){
+    const left = state.players.filter(p=>p.archived).sort((a,b)=>a.name.localeCompare(b.name));
+    const d = $("#fs-detail-left"); if(d) d.textContent = left.length ? String(left.length) : '';
+    $("#left-list").innerHTML = left.length
+      ? `<table><tbody>${left.map(p=>{ const b = playerBalance(p.id); return `<tr><td>${nameBtn(p)}<div class="muted" style="font-size:12px">${p.autoArchived?'taken out of Members':'marked as left'}</div></td><td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:'<span class="clear">Clear</span>'}</td></tr>`; }).join('')}</tbody></table>`
+      : emptyMsg("👋","Nobody has left","Players taken out of Members show here.");
   }
   function deletePlayer(id){
     const gone = state.players.find(p=>p.id===id);
@@ -1146,7 +1160,7 @@
         + '<div class="muted" style="font-size:13px;margin-bottom:10px">' + esc(x.p.parentName || 'Parent') + (num ? ' \u00b7 ' + esc(x.p.parentPhone) : '') + '</div>'
         + (num
             ? '<div style="background:#f4f7f5;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;white-space:pre-wrap">' + esc(msg) + '</div>'
-            : '<div class="hint" style="background:var(--red-bg);color:var(--red)">No phone number on file \u2014 add one on the Players tab to message this parent.</div>');
+            : '<div class="hint" style="background:var(--red-bg);color:var(--red)">No phone number on file \u2014 tap the player\u2019s name to add one.</div>');
       const buttons = [];
       if(url) buttons.push({ label: '\uD83D\uDCAC Open WhatsApp', cls: 'btn-primary', act: ()=>{ window.open(url, '_blank', 'noopener'); } });
       buttons.push({ label: last ? 'Finish' : 'Next parent \u203A', act: next });
@@ -1165,7 +1179,7 @@
     $("#owes-table").innerHTML = `
       <div style="margin-bottom:10px"><strong class="owe">${money(total)}</strong> <span class="muted">outstanding across ${rows.length} player${rows.length!==1?'s':''}</span></div>
       <table><thead><tr><th>Player</th><th>Months owed</th><th>Parent</th><th>Phone</th><th class="num">Owes</th>${showWA?'<th>Remind</th>':''}</tr></thead><tbody>${
-        rows.map(x=>`<tr><td><strong>${esc(x.p.name)}</strong></td><td class="muted">${x.b.monthsBehind.map(fmtMonthShort).join(', ')}</td><td>${esc(x.p.parentName||'—')}</td><td class="muted">${esc(x.p.parentPhone||'—')}</td><td class="num owe">${money(x.b.owed)}</td>${showWA?`<td>${waButton(x.p, owesMessage(x.p, x.b))}</td>`:''}</tr>`).join('')
+        rows.map(x=>`<tr><td>${nameBtn(x.p)}</td><td class="muted">${x.b.monthsBehind.map(fmtMonthShort).join(', ')}</td><td>${esc(x.p.parentName||'—')}</td><td class="muted">${esc(x.p.parentPhone||'—')}</td><td class="num owe">${money(x.b.owed)}</td>${showWA?`<td>${waButton(x.p, owesMessage(x.p, x.b))}</td>`:''}</tr>`).join('')
       }</tbody></table>`;
   }
 
@@ -1227,11 +1241,12 @@
     $("#set-currency").value = state.settings.currency;
     $("#set-start").value = state.settings.startMonth || thisMonth();
     refreshPushState();
+    renderLeft();
     fsSync();
   }
 
   // ---------- Modal helpers ----------
-  function openModal(title, bodyHTML, buttons){
+  function openModal(title, bodyHTML, buttons, noFocus){
     $("#modal-title").textContent = title;
     $("#modal-body").innerHTML = bodyHTML;
     const foot = $("#modal-foot"); foot.innerHTML = '';
@@ -1241,7 +1256,7 @@
       btn.onclick = b.act; foot.appendChild(btn);
     });
     $("#modal-backdrop").classList.add('open');
-    const first = $("#modal-body input"); if(first) first.focus();
+    const first = !noFocus && $("#modal-body input"); if(first) first.focus();
   }
   function closeModal(){ $("#modal-backdrop").classList.remove('open'); }
 
@@ -1291,7 +1306,7 @@
   }
 
   // ---------- Events ----------
-  const viewRenderers = { dashboard:renderDashboard, subs:renderSubs, players:renderPlayers, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
+  const viewRenderers = { dashboard:renderDashboard, subs:renderSubs, outstanding:renderOutstanding, expenses:renderExpenses, settings:renderSettings };
   // ---- Settings as a list of rows, each opening its panel on its own (with the phone's back gesture) ----
   function fsSync(){
     const dev = $("#devices-panel");
@@ -1323,7 +1338,7 @@
     $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
     $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
     if(viewRenderers[name]) viewRenderers[name](); // always show fresh data
-    if(name === 'players') syncSquad(false); // anyone new in Members
+    syncSquad(false); // anyone new in Members, or gone from it
     window.scrollTo({top:0, behavior:'smooth'});
   }
   document.addEventListener('click', e=>{
@@ -1337,8 +1352,6 @@
   $("#modal-backdrop").addEventListener('click', e=>{ if(e.target===$("#modal-backdrop")) closeModal(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
-  $("#add-player-btn").onclick = ()=>openPlayerModal();
-  $("#player-search").oninput = renderPlayers;
   $("#add-expense-btn").onclick = ()=>openExpenseModal();
   $("#prev-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,-1); renderSubs(); };
   $("#next-month").onclick = ()=>{ currentMonth = monthAdd(currentMonth,1); renderSubs(); };
@@ -1586,9 +1599,11 @@
 
   // ---- Players from the hub's Members tab ----
   // The team's squad in Members: anyone missing here is added, with their
-  // parent's name and email; a player already here under the same name is
-  // linked instead. One deleted here isn't added back. Done in the browser,
-  // because the records are encrypted with the team's key.
+  // parent's name, email and phone; a player already here under the same name
+  // is linked instead. One taken out of Members (or moved to another team) is
+  // marked as left, so they stop being charged and keep their history; back in
+  // Members, they're back here. Done in the browser, because the records are
+  // encrypted with the team's key.
   let squadSyncedAt = 0;
   async function syncSquad(force){
     if(!currentTeam || !cryptoKey || !apiAvailable) return;
@@ -1621,6 +1636,13 @@
         if(p.squadId !== sp.id){ p.squadId = sp.id; changed++; }
         // a parent the treasurer hasn't filled in yet
         if(g && !p.parentName && !p.parentEmail){ p.parentName = g.name || ''; p.parentEmail = g.email || ''; changed++; }
+        // a phone number the parent gave when they joined
+        const phone = (sp.guardians || []).map(x => x.phone).find(Boolean);
+        if(phone && !p.parentPhone){ p.parentPhone = phone; changed++; }
+        // back in Members after being taken out
+        if(p.archived && p.autoArchived){ p.archived = false; p.autoArchived = false; changed++; }
+        // the name as it is in Members, which keeps it now
+        if(p.name !== sp.name){ p.name = sp.name; changed++; }
         // one added from Members before join dates came across
         if(p.fromSquad && !p.joined && joinedOn(sp.createdAt)){ p.joined = joinedOn(sp.createdAt); changed++; }
         continue;
@@ -1629,9 +1651,14 @@
         id: uid(), squadId: sp.id, fromSquad: true, name: sp.name,
         joined: joinedOn(sp.createdAt),
         parentName: g ? (g.name || '') : '', parentEmail: g ? (g.email || '') : '',
-        parentPhone: '', emergency: '', medical: '', notes: '', archived: false
+        parentPhone: (sp.guardians || []).map(x => x.phone).find(Boolean) || '',
+        archived: false
       });
       added++;
+    }
+    const inSquad = new Set(squad.map(sp => sp.id));
+    for(const p of state.players){
+      if(p.squadId && !p.archived && !inSquad.has(p.squadId)){ p.archived = true; p.autoArchived = true; changed++; }
     }
     if(added || changed){ save(); renderAll(); }
     if(added) flash(added === 1 ? 'Added 1 player from Members' : 'Added ' + added + ' players from Members');

@@ -66,6 +66,8 @@ export type Person = {
   userId: string;
   name: string;
   email: string;
+  /** their mobile number, if they gave one (for WhatsApp reminders about subs) */
+  phone?: string;
   roles: Role[];
   status: MemberStatus;
   relation?: Relation;

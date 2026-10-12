@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { squarePhoto } from "../account/ProfilePhoto";
 import { RELATIONS, ROLES, childrenOf, hasOwnTeam, teamsOf, type Member, type Person, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "./ChildrenEditor";
+import { PlayerCareForm } from "./PlayerCare";
 import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
@@ -540,7 +541,7 @@ export default function MembersAdmin() {
                 <li key={p.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <span className="min-w-0">
                     <span className="block font-bold text-gray-900 dark:text-gray-50">{p.name}</span>
-                    <span className="block text-sm text-gray-500 dark:text-gray-400">{[p.email, describe(p)].filter(Boolean).join(" · ")}</span>
+                    <span className="block text-sm text-gray-500 dark:text-gray-400">{[p.email, p.phone, describe(p)].filter(Boolean).join(" · ")}</span>
                   </span>
                   <button onClick={() => act({ action: "removePerson", userId: p.userId })} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400">
                     Remove
@@ -724,7 +725,7 @@ function PendingPerson({
   return (
     <li className="py-3">
       <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
-      <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
+      <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, person.phone, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
       {person.relation === "coach" && (
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
           Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
@@ -1059,6 +1060,11 @@ function PlayerProfile({
           </div>
 
           <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Medical & Emergency
+          </p>
+          <PlayerCareForm playerId={player.id} first={player.name.trim().split(/\s+/)[0] || "Their"} adminKey={adminKey} />
+
+          <p className="mb-1.5 mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Parents & Carers
           </p>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white dark:divide-white/10 dark:bg-black/40">
@@ -1080,7 +1086,7 @@ function PlayerProfile({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{g.name}</span>
-                      <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{[g.email, extra].filter(Boolean).join(" · ")}</span>
+                      <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{[g.email, g.phone, extra].filter(Boolean).join(" · ")}</span>
                     </span>
                     <span className="text-sm font-semibold text-green-700 dark:text-green-400">{open === g.userId ? "Close" : "Manage"}</span>
                   </button>
@@ -1165,7 +1171,7 @@ function MemberRow({
         {/* the name gets the room; Edit and Remove from Club go underneath when it's tight */}
         <span className="min-w-[13rem] flex-1">
           <span className={`block font-bold text-gray-900 dark:text-gray-50 ${guardian ? "text-sm" : ""}`}>{person.name}</span>
-          <span className="block text-sm text-gray-500 dark:text-gray-400">{note ?? [person.email, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
+          <span className="block text-sm text-gray-500 dark:text-gray-400">{note ?? [person.email, person.phone, describe(person, inTeam)].filter(Boolean).join(" · ")}</span>
         </span>
         <span className="flex gap-3">
           <button onClick={() => setEditing(!editing)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
