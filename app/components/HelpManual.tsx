@@ -425,14 +425,18 @@ export default function HelpManual() {
             before it leaves your phone, so nobody can read it without it.
           </p>
           <Steps>
-            <li>Tap <B>Financial Admin</B> on the Team Hub&apos;s main page.</li>
+            <li>Tap <B>Finances</B> in the tab bar (or on the Team Hub&apos;s main page).</li>
             <li>Type your team&apos;s subs password and tap <B>Unlock</B>. It opens your team.</li>
             <li>
               The first time, a team has no password yet: tap <B>Setting up a team for the first
               time?</B>, choose the team, pick its password and enter the Coach Admin password.
             </li>
-            <li>Mark payments in <B>Monthly Subs</B>; <B>Who Owes</B> lists anyone behind.</li>
-            <li>Tap <B>🔒 Lock</B> when you&apos;ve finished, especially on a shared device.</li>
+            <li>
+              In <B>Subs</B>, tap <B>Unpaid</B> beside a player when they pay; tap <B>Paid</B> to
+              change how they paid or exempt them that month. Tap a name for their card.
+            </li>
+            <li><B>Who Owes</B> lists anyone behind, with a WhatsApp reminder for each parent; <B>Spending</B> keeps money in and out.</li>
+            <li>Tap the <B>padlock</B> at the top when you&apos;ve finished, especially on a shared device.</li>
           </Steps>
           <p>
             Under <B>Settings</B> you can turn on <B>reminders</B>: your phone gets a nudge on the
