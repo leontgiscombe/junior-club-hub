@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import NameFields from "../components/NameFields";
+import EmailChange from "./EmailChange";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
 import { ChildAvatar } from "./ChildPhotos";
 import ProfilePhoto from "./ProfilePhoto";
@@ -216,7 +217,6 @@ export default function AccountPage() {
                   />
                   <span className="mt-1 block text-xs text-gray-400">So your club can reach you, e.g. a WhatsApp reminder about subs. Only its coaches and treasurer see it.</span>
                 </label>
-                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Email: {account.user.email}</p>
                 <button onClick={saveName} disabled={busy || !name.trim() || !phone.trim() || (name === account.user.name && phone.trim() === (account.user.phone ?? ""))} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save
                 </button>
@@ -224,6 +224,11 @@ export default function AccountPage() {
                   <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>{message.text}</p>
                 )}
               </div>
+            </Group>
+          )}
+          {screen === "details" && (
+            <Group>
+              <EmailChange email={account.user.email} onChanged={(email) => setAccount((a) => (a ? { ...a, user: { ...a.user, email } } : a))} />
             </Group>
           )}
 
