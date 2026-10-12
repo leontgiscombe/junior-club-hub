@@ -1519,6 +1519,7 @@
       const res = await serverPutFull(currentTeam, blob, built.auth); // with the old write token
       dataKeyRaw = raw; currentAuth = built.auth; writeToken = built.token; localRev = res.rev;
       writeCache(currentTeam, { blob, rev: localRev });
+      keepTeamKey();
       showRecoveryCode(rec.code, 'This team now has a recovery code, so a forgotten password no longer means losing its records.');
     } catch(e){ cryptoKey = oldKey; console.warn('Could not add a recovery code yet', e); }
   }
@@ -1640,6 +1641,7 @@
     currentMonth = thisMonth();
     if(currentMonth < (state.settings.startMonth||thisMonth())) currentMonth = state.settings.startMonth;
     document.body.classList.remove('locked');
+    keepTeamKey();
     renderAll();
     startPolling();
     if(accountFor(currentTeam)) renderDevices();
@@ -2005,27 +2007,68 @@
       + (financeTeams && financeTeams.length ? ' As ' + whose(financeTeams.map(teamName).join(', ')) + ' treasurer, you open ' + (financeTeams.length === 1 ? 'it' : 'them') + ' here; other teams need their own password.' : '');
     await renderAccountTeams();
   }
+  // The signed-in treasurer's (or club admin's) teams: each opens with Face ID
+  // (or straight away, without a passkey on the account) once the server keeps
+  // its key (lib/financeEscrow.ts) — after the team is first opened.
   async function renderAccountTeams(){
-    const dev = await deviceKeys();
-    let anyPasskey = false;
     await teamsChecked;
     // a team with no password yet is set up from the list above, not opened
     const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id));
+    let faceId = false;
     const rows = await Promise.all(ids.map(async id=>{
       try {
-        const d = await devicesOf(id);
-        if(d.passkeys && d.passkeys.length) anyPasskey = true;
-        return { id, mine: d.devices.find(x=> x.id === dev.id) || null, pk: canPasskey() && myPasskeyCopies(d).length > 0 };
-      }
-      catch(e){ return { id, mine: null, err: true }; }
+        const r = await fetch('/api/finance/escrow?team=' + encodeURIComponent(id), { cache:'no-store' });
+        const d = r.ok ? await r.json() : null;
+        if(d && d.faceId) faceId = true;
+        return { id, ready: !!(d && d.ready), faceId: !!(d && d.faceId) };
+      } catch(e){ return { id, ready: false }; }
     }));
     $("#account-teams").innerHTML = rows.map(r=>{
       const name = esc(teamName(r.id));
-      if(r.mine && r.mine.wrapped) return '<button class="btn btn-primary" data-open-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+'</button>';
-      if(r.pk) return '<button class="btn btn-primary" data-pk-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Open '+name+' with Your Passkey</button>';
-      if(r.mine) return '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+name+'</strong>: type its password below once on this device \u2014 after that your account opens it here, and you can add Face ID. (Or another treasurer or club admin can approve this device in Settings \u2192 Devices. <a href="#" data-recheck style="color:var(--green);font-weight:700">Check again</a>)</p>';
-      return '<button class="btn" data-ask-team="'+esc(r.id)+'" style="width:100%;margin-bottom:8px">Use This Device for '+name+'</button>';
-    }).join('') + (!anyPasskey && canPasskey() ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, then open your teams with Face ID or a fingerprint on any of your devices.</p>' : '');
+      if(r.ready) return '<button class="btn btn-primary" data-escrow-team="'+esc(r.id)+'" data-face="'+(r.faceId?'1':'')+'" style="width:100%;margin-bottom:8px">Open '+name+(r.faceId && canPasskey() ? ' with Face ID' : '')+'</button>';
+      return '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+name+'</strong>: type its password below just once — from then on your account opens it'+(faceId ? ' with Face ID' : '')+', with no password, on any device.</p>';
+    }).join('') + (!faceId && canPasskey() && rows.length ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, and your teams open with Face ID or a fingerprint.</p>' : '');
+  }
+  // Face ID (or a fingerprint) with the account's passkey, as the server's signin check wants it
+  async function faceIdResponse(){
+    const o = await (await fetch('/api/finance/escrow', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'options' }) })).json();
+    const cred = await navigator.credentials.get({ publicKey: {
+      challenge: unb64u(o.challenge), rpId: o.rpId, timeout: o.timeout, userVerification: 'required',
+      allowCredentials: (o.allowCredentials || []).map(c=>({ type:'public-key', id: unb64u(c.id) })),
+    } });
+    const r = cred.response;
+    return {
+      id: cred.id, rawId: b64u(cred.rawId), type: cred.type,
+      clientExtensionResults: cred.getClientExtensionResults ? cred.getClientExtensionResults() : {},
+      ...(cred.authenticatorAttachment ? { authenticatorAttachment: cred.authenticatorAttachment } : {}),
+      response: {
+        clientDataJSON: b64u(r.clientDataJSON), authenticatorData: b64u(r.authenticatorData), signature: b64u(r.signature),
+        ...(r.userHandle ? { userHandle: b64u(r.userHandle) } : {}),
+      },
+    };
+  }
+  /** Open a team with the account: Face ID, then the server gives its key. */
+  async function openWithEscrow(id, faceId){
+    $("#account-err").textContent = '';
+    const body = { action:'open', team: id };
+    if(faceId) body.response = await faceIdResponse();
+    const res = await fetch('/api/finance/escrow', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const d = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(d.error || 'Couldn’t open the team — try again');
+    const raw = ub64(d.key);
+    currentTeam = id; currentAuth = d.record.auth; dataKeyRaw = raw;
+    cryptoKey = await importDataKey(raw); writeToken = null; accountWrites = true;
+    const loaded = await loadFromRecord(d.record, null);
+    if(!loaded){ cryptoKey = null; currentTeam = null; dataKeyRaw = null; accountWrites = false; throw new Error('Couldn’t open the team — type its password once instead.'); }
+    unlockApp();
+  }
+  /** Just opened a team: the server keeps its key, so its treasurer can open it with Face ID next time. */
+  function keepTeamKey(){
+    if(!dataKeyRaw || !currentTeam || !apiAvailable) return;
+    const h = writeHeaders();
+    const admin = $("#setup-admin") && $("#setup-admin").value;
+    if(!writeToken && !accountWrites && admin) h['x-admin-key'] = admin;
+    fetch('/api/finance/escrow', { method:'POST', headers: h, body: JSON.stringify({ action:'save', team: currentTeam, key: b64(dataKeyRaw) }) }).catch(()=>{});
   }
   async function openWithAccount(id){
     $("#account-err").textContent = '';
@@ -2076,24 +2119,19 @@
    */
   async function afterPasswordUnlock(){
     const shared = sharedWith; sharedWith = [];
-    let pkOffer = false, needsPasskey = false;
-    if(accountFor(currentTeam) && canPasskey() && dataKeyRaw){
+    let faceId = null;
+    if(accountFor(currentTeam)){
       try {
-        const d = await devicesOf(currentTeam);
-        const usable = (d.passkeys || []).filter(k=> k.prf !== false);
-        if(!myPasskeyCopies(d).length){ pkOffer = usable.length > 0; needsPasskey = !(d.passkeys || []).length; }
+        const r = await fetch('/api/finance/escrow?team=' + encodeURIComponent(currentTeam), { cache:'no-store' });
+        if(r.ok) faceId = !!(await r.json()).faceId;
       } catch(e){}
     }
-    if(!shared.length && !pkOffer && !needsPasskey) return;
+    if(!shared.length && faceId === null) return;
     const parts = [];
-    if(shared.length) parts.push('<div class="hint" style="background:var(--red-bg);color:var(--red)">This password opens <strong>' + esc([currentTeam, ...shared].map(teamName).join(' and ')) + '</strong>. Give each team its own password (Settings \u2192 Security &amp; Sync \u2192 Change Team Password), so each opens only its own.</div>');
-    if(pkOffer) parts.push('<p style="margin:0 0 6px"><strong>Open ' + esc(teamName(currentTeam)) + ' with Face ID next time?</strong></p><p class="muted" style="font-size:14px;margin:0">Your passkey will open it on any of your devices \u2014 no team password needed.</p>');
-    else if(needsPasskey) parts.push('<p style="margin:0 0 6px"><strong>Open ' + esc(teamName(currentTeam)) + ' with Face ID next time</strong></p><p class="muted" style="font-size:14px;margin:0">First add a passkey to your account in <a href="/account#security" style="color:var(--green);font-weight:700">Your Account \u2192 Sign-In &amp; Security</a>, then come back: Finances will offer it.</p>');
-    openModal(pkOffer || needsPasskey ? 'Next Time' : 'One Password, Two Teams', parts.join(''), pkOffer
-      ? [{ label:'Not Now', act: closeModal }, { label:'Use Face ID', cls:'btn-primary', act: async ()=>{
-          try { await addPasskeyToTeam(); closeModal(); } catch(e){ flash(e && e.message ? e.message : 'That didn\u2019t work \u2014 try again in Settings \u2192 Devices'); }
-        } }]
-      : [{ label:'OK', cls:'btn-primary', act: closeModal }], true);
+    if(shared.length) parts.push('<div class="hint" style="background:var(--red-bg);color:var(--red)">This password opens <strong>' + esc([currentTeam, ...shared].map(teamName).join(' and ')) + '</strong>. Give each team its own password (Settings → Security &amp; Sync → Change Team Password), so each opens only its own.</div>');
+    if(faceId === true) parts.push('<p style="margin:0 0 6px"><strong>No password next time</strong></p><p class="muted" style="font-size:14px;margin:0">You’re ' + esc(whose(teamName(currentTeam))) + ' treasurer, so from now on it opens with Face ID on any of your devices.</p>');
+    else if(faceId === false) parts.push('<p style="margin:0 0 6px"><strong>No password next time</strong></p><p class="muted" style="font-size:14px;margin:0">From now on your account opens ' + esc(teamName(currentTeam)) + ' without its password. For Face ID, <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> in Your Account → Sign-In &amp; Security.</p>');
+    openModal(faceId !== null ? 'All Set' : 'One Password, Two Teams', parts.join(''), [{ label:'OK', cls:'btn-primary', act: closeModal }], true);
   }
   /** After unlocking with the team password: this device opens the team with the account from now on. */
   async function rememberThisDevice(){
@@ -2130,6 +2168,7 @@
   }
   document.addEventListener('click', async (e)=>{
     const open = e.target.closest('[data-open-team]');
+    const escrowOpen = e.target.closest('[data-escrow-team]');
     const ask = e.target.closest('[data-ask-team]');
     const approve = e.target.closest('[data-approve-device]');
     const remove = e.target.closest('[data-remove-device]');
@@ -2137,7 +2176,12 @@
     const pkAdd = e.target.closest('[data-pk-add]');
     if(e.target.closest('[data-recheck]')){ e.preventDefault(); renderAccountTeams(); return; }
     try {
-      if(open){ open.disabled = true; open.textContent = 'Opening\u2026'; await openWithAccount(open.dataset.openTeam); }
+      if(escrowOpen){
+        const label = escrowOpen.textContent; escrowOpen.disabled = true; escrowOpen.textContent = 'Opening\u2026';
+        try { await openWithEscrow(escrowOpen.dataset.escrowTeam, !!escrowOpen.dataset.face && canPasskey()); }
+        finally { escrowOpen.disabled = false; escrowOpen.textContent = label; }
+      }
+      else if(open){ open.disabled = true; open.textContent = 'Opening\u2026'; await openWithAccount(open.dataset.openTeam); }
       else if(pkOpen){
         pkOpen.disabled = true;
         try { await openWithPasskey(pkOpen.dataset.pkTeam); }
