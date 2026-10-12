@@ -39,20 +39,20 @@ export default function PasskeyOffer({ next, hasOne }: { next: string; hasOne: b
   return (
     <div className="text-center">
       <div className="text-4xl">🔐</div>
-      <h1 className="mt-3 text-2xl font-extrabold text-gray-900">Sign in faster next time?</h1>
-      <p className="mt-2 text-sm text-gray-500">
+      <h1 className="mt-3 text-2xl font-extrabold text-gray-900 dark:text-gray-50">Sign in faster next time?</h1>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
         {hasOne
           ? "Add a passkey on this device too, and sign in here with Face ID, your fingerprint or your screen lock — no waiting for a code."
           : "Add a passkey and sign in with Face ID, your fingerprint or your screen lock — no waiting for a code. Treasurers and club admins can open Financial Admin with it too."}
       </p>
-      {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      <button onClick={add} disabled={busy} className="mt-5 w-full rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
+      {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
+      <button onClick={add} disabled={busy} className="mt-5 w-full rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
         {busy ? "Adding…" : "Add a Passkey"}
       </button>
-      <button onClick={noThanks} disabled={busy} className="mt-2 w-full rounded-xl py-3 text-sm font-semibold text-gray-500 hover:text-gray-800">
+      <button onClick={noThanks} disabled={busy} className="mt-2 w-full rounded-xl py-3 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
         No thanks
       </button>
-      <p className="mt-2 text-xs text-gray-400">You can add one any time in Your Account.</p>
+      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">You can add one any time in Your Account.</p>
     </div>
   );
 }
