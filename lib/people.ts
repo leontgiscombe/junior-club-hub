@@ -19,7 +19,7 @@ import {
 } from "./access";
 import { getTeams } from "./settings";
 import { addPlayer, deletePlayer, listPlayers, setPlayerTeam, updatePlayer, type Position } from "./statsStorage";
-import { currentUser, userClubsKey, type User } from "./auth";
+import { currentUser, setUserName, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
 import { getTenantRecord } from "./tenants";
 import { removeAllPlayerDevices } from "./playerDevices";
@@ -137,6 +137,8 @@ async function redeemInvite(tenant: string, user: User, existing: Person | null)
   };
   await save(tenant, person);
   await cancelInvite(tenant, user.email);
+  // a new account takes the name they were invited with, so it's theirs everywhere
+  if (!user.name && invite.name) await setUserName(user.id, invite.name).catch(() => null);
   // a parent who'd already listed children: they join the squad, as on any approval
   if (childrenOf(person).length) {
     await addChildrenToSquad(tenant, user.id, {});
