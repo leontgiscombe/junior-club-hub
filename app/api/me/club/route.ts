@@ -51,6 +51,7 @@ export async function PUT(req: NextRequest) {
     await notifyChildRequest(ctx.tenant, {
       userId: person.userId,
       parentName: person.name,
+      childNames: added.map((c) => c.name),
       teams: [...new Set(added.flatMap((c) => (c.requestedTeam ? [c.requestedTeam.slug] : [])))],
       clubName: (await getClub()).name,
     });
