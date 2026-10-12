@@ -4,6 +4,7 @@
 // first team and the organiser's email. Then they sign in with the code we
 // email them (they're the club's admin), and can add a passkey for next time.
 import { useEffect, useState } from "react";
+import { FORMAT_AGES, GAME_FORMATS } from "@/lib/clubSettings";
 import SignInForm from "../../components/SignInForm";
 import { addPasskey, cancelled, supportsPasskeys } from "../../components/passkey";
 
@@ -21,6 +22,8 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
   const [addressTouched, setAddressTouched] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [team, setTeam] = useState("");
+  // the first team's age group: which Training Hub its players see
+  const [format, setFormat] = useState("");
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -51,7 +54,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address: shownAddress, team, email, website, agreed }),
+        body: JSON.stringify({ name, address: shownAddress, team, format, email, website, agreed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
@@ -140,6 +143,22 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
         <span className="text-sm font-bold text-gray-800">Your team</span>
         <input value={team} onChange={(e) => setTeam(e.target.value)} maxLength={30} className={input} placeholder="e.g. U10s Lions" />
         <span className="mt-1 block text-xs text-gray-400">Your club starts with this one team. Add more any time in Coach Admin → Settings.</span>
+      </label>
+      <label>
+        <span className="text-sm font-bold text-gray-800">Its age group</span>
+        <select value={format} onChange={(e) => setFormat(e.target.value)} required className={input}>
+          <option value="" disabled>
+            Choose…
+          </option>
+          {GAME_FORMATS.map((f) => (
+            <option key={f} value={f}>
+              {FORMAT_AGES[f]} · {f}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-gray-400">
+          The Training Hub gives the team&apos;s players the guide, quiz and challenges for their age. Change it any time in Settings.
+        </span>
       </label>
       <label>
         <span className="text-sm font-bold text-gray-800">Your email</span>

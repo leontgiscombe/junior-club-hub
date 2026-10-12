@@ -887,7 +887,8 @@ function openFormatPicker(){
     b.className = "fmt-option" + (f === HUB_FMT ? " on" : "");
     b.innerHTML = '<strong>'+FMT_AGES[f]+'</strong><span>'+f+'</span>';
     b.onclick = function(){
-      try { localStorage.setItem("hub_format", f); } catch(e){}
+      // remembered with the team's age group at the time, so a club change still comes through
+      try { localStorage.setItem("hub_format", f); localStorage.setItem("hub_format_team", window.HUB_TEAM_FORMAT || ""); } catch(e){}
       applyHubFormat(f);
       sheet.remove();
     };
@@ -896,7 +897,7 @@ function openFormatPicker(){
   const team = document.createElement("button");
   team.className = "fmt-reset";
   team.textContent = "Use my team's";
-  team.onclick = function(){ try { localStorage.removeItem("hub_format"); } catch(e){} applyHubFormat(window.HUB_TEAM_FORMAT); sheet.remove(); };
+  team.onclick = function(){ try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); } catch(e){} applyHubFormat(window.HUB_TEAM_FORMAT); sheet.remove(); };
   panel.appendChild(team);
   sheet.appendChild(panel);
   document.body.appendChild(sheet);
@@ -905,7 +906,13 @@ function openFormatPicker(){
 function chooseHubFormat(teamFormat){
   window.HUB_TEAM_FORMAT = teamFormat || "7v7";
   let picked = null;
-  try { picked = localStorage.getItem("hub_format"); } catch(e){}
+  try {
+    picked = localStorage.getItem("hub_format");
+    // the club has changed the team's age group since this phone picked one: the club's wins
+    if(picked && teamFormat && localStorage.getItem("hub_format_team") !== teamFormat){
+      localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); picked = null;
+    }
+  } catch(e){}
   applyHubFormat(picked || teamFormat || "7v7");
 }
 

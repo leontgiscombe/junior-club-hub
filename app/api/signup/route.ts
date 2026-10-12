@@ -5,10 +5,10 @@
 // sign-up form sends them a code straight away) and is the club's admin;
 // everyone else joins with the club code and their own account.
 //   GET  ?address=riverside -> { ok } or { error } (is the address free?)
-//   POST { name, address, email, team, website, agreed } -> { url }
+//   POST { name, address, email, team, format?, website, agreed } -> { url }
 import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
-import { slugFor } from "@/lib/clubSettings";
+import { isGameFormat, slugFor } from "@/lib/clubSettings";
 import { showCode } from "@/lib/access";
 import { getAccess, setPasswordOff, setPrivate } from "@/lib/members";
 import { saveClubChanges, saveTeams } from "@/lib/settings";
@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That address was just taken — try another" }, { status: 409 });
   }
   await saveClubChanges({ name, fullName: name }, address);
-  await saveTeams([{ slug: slugFor(team, []), name: team, accent: "⚽" }], address);
+  // its age group decides the Training Hub its players see (worked out from its name if not given)
+  const format = isGameFormat(body.format) ? body.format : undefined;
+  await saveTeams([{ slug: slugFor(team, []), name: team, accent: "⚽", ...(format ? { format } : {}) }], address);
   // new hubs are private: parents join with the club code and a coach approves them
   await setPrivate(address, true);
   // coaches sign in with their own accounts, not a shared password

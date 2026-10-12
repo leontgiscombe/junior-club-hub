@@ -117,6 +117,13 @@ export function cleanChanges(input: unknown): ClubChanges {
 export const GAME_FORMATS = ["5v5", "7v7", "9v9", "11v11"] as const;
 export type GameFormat = (typeof GAME_FORMATS)[number];
 export const isGameFormat = (v: unknown): v is GameFormat => GAME_FORMATS.includes(v as GameFormat);
+/** Each format's age group, as clubs say it: "Under 9s & 10s". */
+export const FORMAT_AGES: Record<GameFormat, string> = {
+  "5v5": "Under 7s & 8s",
+  "7v7": "Under 9s & 10s",
+  "9v9": "Under 11s & 12s",
+  "11v11": "Under 13s and up",
+};
 
 /**
  * A team's match format: the one set in Settings, else worked out from an age

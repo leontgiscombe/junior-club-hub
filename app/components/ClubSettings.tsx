@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -1017,21 +1017,21 @@ function TeamsEditor({
                   </span>
                 </label>
                 <label>
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Match format</span>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Age group</span>
                   <select
                     value={t.format ?? ""}
                     onChange={(e) => change(i, { format: isGameFormat(e.target.value) ? e.target.value : undefined })}
                     className={input}
                   >
-                    <option value="">From the team name ({teamFormat({ name: t.name })})</option>
+                    <option value="">From the team name ({FORMAT_AGES[teamFormat({ name: t.name })]} · {teamFormat({ name: t.name })})</option>
                     {GAME_FORMATS.map((f) => (
                       <option key={f} value={f}>
-                        {f}
+                        {FORMAT_AGES[f]} · {f}
                       </option>
                     ))}
                   </select>
                   <span className="mt-1 block text-xs text-gray-400">
-                    The Training Hub shows its players the guide, quiz and challenges for this format.
+                    The Training Hub shows this team&apos;s players the guide, quiz and challenges for their age group — change it here and it changes there.
                   </span>
                 </label>
                 <TrainingDays training={t.training ?? DEFAULT_TRAINING} onChange={(training) => change(i, { training })} input={input} />
