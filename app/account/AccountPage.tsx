@@ -21,9 +21,21 @@ import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
 
+// What "Your Team"/"Your Children" shows: a parent's children, the team of
+// anyone who isn't only a parent (a coach), and both for a coach who's a parent
+// too — any club staff can add a child of theirs who plays.
+const STAFF: Role[] = ["admin", "coach", "treasurer"];
+function hereShows(p: NonNullable<Here["person"]>) {
+  const parent = p.relation === "parent" || p.children.length > 0 || (p.roles ?? []).includes("parent");
+  const staff = (p.roles ?? []).some((r) => STAFF.includes(r));
+  return { kids: parent || staff, team: staff || !parent, parent };
+}
+const startKids = (p: NonNullable<Here["person"]>) =>
+  p.children.length ? toDrafts(p.children) : hereShows(p).parent ? [{ name: "", team: "" }] : [];
+
 type Here = {
   club: string;
-  person: { status: MemberStatus; relation: Relation | null; team: { slug: string } | null; children: Child[] } | null;
+  person: { status: MemberStatus; roles: Role[]; relation: Relation | null; team: { slug: string } | null; children: Child[] } | null;
   teams: { slug: string; name: string }[];
   /** their children's photo versions, by squad player id */
   photos?: Record<string, string>;
@@ -72,7 +84,7 @@ export default function AccountPage() {
       if (!hd.person) return;
       setHere(hd);
       setPhotos(hd.photos ?? {});
-      setKids(hd.person.children.length ? toDrafts(hd.person.children) : [{ name: "", team: "" }]);
+      setKids(startKids(hd.person));
       setMyTeam(hd.person.team?.slug ?? "");
     });
   }, []);
@@ -81,17 +93,17 @@ export default function AccountPage() {
     if (!here?.person) return;
     setBusy(true);
     setHereMessage(null);
-    const isParent = here.person.relation === "parent" || here.person.children.length > 0;
+    const shows = hereShows(here.person);
     const res = await fetch("/api/me/club", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(isParent ? { children: kids.filter((k) => k.name.trim()) } : { team: myTeam }),
+      body: JSON.stringify({ ...(shows.kids ? { children: kids.filter((k) => k.name.trim()) } : {}), ...(shows.team ? { team: myTeam } : {}) }),
     });
     if (res.ok) {
       const saved = ((await res.json().catch(() => null)) as { person?: Here["person"] } | null)?.person;
       if (saved) {
         setHere({ ...here, person: saved });
-        if (isParent) setKids(saved.children.length ? toDrafts(saved.children) : [{ name: "", team: "" }]);
+        if (shows.kids) setKids(startKids(saved));
       }
       const waiting = saved?.children.some((c) => c.pending);
       const kept = new Set((saved?.children ?? []).flatMap((c) => (c.playerId ? [c.playerId] : [])));
@@ -172,7 +184,7 @@ export default function AccountPage() {
   if (!account) return <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black" />;
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
-  const isParent = !!here?.person && (here.person.relation === "parent" || here.person.children.length > 0);
+  const shows = here?.person ? hereShows(here.person) : { kids: false, team: true, parent: false };
   const initials = (account.user.name || account.user.email)
     .split(/\s+/)
     .filter(Boolean)
@@ -184,7 +196,7 @@ export default function AccountPage() {
   const titles: Record<string, string> = {
     details: "Your Details",
     clubs: "Your Clubs",
-    here: isParent ? "Your Children" : "Your Team",
+    here: shows.kids && shows.team ? "Your Team & Children" : shows.kids ? "Your Children" : "Your Team",
     security: "Sign-In & Security",
     alerts: "Notifications",
     appearance: "Appearance",
@@ -261,45 +273,51 @@ export default function AccountPage() {
           {screen === "here" && here?.person && (
             <Group>
               <div className="p-5">
-                <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-                  {isParent
-                    ? `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`
-                    : `Your team at ${here.club}.`}
-                </p>
-                {isParent ? (
-                  <ChildrenEditor
-                    value={kids}
-                    teams={here.teams}
-                    onChange={setKids}
-                    clubDecidesTeams
-                    confirmRemove
-                    // each child's card is headed by their photo, once they're in the squad
-                    photo={(c, info) => (
-                      <ChildAvatar
-                        playerId={here.person?.status === "approved" ? c.playerId : undefined}
-                        name={c.name}
-                        version={c.playerId ? photos[c.playerId] : undefined}
-                        onChange={(v) =>
-                          c.playerId &&
-                          setPhotos((all) => {
-                            const next = { ...all };
-                            if (v) next[c.playerId!] = v;
-                            else delete next[c.playerId!];
-                            return next;
-                          })
-                        }
-                      >
-                        {info}
-                      </ChildAvatar>
-                    )}
-                  />
-                ) : (
-                  <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={input}>
-                    <option value="">Not sure / more than one</option>
-                    {here.teams.map((t) => (
-                      <option key={t.slug} value={t.slug}>{t.name}</option>
-                    ))}
-                  </select>
+                {shows.team && (
+                  <>
+                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">Your team at {here.club}.</p>
+                    <select value={myTeam} onChange={(e) => setMyTeam(e.target.value)} className={input}>
+                      <option value="">Not sure / more than one</option>
+                      {here.teams.map((t) => (
+                        <option key={t.slug} value={t.slug}>{t.name}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+                {shows.kids && (
+                  <>
+                    <p className={`mb-3 text-sm text-gray-500 dark:text-gray-400 ${shows.team ? "mt-5" : ""}`}>
+                      {shows.team
+                        ? `Your children at ${here.club}, if any play here: their full name and team, for the club's squad.`
+                        : `Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`}
+                    </p>
+                    <ChildrenEditor
+                      value={kids}
+                      teams={here.teams}
+                      onChange={setKids}
+                      clubDecidesTeams
+                      confirmRemove
+                      // each child's card is headed by their photo, once they're in the squad
+                      photo={(c, info) => (
+                        <ChildAvatar
+                          playerId={here.person?.status === "approved" ? c.playerId : undefined}
+                          name={c.name}
+                          version={c.playerId ? photos[c.playerId] : undefined}
+                          onChange={(v) =>
+                            c.playerId &&
+                            setPhotos((all) => {
+                              const next = { ...all };
+                              if (v) next[c.playerId!] = v;
+                              else delete next[c.playerId!];
+                              return next;
+                            })
+                          }
+                        >
+                          {info}
+                        </ChildAvatar>
+                      )}
+                    />
+                  </>
                 )}
                 <button onClick={saveHere} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save

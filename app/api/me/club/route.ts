@@ -24,7 +24,7 @@ async function context() {
 }
 
 const view = (p: NonNullable<Awaited<ReturnType<typeof currentPerson>>>["person"]) =>
-  p ? { status: p.status, relation: p.relation ?? null, team: p.team ?? null, children: childrenOf(p) } : null;
+  p ? { status: p.status, roles: p.roles, relation: p.relation ?? null, team: p.team ?? null, children: childrenOf(p) } : null;
 
 export async function GET() {
   const ctx = await context();
