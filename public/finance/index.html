@@ -1031,7 +1031,7 @@
       list.map(p=>{
         const b = playerBalance(p.id);
         return `<tr>
-          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
+          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${p.joined.length >= 10 ? fmtDate(p.joined.slice(0,10)) : fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
           <td>${esc(p.parentName||'—')}</td>
           <td class="muted">${p.parentPhone?esc(p.parentPhone):''}${p.parentPhone&&p.parentEmail?'<br>':''}${p.parentEmail?esc(p.parentEmail):''}${!p.parentPhone&&!p.parentEmail?'—':''}</td>
           <td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:`<span class="clear">Clear</span>`}</td>
@@ -1046,7 +1046,7 @@
     return `
       <div class="form-grid">
         <label class="field"><span>Child's name *</span><input id="pf-name" value="${esc(p.name||'')}"></label>
-        <label class="field"><span>Month joined</span><input id="pf-joined" type="month" value="${esc(p.joined?p.joined.slice(0,7):'')}"></label>
+        <label class="field"><span>Date joined</span><input id="pf-joined" type="date" value="${esc(!p.joined ? '' : p.joined.length >= 10 ? p.joined.slice(0,10) : p.joined.slice(0,7) + '-01')}"></label>
         <label class="field"><span>Parent / guardian name</span><input id="pf-parent" value="${esc(p.parentName||'')}"></label>
         <label class="field"><span>Parent phone</span><input id="pf-phone" value="${esc(p.parentPhone||'')}"></label>
         <label class="field"><span>Parent email</span><input id="pf-email" type="email" value="${esc(p.parentEmail||'')}"></label>
@@ -1587,9 +1587,12 @@
     } catch(e){ return; }
     if(team !== currentTeam || !cryptoKey) return;
     const skipped = new Set(state.squadSkipped || []);
-    // a team's first import owes from the season's start; later arrivals from the month they joined
-    const firstImport = state.players.length === 0;
-    const start = state.settings.startMonth || '';
+    // joined: the day they were added to the squad (a coach adding them, or
+    // their parent's sign-up being approved), on this device's calendar
+    const joinedOn = iso => {
+      const d = new Date(iso || ''); if(isNaN(d)) return '';
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    };
     const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
     let added = 0, changed = 0;
     for(const sp of squad){
@@ -1601,12 +1604,13 @@
         if(p.squadId !== sp.id){ p.squadId = sp.id; changed++; }
         // a parent the treasurer hasn't filled in yet
         if(g && !p.parentName && !p.parentEmail){ p.parentName = g.name || ''; p.parentEmail = g.email || ''; changed++; }
+        // one added from Members before join dates came across
+        if(p.fromSquad && !p.joined && joinedOn(sp.createdAt)){ p.joined = joinedOn(sp.createdAt); changed++; }
         continue;
       }
-      const addedM = String(sp.createdAt || '').slice(0,7);
       state.players.push({
-        id: uid(), squadId: sp.id, name: sp.name,
-        joined: !firstImport && addedM > start ? addedM : '',
+        id: uid(), squadId: sp.id, fromSquad: true, name: sp.name,
+        joined: joinedOn(sp.createdAt),
         parentName: g ? (g.name || '') : '', parentEmail: g ? (g.email || '') : '',
         parentPhone: '', emergency: '', medical: '', notes: '', archived: false
       });
