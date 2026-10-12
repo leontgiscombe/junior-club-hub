@@ -78,6 +78,8 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
   const swallowClick = useRef(false);
 
   function pressStart(e: React.PointerEvent) {
+    // a new press: whatever tap the last long press might have led to has gone
+    swallowClick.current = false;
     if (arranging) return;
     const x = e.clientX, y = e.clientY;
     press.current = {
@@ -96,6 +98,8 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
   function pressEnd() {
     if (press.current) window.clearTimeout(press.current.timer);
     press.current = null;
+    // a phone may or may not send a tap after a long press: only one straight after it is ignored
+    if (swallowClick.current) window.setTimeout(() => (swallowClick.current = false), 400);
   }
   function pressMove(e: React.PointerEvent) {
     // a scroll, not a press
