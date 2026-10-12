@@ -4,8 +4,9 @@
 //   PUT { children?, team? }     -> saves their children (a parent) or their own team
 // Only their own record; the club's coaches see the changes in Members.
 import { NextRequest, NextResponse } from "next/server";
-import { childrenOf } from "@/lib/access";
-import { cleanChildren, currentPerson, pickTeam, updatePerson } from "@/lib/people";
+import { childrenOf, readPerson } from "@/lib/access";
+import { canCoach, cleanChildren, currentPerson, decideChild, pickTeam, updatePerson } from "@/lib/people";
+import { listPlayers } from "@/lib/statsStorage";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { playerPhotoVersions } from "@/lib/playerPhoto";
@@ -43,12 +44,25 @@ export async function PUT(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const before = childrenOf(ctx.me.person);
   const waitingBefore = new Set(before.flatMap((c) => (c.pending ? [c.id] : [])));
-  const person = await updatePerson(ctx.tenant, ctx.me.user.id, {
+  let person = await updatePerson(ctx.tenant, ctx.me.user.id, {
     ...(body && "children" in body ? { children: cleanChildren(body.children, ctx.teams) } : {}),
     ...(body && "team" in body ? { team: pickTeam(body.team, ctx.teams) ?? null } : {}),
   });
   // a child just added waits for a coach: let them know
-  const added = person ? childrenOf(person).filter((c) => c.pending && !waitingBefore.has(c.id)) : [];
+  let added = person ? childrenOf(person).filter((c) => c.pending && !waitingBefore.has(c.id)) : [];
+  // …unless they're a coach (or club admin) themselves: their own child goes
+  // straight into the squad, as the same player if they're there already
+  if (added.length && person && canCoach(person)) {
+    const players = await listPlayers();
+    const same = (a: string, b: string) => a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
+    for (const c of added) {
+      const match =
+        players.find((p) => same(p.name, c.name) && (!c.requestedTeam || p.team === c.requestedTeam.slug)) ?? players.find((p) => same(p.name, c.name));
+      await decideChild(ctx.tenant, person.userId, c.id, { approve: true, ...(match ? { link: match.id } : { team: c.requestedTeam }) });
+    }
+    person = (await readPerson(ctx.tenant, person.userId)) ?? person;
+    added = [];
+  }
   if (added.length && person) {
     await notifyChildRequest(ctx.tenant, {
       userId: person.userId,
