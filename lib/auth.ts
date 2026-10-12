@@ -9,6 +9,7 @@
 //   platform:session:<hash>         a signed-in device: { userId }
 //   platform:login:<id>             a sign-in waiting to be finished (15 minutes)
 //   platform:login-email:<email>    the latest one for an email, for typing the code
+//   platform:email-change:<id>      a new email address waiting for its code (15 minutes)
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
 import type { NextResponse } from "next/server";
@@ -60,6 +61,44 @@ async function findOrCreateUser(email: string): Promise<User> {
   if ((await kvCall<number>(["HSETNX", USERS_BY_EMAIL, email, user.id])) !== 1) return (await userByEmail(email))!;
   await kvCall(["SET", userKey(user.id), JSON.stringify(user)]);
   return user;
+}
+
+// Changing an account's email: a code sent to the new address proves it's
+// theirs (it's how they'll sign in from then on), for 15 minutes, 5 tries.
+const emailChangeKey = (id: string) => `platform:email-change:${id}`;
+type EmailChange = { email: string; codeHash: string; tries: number };
+
+/** A code to email to `email`, or why it can't be their new address. */
+export async function startEmailChange(user: User, email: string): Promise<{ code: string } | { error: string }> {
+  if (!EMAIL.test(email)) return { error: "Enter a valid email address" };
+  if (email === user.email) return { error: "That's already your email address" };
+  if (await userByEmail(email)) return { error: "That email address already has an account" };
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const change: EmailChange = { email, codeHash: sha(`${user.id}:${email}:${code}`), tries: 0 };
+  await kvCall(["SET", emailChangeKey(user.id), JSON.stringify(change), "EX", LOGIN_SECONDS]);
+  return { code };
+}
+
+/** The new address, once its code is right: the account moves to it. */
+export async function finishEmailChange(user: User, code: string): Promise<{ user: User; from: string } | { error: string }> {
+  const change = parse<EmailChange>(await kvCall(["GET", emailChangeKey(user.id)]));
+  if (!change) return { error: "That code has run out — ask for a new one" };
+  if (!same(sha(`${user.id}:${change.email}:${code.replace(/\D/g, "")}`), change.codeHash)) {
+    if (change.tries + 1 >= MAX_CODE_TRIES) await kvCall(["DEL", emailChangeKey(user.id)]);
+    else await kvCall(["SET", emailChangeKey(user.id), JSON.stringify({ ...change, tries: change.tries + 1 }), "KEEPTTL"]);
+    return { error: "That code isn't right — check the email and try again" };
+  }
+  await kvCall(["DEL", emailChangeKey(user.id)]);
+  // the new address is theirs only if nobody's made an account with it meanwhile
+  if ((await kvCall<number>(["HSETNX", USERS_BY_EMAIL, change.email, user.id])) !== 1) {
+    const owner = await kvCall<string | null>(["HGET", USERS_BY_EMAIL, change.email]);
+    if (owner !== user.id) return { error: "That email address already has an account" };
+  }
+  const fresh = (await getUser(user.id)) ?? user;
+  const next: User = { ...fresh, email: change.email };
+  await kvCall(["SET", userKey(user.id), JSON.stringify(next)]);
+  await kvCall(["HDEL", USERS_BY_EMAIL, fresh.email]);
+  return { user: next, from: fresh.email };
 }
 
 /** Their mobile number ("" takes it off). */
