@@ -1,13 +1,14 @@
 // Find your club, by its join code (Coach Admin → Members): there's no list or
 // search of clubs, so nobody can browse who's on the platform. Lookups are
 // limited per IP address, so codes can't be guessed.
-//   GET ?code=K7Q-M3X -> { url } (the club's join page) or 404
+//   GET ?code=K7Q-M3X -> { url, home, name } (the club's join page, its address and name) or 404
 import { NextRequest, NextResponse } from "next/server";
 import { normaliseCode } from "@/lib/access";
 import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
 import { tenantForCode } from "@/lib/members";
 import { getTenant, tenantUrl } from "@/lib/tenant";
+import { getTenantRecord } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -26,5 +27,6 @@ export async function GET(req: NextRequest) {
   }
   const tenant = await tenantForCode(code);
   if (!tenant) return NextResponse.json({ error: "That code isn't right — check it with your coach" }, { status: 404 });
-  return NextResponse.json({ url: tenantUrl(tenant, `/join?code=${code}`) });
+  const record = await getTenantRecord(tenant);
+  return NextResponse.json({ url: tenantUrl(tenant, `/join?code=${code}`), home: tenantUrl(tenant, "/"), name: record?.name ?? "" });
 }

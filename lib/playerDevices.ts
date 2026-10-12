@@ -21,7 +21,9 @@ export const CODE_MINUTES = 10;
 
 export type PlayerDevice = { id: string; label: string; createdAt: string; tokenHash: string; by: string };
 
-const codeKey = (tenant: string, code: string) => clubKey(tenant, `player-code:${code}`);
+// codes are unique across the platform, so a code says which club it's for:
+// a child can type it in the app before it knows their club (/start)
+const codeKey = (code: string) => `platform:player-code:${code}`;
 const devicesKey = (tenant: string, playerId: string) => clubKey(tenant, `player-devices:${playerId}`);
 const progressKey = (tenant: string, playerId: string) => clubKey(tenant, `player-progress:${playerId}`);
 
@@ -43,10 +45,17 @@ export function isGuardianOf(person: Person | null, playerId: string): boolean {
 export async function newPlayerCode(tenant: string, playerId: string, by: string): Promise<string> {
   for (let i = 0; i < 20; i++) {
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-    const set = await kvCall(["SET", codeKey(tenant, code), JSON.stringify({ playerId, by }), "NX", "EX", CODE_MINUTES * 60]);
+    const set = await kvCall(["SET", codeKey(code), JSON.stringify({ tenant, playerId, by }), "NX", "EX", CODE_MINUTES * 60]);
     if (set === "OK") return code;
   }
   throw new Error("Couldn't make a code — try again");
+}
+
+/** The club a player code is for (still unused and in time), without using it up. */
+export async function playerCodeTenant(code: string): Promise<string | null> {
+  const clean = code.replace(/\D/g, "");
+  if (clean.length !== 6) return null;
+  return parse<{ tenant: string }>(await kvCall(["GET", codeKey(clean)]))?.tenant ?? null;
 }
 
 /** A short name for the device, from its browser: "iPhone", "Android tablet". */
@@ -67,9 +76,9 @@ export function deviceLabel(userAgent: string): string {
 export async function redeemPlayerCode(tenant: string, code: string, label: string): Promise<{ token: string; playerId: string } | null> {
   const clean = code.replace(/\D/g, "");
   if (clean.length !== 6) return null;
-  const key = codeKey(tenant, clean);
-  const found = parse<{ playerId: string; by: string }>(await kvCall(["GET", key]));
-  if (!found) return null;
+  const key = codeKey(clean);
+  const found = parse<{ tenant: string; playerId: string; by: string }>(await kvCall(["GET", key]));
+  if (!found || found.tenant !== tenant) return null;
   // once only
   if (Number(await kvCall(["DEL", key])) !== 1) return null;
   const token = randomBytes(32).toString("base64url");

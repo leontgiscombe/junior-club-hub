@@ -2,7 +2,7 @@
 // six-digit code a parent or coach made on their card, and this device opens
 // the Training Hub as them from then on — nothing else in the hub.
 import { getClub } from "@/lib/settings";
-import { getTenant } from "@/lib/tenant";
+import { getTenant, rootDomain } from "@/lib/tenant";
 import { currentPlayer, playerView } from "@/lib/playerRequest";
 import NoTabBar from "../components/NoTabBar";
 import PlayerLinkForm from "./PlayerLinkForm";
@@ -10,7 +10,8 @@ import PlayerLinkForm from "./PlayerLinkForm";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Player Setup", robots: { index: false } };
 
-export default async function PlayerPage() {
+export default async function PlayerPage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
+  const { code } = await searchParams;
   const tenant = await getTenant();
   const club = tenant ? await getClub() : null;
   const session = await currentPlayer();
@@ -37,7 +38,7 @@ export default async function PlayerPage() {
             </a>
           </>
         ) : (
-          <PlayerLinkForm />
+          <PlayerLinkForm initialCode={code ?? ""} root={rootDomain()} />
         )}
       </div>
     </main>

@@ -23,7 +23,7 @@ import {
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account|player\/find)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
 
 // what a private club's hub shows people who aren't members yet: the join
 // page, Coach Admin, password resets, the legal pages, pictures and files —
@@ -60,6 +60,8 @@ export async function proxy(req: NextRequest) {
   if (tenant === null) {
     if (pathname === "/") return NextResponse.rewrite(new URL("/platform", req.url));
     if (pathname === "/signup") return NextResponse.rewrite(new URL("/platform/signup", req.url));
+    // the app's opening screen: find your club, as a player or a grown-up
+    if (pathname === "/start") return NextResponse.rewrite(new URL("/platform/start", req.url));
     if (!PLATFORM_PATHS.some((p) => p.test(pathname))) return NextResponse.redirect(new URL("/", req.url));
     return NextResponse.next();
   }

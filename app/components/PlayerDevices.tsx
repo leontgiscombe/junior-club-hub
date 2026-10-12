@@ -5,6 +5,8 @@
 // one-time code to set one up, and see or remove the ones already set up.
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import QRCode from "qrcode";
+import { playerSetupUrl } from "@/lib/playerCode";
 
 type Device = { id: string; label: string; createdAt: string; by: string };
 
@@ -38,7 +40,7 @@ export default function PlayerDevices({
 function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first: string; adminKey?: string; onClose: () => void }) {
   const q = (extra = "") => `?${adminKey ? `key=${encodeURIComponent(adminKey)}&` : ""}${extra}`;
   const [devices, setDevices] = useState<Device[] | null>(null);
-  const [code, setCode] = useState<{ code: string; minutes: number } | null>(null);
+  const [code, setCode] = useState<{ code: string; minutes: number; qr?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +68,11 @@ function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) setError(data.error ?? "Couldn't make a code");
-    else setCode(data);
+    else {
+      // a QR code of the setup link, for the child's camera to scan
+      const qr = await QRCode.toString(playerSetupUrl(window.location.origin, data.code), { type: "svg", margin: 1, errorCorrectionLevel: "M" }).catch(() => undefined);
+      setCode({ ...data, qr });
+    }
     setBusy(false);
   }
 
@@ -102,7 +108,20 @@ function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first
 
         {code ? (
           <div className="rounded-3xl bg-white p-5 text-center dark:bg-black/40">
-            <p className="text-sm text-gray-500 dark:text-gray-400">On {first}&apos;s device, go to</p>
+            {code.qr && (
+              <>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Scan this with {first}&apos;s device:</p>
+                {/* white behind it in dark mode too, so cameras can read it */}
+                <div
+                  className="mx-auto mt-3 w-52 rounded-2xl bg-white p-2 [&_svg]:h-auto [&_svg]:w-full"
+                  role="img"
+                  aria-label="QR code to set up the device"
+                  dangerouslySetInnerHTML={{ __html: code.qr }}
+                />
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">No camera? On {first}&apos;s device, go to</p>
+              </>
+            )}
+            {!code.qr && <p className="text-sm text-gray-500 dark:text-gray-400">On {first}&apos;s device, go to</p>}
             <p className="mt-1 break-all font-semibold">{address}</p>
             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">and type this code:</p>
             <p className="mt-2 font-mono text-4xl font-bold tracking-[0.3em]">{code.code}</p>
