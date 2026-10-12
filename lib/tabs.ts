@@ -79,17 +79,17 @@ export function availableTabs(ctx: TabContext): TabId[] {
   if (ctx.features.kitSizes !== false) out.push("kit");
   if (ctx.canCoach) out.push("coach");
   if (ctx.publicResults) out.push("results");
-  out.push("account", "search");
+  // not Account: your photo, top left of every main page, opens it
+  out.push("search");
   if (ctx.canCoach) out.push("matches", "trainingLog", "stats", "members");
   return out;
 }
 
-/** The tabs before anyone chooses: the club's main pages, then Coach, Account or Sign In. */
+/** The tabs before anyone chooses: the club's main pages, then Coach. */
 export function defaultTabs(ctx: TabContext): TabId[] {
   const out: TabId[] = ["home"];
   const can = availableTabs(ctx);
   for (const id of ["training", "finances", "kit", "coach"] as TabId[]) if (can.includes(id)) out.push(id);
-  if (!ctx.signedIn || out.length < MAX_TABS) out.push("account");
   return out.slice(0, MAX_TABS);
 }
 
