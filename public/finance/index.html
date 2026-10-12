@@ -714,7 +714,9 @@
     players: [],
     // payments keyed "YYYY-MM|playerId" -> {status:'paid'|'unpaid'|'exempt', method, date}
     payments: {},
-    expenses: [] // {id,date,type:'expense'|'income',category,desc,amount}
+    expenses: [], // {id,date,type:'expense'|'income',category,desc,amount}
+    // squad ids (from the hub's Members tab) of players deleted here, so they aren't added back
+    squadSkipped: []
   });
 
   let state = defaultState();
@@ -1024,7 +1026,7 @@
     let list = state.players.filter(p=>!p.archived);
     if(q) list = list.filter(p=> (p.name+' '+(p.parentName||'')+' '+(p.parentPhone||'')+' '+(p.parentEmail||'')).toLowerCase().includes(q));
     list.sort((a,b)=>a.name.localeCompare(b.name));
-    if(!state.players.length){ $("#players-table").innerHTML = emptyMsg("🧒","No players yet","Click “+ Add player” to build your squad."); return; }
+    if(!state.players.length){ $("#players-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub\u2019s Members tab are added here automatically, or click \u201c+ Add Player\u201d."); return; }
     $("#players-table").innerHTML = `<table><thead><tr><th>Player</th><th>Parent / guardian</th><th>Contact</th><th class="num">Balance</th><th></th></tr></thead><tbody>${
       list.map(p=>{
         const b = playerBalance(p.id);
@@ -1075,6 +1077,8 @@
     ].filter(Boolean));
   }
   function deletePlayer(id){
+    const gone = state.players.find(p=>p.id===id);
+    if(gone && gone.squadId) state.squadSkipped = [...(state.squadSkipped||[]), gone.squadId];
     state.players = state.players.filter(p=>p.id!==id);
     Object.keys(state.payments).forEach(k=>{ if(k.endsWith('|'+id)) delete state.payments[k]; });
     save(); renderAll();
@@ -1302,6 +1306,7 @@
     $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
     $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
     if(viewRenderers[name]) viewRenderers[name](); // always show fresh data
+    if(name === 'players') syncSquad(false); // anyone new in Members
     window.scrollTo({top:0, behavior:'smooth'});
   }
   document.addEventListener('click', e=>{
@@ -1558,8 +1563,58 @@
     renderAll();
     startPolling();
     if(account) renderDevices();
+    syncSquad(true);
   }
   function lock(){ cryptoKey=null; currentTeam=null; stopPolling(); location.reload(); }
+
+  // ---- Players from the hub's Members tab ----
+  // The team's squad in Members: anyone missing here is added, with their
+  // parent's name and email; a player already here under the same name is
+  // linked instead. One deleted here isn't added back. Done in the browser,
+  // because the records are encrypted with the team's key.
+  let squadSyncedAt = 0;
+  async function syncSquad(force){
+    if(!currentTeam || !cryptoKey || !apiAvailable) return;
+    if(!force && Date.now() - squadSyncedAt < 60000) return;
+    squadSyncedAt = Date.now();
+    const team = currentTeam;
+    let squad;
+    try {
+      const headers = {}; if(writeToken) headers['x-write-token'] = writeToken;
+      const res = await fetch('/api/finance/squad?id=' + encodeURIComponent(team), { cache:'no-store', headers });
+      if(!res.ok) return;
+      squad = (await res.json()).players || [];
+    } catch(e){ return; }
+    if(team !== currentTeam || !cryptoKey) return;
+    const skipped = new Set(state.squadSkipped || []);
+    // a team's first import owes from the season's start; later arrivals from the month they joined
+    const firstImport = state.players.length === 0;
+    const start = state.settings.startMonth || '';
+    const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+    let added = 0, changed = 0;
+    for(const sp of squad){
+      if(skipped.has(sp.id)) continue;
+      const g = (sp.guardians || [])[0];
+      let p = state.players.find(x => x.squadId === sp.id)
+        || state.players.find(x => !x.squadId && norm(x.name) === norm(sp.name));
+      if(p){
+        if(p.squadId !== sp.id){ p.squadId = sp.id; changed++; }
+        // a parent the treasurer hasn't filled in yet
+        if(g && !p.parentName && !p.parentEmail){ p.parentName = g.name || ''; p.parentEmail = g.email || ''; changed++; }
+        continue;
+      }
+      const addedM = String(sp.createdAt || '').slice(0,7);
+      state.players.push({
+        id: uid(), squadId: sp.id, name: sp.name,
+        joined: !firstImport && addedM > start ? addedM : '',
+        parentName: g ? (g.name || '') : '', parentEmail: g ? (g.email || '') : '',
+        parentPhone: '', emergency: '', medical: '', notes: '', archived: false
+      });
+      added++;
+    }
+    if(added || changed){ save(); renderAll(); }
+    if(added) flash(added === 1 ? 'Added 1 player from Members' : 'Added ' + added + ' players from Members');
+  }
 
   // ---- Pull others' changes periodically and when the tab regains focus ----
   let pollTimer = null;
