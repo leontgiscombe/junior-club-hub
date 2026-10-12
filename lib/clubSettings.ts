@@ -113,10 +113,29 @@ export function cleanChanges(input: unknown): ClubChanges {
  * everything else can. A removed team is only archived: its data stays, and
  * it can be brought back.
  */
+/** The match formats the Training Hub has content for, youngest first. */
+export const GAME_FORMATS = ["5v5", "7v7", "9v9", "11v11"] as const;
+export type GameFormat = (typeof GAME_FORMATS)[number];
+export const isGameFormat = (v: unknown): v is GameFormat => GAME_FORMATS.includes(v as GameFormat);
+
+/**
+ * A team's match format: the one set in Settings, else worked out from an age
+ * in its name ("U8 Blues" → 5v5, "Under 12s" → 9v9), else 7v7. The FA's
+ * formats: U7–U8 5v5, U9–U10 7v7, U11–U12 9v9, U13 and up 11v11.
+ */
+export function teamFormat(team: Pick<Team, "name" | "format">): GameFormat {
+  if (team.format) return team.format;
+  const age = Number(/\b(?:u|under)[\s-]*(\d{1,2})/i.exec(team.name)?.[1] ?? NaN);
+  if (!Number.isFinite(age)) return "7v7";
+  return age <= 8 ? "5v5" : age <= 10 ? "7v7" : age <= 12 ? "9v9" : "11v11";
+}
+
 export type Team = {
   slug: string;
   name: string;
   accent: string;
+  /** set in Settings for the Training Hub; unset means worked out (teamFormat) */
+  format?: GameFormat;
   squadName?: string;
   faSnippet?: string;
   opponents?: string[];
@@ -245,6 +264,7 @@ export function cleanTeams(input: unknown): Team[] | null {
     const team: Team = { slug, name, accent: text(r.accent, 8) || "⚽" };
     const squadName = text(r.squadName, 30);
     if (squadName) team.squadName = squadName;
+    if (isGameFormat(r.format)) team.format = r.format;
     const faSnippet = text(r.faSnippet, 15);
     if (/^\d+$/.test(faSnippet)) team.faSnippet = faSnippet;
     if (Array.isArray(r.opponents)) {

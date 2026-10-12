@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, kitAspect, slugFor, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -47,11 +47,13 @@ function fromDrafts(drafts: TeamDraft[]): Team[] {
       accent: d.accent.trim() || "⚽",
       squadName: d.squadName?.trim() || undefined,
       faSnippet: d.faSnippet?.trim() || undefined,
+      format: d.format || undefined,
       opponents: opponentsText.split("\n").map((o) => o.trim()).filter(Boolean),
     };
     if (!team.opponents?.length) delete team.opponents;
     if (!team.squadName) delete team.squadName;
     if (!team.faSnippet) delete team.faSnippet;
+    if (!team.format) delete team.format;
     if (!team.archived) delete team.archived;
     if (!team.slug) team.slug = slugFor(team.name, [...drafts.filter((x) => x.slug) as Team[], ...out]);
     out.push(team);
@@ -1012,6 +1014,24 @@ function TeamsEditor({
                   />
                   <span className="mt-1 block text-xs text-gray-400">
                     Shown after the initials: “{initials} {t.squadName?.trim() || t.name.trim() || "U9s Reds"}”.
+                  </span>
+                </label>
+                <label>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Match format</span>
+                  <select
+                    value={t.format ?? ""}
+                    onChange={(e) => change(i, { format: isGameFormat(e.target.value) ? e.target.value : undefined })}
+                    className={input}
+                  >
+                    <option value="">From the team name ({teamFormat({ name: t.name })})</option>
+                    {GAME_FORMATS.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-xs text-gray-400">
+                    The Training Hub shows its players the guide, quiz and challenges for this format.
                   </span>
                 </label>
                 <TrainingDays training={t.training ?? DEFAULT_TRAINING} onChange={(training) => change(i, { training })} input={input} />
