@@ -14,7 +14,7 @@ import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
 import { getAccess } from "@/lib/members";
 import { notifyJoinRequest } from "@/lib/notify";
-import { BAD_PHONE, cleanPhone } from "@/lib/phone";
+import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
 import { cleanChildren, currentPerson, pickTeam, requestToJoinAsPerson } from "@/lib/people";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
@@ -77,12 +77,13 @@ export async function POST(req: NextRequest) {
   if (!relation) return NextResponse.json({ error: "Choose who you are" }, { status: 400 });
   const phone = cleanPhone(body.phone);
   if (phone === null) return NextResponse.json({ error: BAD_PHONE }, { status: 400 });
+  if (!phone) return NextResponse.json({ error: NEED_PHONE }, { status: 400 });
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
   if (!user.name) await setUserName(user.id, name);
-  if (phone && phone !== user.phone) await setUserPhone(user.id, phone);
+  if (phone !== user.phone) await setUserPhone(user.id, phone);
 
-  const person = await requestToJoinAsPerson(tenant, user, { name, phone: phone || user.phone, relation, team, children, note });
+  const person = await requestToJoinAsPerson(tenant, user, { name, phone, relation, team, children, note });
   const res = NextResponse.json({ status: person.status });
   if (person.status === "approved") return res;
 

@@ -212,14 +212,12 @@ export default function JoinForm({
         )
       )}
       <label>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-          Mobile number{relation === "parent" ? "" : " (optional)"}
-        </span>
+        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Mobile number</span>
         <input
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          required={relation === "parent"}
+          required
           autoComplete="tel"
           inputMode="tel"
           maxLength={24}
@@ -228,8 +226,8 @@ export default function JoinForm({
         />
         <span className="mt-1 block text-xs text-gray-400">
           {relation === "parent"
-            ? "So the team's treasurer can send you a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
-            : "Only the club's coaches and treasurer see it."}
+            ? "So the club can reach you, and the team's treasurer can send a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
+            : "So the club can reach you. Only the club's coaches and treasurer see it."}
         </span>
       </label>
       <label>

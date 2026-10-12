@@ -171,6 +171,26 @@ export default async function Home() {
           <p className={`wp-text mt-0.5 text-[15px] ${sub}`}>{context}</p>
         </div>
 
+        {/* anyone in the club without a mobile number yet (it became required): ask for it */}
+        {person && me && !me.user.phone && (
+          <Link
+            href="/account#details"
+            className="press flex items-center gap-4 rounded-3xl bg-green-50 px-4 py-3.5 text-green-900 dark:bg-green-400/10 dark:text-green-200"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-green-200/70 dark:bg-green-400/20">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+                <path d="M11 18.5h2" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold">Add your mobile number</span>
+              <span className="block text-sm opacity-80">So the club can reach you, e.g. a reminder about subs</span>
+            </span>
+            <Chevron />
+          </Link>
+        )}
+
         {/* coaches: anyone waiting for approval */}
         {waiting > 0 && (
           <Link

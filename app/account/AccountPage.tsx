@@ -206,10 +206,10 @@ export default function AccountPage() {
                     placeholder="e.g. 07700 900123"
                     className={input}
                   />
-                  <span className="mt-1 block text-xs text-gray-400">For WhatsApp reminders about subs. Only your club&apos;s coaches and treasurer see it.</span>
+                  <span className="mt-1 block text-xs text-gray-400">So your club can reach you, e.g. a WhatsApp reminder about subs. Only its coaches and treasurer see it.</span>
                 </label>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Email: {account.user.email}</p>
-                <button onClick={saveName} disabled={busy || !name.trim() || (name === account.user.name && phone.trim() === (account.user.phone ?? ""))} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
+                <button onClick={saveName} disabled={busy || !name.trim() || !phone.trim() || (name === account.user.name && phone.trim() === (account.user.phone ?? ""))} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
                   Save
                 </button>
                 {message && (

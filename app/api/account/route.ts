@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kvCall, peopleKey, readPerson, type Person } from "@/lib/access";
 import { clearSessionCookie, currentUser, deleteUser, setUserName, setUserPhone, userClubsKey } from "@/lib/auth";
-import { BAD_PHONE, cleanPhone } from "@/lib/phone";
+import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
 import { leaveClub } from "@/lib/people";
 import { getClubFor } from "@/lib/settings";
 import { tenantUrl } from "@/lib/tenant";
@@ -42,6 +42,8 @@ export async function PATCH(req: NextRequest) {
   // left out: kept as it is
   const phone = body?.phone === undefined ? (user.phone ?? "") : cleanPhone(body.phone);
   if (phone === null) return NextResponse.json({ error: BAD_PHONE }, { status: 400 });
+  // it's required: it can be changed, not taken off
+  if (!phone && body?.phone !== undefined) return NextResponse.json({ error: NEED_PHONE }, { status: 400 });
   await setUserName(user.id, name);
   await setUserPhone(user.id, phone);
   for (const club of (await kvCall<string[]>(["SMEMBERS", userClubsKey(user.id)])) ?? []) {
