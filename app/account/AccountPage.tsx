@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
+import NameFields from "../components/NameFields";
 import { AlertsSettings, useJoinRequests } from "../components/JoinAlerts";
 import ChildPhotos from "./ChildPhotos";
 import ProfilePhoto from "./ProfilePhoto";
@@ -175,7 +176,7 @@ export default function AccountPage() {
               <div className="p-5">
                 <label className="block">
                   <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
-                  <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className={input} />
+                  <NameFields value={name} onChange={setName} label="Your" autoComplete className={input} />
                 </label>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Email: {account.user.email}</p>
                 <button onClick={saveName} disabled={busy || !name.trim() || name === account.user.name} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">

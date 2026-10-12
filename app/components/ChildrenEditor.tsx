@@ -3,6 +3,7 @@
 // A parent's children: a name and team for each, with "add another" — on the
 // join page, the parent's account page, and when a coach fixes them in Members.
 import { MAX_CHILDREN, type Child } from "@/lib/access";
+import NameFields from "./NameFields";
 
 export type ChildDraft = {
   id?: string;
@@ -36,12 +37,15 @@ export default function ChildrenEditor({
   teams,
   onChange,
   clubDecidesTeams = false,
+  required = false,
 }: {
   value: ChildDraft[];
   teams: TeamOption[];
   onChange: (next: ChildDraft[]) => void;
   /** a parent's view: squad players' teams are shown, not chosen */
   clubDecidesTeams?: boolean;
+  /** each child needs a first and last name (the join form) */
+  required?: boolean;
 }) {
   const set = (i: number, change: Partial<ChildDraft>) => onChange(value.map((c, j) => (j === i ? { ...c, ...change } : c)));
   const field =
@@ -50,18 +54,17 @@ export default function ChildrenEditor({
     <div className="flex flex-col gap-2">
       {value.map((c, i) => (
         <div key={c.id ?? `new-${i}`} className="flex flex-wrap gap-2">
-          <input
+          <NameFields
             value={c.name}
-            onChange={(e) => set(i, { name: e.target.value })}
-            maxLength={60}
-            placeholder="e.g. Sam Bloggs"
-            aria-label={`Child ${i + 1}'s name`}
-            className={`${field} min-w-0 flex-1 basis-32`}
+            onChange={(name) => set(i, { name })}
+            label={`Child ${i + 1}'s`}
+            required={required}
+            className={field}
           />
           {clubDecidesTeams && c.linked ? (
             <span className="flex basis-32 items-center text-sm text-gray-500 dark:text-gray-400">{c.teamLabel}</span>
           ) : teams.length > 0 && (
-            <select value={c.team} onChange={(e) => set(i, { team: e.target.value })} aria-label={`Child ${i + 1}'s team`} className={`${field} basis-32`}>
+            <select value={c.team} onChange={(e) => set(i, { team: e.target.value })} aria-label={`Child ${i + 1}'s team`} className={`${field} min-w-0 flex-1 basis-32`}>
               <option value="">Team…</option>
               {teams.map((t) => (
                 <option key={t.slug} value={t.slug}>
