@@ -171,7 +171,16 @@
   .owe { color: var(--red); font-weight: 700; }
   .clear { color: var(--green-dark); font-weight: 700; }
   .muted { color: var(--muted); }
-  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  /* a table cell, not a flex box, so it lines up with the rest of its row */
+  .row-actions { text-align: right; white-space: nowrap; vertical-align: middle; }
+  .row-actions .btn + .btn { margin-left: 6px; }
+  /* the players table on a phone: parent and contact under the name, so the
+     balance and Edit fit without scrolling sideways */
+  .narrow-only { display: none; }
+  @media (max-width: 620px){
+    .players-list .wide-only { display: none; }
+    .players-list .narrow-only { display: block; }
+  }
   .checkline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .checkline input[type=checkbox] { width: auto; }
   .hint { font-size: 12px; color: var(--muted); background: var(--green-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
@@ -1035,13 +1044,13 @@
     if(q) list = list.filter(p=> (p.name+' '+(p.parentName||'')+' '+(p.parentPhone||'')+' '+(p.parentEmail||'')).toLowerCase().includes(q));
     list.sort((a,b)=>a.name.localeCompare(b.name));
     if(!state.players.length){ $("#players-table").innerHTML = emptyMsg("🧒","No players yet","Players in the hub\u2019s Members tab are added here automatically, or click \u201c+ Add Player\u201d."); return; }
-    $("#players-table").innerHTML = `<table><thead><tr><th>Player</th><th>Parent / guardian</th><th>Contact</th><th class="num">Balance</th><th></th></tr></thead><tbody>${
+    $("#players-table").innerHTML = `<table class="players-list"><thead><tr><th>Player</th><th class="wide-only">Parent / guardian</th><th class="wide-only">Contact</th><th class="num">Balance</th><th></th></tr></thead><tbody>${
       list.map(p=>{
         const b = playerBalance(p.id);
         return `<tr>
-          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${p.joined.length >= 10 ? fmtDate(p.joined.slice(0,10)) : fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
-          <td>${esc(p.parentName||'—')}</td>
-          <td class="muted">${p.parentPhone?esc(p.parentPhone):''}${p.parentPhone&&p.parentEmail?'<br>':''}${p.parentEmail?esc(p.parentEmail):''}${!p.parentPhone&&!p.parentEmail?'—':''}</td>
+          <td><strong>${esc(p.name)}</strong>${p.medical?`<span class="flag" title="${esc(p.medical)}">⚕</span>`:''}${(p.parentName||p.parentPhone||p.parentEmail)?`<div class="narrow-only muted" style="font-size:12px;overflow-wrap:anywhere">${esc([p.parentName, p.parentPhone, p.parentEmail].filter(Boolean).join(' · '))}</div>`:''}${p.joined?`<div class="muted" style="font-size:12px">joined ${p.joined.length >= 10 ? fmtDate(p.joined.slice(0,10)) : fmtMonthShort(p.joined.slice(0,7))}</div>`:''}</td>
+          <td class="wide-only">${esc(p.parentName||'—')}</td>
+          <td class="muted wide-only">${p.parentPhone?esc(p.parentPhone):''}${p.parentPhone&&p.parentEmail?'<br>':''}${p.parentEmail?esc(p.parentEmail):''}${!p.parentPhone&&!p.parentEmail?'—':''}</td>
           <td class="num">${b.owed>0?`<span class="owe">${money(b.owed)} owed</span>`:`<span class="clear">Clear</span>`}</td>
           <td class="row-actions"><button class="btn btn-sm" data-edit-player="${p.id}">Edit</button></td>
         </tr>`;
