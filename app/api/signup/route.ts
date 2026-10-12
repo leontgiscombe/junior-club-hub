@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       heading: `Welcome to ${PLATFORM_NAME}!`,
       paragraphs: [
         `${name}'s hub is ready at ${tenantUrl(address)}.`,
-        "Open Coach Admin and sign in with this email address — you're the club's admin, no password needed. Add a passkey in Your Account and next time it's just Face ID or your fingerprint. Add your badge, colours and any more teams in Coach Admin → Settings.",
+        "Open Coach Admin and sign in with this email address — you're the club's admin, no password needed. A short Set Up Your Club checklist there takes you through the rest: your crest and colours, your teams, inviting your coaches and getting parents to join. Each step ticks itself off as you go.",
         `Your club code is ${showCode(code)}. Parents, players and your other coaches type it at ${platformUrl("/").replace(/^https?:\/\//, "").replace(/\/$/, "")}, sign in with their email and ask to join. You approve them, and choose what each can do, in Coach Admin → Members.`,
         ...(contact ? [`Any questions, just reply to this email or write to ${contact}.`] : []),
       ],
@@ -87,5 +87,6 @@ export async function POST(req: NextRequest) {
       footer: `You're getting this because this email was used to sign ${name} up on ${PLATFORM_NAME}.`,
     }),
   });
-  return NextResponse.json({ url: tenantUrl(address, "/admin/settings") });
+  // Coach Admin, with Set Up Your Club at the top
+  return NextResponse.json({ url: tenantUrl(address, "/admin") });
 }

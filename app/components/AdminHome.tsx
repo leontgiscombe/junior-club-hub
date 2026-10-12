@@ -1,5 +1,7 @@
 "use client";
 
+import SetupCard from "./SetupCard";
+import type { SetupStep } from "@/lib/setupChecklist";
 import NoTabBar from "./NoTabBar";
 import Link from "next/link";
 import { backOr } from "@/lib/back";
@@ -136,9 +138,12 @@ const TOOLS: {
 export default function AdminHome({
   canResetPassword = false,
   viewer = { signedIn: false, initials: "", photo: null },
+  setup = null,
 }: {
   canResetPassword?: boolean;
   viewer?: HeaderViewer;
+  /** "Set up your club", for a club admin who hasn't finished it */
+  setup?: SetupStep[] | null;
 }) {
   const CLUB = useClub();
   const [key, setKey] = useState("");
@@ -314,6 +319,8 @@ export default function AdminHome({
           <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
           <p className="wp-text mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
         </div>
+
+        {setup && <SetupCard steps={setup} />}
 
         {account?.canCoach && key === SESSION_KEY && <AlertsPrompt status={joins} refresh={refreshJoins} />}
 

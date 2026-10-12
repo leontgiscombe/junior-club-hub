@@ -26,6 +26,8 @@ import HomeWallpaper from "./components/HomeWallpaper";
 import AppHeader from "./components/AppHeader";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
 import RefreshOnReturn from "./components/RefreshOnReturn";
+import SetupCard from "./components/SetupCard";
+import { setupFor } from "@/lib/setupChecklist";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
@@ -75,6 +77,7 @@ export default async function Home() {
     tenant ? currentPerson(tenant).catch(() => null) : null,
   ]);
   const person = me?.person?.status === "approved" ? me.person : null;
+  const setup = tenant && me ? await setupFor(tenant, me.user, me.person).catch(() => null) : null;
   const teamName = (slug?: string) => TEAMS.find((t) => t.slug === slug)?.name ?? "";
   const kids = person ? childrenOf(person) : [];
   const isParentView = viewer.signedIn && !viewer.canCoach && !viewer.canFinance;
@@ -193,6 +196,9 @@ export default async function Home() {
             <Chevron />
           </Link>
         )}
+
+        {/* a club admin who hasn't finished setting the club up */}
+        {setup && <SetupCard steps={setup} />}
 
         {/* coaches: anyone waiting for approval */}
         {waiting > 0 && (
