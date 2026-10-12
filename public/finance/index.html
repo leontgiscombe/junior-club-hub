@@ -129,6 +129,14 @@
     font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line);
     border-radius: 9px; background: #fff; color: var(--ink); width: 100%;
   }
+  /* iOS gives date and month fields a minimum width and centred text, so they
+     spill past the form's edge; keep them to the width of the other fields */
+  input[type=date], input[type=month] {
+    -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%;
+    display: block; text-align: left; min-height: 40px;
+  }
+  input[type=date]::-webkit-date-and-time-value, input[type=month]::-webkit-date-and-time-value { text-align: left; }
+  .form-grid > * { min-width: 0; }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: var(--green); }
   label.field { display: block; margin-bottom: 12px; }
   label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--muted); }
