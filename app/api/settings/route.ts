@@ -22,7 +22,7 @@ import {
 import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
 import { getTenantRecord, setTenantEmail, setTenantPassword } from "@/lib/tenants";
 import { readAccess } from "@/lib/access";
-import { PLANS, billingState, teamLimit } from "@/lib/billing";
+import { PLANS, billingState, planSummary, teamLimit } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +67,8 @@ async function snapshot() {
     account: record
       ? { email: record.email, sharedPassword: !record.noPassword && !(await readAccess(tenant!)).passwordOff }
       : null,
+    // the club's plan, in a few words (lib/billing.ts), for Settings → Plan
+    plan: record ? planSummary(billingState(record.billing)) : null,
   };
 }
 

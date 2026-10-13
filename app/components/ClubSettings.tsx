@@ -27,6 +27,8 @@ type Snapshot = {
   teams: Team[];
   /** The club's own sign-in details on the platform (none on a single-club hub). */
   account: { email: string; sharedPassword?: boolean } | null;
+  /** the club's plan in a few words (platform clubs only) */
+  plan?: string | null;
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
@@ -741,6 +743,13 @@ export default function ClubSettings() {
               <Row icon={ICONS.team} label="Teams" detail={String(liveTeams)} onClick={() => open("teams")} />
               <Row icon={ICONS.grid} label="Parts of the Hub" onClick={() => open("parts")} />
             </Group>
+
+            {/* a club on the platform: its free trial or plan (app/plans) */}
+            {canAdmin && snap.plan && (
+              <Group>
+                <Row icon={ICONS.money} label="Plan" detail={snap.plan} href="/plans" />
+              </Group>
+            )}
 
 
           </div>
