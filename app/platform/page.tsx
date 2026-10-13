@@ -81,6 +81,7 @@ export default function PlatformHome() {
           <Link href="/signup" className="mt-5 inline-block rounded-2xl bg-[var(--club-bright)] px-6 py-3.5 font-extrabold text-[var(--club-night)] hover:opacity-90">
             Start Your Club →
           </Link>
+          <p className="mt-3 text-sm opacity-80">30 days free, no card needed. Then from £4.99 a month for the whole club.</p>
         </section>
       </main>
 

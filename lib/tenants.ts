@@ -1,6 +1,7 @@
 // The clubs on the platform: each one's web address (its id), name, contact
 // email and coach password (scrypt-hashed, never stored as typed). Kept in one
 // platform-wide record outside every club's own data. Server only.
+import { newTrial, type Billing } from "./billing";
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { rawKv } from "./kv";
@@ -21,6 +22,8 @@ export type TenantRecord = {
   noPassword?: true;
   /** paused by the platform admin: its hub shows a "paused" page; nothing is deleted */
   paused?: { at: string; reason?: string };
+  /** the free trial and plan (lib/billing.ts); none at all: a founding club, which never pays */
+  billing?: Billing;
 };
 
 /** A club as the public can see it (find-your-club): no email or password. */
@@ -71,6 +74,7 @@ export async function createTenant(input: { id: string; name: string; email: str
     // clubs signed up with accounts have no coach password: a random one nobody knows
     passwordHash: await hash(input.password || randomBytes(24).toString("base64url"), salt),
     ...(input.password ? {} : { noPassword: true as const }),
+    billing: newTrial(),
   };
   const added = (await kv.hsetnx(TENANTS_KEY, input.id, JSON.stringify(record))) === 1;
   if (added) known.delete(input.id);
@@ -115,6 +119,20 @@ export async function setTenantPassword(id: string, password: string): Promise<v
   if (!record) throw new Error("No such club");
   const salt = randomBytes(16);
   await saveRecord({ ...record, passwordSalt: salt.toString("base64"), passwordHash: await hash(password, salt) });
+}
+
+/** Change a club's trial or plan (lib/billing.ts): `change` is merged in; null fields are removed. */
+export async function setTenantBilling(id: string, change: { [K in keyof Billing]?: Billing[K] | null }): Promise<Billing> {
+  const record = await getTenantRecord(id);
+  if (!record) throw new Error("No such club");
+  // a founding club given a trial or plan starts from what it had: nothing
+  const billing: Billing = { ...(record.billing ?? {}) };
+  for (const [k, v] of Object.entries(change) as [keyof Billing, unknown][]) {
+    if (v === null) delete billing[k];
+    else (billing as Record<string, unknown>)[k] = v;
+  }
+  await saveRecord({ ...record, billing });
+  return billing;
 }
 
 /** Change a club's contact email. */
@@ -172,7 +190,7 @@ export async function listTenantsForAdmin(): Promise<AdminTenant[]> {
   const all = (await kv.hgetall<Record<string, TenantRecord | string>>(TENANTS_KEY)) ?? {};
   return Object.values(all)
     .map((r) => (typeof r === "string" ? (JSON.parse(r) as TenantRecord) : r))
-    .map(({ id, name, email, createdAt, paused }) => ({ id, name, email, createdAt, ...(paused ? { paused } : {}) }))
+    .map(({ id, name, email, createdAt, paused, billing }) => ({ id, name, email, createdAt, ...(paused ? { paused } : {}), ...(billing ? { billing } : {}) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

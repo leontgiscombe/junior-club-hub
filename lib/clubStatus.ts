@@ -3,6 +3,7 @@
 // noting when it was last used (at most once an hour per club, per server),
 // for the platform admin's dashboard. Nothing about who used it is kept.
 import { kvCall } from "./access";
+import { billingState, type Billing } from "./billing";
 import { DEFAULT_TENANT } from "./tenantHost";
 
 export const activeKey = (tenant: string) => `platform:club-active:${tenant}`;
@@ -21,7 +22,8 @@ export function noteActive(tenant: string): void {
   kvCall(["SET", activeKey(tenant), new Date().toISOString()]).catch(() => noted.delete(tenant));
 }
 
-export type Paused = { at: string; reason?: string };
+/** paused by the platform admin, or (trialEnded) its free trial ended without a plan */
+export type Paused = { at: string; reason?: string; trialEnded?: true };
 const pausedCache = new Map<string, { at: number; paused: Paused | null }>();
 
 /** Whether the platform admin has paused `tenant` (remembered for 30 seconds). */
@@ -32,7 +34,13 @@ export async function pausedClub(tenant: string): Promise<Paused | null> {
   const raw = await kvCall<string | null>(["HGET", TENANTS_KEY, tenant]);
   let paused: Paused | null = null;
   try {
-    paused = (raw ? (JSON.parse(raw) as { paused?: Paused }).paused : null) ?? null;
+    const record = raw ? (JSON.parse(raw) as { paused?: Paused; billing?: Billing }) : null;
+    paused = record?.paused ?? null;
+    // no plan after the free trial: paused until it subscribes (nothing deleted)
+    if (!paused && record) {
+      const state = billingState(record.billing);
+      if (state.kind === "ended") paused = { at: state.endedAt, trialEnded: true };
+    }
   } catch {}
   if (pausedCache.size > 5000) pausedCache.clear();
   pausedCache.set(tenant, { at: Date.now(), paused });

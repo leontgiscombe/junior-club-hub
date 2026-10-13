@@ -31,6 +31,8 @@ import { cookies } from "next/headers";
 import RefreshOnReturn from "./components/RefreshOnReturn";
 import SetupCard from "./components/SetupCard";
 import { setupFor } from "@/lib/setupChecklist";
+import { getTenantRecord } from "@/lib/tenants";
+import { billingState } from "@/lib/billing";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
@@ -83,6 +85,11 @@ export default async function Home() {
   ]);
   const person = me?.person?.status === "approved" ? me.person : null;
   const setup = tenant && me ? await setupFor(tenant, me.user, me.person).catch(() => null) : null;
+  // a club admin, in the last week of the free trial: how long's left (lib/billing.ts)
+  const trial =
+    tenant && person?.roles.includes("admin")
+      ? await getTenantRecord(tenant).then((r) => (r ? billingState(r.billing) : null)).catch(() => null)
+      : null;
   const teamName = (slug?: string) => TEAMS.find((t) => t.slug === slug)?.name ?? "";
   const kids = person ? childrenOf(person) : [];
   const isParentView = viewer.signedIn && !viewer.canCoach && !viewer.canFinance;
@@ -225,6 +232,24 @@ export default async function Home() {
                     ? "A coach didn't approve your request — tap to ask again"
                     : "Add your child, and get the club's updates"}
               </span>
+            </span>
+            <Chevron />
+          </Link>
+        )}
+
+        {trial?.kind === "trial" && trial.daysLeft <= 7 && (
+          <Link
+            href="/plans"
+            className="press flex items-center gap-4 rounded-3xl bg-amber-50 px-4 py-3.5 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-200/70 text-2xl dark:bg-amber-400/20" aria-hidden="true">
+              ⏳
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold">
+                {trial.daysLeft} day{trial.daysLeft === 1 ? "" : "s"} left of your free trial
+              </span>
+              <span className="block text-sm opacity-80">Choose a plan, from £4.99 a month, so the hub carries on</span>
             </span>
             <Chevron />
           </Link>

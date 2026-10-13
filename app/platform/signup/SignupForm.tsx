@@ -182,6 +182,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       <button disabled={busy || !!addressError || !agreed} className="mt-1 cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
         {busy ? "Setting up…" : "Create Your Club's Hub"}
       </button>
+      <p className="text-center text-sm text-gray-500">30 days free, no card needed. Then from £4.99 a month, by how many teams you have.</p>
     </form>
   );
 }

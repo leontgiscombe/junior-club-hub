@@ -4,6 +4,8 @@
 //                                             log, emailConfigured, backups, separateBackups }
 //   GET                                    -> also { feedback }: Help & Feedback messages (lib/feedback.ts)
 //   POST { action: "feedbackDone", feedbackId, done? } -> marks a message done (or not)
+//   POST { action: "billing", id, op: "extend" | "free" | "unfree" | "paid" | "unpaid", reason?, plan?, months? }
+//                                          -> a club's trial or plan (lib/billing.ts)
 //   POST { action: "demo", id }           -> fills an empty club with made-up teams, players and games (lib/demoSeed.ts)
 //   POST { action: "reset", id }          -> emails the club a password-reset link
 //   POST { action: "pause", id, reason? } -> the club's hub shows a "paused" page; nothing is deleted
@@ -14,6 +16,7 @@
 //   POST { action: "restore", id, date, confirm } -> puts a club back as it was in
 //                                            that day's backup (confirm repeats the id)
 import { seedDemoClub } from "@/lib/demoSeed";
+import { PLANS, PLAN_IDS } from "@/lib/billing";
 import { listFeedback, setFeedbackDone } from "@/lib/feedback";
 import { NextRequest, NextResponse } from "next/server";
 import { listBackups, restoreClub, separateBackupDb } from "@/lib/backup";
@@ -22,7 +25,7 @@ import { platformAdminProblem } from "@/lib/platformAdmin";
 import { sendResetEmail } from "@/lib/resetEmail";
 import { getTenant } from "@/lib/tenant";
 import { adminLog, clubStats, forgetClubExtras, logAdmin, setNotes } from "@/lib/platformStats";
-import { deleteTenant, getTenantRecord, listTenantsForAdmin, setTenantPaused } from "@/lib/tenants";
+import { deleteTenant, getTenantRecord, listTenantsForAdmin, setTenantPaused, setTenantBilling } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +51,41 @@ export async function POST(req: NextRequest) {
   if (refused) return refused;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
+
+  // a club's trial or plan (lib/billing.ts): extend the trial, free for good, or mark a plan paid
+  if (body?.action === "billing") {
+    const record = await getTenantRecord(id);
+    if (!record) return NextResponse.json({ error: "No such club" }, { status: 404 });
+    const op = body.op;
+    const DAY = 86400_000;
+    const from = (iso?: string) => Math.max(Date.now(), iso ? Date.parse(iso) || 0 : 0);
+    let message = "";
+    if (op === "extend") {
+      await setTenantBilling(id, { trialEndsAt: new Date(from(record.billing?.trialEndsAt) + 30 * DAY).toISOString(), reminded: null });
+      message = `${record.name}'s trial is 30 days longer`;
+    } else if (op === "free") {
+      const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 80) : "Free";
+      await setTenantBilling(id, { free: { reason } });
+      message = `${record.name} is free (${reason})`;
+    } else if (op === "unfree") {
+      // back to paying: a fresh 30-day trial if it never had one running
+      await setTenantBilling(id, { free: null, ...(record.billing?.trialEndsAt ? {} : { trialEndsAt: new Date(Date.now() + 30 * DAY).toISOString() }) });
+      message = `${record.name} now needs a plan (after any trial)`;
+    } else if (op === "paid") {
+      const plan = PLAN_IDS.find((p) => p === body.plan);
+      const months = Math.min(24, Math.max(1, Number(body.months) || 1));
+      if (!plan) return NextResponse.json({ error: "Choose a plan" }, { status: 400 });
+      const until = new Date(from(record.billing?.plan === plan ? record.billing?.paidUntil : undefined));
+      until.setUTCMonth(until.getUTCMonth() + months);
+      await setTenantBilling(id, { plan, paidUntil: until.toISOString() });
+      message = `${record.name}: ${PLANS[plan].name} plan, paid up to ${until.toLocaleDateString("en-GB")}`;
+    } else if (op === "unpaid") {
+      await setTenantBilling(id, { plan: null, paidUntil: null });
+      message = `${record.name}'s plan removed`;
+    } else return NextResponse.json({ error: "Unknown change" }, { status: 400 });
+    await logAdmin("Billing", id, message);
+    return NextResponse.json({ message });
+  }
 
   if (body?.action === "feedbackDone") {
     const fid = typeof body.feedbackId === "string" ? body.feedbackId : "";
