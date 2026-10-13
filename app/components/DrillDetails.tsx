@@ -52,7 +52,15 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
           <img src={fileUrl(f.name)} alt={`${drill.title}: ${f.label}`} className="w-full" />
         </a>
       ))}
-      {facts.length > 0 && <p className="text-xs text-gray-500 dark:text-gray-400">{facts.join(" · ")}</p>}
+      {facts.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {facts.map((f) => (
+            <span key={f} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">
+              {f}
+            </span>
+          ))}
+        </div>
+      )}
       {drill.equipment && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Equipment</p>
@@ -78,9 +86,12 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Coaching points
           </p>
-          <ul className="mt-0.5 list-disc pl-5">
+          <ul className="mt-1 flex flex-col gap-1">
             {drill.coachingPoints.map((p, i) => (
-              <li key={i}>{p}</li>
+              <li key={i} className="flex gap-2">
+                <span className="font-bold text-green-600 dark:text-green-400" aria-hidden="true">✓</span>
+                <span>{p}</span>
+              </li>
             ))}
           </ul>
         </div>
