@@ -45,7 +45,7 @@ export const PAGES: PageEntry[] = [
   { title: "Delete Account", where: "Your Account", href: "/account#delete", words: "remove close account", who: "signedIn" },
 
   // treasurers
-  { title: "Finances", where: "Page", href: "/finance", words: "finances subs money payments owed spending treasurer", who: "finance", feature: "financialAdmin", external: true },
+  { title: "Finances", where: "Page", href: "/finance", words: "finances subs money payments owed spending income expenses in out categories treasurer", who: "finance", feature: "financialAdmin", external: true },
 
   // coaches
   { title: "Coach Admin", where: "Page", href: "/admin", words: "coach tools admin", who: "coach" },

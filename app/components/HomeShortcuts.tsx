@@ -49,7 +49,7 @@ const TOOLS: Record<ShortcutId, Tool> = {
   // straight to one of Finances' tabs (the page opens on it once the team's open)
   finSubs: { href: "/finance?view=subs", label: "Subs", colour: "bg-emerald-700", icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
   finOwes: { href: "/finance?view=outstanding", label: "Who Owes", colour: "bg-red-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>), external: true },
-  finSpending: { href: "/finance?view=expenses", label: "Spending", colour: "bg-violet-700", icon: svg(<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>), external: true },
+  finSpending: { href: "/finance?view=expenses", label: "In & Out", colour: "bg-violet-700", icon: svg(<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>), external: true },
   finSettings: { href: "/finance?view=settings", label: "Finance Settings", colour: "bg-gray-600", icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>), external: true },
   hub: { href: "/training-hub", label: "Training Hub", colour: "bg-green-800", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></>), external: true },
   kit: { href: "/kit", label: "Kit Sizes", colour: "bg-orange-600", icon: svg(<path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" />) },

@@ -133,6 +133,7 @@
   .btn-primary:hover, .btn-wa:hover { filter: brightness(.94); }
   .btn-wa { background: var(--wa); color: #fff; }
   .btn-sm { padding: 8px 12px; font-size: 14px; border-radius: 12px; }
+  .cat-btn { padding: 6px 10px; font-size: 13px; flex: none; }
   .btn-danger { color: var(--red); }
   .btn-ghost { background: none; }
   .actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
@@ -363,7 +364,7 @@
   <div class="tabs-inner" id="tabs" role="tablist">
     <button class="tab active" data-view="subs" role="tab">Subs</button>
     <button class="tab" data-view="outstanding" role="tab">Who Owes</button>
-    <button class="tab" data-view="expenses" role="tab">Spending</button>
+    <button class="tab" data-view="expenses" role="tab">In &amp; Out</button>
     <button class="tab" data-view="settings" role="tab">Settings</button>
   </div>
 </nav>
@@ -424,6 +425,7 @@
     <div class="fs-top" id="fs-top"><button class="fs-back" id="fs-back" aria-label="Back to Settings"></button><h2 id="fs-title"></h2><span></span></div>
     <div id="fs-list">
       <div class="fs-group"><button class="fs-row" data-fs-open="team"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/><path d="M7 20a5 5 0 0 1 10 0M1.5 19a3.5 3.5 0 0 1 6-2.5M22.5 19a3.5 3.5 0 0 0-6-2.5"/></svg></span><span class="fs-label">Subs</span><span class="fs-detail" id="fs-detail-team"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
+      <div class="fs-group"><button class="fs-row" data-fs-open="cats"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="fs-label">Categories</span><span class="fs-detail"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="left"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0M17 11h5"/></svg></span><span class="fs-label">Players Who&rsquo;ve Left</span><span class="fs-detail" id="fs-detail-left"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="backup"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 15v5h14v-5"/></svg></span><span class="fs-label">Backup &amp; Restore</span><span class="fs-detail" id="fs-detail-backup"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="reminders"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="fs-label">Monthly Reminders</span><span class="fs-detail" id="fs-detail-reminders"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
       <div class="fs-group"><button class="fs-row" data-fs-open="security"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="fs-label">Security &amp; Sync</span><span class="fs-detail" id="fs-detail-security"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button><button class="fs-row" data-fs-open="devices"><span class="fs-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><span class="fs-label">Devices &amp; Passkeys</span><span class="fs-detail" id="fs-detail-devices"></span><span class="fs-chev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button></div>
@@ -437,6 +439,11 @@
         <label class="field"><span>Subs start month</span><input id="set-start" type="month"></label>
       </div>
       <p class="muted" style="font-size:13px;margin:4px 0 0">Changes save as you make them. The team&rsquo;s name and the season come from the club&rsquo;s settings (Coach Admin &rarr; Settings).</p>
+    </div>
+    <div class="panel fs-panel" data-fs="cats">
+      <div class="panel-head"><h3>Categories</h3></div>
+      <p class="muted" style="font-size:13px;margin-top:0">What you pick from when adding money in or out. Renaming one changes the entries that use it; removing one leaves past entries as they are.</p>
+      <div id="cats-editor"></div>
     </div>
     <div class="panel fs-panel" data-fs="left">
       <div class="panel-head"><h3>Players Who&rsquo;ve Left</h3></div>
@@ -1237,14 +1244,75 @@
     if(!iso) return '';
     return new Date(iso+"T00:00:00").toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   }
+  // Each team's categories for money in and money out (Settings → Categories), kept
+  // with its records; "Other" is always there, so an entry always has somewhere to go.
+  const DEFAULT_CATS = {
+    in: ['Sponsorship','Fundraising','Donations','Tournament winnings','Other'],
+    out: ['Pitch hire','Referee','Kit & equipment','League fees','Tournament entry','Insurance','First aid','Coaching course','Presentation night','Other'],
+  };
+  const catSide = (type) => type === 'income' ? 'in' : 'out';
+  function categoriesFor(type){
+    const saved = state.settings.categories && state.settings.categories[catSide(type)];
+    const list = Array.isArray(saved) && saved.length ? saved.slice() : DEFAULT_CATS[catSide(type)].slice();
+    if(!list.includes('Other')) list.push('Other');
+    return list;
+  }
+  function setCategories(side, list){
+    state.settings.categories = Object.assign({ in: categoriesFor('income'), out: categoriesFor('expense') }, state.settings.categories || {}, { [side]: list });
+    save(); renderCats();
+  }
+  function renderCats(){
+    const box = $("#cats-editor"); if(!box || !state) return;
+    box.innerHTML = [['in','Money in'],['out','Money out']].map(([side, label])=>{
+      const list = categoriesFor(side === 'in' ? 'income' : 'expense');
+      return '<h4 style="margin:14px 0 6px">'+label+'</h4><div class="group">'
+        + list.map(c=>'<div class="row" style="display:flex;align-items:center;gap:6px"><span class="row-main" style="min-width:0"><span class="row-title" style="white-space:normal;overflow-wrap:anywhere">'+esc(c)+'</span></span>'
+          + (c === 'Other' ? '' : '<button class="btn btn-sm cat-btn" data-cat-rename="'+side+'|'+esc(c)+'">Rename</button><button class="btn btn-sm cat-btn" data-cat-remove="'+side+'|'+esc(c)+'">Remove</button>')
+          + '</div>').join('')
+        + '</div><div style="display:flex;gap:8px;margin-top:8px"><input data-cat-new="'+side+'" placeholder="New category" maxlength="40" style="flex:1"><button class="btn btn-sm btn-primary" data-cat-add="'+side+'">Add</button></div>';
+    }).join('');
+  }
+  document.addEventListener('click', e=>{
+    const add = e.target.closest('[data-cat-add]');
+    if(add){
+      const side = add.dataset.catAdd, input = document.querySelector('[data-cat-new="'+side+'"]');
+      const name = (input.value||'').trim().slice(0,40); if(!name) return;
+      const list = categoriesFor(side === 'in' ? 'income' : 'expense');
+      if(list.some(c=>c.toLowerCase() === name.toLowerCase())){ flash('There\u2019s already a ' + name); return; }
+      list.splice(list.indexOf('Other'), 0, name); setCategories(side, list); return;
+    }
+    const ren = e.target.closest('[data-cat-rename]');
+    if(ren){
+      const [side, old] = ren.dataset.catRename.split('|');
+      const name = (prompt('Rename \u201c' + old + '\u201d to:', old) || '').trim().slice(0,40);
+      if(!name || name === old) return;
+      const list = categoriesFor(side === 'in' ? 'income' : 'expense');
+      if(list.some(c=>c.toLowerCase() === name.toLowerCase() && c !== old)){ flash('There\u2019s already a ' + name); return; }
+      list[list.indexOf(old)] = name;
+      // its entries follow the new name
+      state.expenses.forEach(x=>{ if(catSide(x.type) === side && x.category === old) x.category = name; });
+      setCategories(side, list); if(viewRenderers.expenses) viewRenderers.expenses(); return;
+    }
+    const rem = e.target.closest('[data-cat-remove]');
+    if(rem){
+      const [side, name] = rem.dataset.catRemove.split('|');
+      if(!confirm('Remove \u201c' + name + '\u201d? Past entries keep it; it just won\u2019t be offered for new ones.')) return;
+      setCategories(side, categoriesFor(side === 'in' ? 'income' : 'expense').filter(c=>c !== name));
+    }
+  });
   function openExpenseModal(id){
     const e = id ? state.expenses.find(x=>x.id===id) : {type:'expense', date:todayISO()};
-    const cats = ['Pitch hire','Referee','Kit & equipment','League fees','Tournament','Insurance','First aid','Coaching course','Fundraising','Sponsorship','Other'];
+    // this entry's side's categories, and its own if it's since been removed
+    const catOptions = (type, current) => {
+      const list = categoriesFor(type);
+      if(current && !list.includes(current)) list.unshift(current);
+      return list.map(c=>`<option ${current===c?'selected':''}>${esc(c)}</option>`).join('');
+    };
     openModal(id?'Edit Entry':'Money In or Out', `
       <div class="form-grid">
         <label class="field"><span>Type</span><select id="ef-type"><option value="expense" ${e.type==='expense'?'selected':''}>Expense (money out)</option><option value="income" ${e.type==='income'?'selected':''}>Income (money in)</option></select></label>
         <label class="field"><span>Date</span><input id="ef-date" type="date" value="${esc(e.date||todayISO())}"></label>
-        <label class="field"><span>Category</span><select id="ef-cat">${cats.map(c=>`<option ${e.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
+        <label class="field"><span>Category</span><select id="ef-cat">${catOptions(e.type, e.category)}</select></label>
         <label class="field"><span>Amount (£)</span><input id="ef-amount" type="number" min="0" step="0.01" value="${e.amount!=null?e.amount:''}"></label>
       </div>
       <label class="field"><span>Description</span><input id="ef-desc" value="${esc(e.desc||'')}" placeholder="e.g. Astro pitch hire — June"></label>
@@ -1260,6 +1328,8 @@
         save(); closeModal(); renderExpenses(); renderDashboard();
       }}
     ].filter(Boolean));
+    // switching between money in and out offers that side's categories
+    $("#ef-type").onchange = () => { $("#ef-cat").innerHTML = catOptions($("#ef-type").value, ''); };
   }
 
   // ---- SETTINGS ----
@@ -1269,6 +1339,7 @@
     $("#set-start").value = state.settings.startMonth || thisMonth();
     refreshPushState();
     renderLeft();
+    renderCats();
     fsSync();
   }
 
@@ -1368,6 +1439,7 @@
     const row = document.querySelector('[data-fs-open="'+id+'"] .fs-label');
     $("#fs-title").innerHTML = row ? row.innerHTML : '';
     if(!id) fsSync();
+    if(id === 'cats') renderCats();
     window.scrollTo(0,0);
   }
   document.addEventListener('click', e=>{
