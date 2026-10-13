@@ -1372,7 +1372,10 @@
     });
     $("#modal-backdrop").classList.add('open');
     lockScroll('modal');
-    const first = !noFocus && $("#modal-body input"); if(first) first.focus();
+    // start typing in the form's first field when it's a text box; never a date, which would
+    // open the date picker straight away (the money in/out form starts with Type, then Date)
+    const first = !noFocus && $("#modal-body input, #modal-body select, #modal-body textarea");
+    if(first && first.matches('textarea, input:not([type=date]):not([type=month]):not([type=time]):not([type=checkbox]):not([type=radio]):not([type=file])')) first.focus();
   }
   function closeModal(){ $("#modal-backdrop").classList.remove('open'); unlockScroll('modal'); }
 
