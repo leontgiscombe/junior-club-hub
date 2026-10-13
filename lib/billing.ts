@@ -62,3 +62,11 @@ export function newTrial(now = Date.now()): Billing {
 export function teamLimit(state: BillingState): number {
   return state.kind === "paid" ? PLANS[state.plan].teams : Infinity;
 }
+
+/** Where a club stands, in a few words: "Free trial · 23 days left", "Club plan", "Free", "Trial ended". */
+export function planSummary(state: BillingState): string {
+  if (state.kind === "trial") return `Free trial · ${state.daysLeft} day${state.daysLeft === 1 ? "" : "s"} left`;
+  if (state.kind === "paid") return `${PLANS[state.plan].name} plan`;
+  if (state.kind === "free") return "Free";
+  return "Trial ended";
+}
