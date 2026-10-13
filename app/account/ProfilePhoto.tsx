@@ -37,10 +37,11 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // a fresh ?v= each time the page opens, so a new photo always shows
-    const url = `/api/account/photo?v=${Date.now()}`;
-    fetch(url)
-      .then((r) => r.ok && setSrc(url))
+    // only when there is one (asking for a photo nobody's added is a 404), with a
+    // fresh ?v= each time the page opens, so a new photo always shows
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => me?.user?.photo && setSrc(`/api/account/photo?v=${Date.now()}`))
       .catch(() => {});
   }, []);
 
