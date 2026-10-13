@@ -223,7 +223,8 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 html.player-mode #hub-tabbar{display:none!important}
 html.player-mode body{padding-bottom:max(24px,env(safe-area-inset-bottom))!important}
 /* the header row, as on Home: your photo, Search and the crest */
-.hub-head{align-self:stretch;display:flex;align-items:center;justify-content:space-between;padding-top:max(0px,env(safe-area-inset-top));margin-bottom:6px}
+/* exactly where Home's header row is: 28px down, 20px in, in a 536px-wide column */
+.hub-head{align-self:center;width:100%;max-width:536px;display:flex;align-items:center;justify-content:space-between;padding-top:calc(max(20px,env(safe-area-inset-top)) - 10px);margin-bottom:6px}
 .hub-head-right{display:flex;align-items:center;gap:12px}
 .hub-me{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;overflow:hidden;background:#15803d;color:#fff;font-weight:800;font-size:16px;text-decoration:none;box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.2)}
 .hub-me svg{width:24px;height:24px}

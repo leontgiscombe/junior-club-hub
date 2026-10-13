@@ -22,7 +22,7 @@ export default async function KitHeader({
   // the Kit tab itself: like Home — your photo, Search and the crest, then a large title
   const viewer = await getViewer(await getTenant()).catch(() => SIGNED_OUT);
   return (
-    <header className="mx-auto flex w-full max-w-md flex-col gap-6 px-5 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <header className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <AppHeader viewer={viewer} crest={CLUB.crest} />
       <div className="min-w-0">
         <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">{title}</h1>
