@@ -3,6 +3,7 @@
 // step ticks itself when it's actually done — the same signals the platform
 // admin sees (lib/platformStats.ts) — and the ones a club might not need, or
 // that are about checking something, can be ticked by hand. Server only.
+import { inApp } from "./inAppServer";
 import { awaitingApproval, childrenOf, clubKey, invitesKey, joinAlertsKey, kvCall, peopleKey, type Person } from "./access";
 import type { User } from "./auth";
 import { financeKeys } from "./financeStorage";
@@ -162,7 +163,17 @@ export async function setupFor(tenant: string, user: User, person: Person | null
           },
         ]
       : []),
-    {
+    // in the App Store app, web alerts can't be turned on (lib/inApp.ts): just Face ID
+    (await inApp())
+      ? {
+          id: "phone",
+          title: "Turn on Face ID sign-in",
+          hint: "Sign in with a glance next time.",
+          href: "/account#security",
+          done: ticked("phone") || passkeys.length > 0,
+          manual: true,
+        }
+      : {
       id: "phone",
       title: "Turn on notifications and Face ID sign-in",
       hint: "Hear straight away when someone asks to join, and sign in with a glance.",

@@ -463,7 +463,7 @@
     </div>
     <div class="panel fs-panel" data-fs="reminders">
       <div class="panel-head"><h3>Monthly Reminders</h3></div>
-      <p class="muted" style="font-size:13px;margin-top:0">Get a push notification on the 1st of each month reminding you to check this team's subs and chase anyone who hasn't paid. Turn it on for each device (phone) you want reminded.</p>
+      <p class="muted" id="push-intro" style="font-size:13px;margin-top:0">Get a push notification on the 1st of each month reminding you to check this team's subs and chase anyone who hasn't paid. Turn it on for each device (phone) you want reminded.</p>
       <div class="toolbar">
         <button class="btn btn-primary" id="push-enable-btn">🔔 Turn On Monthly Reminder</button>
         <button class="btn" id="push-test-btn">Send Test Notification</button>
@@ -471,7 +471,7 @@
         <button class="btn" id="cal-add-btn">📅 Add Reminders to Calendar</button>
       </div>
       <p class="muted" id="push-status" style="font-size:12px;margin:10px 0 0"></p>
-      <p class="muted" style="font-size:12px;margin:8px 0 0">On iPhone/iPad you must first add this app to your Home Screen (Share → Add to Home Screen) and open it from there, then turn on reminders.</p>
+      <p class="muted" id="push-a2hs" style="font-size:12px;margin:8px 0 0">On iPhone/iPad you must first add this app to your Home Screen (Share → Add to Home Screen) and open it from there, then turn on reminders.</p>
     </div>
     <div class="panel fs-panel" data-fs="security">
       <div class="panel-head"><h3>Security &amp; Sync</h3></div>
@@ -2037,6 +2037,12 @@
   async function refreshPushState(){
     const enBtn = $("#push-enable-btn"), disBtn = $("#push-disable-btn");
     if(!enBtn || !disBtn) return;
+    // the App Store app can't show web alerts (lib/inApp.ts): just the calendar reminders there
+    if(/GrassrootsClubHubApp/.test(navigator.userAgent)){
+      ['#push-enable-btn','#push-disable-btn','#push-test-btn','#push-a2hs'].forEach(s=>{ const el=$(s); if(el) el.style.display='none'; });
+      const intro = $("#push-intro"); if(intro) intro.textContent = "Add a reminder to your calendar for the 1st of each month, to check this team's subs and chase anyone who hasn't paid.";
+      return;
+    }
     if(!('serviceWorker' in navigator) || !('PushManager' in window)){ enBtn.style.display=''; disBtn.style.display='none'; return; }
     try {
       const reg = await navigator.serviceWorker.ready;
