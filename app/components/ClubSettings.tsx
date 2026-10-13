@@ -663,7 +663,7 @@ export default function ClubSettings() {
             )}
             {screen === "teams" && (
               <>
-                <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} />
+                <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} adminKey={key} />
               </>
             )}
             {screen === "signin" && (
@@ -915,11 +915,15 @@ function TeamsEditor({
   teams,
   setTeams,
   initials,
+  adminKey,
 }: {
+  adminKey: string;
   teams: TeamDraft[];
   setTeams: (update: (teams: TeamDraft[]) => TeamDraft[]) => void;
   initials: string;
 }) {
+  // an archived team being deleted for good (DeleteTeam)
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const active = teams.map((t, i) => ({ t, i })).filter(({ t }) => !t.archived);
   const archived = teams.map((t, i) => ({ t, i })).filter(({ t }) => t.archived);
@@ -1128,8 +1132,25 @@ function TeamsEditor({
                 >
                   Bring Back
                 </button>
+                <button
+                  onClick={() => setDeleting(t.slug)}
+                  className="cursor-pointer text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400"
+                >
+                  Delete
+                </button>
               </div>
             ))}
+            {deleting && (
+              <DeleteTeam
+                slug={deleting}
+                adminKey={adminKey}
+                onClose={() => setDeleting(null)}
+                onDeleted={() => {
+                  setTeams((ts) => ts.filter((x) => x.slug !== deleting));
+                  setDeleting(null);
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1251,3 +1272,82 @@ function AccountSection({
   );
 }
 
+
+/**
+ * Deleting an archived team for good (app/api/teams/delete): what goes, and
+ * the team's name typed to confirm.
+ */
+function DeleteTeam({ slug, adminKey, onClose, onDeleted }: { slug: string; adminKey: string; onClose: () => void; onDeleted: () => void }) {
+  const [info, setInfo] = useState<{ name: string; footprint: { games: number; sessions: number; players: number; kitSizes: number; kitRequests: number; finances: boolean; plan: boolean } } | null>(null);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`/api/teams/delete?key=${encodeURIComponent(adminKey)}&team=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) setInfo(d);
+        else setError(d.error ?? "Couldn't check the team");
+      })
+      .catch(() => setError("Couldn't check the team"));
+  }, [slug, adminKey]);
+  async function remove() {
+    setBusy(true);
+    setError(null);
+    const r = await fetch(`/api/teams/delete?key=${encodeURIComponent(adminKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team: slug, confirm: typed }),
+    }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    setBusy(false);
+    if (r?.ok) onDeleted();
+    else setError(d.error ?? "That didn't delete — try again");
+  }
+  const f = info?.footprint;
+  const n = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+  const parts = f
+    ? [
+        f.games && n(f.games, "game"),
+        f.sessions && n(f.sessions, "training session"),
+        f.players && `${n(f.players, "player")} (with their photos and medical notes, and off their parents' lists)`,
+        f.kitSizes && n(f.kitSizes, "kit size form"),
+        f.kitRequests && n(f.kitRequests, "kit request"),
+        f.plan && "its training plan",
+        f.finances && "its Finances records (subs, payments and spending)",
+      ].filter(Boolean)
+    : [];
+  const matches = !!info && typed.trim().toLowerCase() === info.name.trim().toLowerCase();
+  return (
+    <div className="mt-2 rounded-2xl border-2 border-red-200 bg-red-50 p-4 dark:border-red-400/30 dark:bg-red-400/10">
+      {!info ? (
+        <p className="text-sm text-gray-600 dark:text-gray-300">{error ?? "Checking…"}</p>
+      ) : (
+        <>
+          <p className="font-bold text-red-800 dark:text-red-200">Delete {info.name} for good?</p>
+          <p className="mt-1 text-sm text-red-800 dark:text-red-200">
+            {parts.length ? <>This deletes {parts.join(", ")}.</> : "It has nothing saved yet."} It can&apos;t be undone.
+          </p>
+          <label className="mt-3 block">
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Type <strong>{info.name}</strong> to confirm</span>
+            <input
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+              className="mt-1 w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 dark:border-red-400/30 dark:bg-transparent dark:text-gray-50"
+            />
+          </label>
+          {error && <p className="mt-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
+          <div className="mt-3 flex gap-2">
+            <button onClick={remove} disabled={!matches || busy} className="cursor-pointer rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-40">
+              {busy ? "Deleting…" : "Delete for Good"}
+            </button>
+            <button onClick={onClose} disabled={busy} className="cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300">
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
