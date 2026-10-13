@@ -26,7 +26,7 @@ type Snapshot = {
   kitImage: { width: number; height: number; updatedAt: string } | null;
   teams: Team[];
   /** The club's own sign-in details on the platform (none on a single-club hub). */
-  account: { email: string } | null;
+  account: { email: string; sharedPassword?: boolean } | null;
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
@@ -669,6 +669,7 @@ export default function ClubSettings() {
                 {canAdmin && snap.account && (
                   <AccountSection
                     email={snap.account.email}
+                    sharedPassword={snap.account.sharedPassword !== false}
                     adminKey={key}
                     onPasswordChanged={(next) => {
                       // stay signed in with the new password
@@ -1158,10 +1159,13 @@ function Toggle({
 // Saved on their own, so they don't touch unsaved changes above.
 function AccountSection({
   email,
+  sharedPassword,
   adminKey,
   onPasswordChanged,
 }: {
   email: string;
+  /** a shared coach password in use: false when coaches sign in only with their own accounts */
+  sharedPassword: boolean;
   adminKey: string;
   onPasswordChanged: (password: string) => void;
 }) {
@@ -1215,6 +1219,11 @@ function AccountSection({
       <button onClick={() => save("email")} disabled={busy !== null || newEmail.trim() === email} className={button}>
         {busy === "email" ? "Saving…" : "Save Email"}
       </button>
+      {!sharedPassword ? (
+        <p className="mt-5 border-t border-gray-100 pt-4 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+          There&apos;s no shared coach password: everyone signs in with their own email, and you choose who&apos;s a coach in Members.
+        </p>
+      ) : (
       <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Change the coach password</span>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password (8+ characters)" autoComplete="new-password" className={input} />
@@ -1223,6 +1232,7 @@ function AccountSection({
           {busy === "password" ? "Changing…" : "Change Password"}
         </button>
       </div>
+      )}
       {message && (
         <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${message.ok ? "bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}>
           {message.text}
