@@ -2,6 +2,7 @@
 // Coach Admin and on the home page), and turning this phone's alerts on or off.
 //   GET    ?key=…&endpoint=…  -> { pending, alerts, pushAvailable }   (alerts: whether this phone has them on)
 //   POST   { subscription }   -> turn alerts on for this phone   (signed in as a club admin or coach)
+//   POST   { apnsToken }      -> the same, for the App Store app (lib/apns.ts); its endpoint is "apns:<token>"
 //   POST   { test, endpoint } -> send a test alert to this phone
 //   DELETE { endpoint }       -> turn them off
 // With no key, the signed-in account is used.
@@ -9,7 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { SESSION_KEY, awaitingApproval } from "@/lib/access";
 import { isCoach } from "@/lib/adminAuth";
 import { listMembers } from "@/lib/members";
-import { addJoinAlert, hasJoinAlert, pushConfigured, removeJoinAlert, sendTestAlert } from "@/lib/notify";
+import { addJoinAlert, addNativeAlert, hasJoinAlert, pushConfigured, removeJoinAlert, sendTestAlert } from "@/lib/notify";
+import { isApnsToken } from "@/lib/apns";
 import { canCoach, currentPerson, listPeople } from "@/lib/people";
 import { requireTenant } from "@/lib/tenant";
 
@@ -47,11 +49,17 @@ export async function POST(req: NextRequest) {
     test?: boolean;
     endpoint?: unknown;
     subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
+    apnsToken?: unknown;
   } | null;
   if (body?.test) {
     if (typeof body.endpoint !== "string") return NextResponse.json({ error: "missing endpoint" }, { status: 400 });
     const error = await sendTestAlert(me.tenant, me.userId, body.endpoint);
     return error ? NextResponse.json({ error }, { status: 502 }) : NextResponse.json({ ok: true });
+  }
+  if (body?.apnsToken !== undefined) {
+    if (!isApnsToken(body.apnsToken)) return NextResponse.json({ error: "That phone's token isn't right" }, { status: 400 });
+    await addNativeAlert(me.tenant, me.userId, body.apnsToken);
+    return NextResponse.json({ ok: true });
   }
   const sub = body?.subscription;
   if (
