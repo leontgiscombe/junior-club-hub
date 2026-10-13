@@ -22,6 +22,7 @@ import {
 import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
 import { getTenantRecord, setTenantEmail, setTenantPassword } from "@/lib/tenants";
 import { readAccess } from "@/lib/access";
+import { PLANS, billingState, teamLimit } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +110,19 @@ export async function PUT(req: NextRequest) {
     if (body?.teams !== undefined) {
       const teams = cleanTeams(body.teams);
       if (!teams) return NextResponse.json({ error: "Keep at least one team" }, { status: 400 });
+      // a subscribed club's plan covers so many teams (lib/billing.ts): more needs the next plan up
+      const here = await getTenant();
+      const record = here && here !== DEFAULT_TENANT ? await getTenantRecord(here) : null;
+      if (record) {
+        const state = billingState(record.billing);
+        const live = teams.filter((t) => !t.archived).length;
+        if (live > teamLimit(state) && state.kind === "paid") {
+          return NextResponse.json(
+            { error: `The ${PLANS[state.plan].name} plan covers up to ${PLANS[state.plan].teams} teams. Move to the next plan up (Plans, on Home) to add more.` },
+            { status: 402 },
+          );
+        }
+      }
       // A team is never dropped, only archived, so its kit sizes, stats,
       // logs and subs stay put and it can be brought back.
       const before = await getAllTeams();

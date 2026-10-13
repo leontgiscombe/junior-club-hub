@@ -24,7 +24,7 @@ import { noteActive, pausedClub } from "./lib/clubStatus";
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account|player\/find|feedback)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|cron-trial|finance\/cron-remind|auth|account|player\/find|feedback)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
 
 // what a private club's hub shows people who aren't members yet: the join
 // page, Coach Admin, password resets, the legal pages, pictures and files —
@@ -85,7 +85,9 @@ export async function proxy(req: NextRequest) {
     try {
       paused = await pausedClub(tenant);
     } catch {}
-    if (paused) {
+    // signing in, your account, help and the plans stay open: a club admin can still sort it out
+    const stillOpen = /^\/(signin|account|support|plans|privacy|terms)(\/|$)|^\/api\/(auth|account|feedback)(\/|$)/.test(pathname);
+    if (paused && !stillOpen) {
       if (pathname.startsWith("/api/")) return NextResponse.json({ error: "This club's hub is paused" }, { status: 423 });
       headers.set(PATH_HEADER, "/paused");
       return NextResponse.rewrite(new URL("/paused", req.url), { request: { headers } });

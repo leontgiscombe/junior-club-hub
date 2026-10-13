@@ -1,7 +1,7 @@
 // The daily job, for a host's scheduler (on Render, the cron job in
 // render.yaml, every day at 9am UTC). Every day it asks the app to back up the
 // database (lib/backup.ts); on the 1st and the 15th it also sends that day's
-// subs reminder: "check this month's subs" on the 1st, the halfway chase-up on
+// subs reminder (and every day, emails clubs near the end of a free trial): "check this month's subs" on the 1st, the halfway chase-up on
 // the 15th.
 //   APP_URL      the app's own address, e.g. https://junior-club-hub.onrender.com
 //   CRON_SECRET  the same value the app has, so only this job can trigger it
@@ -26,6 +26,7 @@ async function run(label, path) {
 }
 
 await run("backup", "/api/cron-backup");
+await run("trial reminders", "/api/cron-trial");
 const day = new Date().getUTCDate();
 if (day === 1 || day === 15) await run("reminders", `/api/finance/cron-remind${day >= 15 ? "?when=mid" : ""}`);
 if (failed) process.exit(1);

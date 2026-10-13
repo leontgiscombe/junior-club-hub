@@ -8,8 +8,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "../../components/useScrollLock";
 import { FEATURES, type Feature } from "@/lib/clubSettings";
+import { PLANS, PLAN_IDS, billingState, planForTeams, type Billing, type PlanId } from "@/lib/billing";
 
 type AdminClub = {
+  billing?: Billing;
   id: string;
   name: string;
   email: string;
@@ -33,7 +35,7 @@ type AdminClub = {
 };
 type Backup = { date: string; at: string; keys: number };
 type LogEntry = { at: string; action: string; club: string; detail?: string };
-type Action = { action: string; id: string; confirm?: string; date?: string; reason?: string; text?: string; feedbackId?: string; done?: boolean };
+type Action = { action: string; id: string; confirm?: string; date?: string; reason?: string; text?: string; feedbackId?: string; done?: boolean; op?: string; plan?: string; months?: number };
 type Feedback = { id: string; kind: "question" | "problem" | "idea"; message: string; name: string; email: string; club: string; page: string; device: string; at: string; done?: boolean };
 const KIND = { question: "❓ Question", problem: "🐞 Problem", idea: "💡 Suggestion" } as const;
 
@@ -542,6 +544,8 @@ function ClubPanel({
           </button>
         </div>
 
+        <BillingPanel c={c} busy={busy} act={act} />
+
         {notice && <p className="mt-4 rounded-2xl bg-green-50 p-3 text-sm font-semibold text-green-800">{notice}</p>}
         {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
         {c.paused && (
@@ -725,5 +729,79 @@ function ClubPanel({
         )}
       </div>
     </div>
+  );
+}
+
+/** A club's free trial or plan (lib/billing.ts), and the platform admin's changes to it. */
+function BillingPanel({ c, busy, act }: { c: AdminClub & { teams?: number }; busy: boolean; act: (body: Action) => Promise<boolean> }) {
+  const state = billingState(c.billing);
+  const [plan, setPlan] = useState<PlanId>(planForTeams(Math.max(c.teams ?? 1, 1)));
+  const [months, setMonths] = useState(12);
+  const date = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const small = "rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50";
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-4">
+      <h3 className="font-extrabold text-gray-900">Plan</h3>
+      <p className="mt-1 text-sm text-gray-700">
+        {state.kind === "free"
+          ? `Free — ${state.reason}`
+          : state.kind === "paid"
+            ? `${PLANS[state.plan].name}, paid up to ${date(state.until)}`
+            : state.kind === "trial"
+              ? `Free trial: ${state.daysLeft} day${state.daysLeft === 1 ? "" : "s"} left (ends ${date(state.endsAt)})`
+              : `Trial ended ${date(state.endedAt)} — the hub is paused until it has a plan`}
+        {typeof c.teams === "number" && ` · ${c.teams} team${c.teams === 1 ? "" : "s"}, needs ${PLANS[planForTeams(Math.max(c.teams, 1))].name}`}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {state.kind !== "free" && (
+          <button onClick={() => act({ action: "billing", id: c.id, op: "extend" })} disabled={busy} className={small}>
+            Trial +30 Days
+          </button>
+        )}
+        {state.kind === "free" ? (
+          <button onClick={() => confirm(`Make ${c.name} pay (after a trial)?`) && act({ action: "billing", id: c.id, op: "unfree" })} disabled={busy} className={small}>
+            Stop Being Free
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              const reason = prompt("Why is it free? (e.g. Founding club, Friend)", "Free");
+              if (reason !== null) act({ action: "billing", id: c.id, op: "free", reason });
+            }}
+            disabled={busy}
+            className={small}
+          >
+            Make Free
+          </button>
+        )}
+        {state.kind === "paid" && (
+          <button onClick={() => confirm(`Remove ${c.name}'s plan?`) && act({ action: "billing", id: c.id, op: "unpaid" })} disabled={busy} className={small}>
+            Remove Plan
+          </button>
+        )}
+      </div>
+      {state.kind !== "free" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-semibold text-gray-500">Paid another way:</span>
+          <select value={plan} onChange={(e) => setPlan(e.target.value as PlanId)} className="rounded-lg border border-gray-200 px-2 py-1.5">
+            {PLAN_IDS.map((p) => (
+              <option key={p} value={p}>
+                {PLANS[p].name}
+              </option>
+            ))}
+          </select>
+          <select value={months} onChange={(e) => setMonths(Number(e.target.value))} className="rounded-lg border border-gray-200 px-2 py-1.5">
+            {[1, 3, 6, 12].map((m) => (
+              <option key={m} value={m}>
+                {m} month{m === 1 ? "" : "s"}
+              </option>
+            ))}
+          </select>
+          <button onClick={() => act({ action: "billing", id: c.id, op: "paid", plan, months })} disabled={busy} className={small}>
+            Mark Paid
+          </button>
+        </div>
+      )}
+    </section>
   );
 }
