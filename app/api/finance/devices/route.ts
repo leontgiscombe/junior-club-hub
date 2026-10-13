@@ -30,7 +30,7 @@ import { requireTenant } from "@/lib/tenant";
 export const dynamic = "force-dynamic";
 
 async function context(team: unknown) {
-  if (!(await getClub()).features.financialAdmin) return { error: "Financial Admin is off", status: 400 } as const;
+  if (!(await getClub()).features.financialAdmin) return { error: "Finances is switched off", status: 400 } as const;
   const tenant = await requireTenant();
   if (typeof team !== "string" || !(await isTeam(team))) return { error: "unknown team", status: 400 } as const;
   // a treasurer with a team of their own opens just that one with their account

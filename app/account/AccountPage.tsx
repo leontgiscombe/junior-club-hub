@@ -177,7 +177,7 @@ export default function AccountPage() {
         ok: true,
         text:
           key.prf === false
-            ? "Passkey added — use it to sign in. This browser can't use it to open Financial Admin, so that still needs this device approved."
+            ? "Passkey added — use it to sign in."
             : "Passkey added — next time, sign in with it instead of an emailed code.",
       });
     } catch (err) {
@@ -398,7 +398,7 @@ export default function AccountPage() {
                 <h2 className="font-extrabold text-gray-900 dark:text-gray-50">Passkeys</h2>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Sign in with Face ID, your fingerprint or your phone&apos;s screen lock instead of an emailed code. Your phone keeps the passkey
-                  (Apple and Google sync it to your other devices). Treasurers and club admins can open Financial Admin with it too.
+                  (Apple and Google sync it to your other devices). Treasurers and club admins can open Finances with it too.
                 </p>
                 {passkeys.length > 0 && (
                   <ul className="mt-3 divide-y divide-gray-100 dark:divide-white/10">

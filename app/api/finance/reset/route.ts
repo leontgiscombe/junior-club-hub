@@ -18,9 +18,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   if (!(await isClubAdmin(req.headers.get("x-admin-key") ?? ""))) {
-    return NextResponse.json({ error: "Only a club admin can reset a team's Financial Admin password" }, { status: 403 });
+    return NextResponse.json({ error: "Only a club admin can reset a team's Finances password" }, { status: 403 });
   }
-  if (!(await getClub()).features.financialAdmin) return NextResponse.json({ error: "Financial Admin is off" }, { status: 400 });
+  if (!(await getClub()).features.financialAdmin) return NextResponse.json({ error: "Finances is switched off" }, { status: 400 });
   const id = req.nextUrl.searchParams.get("id") ?? "";
   if (!(await isTeam(id))) return NextResponse.json({ error: "unknown team" }, { status: 400 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });

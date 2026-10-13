@@ -20,7 +20,7 @@ const FEATURES = [
   ["🌟", "Player of the Month", "Worked out from the awards, with a poster ready to share."],
   ["📊", "Stats & Presentation", "Season totals, milestones and a slideshow for awards night."],
   ["👕", "Kit Sizes", "Parents pick their child and send sizes; you see who's missing."],
-  ["💷", "Financial Admin", "Subs, who's paid and spending, encrypted with each team's password."],
+  ["💷", "Finances", "Subs, who's paid and spending, stored encrypted, opened by each team's treasurer with Face ID."],
   ["🧠", "Player Training Hub", "A tactics guide, quizzes and skill challenges for the players."],
   ["🎨", "Your Club's Look", "Your badge, colours, teams and slogan on every page."],
 ];

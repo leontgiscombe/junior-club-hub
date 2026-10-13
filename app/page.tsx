@@ -394,7 +394,7 @@ export default async function Home() {
               <Tile colour="bg-gray-900 dark:bg-gray-700">{ICON.coach}</Tile>
               <span className="flex-1">
                 <span className="block font-bold">Coach Admin</span>
-                <span className={`block text-sm ${sub}`}>With the coaches&apos; password</span>
+                <span className={`block text-sm ${sub}`}>For coaches: sign in with your email</span>
               </span>
               <Chevron />
             </Link>

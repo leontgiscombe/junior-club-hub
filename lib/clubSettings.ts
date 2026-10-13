@@ -37,7 +37,7 @@ export const NOT_NEEDED = "Not needed";
 export const FEATURES = {
   trainingHub: { label: "Player Training Hub", hint: "The players' tactics guide, quiz and skill challenges." },
   kitSizes: { label: "Kit Sizes", hint: "Parents send their child's kit sizes; coaches see the responses." },
-  financialAdmin: { label: "Financial Admin", hint: "Each team's subs, payments and spending." },
+  financialAdmin: { label: "Finances", hint: "Each team's subs, payments and spending." },
   playerOfMonth: { label: "Player of the Month", hint: "The monthly winner from the awards, with a poster." },
   trainingPlans: { label: "Training Plans", hint: "Weekly session plans from a shared drill library." },
   cameraRegister: { label: "Camera Register", hint: "Who films each home game, and whether it's uploaded." },

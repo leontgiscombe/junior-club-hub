@@ -22,6 +22,19 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 /**
+ * Whether a shared coach password can be used at `tenant` at all: not for a
+ * club signed up with accounts only, or one that's switched it off.
+ */
+export async function sharedPasswordOn(tenant: string): Promise<boolean> {
+  try {
+    if ((await readAccess(tenant)).passwordOff) return false;
+  } catch {}
+  if (tenant === DEFAULT_TENANT) return !!process.env.ADMIN_KEY;
+  const record = await getTenantRecord(tenant).catch(() => null);
+  return !!record && !record.noPassword;
+}
+
+/**
  * The owner's own password for changing the drill library — set as the
  * TRAINING_PLANS_OWNER_KEY environment variable, never in the repo. Coaches
  * with only the admin password build their teams' plans from the library but

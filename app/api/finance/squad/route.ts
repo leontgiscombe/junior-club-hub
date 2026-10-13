@@ -19,7 +19,7 @@ import { requireTenant } from "@/lib/tenant";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!(await getClub()).features.financialAdmin) return NextResponse.json({ error: "Financial Admin is off" }, { status: 404 });
+  if (!(await getClub()).features.financialAdmin) return NextResponse.json({ error: "Finances is switched off" }, { status: 404 });
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });
   const tenant = await requireTenant();
   const id = req.nextUrl.searchParams.get("id") ?? "";

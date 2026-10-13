@@ -99,7 +99,7 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
           <div className="mt-5 text-center">
             <p className="text-sm text-gray-600">
               Next time, sign in with Face ID, your fingerprint or your phone&apos;s screen lock instead of waiting for a code. It also opens
-              Financial Admin.
+              Finances.
             </p>
             {passkeyError && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{passkeyError}</p>}
             <button onClick={passkeyThenGo} disabled={busy} className="mt-4 w-full rounded-2xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50">
