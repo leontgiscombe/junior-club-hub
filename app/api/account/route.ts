@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { kvCall, peopleKey, readPerson, type Person } from "@/lib/access";
 import { clearSessionCookie, currentUser, deleteUser, setUserName, setUserPhone, userClubsKey } from "@/lib/auth";
 import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
-import { leaveClub } from "@/lib/people";
+import { leaveClub, onlyAdminOf } from "@/lib/people";
 import { getClubFor } from "@/lib/settings";
 import { tenantUrl } from "@/lib/tenant";
 import { deletePhoto } from "@/lib/userPhoto";
@@ -64,8 +64,17 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await currentUser();
   if (!user) return notSignedIn();
+  // a club's only admin, with others still in it, hands it on first: nobody would be left to run it
+  const stuck = await onlyAdminOf(user.id);
+  if (stuck.length) {
+    const names = await Promise.all(stuck.map(async (t) => (await getClubFor(t)).name));
+    return NextResponse.json(
+      { error: `You're the only club admin of ${names.join(" and ")}. Make someone else a club admin in Members first, then delete your account.` },
+      { status: 409 },
+    );
+  }
   await deletePhoto(user.id);
-  await deleteUser(user, leaveClub);
+  await deleteUser(user, (tenant, id) => leaveClub(tenant, id, { forget: true }));
   const res = NextResponse.json({ ok: true });
   clearSessionCookie(res, req);
   return res;
