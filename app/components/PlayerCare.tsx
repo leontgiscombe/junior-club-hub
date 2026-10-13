@@ -4,6 +4,7 @@
 // parents (Your Account → Your Children: the Medical button) and coaches
 // (Members → a player's profile, inline). Nobody else in the club sees them.
 import { useEffect, useState } from "react";
+import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 
 type Care = { medical: string; emergency: string; updatedAt?: string; by?: string };
@@ -100,6 +101,7 @@ export function PlayerCareForm({ playerId, first, adminKey }: { playerId: string
 /** A "Medical" button, opening the form in a sheet. */
 export default function PlayerCare({ playerId, name, className = "text-green-700 dark:text-green-400" }: { playerId: string; name: string; className?: string }) {
   const [open, setOpen] = useState(false);
+  useScrollLock(open);
   const first = name.trim().split(/\s+/)[0] || "Their";
   return (
     <>

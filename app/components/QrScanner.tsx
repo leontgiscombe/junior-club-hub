@@ -5,8 +5,10 @@
 // it says so — the screens that use it always offer typing the code instead.
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
+import { useScrollLock } from "./useScrollLock";
 
 export default function QrScanner({ onResult, onClose }: { onResult: (text: string) => void; onClose: () => void }) {
+  useScrollLock();
   const video = useRef<HTMLVideoElement>(null);
   const [problem, setProblem] = useState<string | null>(null);
 

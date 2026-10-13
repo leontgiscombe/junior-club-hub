@@ -4,6 +4,7 @@
 // (exports, slideshows…), so the page itself keeps only what's used every visit.
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 
 export type MoreItem = {
@@ -16,6 +17,7 @@ export type MoreItem = {
 
 export function MoreMenu({ title = "More", items }: { title?: string; items: MoreItem[] }) {
   const [open, setOpen] = useState(false);
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return;

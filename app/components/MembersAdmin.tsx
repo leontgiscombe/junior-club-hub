@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 import { squarePhoto } from "../account/ProfilePhoto";
 import { RELATIONS, ROLES, childrenOf, hasOwnTeam, teamsOf, type Member, type Person, type Role } from "@/lib/access";
@@ -855,14 +856,7 @@ function PlayerProfile({
   const teamName = snap.teams.find((t) => t.slug === player.team)?.name;
 
   // the page behind stays still while it's open
-  useEffect(() => {
-    const html = document.documentElement;
-    const before = [html.style.overflow, document.body.style.overflow];
-    html.style.overflow = document.body.style.overflow = "hidden";
-    return () => {
-      [html.style.overflow, document.body.style.overflow] = before;
-    };
-  }, []);
+  useScrollLock();
 
   async function photo(file: File | null) {
     setPhotoBusy(true);
