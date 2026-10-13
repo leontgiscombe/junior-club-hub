@@ -30,6 +30,7 @@ type Snapshot = {
   account: { email: string; sharedPassword?: boolean } | null;
   /** the club's plan in a few words (platform clubs only) */
   plan?: string | null;
+  planDetail?: string | null;
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
@@ -138,6 +139,8 @@ export default function ClubSettings() {
   const router = useRouter();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
+  // Settings → Plan, opened up in the App Store app (no prices page there)
+  const [planOpen, setPlanOpen] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
   const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -749,7 +752,16 @@ export default function ClubSettings() {
             {canAdmin && snap.plan && (
               <Group>
                 {/* in the App Store app, nothing points to paying on the website (lib/inApp.ts) */}
-                <Row icon={ICONS.money} label="Plan" detail={snap.plan} href={typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent) ? undefined : "/plans"} />
+                {typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent) ? (
+                  <>
+                    <Row icon={ICONS.money} label="Plan" detail={snap.plan} onClick={() => setPlanOpen((v) => !v)} />
+                    {planOpen && snap.planDetail && (
+                      <p className="px-5 pb-4 text-[15px] text-gray-600 dark:text-gray-300">{snap.planDetail}</p>
+                    )}
+                  </>
+                ) : (
+                  <Row icon={ICONS.money} label="Plan" detail={snap.plan} href="/plans" />
+                )}
               </Group>
             )}
 
