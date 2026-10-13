@@ -28,7 +28,7 @@ export default async function PausedPage() {
             <p className="mt-2 text-[15px] text-gray-500 dark:text-gray-400">
               Nothing has been lost: every team, player and record is kept.{" "}
               {appView
-                ? "Once a club admin has chosen a plan, the hub opens again straight away."
+                ? "Your club's admin can sort this out."
                 : "A club admin chooses a plan, from £4.99 a month, and the hub opens again straight away."}
             </p>
             {/* in the App Store app, nothing points to paying on the website (lib/inApp.ts) */}

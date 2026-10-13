@@ -68,10 +68,10 @@ export function teamLimit(state: BillingState): number {
 export function planDetail(state: BillingState): string {
   const date = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   if (state.kind === "trial")
-    return `Your free trial has ${state.daysLeft} day${state.daysLeft === 1 ? "" : "s"} left, and ends on ${date(state.endsAt)}. Everything is included until then.`;
+    return `Free trial: ${state.daysLeft} day${state.daysLeft === 1 ? "" : "s"} left, until ${date(state.endsAt)}.`;
   if (state.kind === "paid") return `On the ${PLANS[state.plan].name} plan, up to ${PLANS[state.plan].teams === Infinity ? "any number of" : PLANS[state.plan].teams} teams, until ${date(state.until)}.`;
   if (state.kind === "free") return "Your club uses the hub free.";
-  return "Your club's free trial has ended. Every record is kept.";
+  return "Free trial ended. Every record is kept.";
 }
 
 export function planSummary(state: BillingState): string {
