@@ -82,6 +82,20 @@ export type Person = {
   decidedAt?: string;
 };
 
+/**
+ * Everyone a coach has to answer: people asking to join, and children an
+ * approved parent has added since. Home's card, the badges and Members all
+ * count the same way.
+ */
+export function awaitingApproval(people: Pick<Person, "status" | "name" | "children" | "child" | "team" | "relation">[]): string[] {
+  const names: string[] = [];
+  for (const p of people) {
+    if (p.status === "pending") names.push(p.name);
+    else if (p.status === "approved") for (const c of childrenOf(p)) if (c.pending && !c.playerId) names.push(c.name);
+  }
+  return names;
+}
+
 /** A person's children, including one typed before children were listed. */
 export function childrenOf(p: Pick<Person, "children" | "child" | "team" | "relation">): Child[] {
   if (p.children?.length) return p.children;

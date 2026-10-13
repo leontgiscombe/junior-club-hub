@@ -3,7 +3,7 @@
 // step ticks itself when it's actually done — the same signals the platform
 // admin sees (lib/platformStats.ts) — and the ones a club might not need, or
 // that are about checking something, can be ticked by hand. Server only.
-import { childrenOf, clubKey, invitesKey, joinAlertsKey, kvCall, peopleKey, type Person } from "./access";
+import { awaitingApproval, childrenOf, clubKey, invitesKey, joinAlertsKey, kvCall, peopleKey, type Person } from "./access";
 import type { User } from "./auth";
 import { financeKeys } from "./financeStorage";
 import { keyPrefix } from "./kv";
@@ -136,7 +136,8 @@ export async function setupFor(tenant: string, user: User, person: Person | null
       title: "Approve parents and get your squad in",
       hint: "Each child a parent adds joins their team's squad once you approve them.",
       href: "/admin/members",
-      done: Number(players) > 0 && others.some((p) => p.status === "approved" && childrenOf(p).length > 0),
+      // not while anyone's still waiting for an answer
+      done: Number(players) > 0 && others.some((p) => p.status === "approved" && childrenOf(p).length > 0) && awaitingApproval(people).length === 0,
     },
     {
       id: "first",

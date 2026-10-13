@@ -6,7 +6,7 @@
 //   DELETE { endpoint }       -> turn them off
 // With no key, the signed-in account is used.
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_KEY } from "@/lib/access";
+import { SESSION_KEY, awaitingApproval } from "@/lib/access";
 import { isCoach } from "@/lib/adminAuth";
 import { listMembers } from "@/lib/members";
 import { addJoinAlert, hasJoinAlert, pushConfigured, removeJoinAlert, sendTestAlert } from "@/lib/notify";
@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
     listMembers(tenant),
     endpoint ? hasJoinAlert(tenant, endpoint) : false,
   ]);
-  const pending =
-    people.filter((p) => p.status === "pending").length + members.filter((m) => m.status === "pending").length;
+  // the same count as Home's card and Members (lib/access.ts)
+  const pending = awaitingApproval(people).length + members.filter((m) => m.status === "pending").length;
   return NextResponse.json({ pending, alerts, pushAvailable: await pushConfigured() }, { headers: { "cache-control": "no-store" } });
 }
 
