@@ -7,6 +7,7 @@
 // last page instead of the alert's. Draws nothing.
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { onAlertTapped } from "@/lib/nativePush";
 
 const OPEN_CACHE = "hub-open";
 const OPEN_KEY = "/__hub-open";
@@ -49,11 +50,18 @@ export default function NotificationNav() {
       }
     };
     check();
+    // the App Store app's alerts (lib/nativePush.ts): a full address, maybe another club's
+    const stopNative = onAlertTapped((url) => {
+      const u = new URL(url);
+      if (u.host === window.location.host) go(u.pathname + u.search + u.hash);
+      else window.location.href = url;
+    });
     document.addEventListener("visibilitychange", check);
     window.addEventListener("focus", check);
     window.addEventListener("pageshow", check);
     if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", onMessage);
     return () => {
+      stopNative();
       document.removeEventListener("visibilitychange", check);
       window.removeEventListener("focus", check);
       window.removeEventListener("pageshow", check);

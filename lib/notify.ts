@@ -13,14 +13,24 @@ import { rawKv } from "./kv";
 import { listPeople } from "./people";
 import { getTenantRecord } from "./tenants";
 import { setUpVapid, vapidKeys } from "./vapid";
+import { apnsConfigured, sendApns } from "./apns";
 import { DEFAULT_TENANT, PLATFORM_NAME, tenantUrl } from "./tenant";
 
 const REPEAT_GAP_SECONDS = 1800; // someone sending the form again within half an hour isn't news
 
-/** A phone's alert subscription, kept by its endpoint. */
-type Alert = { userId: string; endpoint: string; keys: { p256dh: string; auth: string }; addedAt: string };
+/**
+ * A phone's alert subscription, kept by its endpoint: a browser's web push, or
+ * the App Store app's device token (endpoint "apns:<token>", lib/apns.ts).
+ */
+type Alert = { userId: string; endpoint: string; keys?: { p256dh: string; auth: string }; apns?: string; addedAt: string };
 
-export const pushConfigured = async () => !!(await vapidKeys());
+export const pushConfigured = async () => !!(await vapidKeys()) || apnsConfigured();
+
+/** The App Store app's alerts for this phone, by its device token. */
+export async function addNativeAlert(tenant: string, userId: string, token: string) {
+  const alert: Alert = { userId, endpoint: `apns:${token}`, apns: token, addedAt: new Date().toISOString() };
+  await kvCall(["HSET", joinAlertsKey(tenant), alert.endpoint, JSON.stringify(alert)]);
+}
 
 /** Whether `person` should hear about a request for `teams` (no teams: every coach). */
 function wantsToHear(person: Person, teams: string[]): boolean {
@@ -195,14 +205,22 @@ async function pushTo(
     console.log(`${what} alerts (${tenant}): ${summary}`);
     return;
   }
-  if (!(await setUpVapid(tenantUrl(tenant)))) {
-    console.log(`${what} alerts (${tenant}): ${summary} — no keys to send phone alerts with`);
-    return;
-  }
+  const web = await setUpVapid(tenantUrl(tenant));
   let sent = 0;
   const payload = JSON.stringify(message);
   await Promise.all(
     alerts.map(async (a) => {
+      // the App Store app: through Apple, opening the club's page when tapped
+      if (a.apns) {
+        const r = await sendApns(a.apns, { ...message, url: tenantUrl(tenant, message.url) });
+        if (r === "sent") sent++;
+        else {
+          console.log(`${what} alert to an app refused (${r})`);
+          if (r === "gone") await removeJoinAlert(tenant, a.endpoint).catch(() => {});
+        }
+        return;
+      }
+      if (!web || !a.keys) return;
       try {
         await webpush.sendNotification({ endpoint: a.endpoint, keys: a.keys }, payload);
         sent++;
@@ -259,7 +277,13 @@ export async function notifyKitRequest(
 export async function sendTestAlert(tenant: string, userId: string, endpoint: string): Promise<string | null> {
   const alert = (await listAlerts(tenant)).find((a) => a.endpoint === endpoint && a.userId === userId);
   if (!alert) return "This phone's alerts aren't on — turn them off and on again";
-  if (!(await setUpVapid(tenantUrl(tenant)))) return "Phone alerts aren't set up on this hub";
+  if (alert.apns) {
+    const r = await sendApns(alert.apns, { title: "Test alert", body: "Alerts are working on this phone.", url: tenantUrl(tenant, "/account#alerts") });
+    if (r === "sent") return null;
+    if (r === "gone") await removeJoinAlert(tenant, alert.endpoint).catch(() => {});
+    return r === "gone" ? "This phone's alerts have expired — turn them off and on again" : `Apple refused it (${r})`;
+  }
+  if (!alert.keys || !(await setUpVapid(tenantUrl(tenant)))) return "Phone alerts aren't set up on this hub";
   try {
     await webpush.sendNotification(
       { endpoint: alert.endpoint, keys: alert.keys },

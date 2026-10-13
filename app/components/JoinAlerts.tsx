@@ -9,8 +9,11 @@ import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { isAppUserAgent } from "@/lib/inApp";
 
-// the App Store app's web view can't show web alerts (lib/inApp.ts): no prompt or switch there
-const inTheApp = () => typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent);
+import { forgetToken, nativePush, nativeToken, savedToken } from "@/lib/nativePush";
+
+// the App Store app's web view can't show web alerts (lib/inApp.ts): there, alerts come
+// through Apple (lib/nativePush.ts), and an older build of the app without that shows none
+const inTheApp = () => typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent) && !nativePush();
 
 type Status = { pending: number; alerts: boolean; pushAvailable: boolean };
 
@@ -42,7 +45,8 @@ export function useJoinRequests(key: string = SESSION_KEY, enabled = true) {
     // only once signed in: a half-typed password would count as a wrong one
     if (!enabled) return;
     let endpoint = "";
-    if (pushSupported()) {
+    if (nativePush()) endpoint = savedToken() ? `apns:${savedToken()}` : "";
+    else if (pushSupported()) {
       const reg = await navigator.serviceWorker.getRegistration("/").catch(() => undefined);
       endpoint = (await reg?.pushManager.getSubscription().catch(() => null))?.endpoint ?? "";
     }
@@ -70,6 +74,16 @@ function useAlertSwitch(refresh: () => void) {
     setBusy(true);
     setNote(null);
     try {
+      if (nativePush()) {
+        const res = await fetch("/api/members/alerts", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ apnsToken: await nativeToken() }),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not turn alerts on");
+        setNote("Alerts are on for this phone.");
+        return;
+      }
       if (!pushSupported()) {
         setNote("This browser can't show alerts. On an iPhone, add the hub to your Home Screen (Share → Add to Home Screen), open it from there and try again.");
         return;
@@ -109,6 +123,18 @@ function useAlertSwitch(refresh: () => void) {
     setBusy(true);
     setNote(null);
     try {
+      if (nativePush()) {
+        if (savedToken()) {
+          await fetch("/api/members/alerts", {
+            method: "DELETE",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ endpoint: `apns:${savedToken()}` }),
+          });
+        }
+        forgetToken();
+        setNote("Alerts are off for this phone.");
+        return;
+      }
       const reg = await navigator.serviceWorker.getRegistration("/");
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
@@ -130,13 +156,14 @@ function useAlertSwitch(refresh: () => void) {
     setBusy(true);
     setNote(null);
     try {
-      const reg = await navigator.serviceWorker.getRegistration("/");
-      const sub = await reg?.pushManager.getSubscription();
-      if (!sub) throw new Error("This phone has no alerts set up — turn them on first");
+      const endpoint = nativePush()
+        ? savedToken() && `apns:${savedToken()}`
+        : (await (await navigator.serviceWorker.getRegistration("/"))?.pushManager.getSubscription())?.endpoint;
+      if (!endpoint) throw new Error("This phone has no alerts set up — turn them on first");
       const res = await fetch("/api/members/alerts", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ test: true, endpoint: sub.endpoint }),
+        body: JSON.stringify({ test: true, endpoint }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "The test alert wasn't sent");
