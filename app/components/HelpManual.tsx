@@ -342,28 +342,32 @@ export default function HelpManual() {
             in order — a <B>warm-up</B>, a <B>technical</B> drill and a <B>game</B>. The drills come
             from one <B>Drill Library</B> every team shares.
           </p>
-          <H3>The Quickest Start: a Built-In Season Plan</H3>
+          <H3>What&apos;s On Next</H3>
           <p>
-            If your hub comes with a season plan, <B>📅 Team Plans</B> shows a button to use it. Tap
-            it, pick the session <B>Week 1 is on</B>, then tap <B>Save Plan</B>. You can change any
-            week afterwards.
+            <B>Team Plans</B> opens on the plan&apos;s name and how many weeks are done, then the
+            <B> next session</B>: its topic and its three drills. Tap a drill to read it in full (setup,
+            how it works, coaching points), <B>Swap Drill</B> for another, or tick its circle once it&apos;s done.
           </p>
-          <H3>Building or Changing Weeks Yourself</H3>
+          <H3>Setting Up the Plan</H3>
           <Steps>
-            <li>Pick the session <B>Week 1 is on</B>; each week after lands on the team&apos;s next training session.</li>
-            <li>Tap <B>+ Add Week</B>, pick its topic, then its warm-up, technical drill and game. Each list shows only drills of that topic.</li>
-            <li>Use the arrows to move a week, or ✕ to remove it.</li>
+            <li>Tap <B>Edit Plan</B> to name it and pick the session <B>Week 1 is on</B>; each week after lands on the team&apos;s next training session.</li>
+            <li>Tap <B>+ Add Week</B>, tap <B>Topic</B> to give it one, then add its warm-up, technical drill and game. The drills on that topic come first.</li>
+            <li>Under <B>Season</B>, tap a week to open it: change its topic or drills, move it <B>Earlier</B> or <B>Later</B>, or remove it.</li>
             <li>Tap <B>Save Plan</B>. Nothing is kept until you do.</li>
           </Steps>
+          <p>
+            If your hub comes with a season plan, <B>Edit Plan</B> has a button to use it.
+          </p>
           <H3>Ticking Drills Off</H3>
           <p>
-            <B>Mark Done</B> saves straight away, here or on the training log. A week with all three
-            done shows a ✓. Tap a week to open or fold it, or use <B>Open All</B> /{" "}
-            <B>Close All</B>.
+            Ticks save straight away, here or on the training log. In <B>Season</B>, a week with all
+            three done shows a ✓, a past week with some not ticked shows in amber, and the next one is
+            ringed in green. Earlier weeks fold away: tap <B>Show earlier weeks</B> to see them.
           </p>
           <H3>The Drill Library</H3>
           <p>
-            <B>📚 Drill Library</B> lists every drill, with topic and type filters and a search.
+            <B>📚 Drill Library</B> lists every drill, with type and topic filters along the top and a
+            search. Tap a drill to read it, or to edit it.
             Any coach can read it, but only the club owner can add or change drills (with{" "}
             <B>🔒 Owner</B> and their own password).
           </p>

@@ -14,12 +14,14 @@ import {
   type Drill,
   type DrillKind,
   type DrillTopic,
+  type PlanWeek,
   type TrainingPlan,
 } from "@/lib/trainingPlanTypes";
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar } from "./SettingsUI";
+import { useScrollLock } from "./useScrollLock";
 
 type View = "plan" | "library";
 
@@ -89,34 +91,80 @@ function newId() {
 const inputClass =
   "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15";
 
-function iconButton(label: ReactNode, onClick: () => void, disabled = false, title?: string) {
+// the colour down the side of a drill: warm-up, technical, game
+const KIND_STRIPE: Record<DrillKind, string> = {
+  "warm-up": "bg-amber-400",
+  technical: "bg-sky-500",
+  game: "bg-green-600",
+};
+
+function smallButton(label: ReactNode, onClick: () => void, disabled = false, danger = false) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={title}
-      aria-label={title}
-      className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-green-400 hover:text-green-700 disabled:cursor-default disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
+      className={`cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold disabled:cursor-default disabled:opacity-30 dark:bg-white/10 ${
+        danger ? "text-red-600 dark:text-red-400" : "text-gray-700 hover:text-green-700 dark:text-gray-200"
+      }`}
     >
       {label}
     </button>
   );
 }
 
-/**
- * Drills grouped by topic for a week's "Add a drill" list — the topic matching
- * the week's theme first (a "Passing" week opens on the passing drills), then
- * the rest, with untopiced drills last.
- */
-function topicGroups(drills: Drill[], theme: string) {
-  const wanted = theme.trim().toLowerCase();
-  const groups = [...DRILL_TOPICS, { slug: "", name: "No topic" }]
-    .map((t) => ({ ...t, drills: drills.filter((d) => d.topic === t.slug) }))
-    .filter((g) => g.drills.length > 0);
-  const first = groups.findIndex((g) => g.slug && wanted.includes(g.slug));
-  return first > 0 ? [groups[first], ...groups.filter((_, i) => i !== first)] : groups;
+/** A sheet up from the bottom of the screen (a box in the middle on a wide one). */
+function Sheet({ title, badge, onClose, children }: { title: string; badge?: ReactNode; onClose: () => void; children: ReactNode }) {
+  useScrollLock();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div
+      className="themed fixed inset-0 z-50 flex items-end justify-center overscroll-contain bg-black/40 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-[#f2f2f7] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 text-gray-900 shadow-2xl dark:bg-[#1c1c1e] dark:text-gray-50 sm:rounded-3xl"
+      >
+        <div className="mb-3 flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            {badge && <div className="mb-1">{badge}</div>}
+            <h2 className="text-[19px] font-bold leading-tight">{title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full bg-gray-200/80 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
 }
+
+// how a slot is named in a sentence: "a warm-up", "a technical drill", "a game"
+const SLOT_WORD: Record<DrillKind, [string, string]> = {
+  "warm-up": ["warm-up", "warm-ups"],
+  technical: ["technical drill", "technical drills"],
+  game: ["game", "games"],
+};
+
+type SheetState =
+  | { kind: "drill"; drillId: string; weekId?: string }
+  | { kind: "pick"; weekId: string; slot: DrillKind }
+  | { kind: "topic"; weekId: string }
+  | { kind: "plan" }
+  | null;
 
 function move<T>(items: T[], from: number, to: number): T[] {
   if (to < 0 || to >= items.length) return items;
@@ -143,13 +191,15 @@ export default function TrainingPlans() {
   const [draft, setDraft] = useState<TrainingPlan | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
-  // "week:drill" or a drill id — whichever row is opened up to read
-  const [open, setOpen] = useState<string | null>(null);
+  // the sheet up over the page: a drill, a drill picker, a week's topic, or the plan's details
+  const [sheet, setSheet] = useState<SheetState>(null);
+  // weeks before the one coming up stay folded away until asked for
+  const [showEarlier, setShowEarlier] = useState(false);
   const [drillForm, setDrillForm] = useState<DrillDraft | null>(null);
   const [kindFilter, setKindFilter] = useState<DrillKind | "">("");
   const [topicFilter, setTopicFilter] = useState<DrillTopic | "">("");
   const [search, setSearch] = useState("");
-  // Weeks opened or closed by hand; the rest follow the default (see weekOpen).
+  // Weeks opened or closed by hand; the rest stay folded.
   const [weekToggles, setWeekToggles] = useState<Record<string, boolean>>({});
   const [ticking, setTicking] = useState<string | null>(null);
   // Only the owner changes plans: their password, once checked, unlocks editing.
@@ -355,7 +405,8 @@ export default function TrainingPlans() {
       return;
     }
     setDirty(false);
-    setOpen(null);
+    setSheet(null);
+    setShowEarlier(false);
     setTeam(slug);
   }
 
@@ -379,7 +430,7 @@ export default function TrainingPlans() {
         )
       );
       setDrillForm(null);
-      setOpen(saved.id);
+      setSheet({ kind: "drill", drillId: saved.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't save");
     } finally {
@@ -387,13 +438,14 @@ export default function TrainingPlans() {
     }
   }
 
-  async function deleteDrill(drill: Drill) {
+  /** Deletes a drill (after asking): whether it went. */
+  async function deleteDrill(drill: Drill): Promise<boolean> {
     const uses = usesOf(drill.id);
     const warning =
       uses.length > 0
         ? `\n\nIt will also come out of: ${uses.join(", ")}.`
         : "";
-    if (!confirm(`Delete "${drill.title}" from the drill library?${warning}`)) return;
+    if (!confirm(`Delete "${drill.title}" from the drill library?${warning}`)) return false;
     setSaving(true);
     setError(null);
     try {
@@ -412,8 +464,10 @@ export default function TrainingPlans() {
             }
           : prev
       );
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't delete");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -488,370 +542,317 @@ export default function TrainingPlans() {
       (d) => (!topic || d.topic === topic) && (!kindFilter || d.kind === kindFilter) && matchesSearch(d)
     ).length;
 
+  // A week's drills, its drill in each slot, and changes to one week of the draft.
+  const weekDrillsOf = (w: PlanWeek) =>
+    w.drillIds.map((id) => drillById.get(id)).filter((d): d is Drill => !!d);
+  const inSlot = (w: PlanWeek, kind: DrillKind) => weekDrillsOf(w).find((d) => d.kind === kind);
+  const setWeek = (weekId: string, change: (w: PlanWeek) => PlanWeek) =>
+    editPlan((p) => ({ ...p, weeks: p.weeks.map((w) => (w.id === weekId ? change(w) : w)) }));
+  // Every week runs warm-up, technical, game — one drill in each slot.
+  const setSlot = (weekId: string, kind: DrillKind, drillId: string) =>
+    setWeek(weekId, (w) => ({
+      ...w,
+      drillIds: DRILL_KINDS.map((k) => (k.slug === kind ? drillId : inSlot(w, k.slug)?.id ?? "")).filter(Boolean),
+    }));
+  const savedPlan = plans.find((p) => p.team === team);
+  const doneCount = (w: PlanWeek) => w.doneIds.filter((id) => w.drillIds.includes(id) && drillById.has(id)).length;
+  const drillCount = (w: PlanWeek) => w.drillIds.filter((id) => drillById.has(id)).length;
+  const sessionsHere = sessions.filter((s) => s.team === team).sort((a, b) => a.date.localeCompare(b.date));
+
+  /** One of a week's drills: tick it off, or tap it to read it (and swap it). */
+  function drillRow(week: PlanWeek, kind: DrillKind) {
+    const drill = inSlot(week, kind);
+    const kindLabel = DRILL_KINDS.find((k) => k.slug === kind)!.name;
+    if (!drill) {
+      const word = SLOT_WORD[kind][0];
+      return (
+        <button
+          key={kind}
+          onClick={() => setSheet({ kind: "pick", weekId: week.id, slot: kind })}
+          className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 px-3 py-3 text-left text-sm font-semibold text-gray-500 hover:border-green-400 hover:text-green-700 dark:border-white/15 dark:text-gray-400`}
+        >
+          <span className={`h-8 w-1 shrink-0 rounded-full ${KIND_STRIPE[kind]} opacity-40`} />
+          + Add a {word}
+        </button>
+      );
+    }
+    const ticked = week.doneIds.includes(drill.id);
+    const tickable = !!savedPlan?.weeks.find((w) => w.id === week.id)?.drillIds.includes(drill.id);
+    return (
+      <div key={kind} className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-2.5 dark:bg-white/5">
+        <span className={`h-9 w-1 shrink-0 rounded-full ${KIND_STRIPE[kind]}`} />
+        <button
+          onClick={() => setSheet({ kind: "drill", drillId: drill.id, weekId: week.id })}
+          className="min-w-0 flex-1 cursor-pointer text-left"
+        >
+          <span className={`block truncate text-[15px] font-semibold ${ticked ? "text-gray-400 line-through dark:text-gray-500" : "text-gray-900 dark:text-gray-50"}`}>
+            {drill.title}
+          </span>
+          <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+            {[kindLabel, drill.minutes ? `${drill.minutes} min` : ""].filter(Boolean).join(" · ")}
+          </span>
+        </button>
+        <button
+          onClick={() => tick(week.id, drill.id, !ticked)}
+          disabled={!tickable || ticking === `${week.id}:${drill.id}`}
+          title={tickable ? (ticked ? "Done — tap to undo" : "Mark done") : "Save the plan first, then tick it off"}
+          aria-label={ticked ? `${drill.title} done` : `Mark ${drill.title} done`}
+          aria-pressed={ticked}
+          className={`grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full border-2 disabled:cursor-default disabled:opacity-40 ${
+            ticked
+              ? "border-green-600 bg-green-600 text-white"
+              : "border-gray-300 text-transparent hover:border-green-500 dark:border-white/25"
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+        </button>
+      </div>
+    );
+  }
+
+  function weekDrills(week: PlanWeek) {
+    const minutes = weekDrillsOf(week).reduce((sum, d) => sum + d.minutes, 0);
+    return (
+      <>
+        <div className="flex flex-col gap-2">{DRILL_KINDS.map((k) => drillRow(week, k.slug))}</div>
+        {minutes > 0 && (
+          <p className="mt-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">{minutes} min in all</p>
+        )}
+      </>
+    );
+  }
+
   function planView() {
     if (!draft) return null;
-    const sessionsHere = sessions
-      .filter((s) => s.team === team)
-      .sort((a, b) => a.date.localeCompare(b.date));
     const weekDates = new Map<number, string>();
     for (const [date, week] of scheduleWeeks(draft, sessionsHere)) weekDates.set(week, date);
     const unplaced = draft.startDate ? draft.weeks.length - weekDates.size : 0;
-    // A long plan opens folded up, apart from the week coming up next (or, with
-    // no dates, the first week not yet ticked off) — tap a week to open it.
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const savedPlan = plans.find((p) => p.team === team);
-    const doneCount = (w: TrainingPlan["weeks"][number]) =>
-      w.doneIds.filter((id) => w.drillIds.includes(id) && drillById.has(id)).length;
-    const drillCount = (w: TrainingPlan["weeks"][number]) =>
-      w.drillIds.filter((id) => drillById.has(id)).length;
+    // The week coming up next — or, with no dates, the first week not yet ticked off.
     const currentIdx = draft.startDate
-      ? draft.weeks.findIndex((_, i) => (weekDates.get(i) ?? "") >= today)
+      ? draft.weeks.findIndex((_, i) => (weekDates.get(i) ?? "9999") >= today)
       : draft.weeks.findIndex((w) => drillCount(w) === 0 || doneCount(w) < drillCount(w));
-    const weekOpen = (w: TrainingPlan["weeks"][number], i: number) =>
-      weekToggles[w.id] ??
-      (draft.weeks.length <= 3 ||
-        i === currentIdx ||
-        // a week just added, still to be filled in
-        (drillCount(w) === 0 && !savedPlan?.weeks.some((sw) => sw.id === w.id)));
-    const allWeeks = (open: boolean) =>
-      setWeekToggles(Object.fromEntries(draft.weeks.map((w) => [w.id, open])));
+    const weeksDone = draft.weeks.filter((w) => drillCount(w) > 0 && doneCount(w) === drillCount(w)).length;
+    const current = currentIdx >= 0 ? draft.weeks[currentIdx] : null;
+    const currentDate = currentIdx >= 0 ? weekDates.get(currentIdx) : undefined;
+    // Weeks before this one fold away, as in the Training Log.
+    const earlier = currentIdx > 0 && !showEarlier ? currentIdx : 0;
+    const status = (w: PlanWeek, i: number) => {
+      const total = drillCount(w);
+      const date = weekDates.get(i);
+      if (total > 0 && doneCount(w) === total) return "done";
+      if (i === currentIdx) return "current";
+      if (date && date < today) return "past";
+      return "upcoming";
+    };
     return (
       <>
-        <label className="mb-4 block">
-          <span className="px-1 text-[15px] font-semibold text-gray-900 dark:text-gray-50">
-            {teamName(team)} Plan
-          </span>
-          <input
-            value={draft.title}
-            onChange={(e) => editPlan((p) => ({ ...p, title: e.target.value }))}
-            placeholder="Name this plan, e.g. Autumn block"
-            maxLength={120}
-            className={`${inputClass} mt-1`}
-          />
-        </label>
-
-        <label className="mb-4 block">
-          <span className="px-1 text-[15px] font-semibold text-gray-900 dark:text-gray-50">
-            Week 1 Is On
-          </span>
-          <select
-            value={draft.startDate}
-            onChange={(e) => editPlan((p) => ({ ...p, startDate: e.target.value }))}
-            className={`${inputClass} mt-1`}
-          >
-            <option value="">Not scheduled yet</option>
-            {/* a start date the schedule no longer covers still shows */}
-            {draft.startDate && !sessionsHere.some((s) => s.date === draft.startDate) && (
-              <option value={draft.startDate}>{formatDate(draft.startDate)}</option>
-            )}
-            {sessionsHere.map((s) => (
-              <option key={s.date} value={s.date}>
-                {formatDate(s.date)}
-                {s.cancelled ? " — no training" : ""}
-              </option>
-            ))}
-          </select>
-          <span className="mt-1 block text-[11px] text-gray-400">
-            Each week goes on the team&apos;s next training session, and shows in the Training Log.
-            A session marked as no training is skipped, so the plan moves back one.
-          </span>
-        </label>
+        {/* The plan: its name, when it runs, how far through it the team is */}
+        <section className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-[19px] font-bold text-gray-900 dark:text-gray-50">
+                {draft.title || `${teamName(team)} Plan`}
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {draft.weeks.length} week{draft.weeks.length === 1 ? "" : "s"}
+                {draft.startDate ? ` · from ${formatDate(draft.startDate)}` : " · not on the calendar yet"}
+              </p>
+            </div>
+            <button
+              onClick={() => setSheet({ kind: "plan" })}
+              className="shrink-0 cursor-pointer rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700 hover:text-green-700 dark:bg-white/10 dark:text-gray-200"
+            >
+              Edit Plan
+            </button>
+          </div>
+          {draft.weeks.length > 0 && (
+            <div className="mt-3">
+              <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+                <div
+                  className="h-full rounded-full bg-green-600 transition-all"
+                  style={{ width: `${Math.round((weeksDone / draft.weeks.length) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                {weeksDone} of {draft.weeks.length} weeks done
+              </p>
+            </div>
+          )}
+          {!draft.startDate && draft.weeks.length > 0 && (
+            <button
+              onClick={() => setSheet({ kind: "plan" })}
+              className="mt-3 w-full cursor-pointer rounded-xl bg-green-50 px-3 py-2 text-left text-xs font-semibold text-green-800 dark:bg-green-400/10 dark:text-green-300"
+            >
+              Pick the session week 1 is on, and each week lands on the team&apos;s training in the Training Log →
+            </button>
+          )}
+        </section>
 
         {unplaced > 0 && (
           <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-            {unplaced === 1 ? "The last week doesn't" : `The last ${unplaced} weeks don't`} fit
-            before training ends for the season — start the plan earlier, or take some weeks
-            out.
+            {unplaced === 1 ? "The last week doesn't" : `The last ${unplaced} weeks don't`} fit before training ends for
+            the season — start the plan earlier, or take some weeks out.
           </p>
         )}
 
         {drills.length === 0 && (
           <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
             The drill library is empty — add some drills in the{" "}
-            <button
-              onClick={() => setView("library")}
-              className="cursor-pointer font-semibold underline"
-            >
+            <button onClick={() => setView("library")} className="cursor-pointer font-semibold underline">
               drill library
             </button>{" "}
             first, then pick them for each week here.
           </p>
         )}
 
-        {draft.weeks.length === 0 && (
-          <p className="mb-4 rounded-3xl bg-white px-4 py-6 text-center text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
-            No weeks yet. Add a week, pick its topic, then its warm-up, technical and game
-            {seasonPlan.length > 0 ? ` — or start from the ${seasonPlan.length}-week season plan` : ""}.
-          </p>
+        {/* What's on at the next session */}
+        {current && (
+          <section className="mb-5 rounded-3xl bg-white p-4 shadow-sm ring-2 ring-green-600/40 dark:bg-[#1c1c1e]">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-green-700 dark:text-green-400">
+              {currentDate ? (currentDate === today ? "Today" : `Next session · ${formatDate(currentDate)}`) : "Up next"}
+            </p>
+            <div className="mt-1 mb-3 flex items-baseline justify-between gap-2">
+              <h3 className="min-w-0 truncate text-[22px] font-extrabold text-gray-900 dark:text-gray-50">
+                {current.theme || "No topic yet"}
+              </h3>
+              <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">Week {currentIdx + 1}</span>
+            </div>
+            {weekDrills(current)}
+          </section>
         )}
 
-        {seasonPlan.length > 0 && (
-          <button
-            onClick={applySeasonPlan}
-            className="mb-4 w-full cursor-pointer rounded-3xl bg-white p-4 text-left text-sm shadow-sm ring-2 ring-green-600/30 dark:bg-[#1c1c1e]"
-          >
-            <span className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Use the {seasonPlan.length}-Week Season Plan</span>
-            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-              Fills {possessive(teamName(team))} weeks with the
-              {seasonPlanTitle ? ` ${seasonPlanTitle}` : " season plan"}&apos;s topics and drills, in
-              order. You can change any week afterwards.
-            </span>
-          </button>
-        )}
-
-        {draft.weeks.length > 3 && (
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-semibold text-gray-500 dark:text-gray-400">
-              {draft.weeks.filter((w) => drillCount(w) > 0 && doneCount(w) === drillCount(w)).length} of{" "}
-              {draft.weeks.length} weeks done
-            </span>
-            <span className="flex gap-3">
-              <button onClick={() => allWeeks(true)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300">
-                Open All
-              </button>
-              <button onClick={() => allWeeks(false)} className="cursor-pointer font-semibold text-gray-600 hover:text-green-700 dark:text-gray-300">
-                Close All
-              </button>
-            </span>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {draft.weeks.map((week, wi) => {
-            const weekDrills = week.drillIds
-              .map((id) => drillById.get(id))
-              .filter((d): d is Drill => !!d);
-            const minutes = weekDrills.reduce((sum, d) => sum + d.minutes, 0);
-            // Every week runs warm-up, technical, game — one drill in each slot.
-            const inSlot = (kind: DrillKind) => weekDrills.find((d) => d.kind === kind);
-            const setWeek = (change: (w: typeof week) => typeof week) =>
-              editPlan((p) => ({
-                ...p,
-                weeks: p.weeks.map((w) => (w.id === week.id ? change(w) : w)),
-              }));
-            const setSlot = (kind: DrillKind, drillId: string) =>
-              setWeek((w) => ({
-                ...w,
-                drillIds: DRILL_KINDS.map((k) =>
-                  k.slug === kind ? drillId : inSlot(k.slug)?.id ?? ""
-                ).filter(Boolean),
-              }));
-            // The week's topic, once one is picked, narrows each slot to its drills.
-            const weekTopic = DRILL_TOPICS.find((t) => t.name === week.theme);
-            const knownTheme = !!weekTopic;
-            const isWeekOpen = weekOpen(week, wi);
-            const done = doneCount(week);
-            const total = drillCount(week);
-            const allDone = total > 0 && done === total;
-            const toggleWeek = () => setWeekToggles((t) => ({ ...t, [week.id]: !isWeekOpen }));
-            const saved = savedPlan?.weeks.find((w) => w.id === week.id);
-            if (!isWeekOpen) {
-              return (
-                <button
-                  key={week.id}
-                  onClick={toggleWeek}
-                  aria-expanded={false}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-3xl bg-white px-4 py-3.5 text-left shadow-sm dark:bg-[#1c1c1e] ${
-                    allDone ? "ring-2 ring-green-600/30" : ""
-                  }`}
-                >
-                  <span className="shrink-0 rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">Week {wi + 1}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
-                    {week.theme || "No topic yet"}
-                    {draft.startDate && weekDates.has(wi) && (
-                      <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                        {formatDate(weekDates.get(wi)!)}
-                      </span>
-                    )}
-                  </span>
-                  {total > 0 && (
-                    <span
-                      className={`shrink-0 text-xs font-bold ${allDone ? "text-green-700 dark:text-green-400" : "text-gray-400"}`}
-                    >
-                      {allDone ? "✓ Done" : `${done}/${total}`}
-                    </span>
-                  )}
-                  <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${false ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-                </button>
-              );
-            }
-            return (
-              <section
-                key={week.id}
-                className={`rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e] ${
-                  allDone ? "ring-2 ring-green-600/30" : ""
-                }`}
+        {draft.weeks.length === 0 ? (
+          <div className="mb-4 rounded-3xl bg-white px-4 py-8 text-center shadow-sm dark:bg-[#1c1c1e]">
+            <div className="text-3xl">📋</div>
+            <p className="mt-2 text-[17px] font-bold text-gray-900 dark:text-gray-50">Plan the season</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
+              Add a week, give it a topic, then pick its warm-up, technical and game.
+            </p>
+            {seasonPlan.length > 0 && (
+              <button
+                onClick={applySeasonPlan}
+                className="mt-4 cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
               >
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleWeek}
-                    aria-expanded={true}
-                    title="Fold this week up"
-                    className="flex shrink-0 cursor-pointer items-center gap-1"
-                  >
-                    <span className="rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-bold text-white">Week {wi + 1}</span>
-                    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${true ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-                  </button>
-                  <select
-                    value={week.theme}
-                    onChange={(e) => setWeek((w) => ({ ...w, theme: e.target.value }))}
-                    aria-label={`Week ${wi + 1} theme`}
-                    className={`${inputClass} min-w-0 flex-1 font-semibold`}
-                  >
-                    <option value="">Pick a topic…</option>
-                    {/* a theme typed in before the topics existed still shows */}
-                    {week.theme && !knownTheme && <option value={week.theme}>{week.theme}</option>}
-                    {DRILL_TOPICS.map((t) => (
-                      <option key={t.slug} value={t.name}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                  {iconButton(
-                    "↑",
-                    () => editPlan((p) => ({ ...p, weeks: move(p.weeks, wi, wi - 1) })),
-                    wi === 0,
-                    "Move week earlier"
-                  )}
-                  {iconButton(
-                    "↓",
-                    () => editPlan((p) => ({ ...p, weeks: move(p.weeks, wi, wi + 1) })),
-                    wi === draft.weeks.length - 1,
-                    "Move week later"
-                  )}
-                  {iconButton(
-                    "✕",
-                    () => {
-                      if (
-                        week.drillIds.length > 0 &&
-                        !confirm(`Remove week ${wi + 1}${week.theme ? ` (${week.theme})` : ""}?`)
-                      ) {
-                        return;
-                      }
-                      editPlan((p) => ({ ...p, weeks: p.weeks.filter((w) => w.id !== week.id) }));
-                    },
-                    false,
-                    "Remove week"
-                  )}
-                </div>
-                {draft.startDate && (
-                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    {weekDates.has(wi)
-                      ? formatDate(weekDates.get(wi)!)
-                      : "After the last session of the season"}
-                  </p>
-                )}
-
-                <ol className="mt-3 flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-100 dark:border-white/10 dark:divide-white/10">
-                  {DRILL_KINDS.map((k) => {
-                    const drill = inSlot(k.slug);
-                    const ofKind = drills.filter((d) => d.kind === k.slug);
-                    const onTopic = weekTopic
-                      ? ofKind.filter((d) => d.topic === weekTopic.slug)
-                      : [];
-                    const rowId = `${week.id}:${k.slug}`;
-                    const isOpen = open === rowId && !!drill;
-                    return (
-                      <li key={k.slug} className="px-3 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <KindBadge kind={k.slug} />
-                          {drill && (() => {
-                            const ticked = week.doneIds.includes(drill.id);
-                            const tickable = !!saved?.drillIds.includes(drill.id);
-                            return (
-                              <button
-                                onClick={() => tick(week.id, drill.id, !ticked)}
-                                disabled={!tickable || ticking === `${week.id}:${drill.id}`}
-                                title={tickable ? undefined : "Save the plan first, then tick it off"}
-                                aria-pressed={ticked}
-                                className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-bold disabled:cursor-default disabled:opacity-40 ${
-                                  ticked
-                                    ? "border-green-600 bg-green-600 text-white"
-                                    : "border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-400 dark:border-white/15"
-                                }`}
-                              >
-                                {ticked ? "✓ Done" : "Mark Done"}
-                              </button>
-                            );
-                          })()}
-                        </div>
-                        {/* the dropdown gets its own line so drill names aren't cut short on a phone */}
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <select
-                            value={drill?.id ?? ""}
-                            onChange={(e) => setSlot(k.slug, e.target.value)}
-                            aria-label={`Week ${wi + 1} ${k.name.toLowerCase()}`}
-                            className={`${inputClass} min-w-0 flex-1`}
-                          >
-                            <option value="">
-                              {!weekTopic
-                                ? ofKind.length > 0
-                                  ? `Pick a ${k.name.toLowerCase()}…`
-                                  : "None in the library yet"
-                                : onTopic.length > 0
-                                  ? `Pick a ${k.name.toLowerCase()}…`
-                                  : `No ${weekTopic.name.toLowerCase()} ${k.name.toLowerCase()}s yet`}
-                            </option>
-                            {weekTopic ? (
-                              <>
-                                {onTopic.map((d) => (
-                                  <option key={d.id} value={d.id}>
-                                    {d.title}
-                                  </option>
-                                ))}
-                                {/* a drill picked before the topic changed still shows */}
-                                {drill && drill.topic !== weekTopic.slug && (
-                                  <option value={drill.id}>{drill.title} (not {weekTopic.name})</option>
-                                )}
-                              </>
-                            ) : (
-                              topicGroups(ofKind, week.theme).map((g) => (
-                                <optgroup key={g.slug} label={g.name}>
-                                  {g.drills.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                      {d.title}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ))
-                            )}
-                          </select>
-                          {drill &&
-                            iconButton(
-                              <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>,
-                              () => setOpen(isOpen ? null : rowId),
-                              false,
-                              isOpen ? "Hide the drill" : "Show the drill"
-                            )}
-                        </div>
-                        {isOpen && drill && (
-                          <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
-                            <DrillDetails drill={drill} adminKey={key} />
-                          </div>
+                Use the {seasonPlan.length}-Week Season Plan
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Season</h3>
+              {currentIdx > 0 && (
+                <button
+                  onClick={() => setShowEarlier((v) => !v)}
+                  className="cursor-pointer text-xs font-semibold text-green-700 dark:text-green-400"
+                >
+                  {showEarlier ? "Hide earlier weeks" : `Show ${currentIdx} earlier week${currentIdx === 1 ? "" : "s"}`}
+                </button>
+              )}
+            </div>
+            <div className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+              {draft.weeks.map((week, wi) => {
+                if (wi < earlier) return null;
+                const st = status(week, wi);
+                const total = drillCount(week);
+                const done = doneCount(week);
+                const isOpen =
+                  weekToggles[week.id] ??
+                  // a week just added, still to be filled in
+                  (total === 0 && !savedPlan?.weeks.some((sw) => sw.id === week.id));
+                const date = weekDates.get(wi);
+                return (
+                  <div key={week.id} className="border-b border-gray-100 last:border-b-0 dark:border-white/10">
+                    <button
+                      onClick={() => setWeekToggles((t) => ({ ...t, [week.id]: !isOpen }))}
+                      aria-expanded={isOpen}
+                      className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left ${st === "current" ? "bg-green-50/70 dark:bg-green-400/5" : ""}`}
+                    >
+                      <span
+                        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                          st === "done"
+                            ? "bg-green-600 text-white"
+                            : st === "current"
+                              ? "bg-white text-green-700 ring-2 ring-green-600 dark:bg-transparent dark:text-green-400"
+                              : st === "past"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"
+                                : "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400"
+                        }`}
+                      >
+                        {st === "done" ? (
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+                        ) : (
+                          wi + 1
                         )}
-                      </li>
-                    );
-                  })}
-                </ol>
-
-                {minutes > 0 && (
-                  <p className="mt-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {minutes} min
-                  </p>
-                )}
-              </section>
-            );
-          })}
-        </div>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-semibold text-gray-900 dark:text-gray-50">
+                          {week.theme || "No topic yet"}
+                        </span>
+                        <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                          {[
+                            `Week ${wi + 1}`,
+                            date ? formatDate(date) : draft.startDate ? "After the season" : "",
+                            st === "current" ? "Up next" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 text-xs font-bold ${
+                          st === "done"
+                            ? "text-green-700 dark:text-green-400"
+                            : st === "past"
+                              ? "text-amber-700 dark:text-amber-300"
+                              : "text-gray-400"
+                        }`}
+                      >
+                        {total === 0 ? "No drills" : st === "done" ? "Done" : `${done}/${total}`}
+                      </span>
+                      <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4">
+                        <button
+                          onClick={() => setSheet({ kind: "topic", weekId: week.id })}
+                          className="mb-3 inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700 hover:text-green-700 dark:bg-white/10 dark:text-gray-200"
+                        >
+                          Topic: {week.theme || "pick one"}
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                        </button>
+                        {weekDrills(week)}
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
+                          {smallButton("↑ Earlier", () => editPlan((p) => ({ ...p, weeks: move(p.weeks, wi, wi - 1) })), wi === 0)}
+                          {smallButton("↓ Later", () => editPlan((p) => ({ ...p, weeks: move(p.weeks, wi, wi + 1) })), wi === draft.weeks.length - 1)}
+                          <span className="flex-1" />
+                          {smallButton(
+                            "Remove Week",
+                            () => {
+                              if (week.drillIds.length > 0 && !confirm(`Remove week ${wi + 1}${week.theme ? ` (${week.theme})` : ""}?`)) return;
+                              editPlan((p) => ({ ...p, weeks: p.weeks.filter((w) => w.id !== week.id) }));
+                            },
+                            false,
+                            true
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         <button
-          onClick={() =>
-            editPlan((p) => ({
-              ...p,
-              weeks: [...p.weeks, { id: newId(), theme: "", drillIds: [], doneIds: [] }],
-            }))
-          }
+          onClick={() => {
+            const id = newId();
+            editPlan((p) => ({ ...p, weeks: [...p.weeks, { id, theme: "", drillIds: [], doneIds: [] }] }));
+            setWeekToggles((t) => ({ ...t, [id]: true }));
+          }}
           className="mt-4 w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 py-3 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/20"
         >
           + Add Week
@@ -1011,134 +1012,327 @@ export default function TrainingPlans() {
 
   function libraryView() {
     if (drillForm && canEdit) return drillFormView(drillForm);
+    const chip = (on: boolean, label: ReactNode, onClick: () => void, key: string) => (
+      <button
+        key={key}
+        onClick={onClick}
+        className={`shrink-0 cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold ${
+          on
+            ? "border-green-600 bg-green-600 text-white"
+            : "border-gray-200 bg-white text-gray-600 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
+        }`}
+      >
+        {label}
+      </button>
+    );
     return (
       <>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search drills"
             aria-label="Search drills"
-            className={`${inputClass} min-w-0 flex-1`}
+            className={`${inputClass} min-w-0 flex-1 rounded-xl py-2.5`}
           />
           {canEdit && (
             <button
               onClick={() => setDrillForm({ ...BLANK_DRILL })}
-              className="shrink-0 cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
+              className="shrink-0 cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700"
             >
-              + New drill
+              + New Drill
             </button>
           )}
         </div>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {[{ slug: "" as const, name: "All types" }, ...DRILL_KINDS].map((k) => (
-            <button
-              key={k.slug}
-              onClick={() => setKindFilter(k.slug)}
-              className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold ${
-                kindFilter === k.slug
-                  ? "border-green-600 bg-green-600 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
-              }`}
-            >
-              {k.name} <span className="opacity-70">{kindCount(k.slug)}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="-mt-2 mb-4 flex flex-wrap gap-2">
-          {[{ slug: "" as const, name: "All topics" }, ...DRILL_TOPICS].map((t) => (
-            <button
-              key={t.slug}
-              onClick={() => setTopicFilter(t.slug)}
-              className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold ${
-                topicFilter === t.slug
-                  ? "border-green-700 bg-green-700 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-green-400 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
-              }`}
-            >
-              {t.name} <span className="opacity-70">{topicCount(t.slug)}</span>
-            </button>
-          ))}
+        {/* one row of filters, scrolled sideways: the type, then the topic */}
+        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {chip(!kindFilter && !topicFilter, "All", () => {
+            setKindFilter("");
+            setTopicFilter("");
+          }, "all")}
+          {DRILL_KINDS.map((k) =>
+            chip(kindFilter === k.slug, <>{k.name} <span className="opacity-70">{kindCount(k.slug)}</span></>, () => setKindFilter(kindFilter === k.slug ? "" : k.slug), k.slug)
+          )}
+          <span className="my-1 w-px shrink-0 bg-gray-300 dark:bg-white/15" />
+          {DRILL_TOPICS.map((t) =>
+            chip(topicFilter === t.slug, <>{t.name} <span className="opacity-70">{topicCount(t.slug)}</span></>, () => setTopicFilter(topicFilter === t.slug ? "" : t.slug), t.slug)
+          )}
         </div>
 
         {drills.length > 0 && (
-          <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <p className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {shownDrills.length === drills.length
-              ? `All ${drills.length} drills`
-              : `Showing ${shownDrills.length} of ${drills.length} drills`}
+              ? `${drills.length} drill${drills.length === 1 ? "" : "s"}`
+              : `${shownDrills.length} of ${drills.length} drills`}
           </p>
         )}
 
         {drills.length === 0 ? (
-          <p className="rounded-3xl bg-white px-4 py-6 text-center text-sm text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
-            No drills yet. Every team&apos;s plan picks from this one library, so a drill
-            only has to be written once.
-          </p>
+          <div className="rounded-3xl bg-white px-4 py-8 text-center shadow-sm dark:bg-[#1c1c1e]">
+            <div className="text-3xl">⚽</div>
+            <p className="mt-2 text-[17px] font-bold text-gray-900 dark:text-gray-50">No drills yet</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
+              Every team&apos;s plan picks from this one library, so a drill only has to be written once.
+            </p>
+          </div>
         ) : shownDrills.length === 0 ? (
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">No drills match.</p>
+          <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No drills match.</p>
         ) : (
-          <div className="flex flex-col gap-2">
-            {shownDrills.map((drill) => {
-              const isOpen = open === drill.id;
-              const uses = usesOf(drill.id);
-              return (
-                <div
-                  key={drill.id}
-                  className="rounded-3xl bg-white px-4 py-3 shadow-sm dark:bg-[#1c1c1e]"
-                >
-                  <button
-                    onClick={() => setOpen(isOpen ? null : drill.id)}
-                    aria-expanded={isOpen}
-                    className="flex w-full cursor-pointer items-center gap-2 text-left"
-                  >
-                    <KindBadge kind={drill.kind} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
-                      {drill.title}
-                    </span>
-                    {drill.topic && (
-                      <span className="shrink-0 text-xs text-gray-400">
-                        {topicName(drill.topic)}
-                      </span>
-                    )}
-                    {drill.minutes > 0 && (
-                      <span className="shrink-0 text-xs text-gray-400">{drill.minutes}′</span>
-                    )}
-                    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-                  </button>
-                  {isOpen && (
-                    <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
-                      <DrillDetails drill={drill} adminKey={key} />
-                      <p className="mt-3 text-xs text-gray-400">
-                        {uses.length > 0 ? `Used in ${uses.join(", ")}` : "Not in any plan yet"}
-                      </p>
-                      {canEdit && (
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => setDrillForm(toDraft(drill))}
-                            className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-green-400 hover:text-green-700 dark:text-gray-300 dark:border-white/15"
-                          >
-                            Edit
-                          </button>
-                          {!drill.builtIn && (
-                            <button
-                              onClick={() => deleteDrill(drill)}
-                              disabled={saving}
-                              className="cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:border-red-300 hover:text-red-600 disabled:opacity-40 dark:text-gray-400 dark:border-white/15"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+            {shownDrills.map((drill) => (
+              <button
+                key={drill.id}
+                onClick={() => setSheet({ kind: "drill", drillId: drill.id })}
+                className="flex w-full cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 text-left last:border-b-0 dark:border-white/10"
+              >
+                <span className={`h-9 w-1 shrink-0 rounded-full ${KIND_STRIPE[drill.kind]}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold text-gray-900 dark:text-gray-50">{drill.title}</span>
+                  <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                    {[
+                      DRILL_KINDS.find((k) => k.slug === drill.kind)?.name,
+                      drill.topic ? topicName(drill.topic) : "",
+                      drill.minutes ? `${drill.minutes} min` : "",
+                      drill.players ? `${drill.players} players` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+              </button>
+            ))}
           </div>
         )}
       </>
+    );
+  }
+
+  /** Whichever sheet is open: a drill, picking one for a week, a week's topic, or the plan's details. */
+  function sheetView() {
+    if (!sheet || !draft) return null;
+    const close = () => setSheet(null);
+    if (sheet.kind === "plan") {
+      return (
+        <Sheet title="Edit Plan" onClose={close}>
+          <label className="mb-4 block">
+            <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Name</span>
+            <input
+              value={draft.title}
+              onChange={(e) => editPlan((p) => ({ ...p, title: e.target.value }))}
+              placeholder={`${teamName(team)} Plan, e.g. Autumn block`}
+              maxLength={120}
+              className={`${inputClass} mt-1 rounded-xl py-2.5`}
+            />
+          </label>
+          <label className="mb-4 block">
+            <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Week 1 is on</span>
+            <select
+              value={draft.startDate}
+              onChange={(e) => editPlan((p) => ({ ...p, startDate: e.target.value }))}
+              className={`${inputClass} mt-1 rounded-xl py-2.5`}
+            >
+              <option value="">Not scheduled yet</option>
+              {/* a start date the schedule no longer covers still shows */}
+              {draft.startDate && !sessionsHere.some((s) => s.date === draft.startDate) && (
+                <option value={draft.startDate}>{formatDate(draft.startDate)}</option>
+              )}
+              {sessionsHere.map((s) => (
+                <option key={s.date} value={s.date}>
+                  {formatDate(s.date)}
+                  {s.cancelled ? " — no training" : ""}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block px-1 text-[11px] text-gray-500 dark:text-gray-400">
+              Each week goes on the team&apos;s next training session, and shows in the Training Log. A session marked as
+              no training is skipped, so the plan moves back one.
+            </span>
+          </label>
+          {seasonPlan.length > 0 && (
+            <button
+              onClick={() => {
+                applySeasonPlan();
+                close();
+              }}
+              className="mb-4 w-full cursor-pointer rounded-2xl bg-white p-3 text-left text-sm shadow-sm ring-2 ring-green-600/30 dark:bg-[#2c2c2e]"
+            >
+              <span className="font-bold text-gray-900 dark:text-gray-50">Use the {seasonPlan.length}-Week Season Plan</span>
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                Fills the weeks with the{seasonPlanTitle ? ` ${seasonPlanTitle}` : " season plan"}&apos;s topics and drills.
+              </span>
+            </button>
+          )}
+          <button onClick={close} className="w-full cursor-pointer rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700">
+            Done
+          </button>
+        </Sheet>
+      );
+    }
+    const week = "weekId" in sheet ? draft.weeks.find((w) => w.id === sheet.weekId) : undefined;
+    if (sheet.kind === "topic") {
+      if (!week) return null;
+      const known = DRILL_TOPICS.some((t) => t.name === week.theme);
+      const options = [...DRILL_TOPICS.map((t) => t.name), ...(week.theme && !known ? [week.theme] : [])];
+      return (
+        <Sheet title={`Week ${draft.weeks.indexOf(week) + 1} Topic`} onClose={close}>
+          <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#2c2c2e]">
+            {options.map((name) => (
+              <button
+                key={name}
+                onClick={() => {
+                  setWeek(week.id, (w) => ({ ...w, theme: name }));
+                  close();
+                }}
+                className="flex w-full cursor-pointer items-center justify-between border-b border-gray-100 px-4 py-3 text-left text-[15px] font-semibold text-gray-900 last:border-b-0 dark:border-white/10 dark:text-gray-50"
+              >
+                {name}
+                {week.theme === name && <span className="text-green-600">✓</span>}
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      );
+    }
+    if (sheet.kind === "pick") {
+      if (!week) return null;
+      const [one, many] = SLOT_WORD[sheet.slot];
+      const current = inSlot(week, sheet.slot);
+      const topic = DRILL_TOPICS.find((t) => t.name === week.theme);
+      const ofKind = drills.filter((d) => d.kind === sheet.slot);
+      const onTopic = topic ? ofKind.filter((d) => d.topic === topic.slug) : [];
+      const others = topic ? ofKind.filter((d) => d.topic !== topic.slug) : ofKind;
+      const group = (label: string, list: Drill[]) =>
+        list.length > 0 && (
+          <>
+            <p className="mb-1.5 mt-4 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 first:mt-0 dark:text-gray-400">{label}</p>
+            <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#2c2c2e]">
+              {list.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => {
+                    setSlot(week.id, sheet.slot, d.id);
+                    close();
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 text-left last:border-b-0 dark:border-white/10"
+                >
+                  <span className={`h-8 w-1 shrink-0 rounded-full ${KIND_STRIPE[d.kind]}`} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-gray-900 dark:text-gray-50">{d.title}</span>
+                    <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                      {[d.topic ? topicName(d.topic) : "No topic", d.minutes ? `${d.minutes} min` : ""].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  {current?.id === d.id && <span className="shrink-0 font-bold text-green-600">✓</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        );
+      return (
+        <Sheet title={`Pick a ${one[0].toUpperCase()}${one.slice(1)}`} onClose={close}>
+          {ofKind.length === 0 ? (
+            <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400">
+              No {many} in the library yet.{" "}
+              <button
+                onClick={() => {
+                  close();
+                  setView("library");
+                }}
+                className="cursor-pointer font-semibold text-green-700 underline dark:text-green-400"
+              >
+                Add one
+              </button>
+            </p>
+          ) : (
+            <>
+              {topic && onTopic.length === 0 && (
+                <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+                  No {topic.name.toLowerCase()} {many} yet — here are the others.
+                </p>
+              )}
+              {group(topic ? topic.name : many, topic ? onTopic : others)}
+              {topic && group(`Other ${many}`, others)}
+            </>
+          )}
+          {current && (
+            <button
+              onClick={() => {
+                setSlot(week.id, sheet.slot, "");
+                close();
+              }}
+              className="mt-4 w-full cursor-pointer rounded-xl py-2.5 text-sm font-semibold text-red-600 dark:text-red-400"
+            >
+              Take {current.title} Out
+            </button>
+          )}
+        </Sheet>
+      );
+    }
+    // a drill: from a week (tick it off, swap it), or from the library (edit it)
+    const drill = drillById.get(sheet.drillId);
+    if (!drill) return null;
+    const uses = usesOf(drill.id);
+    const ticked = !!week?.doneIds.includes(drill.id);
+    const tickable = !!week && !!savedPlan?.weeks.find((w) => w.id === week.id)?.drillIds.includes(drill.id);
+    return (
+      <Sheet title={drill.title} badge={<KindBadge kind={drill.kind} />} onClose={close}>
+        <div className="rounded-2xl bg-white p-4 dark:bg-[#2c2c2e]">
+          <DrillDetails drill={drill} adminKey={key} />
+        </div>
+        {week ? (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setSheet({ kind: "pick", weekId: week.id, slot: drill.kind })}
+              className="cursor-pointer rounded-xl bg-white py-3 text-sm font-bold text-gray-700 shadow-sm dark:bg-[#2c2c2e] dark:text-gray-200"
+            >
+              Swap Drill
+            </button>
+            <button
+              onClick={() => tick(week.id, drill.id, !ticked)}
+              disabled={!tickable || !!ticking}
+              className={`cursor-pointer rounded-xl py-3 text-sm font-bold disabled:opacity-40 ${
+                ticked ? "bg-white text-green-700 shadow-sm dark:bg-[#2c2c2e] dark:text-green-400" : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {ticked ? "✓ Done" : "Mark Done"}
+            </button>
+            {!tickable && (
+              <p className="col-span-2 text-center text-[11px] text-gray-500 dark:text-gray-400">Save the plan first, then tick it off</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <p className="mt-3 px-1 text-xs text-gray-500 dark:text-gray-400">
+              {uses.length > 0 ? `Used in ${uses.join(", ")}` : "Not in any plan yet"}
+            </p>
+            {canEdit && (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    close();
+                    setDrillForm(toDraft(drill));
+                  }}
+                  className="cursor-pointer rounded-xl bg-white py-3 text-sm font-bold text-gray-700 shadow-sm dark:bg-[#2c2c2e] dark:text-gray-200"
+                >
+                  Edit
+                </button>
+                {!drill.builtIn && (
+                  <button
+                    onClick={async () => {
+                      if (await deleteDrill(drill)) close();
+                    }}
+                    disabled={saving}
+                    className="cursor-pointer rounded-xl bg-white py-3 text-sm font-bold text-red-600 shadow-sm disabled:opacity-40 dark:bg-[#2c2c2e] dark:text-red-400"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </Sheet>
     );
   }
 
@@ -1159,7 +1353,7 @@ export default function TrainingPlans() {
               key={v}
               onClick={() => {
                 setView(v);
-                setOpen(null);
+                setSheet(null);
               }}
               className={`min-w-0 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
                 view === v
@@ -1249,6 +1443,8 @@ export default function TrainingPlans() {
 
         {view === "plan" ? planView() : libraryView()}
       </div>
+
+      {sheetView()}
 
       {/* Unsaved plan changes follow the coach down the page */}
       {dirty && (
