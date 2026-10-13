@@ -30,7 +30,7 @@ export default async function SearchPage() {
       help={help}
       // only signed-in people have club data to search
       searchData={viewer.signedIn}
-      hint={viewer.canCoach ? "Try a player, an opponent, a drill, or “training times”" : "Try “kit”, an opponent, or “dark mode”"}
+      hint={viewer.canCoach ? "Try a player, an opponent, a drill, or “training times”" : viewer.signedIn ? "Try “kit”, an opponent, or “dark mode”" : "Try “kit”, “results” or “training”"}
     />
   );
 }
