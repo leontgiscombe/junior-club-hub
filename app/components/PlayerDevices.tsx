@@ -4,6 +4,7 @@
 // Account → Your Children) and coaches (Members → a player's profile): make a
 // one-time code to set one up, and see or remove the ones already set up.
 import { useEffect, useState } from "react";
+import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { playerSetupUrl } from "@/lib/playerCode";
@@ -38,6 +39,7 @@ export default function PlayerDevices({
 }
 
 function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first: string; adminKey?: string; onClose: () => void }) {
+  useScrollLock();
   const q = (extra = "") => `?${adminKey ? `key=${encodeURIComponent(adminKey)}&` : ""}${extra}`;
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [code, setCode] = useState<{ code: string; minutes: number; qr?: string } | null>(null);

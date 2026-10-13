@@ -6,6 +6,7 @@
 // or resume it, delete it — and restore a club from a backup. The key is kept
 // for this browser tab only.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useScrollLock } from "../../components/useScrollLock";
 import { FEATURES, type Feature } from "@/lib/clubSettings";
 
 type AdminClub = {
@@ -448,15 +449,11 @@ function ClubPanel({
   const [deleting, setDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   // the page behind stays still, and Escape closes it
+  useScrollLock();
   useEffect(() => {
-    const before = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = before;
-      window.removeEventListener("keydown", onKey);
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const stats: [string, number][] = [

@@ -1273,6 +1273,23 @@
   }
 
   // ---------- Modal helpers ----------
+  // Keeps the page behind a pop-up still: on an iPhone a swipe scrolls what's
+  // behind unless the page is pinned where it was (as app/components/useScrollLock.ts)
+  const scrollLocks = new Set();
+  let scrollSaved = null;
+  function lockScroll(who){
+    if(scrollLocks.has(who)) return;
+    scrollLocks.add(who);
+    if(scrollLocks.size > 1) return;
+    scrollSaved = { y: window.scrollY, css: document.body.style.cssText };
+    Object.assign(document.body.style, { position:'fixed', top: '-' + scrollSaved.y + 'px', left:'0', right:'0', width:'100%', overflow:'hidden' });
+  }
+  function unlockScroll(who){
+    if(!scrollLocks.delete(who) || scrollLocks.size || !scrollSaved) return;
+    document.body.style.cssText = scrollSaved.css;
+    window.scrollTo(0, scrollSaved.y);
+    scrollSaved = null;
+  }
   function openModal(title, bodyHTML, buttons, noFocus){
     $("#modal-title").textContent = title;
     $("#modal-body").innerHTML = bodyHTML;
@@ -1283,9 +1300,10 @@
       btn.onclick = b.act; foot.appendChild(btn);
     });
     $("#modal-backdrop").classList.add('open');
+    lockScroll('modal');
     const first = !noFocus && $("#modal-body input"); if(first) first.focus();
   }
-  function closeModal(){ $("#modal-backdrop").classList.remove('open'); }
+  function closeModal(){ $("#modal-backdrop").classList.remove('open'); unlockScroll('modal'); }
 
   // ---------- Export / import ----------
   function download(filename, text, type){

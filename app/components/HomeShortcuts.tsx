@@ -7,6 +7,7 @@
 // a − to take it off, a + to add more, and Done.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 
 export type ShortcutId =
@@ -122,15 +123,7 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
   }, [available]);
 
   // while the list is open, the page behind it stays still
-  useEffect(() => {
-    if (!editing) return;
-    const html = document.documentElement;
-    const before = [html.style.overflow, document.body.style.overflow];
-    html.style.overflow = document.body.style.overflow = "hidden";
-    return () => {
-      [html.style.overflow, document.body.style.overflow] = before;
-    };
-  }, [editing]);
+  useScrollLock(editing);
 
   function save(next: ShortcutId[] | null) {
     try {

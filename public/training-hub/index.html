@@ -3911,14 +3911,32 @@ function renderHubSearch(q){
     list.appendChild(b);
   });
 }
+// Keeps the page behind a pop-up still: on an iPhone a swipe scrolls what's
+// behind unless the page is pinned where it was (as app/components/useScrollLock.ts)
+var scrollLocks = new Set();
+var scrollSaved = null;
+function lockScroll(who){
+  if(scrollLocks.has(who)) return;
+  scrollLocks.add(who);
+  if(scrollLocks.size > 1) return;
+  scrollSaved = { y: window.scrollY, css: document.body.style.cssText };
+  Object.assign(document.body.style, { position:'fixed', top: '-' + scrollSaved.y + 'px', left:'0', right:'0', width:'100%', overflow:'hidden' });
+}
+function unlockScroll(who){
+  if(!scrollLocks.delete(who) || scrollLocks.size || !scrollSaved) return;
+  document.body.style.cssText = scrollSaved.css;
+  window.scrollTo(0, scrollSaved.y);
+  scrollSaved = null;
+}
 function openHubSearch(){
   HS_ITEMS = buildHubSearch();
   var input = document.getElementById('hs-input'); input.value = '';
   renderHubSearch('');
   document.getElementById('hub-search').classList.add('open');
+  lockScroll('search');
   setTimeout(function(){ input.focus(); }, 50);
 }
-function closeHubSearch(){ document.getElementById('hub-search').classList.remove('open'); }
+function closeHubSearch(){ document.getElementById('hub-search').classList.remove('open'); unlockScroll('search'); }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeHubSearch(); });
 </script>
 </body>
