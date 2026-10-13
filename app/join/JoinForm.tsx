@@ -143,6 +143,11 @@ export default function JoinForm({
         <button id="join-code-next" disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Checking…" : "Next"}
         </button>
+        {!account && (
+          <a href="/signin?next=/" className="text-center text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400">
+            Already a member? Sign in
+          </a>
+        )}
         <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
           I&apos;m a coach — sign in
         </a>

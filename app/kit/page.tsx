@@ -4,7 +4,8 @@ import { kitAspect } from "@/lib/clubSettings";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
 import { canCoach, currentPerson } from "@/lib/people";
-import { teamsOf } from "@/lib/access";
+import { childrenOf, teamsOf } from "@/lib/access";
+import { getSubmissions } from "@/lib/storage";
 import { getTenant } from "@/lib/tenant";
 
 export const metadata = {
@@ -35,6 +36,17 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
   const mine = person && !canCoach(person) ? teamsOf(person) : [];
   const ownOnly = mine.length > 0 && !all;
   const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
+  // a parent's own children in each team, and whether their sizes are in (as Home's reminder works it out)
+  const kids = person && !canCoach(person) ? childrenOf(person).filter((k) => k.team && !k.pending) : [];
+  const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const status = new Map<string, string>();
+  for (const slug of [...new Set(kids.map((k) => k.team!.slug))]) {
+    const sent = await getSubmissions(slug).catch(() => []);
+    const theirs = kids.filter((k) => k.team!.slug === slug);
+    const due = theirs.filter((k) => !sent.some((x) => (k.playerId && x.playerId === k.playerId) || same(x.childName, k.name)));
+    const first = (k: { name: string }) => k.name.split(" ")[0];
+    status.set(slug, due.length ? `Still to send: ${due.map(first).join(" and ")}` : `Sent for ${theirs.map(first).join(" and ")} ✓`);
+  }
   return (
     <div className="themed flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
@@ -73,7 +85,9 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-bold">{team.name}</span>
-                <span className="block text-sm text-gray-500 dark:text-gray-400">Choose kit sizes</span>
+                <span className={`block text-sm ${status.get(team.slug)?.endsWith("✓") ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
+                  {status.get(team.slug) ?? "Choose kit sizes"}
+                </span>
               </span>
               <Chevron />
             </Link>
@@ -91,7 +105,7 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
           )}
         </p>
 
-        {/* kit during the season: a new shirt, a lost jacket */}
+        {/* kit during the season: a bigger shirt, new socks */}
         <Link href="/kit/request" className="press mt-6 flex items-center gap-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white">
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
