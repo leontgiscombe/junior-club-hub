@@ -7,6 +7,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { SESSION_KEY } from "@/lib/access";
+import { isAppUserAgent } from "@/lib/inApp";
+
+// the App Store app's web view can't show web alerts (lib/inApp.ts): no prompt or switch there
+const inTheApp = () => typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent);
 
 type Status = { pending: number; alerts: boolean; pushAvailable: boolean };
 
@@ -154,7 +158,7 @@ function useAlertSwitch(refresh: () => void) {
 export function AlertsPrompt({ status, refresh }: { status: Status | null; refresh: () => void }) {
   const { busy, note, turnOn } = useAlertSwitch(refresh);
   // stays up just long enough to say it worked (or why it didn't)
-  if (!status?.pushAvailable || (status.alerts && !note)) return null;
+  if (!status?.pushAvailable || (status.alerts && !note) || inTheApp()) return null;
   return (
     <div className="mb-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm dark:bg-[#1c1c1e] dark:border-white/15">
       {!status.alerts && (
@@ -190,7 +194,7 @@ export function AlertsPrompt({ status, refresh }: { status: Status | null; refre
 export function AlertsSettings({ className }: { className: string }) {
   const { status, refresh } = useJoinRequests();
   const { busy, note, turnOn, turnOff, test } = useAlertSwitch(refresh);
-  if (!status?.pushAvailable) return null;
+  if (!status?.pushAvailable || inTheApp()) return null;
   return (
     <section className={className} id="alerts">
       <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 Coach Alerts</h2>
