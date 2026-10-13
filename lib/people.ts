@@ -10,6 +10,7 @@ import {
   childrenOf,
   hasOwnTeam,
   invitesKey,
+  joinAlertsKey,
   kvCall,
   peopleKey,
   readPerson,
@@ -17,7 +18,9 @@ import {
   type Person,
   type Role,
 } from "./access";
-import { getTeams } from "./settings";
+import { getAllTeamsFor, getTeams } from "./settings";
+import { financeKeys } from "./financeStorage";
+import { keyPrefix } from "./kv";
 import { addPlayer, deletePlayer, listPlayers, setPlayerTeam, updatePlayer, type Position } from "./statsStorage";
 import { currentUser, setUserName, userClubsKey, type User } from "./auth";
 import { DEFAULT_TENANT } from "./tenantHost";
@@ -402,9 +405,53 @@ export async function editSquadPlayer(
   return true;
 }
 
-export async function leaveClub(tenant: string, userId: string): Promise<void> {
+export async function leaveClub(tenant: string, userId: string, opts: { forget?: boolean } = {}): Promise<void> {
   await kvCall(["HDEL", peopleKey(tenant), userId]);
   await kvCall(["SREM", userClubsKey(userId), tenant]);
+  // what was theirs alone: their phones' alerts, and their devices that open Finances
+  await forgetHashEntries(joinAlertsKey(tenant), (v) => v.userId === userId);
+  for (const team of await getAllTeamsFor(tenant).catch(() => [])) {
+    await forgetHashEntries(financeKeys(tenant).devices(team.slug), (v) => v.userId === userId);
+  }
+  // an account deleted: its kit requests still waiting go, and sorted ones keep no name
+  if (opts.forget) {
+    const key = `${keyPrefix(tenant)}kit_requests`;
+    const flat = (await kvCall<string[] | null>(["HGETALL", key]).catch(() => null)) ?? [];
+    for (let i = 0; i + 1 < flat.length; i += 2) {
+      try {
+        const r = JSON.parse(flat[i + 1]) as { userId?: string; doneAt?: string };
+        if (r.userId !== userId) continue;
+        if (!r.doneAt) await kvCall(["HDEL", key, flat[i]]);
+        else await kvCall(["HSET", key, flat[i], JSON.stringify({ ...r, userId: "", requestedBy: "A deleted account" })]);
+      } catch {}
+    }
+  }
+}
+
+/** Remove the entries of a hash (each a JSON object) that `match`. */
+async function forgetHashEntries(key: string, match: (v: Record<string, unknown>) => boolean): Promise<void> {
+  const flat = (await kvCall<string[] | null>(["HGETALL", key]).catch(() => null)) ?? [];
+  for (let i = 0; i + 1 < flat.length; i += 2) {
+    try {
+      if (match(JSON.parse(flat[i + 1]) as Record<string, unknown>)) await kvCall(["HDEL", key, flat[i]]);
+    } catch {}
+  }
+}
+
+/**
+ * Clubs where `userId` is the only club admin while others are still in it:
+ * deleting their account would leave the club with nobody to run it.
+ */
+export async function onlyAdminOf(userId: string): Promise<string[]> {
+  const out: string[] = [];
+  for (const tenant of (await kvCall<string[]>(["SMEMBERS", userClubsKey(userId)])) ?? []) {
+    const people = await listPeople(tenant).catch(() => [] as Person[]);
+    const me = people.find((p) => p.userId === userId);
+    if (!me || me.status !== "approved" || !me.roles.includes("admin")) continue;
+    const others = people.filter((p) => p.userId !== userId && p.status === "approved");
+    if (others.length && !others.some((p) => p.roles.includes("admin"))) out.push(tenant);
+  }
+  return out;
 }
 
 /**

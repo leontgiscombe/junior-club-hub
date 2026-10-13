@@ -203,7 +203,8 @@ export default function AccountPage() {
     const res = await fetch("/api/account", { method: "DELETE" });
     if (res.ok) window.location.href = "/";
     else {
-      setMessage({ ok: false, text: "Couldn't delete the account — try again" });
+      const why = ((await res.json().catch(() => null)) as { error?: string } | null)?.error;
+      setMessage({ ok: false, text: why ?? "Couldn't delete the account — try again" });
       setBusy(false);
     }
   }
