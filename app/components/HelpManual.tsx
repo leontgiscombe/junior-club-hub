@@ -466,12 +466,12 @@ export default function HelpManual() {
               In <B>Subs</B>, tap <B>Unpaid</B> beside a player when they pay; tap <B>Paid</B> to
               change how they paid or exempt them that month. Tap a name for their card.
             </li>
-            <li><B>Who Owes</B> lists anyone behind, with a WhatsApp reminder for each parent; <B>Spending</B> keeps money in and out.</li>
+            <li><B>Who Owes</B> lists anyone behind, with a WhatsApp reminder for each parent; <B>In &amp; Out</B> keeps money in and out, sorted into categories the treasurer can add to, rename or remove (Settings → Categories).</li>
             <li>Tap the <B>padlock</B> at the top when you&apos;ve finished, especially on a shared device.</li>
           </Steps>
           <p>
             Players come from Members by themselves. Treasurers also get <B>Subs</B>, <B>Who Owes</B>,{" "}
-            <B>Spending</B> and <B>Finance Settings</B> shortcuts on Home.
+            <B>In &amp; Out</B> and <B>Finance Settings</B> shortcuts on Home.
           </p>
         </Section>
 
