@@ -53,7 +53,7 @@ export default function TabBarPicker() {
   return (
     <div className="mt-4">
       <p className="px-2 pb-3 text-sm text-gray-500 dark:text-gray-400">
-        Home is always first. Tick up to {MAX_TABS - 1} more and put them in order — {tabs.length} of {MAX_TABS} chosen.
+        Home is always first. Pick up to {MAX_TABS - 1} more and put them in order ({tabs.length - 1} of {MAX_TABS - 1} picked).
       </p>
       <ul className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
         {[...tabs, ...others].map((id) => {

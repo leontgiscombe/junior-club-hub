@@ -116,7 +116,7 @@ export default function KitRequestForm({
       ) : (
         <div className="flex flex-col gap-3">
           <p className="px-1 text-center text-[15px] text-gray-500 dark:text-gray-400">
-            Need something during the season — a bigger shirt, a lost jacket? Ask here and your child&apos;s
+            Need something during the season — a bigger shirt, new socks? Ask here and your child&apos;s
             coaches get an alert.
           </p>
 

@@ -650,7 +650,9 @@ function PendingPerson({
       )}
       {kids.length > 0 && (
         <div className="mt-2 rounded-lg bg-gray-50 p-2 dark:bg-white/5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Their children in your squad:</p>
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+            Their children: already in your squad? Pick them, so they aren&apos;t added twice.
+          </p>
           {kids.map((c) => (
             <label key={c.id} className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
               <span className="min-w-0 flex-1 font-semibold">
@@ -663,12 +665,12 @@ function PendingPerson({
                 aria-label={`Squad player for ${c.name}`}
                 className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
               >
-                <option value="new">Add as a new player</option>
+                <option value="new">New to the squad — add them</option>
                 {players
                   .filter((pl) => !c.team || pl.team === c.team.slug)
                   .map((pl) => (
                     <option key={pl.id} value={pl.id}>
-                      Is {pl.name}
+                      Already in the squad: {pl.name}
                     </option>
                   ))}
               </select>
@@ -726,12 +728,12 @@ function PendingChild({
           aria-label={`Squad player for ${child.name}`}
           className={field}
         >
-          <option value="new">Add as a new player</option>
+          <option value="new">New to the squad — add them</option>
           {players
             .filter((pl) => !team || pl.team === team)
             .map((pl) => (
               <option key={pl.id} value={pl.id}>
-                Is {pl.name}
+                Already in the squad: {pl.name}
               </option>
             ))}
         </select>
