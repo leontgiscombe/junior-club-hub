@@ -28,7 +28,7 @@ checklist for building and submitting it.
 | --- | --- |
 | `APPLE_TEAM_ID` | Your Apple Developer Team ID (10 characters, in the developer account's Membership page) |
 | `IOS_BUNDLE_ID` | The app's bundle ID, e.g. `uk.co.grassrootsclubhub.app` |
-| `REVIEW_EMAIL` | An email for App Review, e.g. `appreview@grassroots-club-hub.co.uk` |
+| `REVIEW_EMAIL` | App Review's emails, comma-separated: a club admin and a parent, e.g. `appreview@grassroots-club-hub.co.uk,appreview.parent@grassroots-club-hub.co.uk` |
 | `REVIEW_CODE` | Any 6 digits; give it to Apple in the Review Notes |
 
 Then make `REVIEW_EMAIL` a club admin of a demo club with some made-up teams,
