@@ -23,7 +23,7 @@ export type SetupStep = {
   external?: boolean;
 };
 
-export const MANUAL_STEPS = ["teams", "parts", "coaches", "share", "first", "finance", "phone"] as const;
+export const MANUAL_STEPS = ["teams", "parts", "coaches", "share", "squad", "first", "finance", "phone"] as const;
 const setupKey = (tenant: string) => clubKey(tenant, "setup");
 type Stored = { ticked: string[]; hidden: string[] };
 
@@ -137,8 +137,12 @@ export async function setupFor(tenant: string, user: User, person: Person | null
       title: "Approve parents and get your squad in",
       hint: "Each child a parent adds joins their team's squad once you approve them.",
       href: "/admin/members",
-      // not while anyone's still waiting for an answer
-      done: Number(players) > 0 && others.some((p) => p.status === "approved" && childrenOf(p).length > 0) && awaitingApproval(people).length === 0,
+      // not while anyone's still waiting for an answer; a club that brings its squad in
+      // another way (or has no parents to approve yet) can tick it
+      done:
+        ticked("squad") ||
+        (Number(players) > 0 && others.some((p) => p.status === "approved" && childrenOf(p).length > 0) && awaitingApproval(people).length === 0),
+      manual: true,
     },
     {
       id: "first",
