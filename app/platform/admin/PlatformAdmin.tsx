@@ -582,6 +582,16 @@ function ClubPanel({
           <button onClick={() => act({ action: "reset", id: c.id })} disabled={busy} className={btn}>
             Send Password Reset
           </button>
+          {/* a demo club for App Review or showing people: only an empty one */}
+          {c.players === 0 && (
+            <button
+              onClick={() => confirm(`Fill ${c.name} with made-up teams, players and games?`) && act({ action: "demo", id: c.id })}
+              disabled={busy}
+              className={btn}
+            >
+              Fill With Demo Data
+            </button>
+          )}
           {c.paused ? (
             <button onClick={() => act({ action: "resume", id: c.id })} disabled={busy} className="rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50">
               Resume Club

@@ -2,6 +2,7 @@
 // carries the admin key in the "x-platform-key" header.
 //   GET                                   -> { clubs (with their counts, last use and setup: lib/platformStats.ts),
 //                                             log, emailConfigured, backups, separateBackups }
+//   POST { action: "demo", id }           -> fills an empty club with made-up teams, players and games (lib/demoSeed.ts)
 //   POST { action: "reset", id }          -> emails the club a password-reset link
 //   POST { action: "pause", id, reason? } -> the club's hub shows a "paused" page; nothing is deleted
 //   POST { action: "resume", id }         -> opens it again
@@ -10,6 +11,7 @@
 //                                            (confirm must repeat the id)
 //   POST { action: "restore", id, date, confirm } -> puts a club back as it was in
 //                                            that day's backup (confirm repeats the id)
+import { seedDemoClub } from "@/lib/demoSeed";
 import { NextRequest, NextResponse } from "next/server";
 import { listBackups, restoreClub, separateBackupDb } from "@/lib/backup";
 import { emailConfigured } from "@/lib/email";
@@ -43,6 +45,18 @@ export async function POST(req: NextRequest) {
   if (refused) return refused;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
+
+  if (body?.action === "demo") {
+    const record = await getTenantRecord(id);
+    if (!record) return NextResponse.json({ error: "No such club" }, { status: 404 });
+    try {
+      const done = await seedDemoClub(id);
+      await logAdmin("Filled with demo data", id);
+      return NextResponse.json({ message: `${record.name}: ${done.teams} teams, ${done.players} made-up players and ${done.matches} matches added` });
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Couldn't add the demo data" }, { status: 400 });
+    }
+  }
 
   if (body?.action === "reset") {
     const record = await getTenantRecord(id);
