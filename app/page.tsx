@@ -11,7 +11,7 @@
 //   signed out: the Training Hub and kit sizes, and a way in for coaches.
 // Light or dark (Your Account → Appearance): the page is "themed".
 import Link from "next/link";
-import { childrenOf, teamsOf } from "@/lib/access";
+import { awaitingApproval, childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { getSubmissions } from "@/lib/storage";
 import { listMembers } from "@/lib/members";
@@ -134,9 +134,10 @@ export default async function Home() {
       listMatches().catch(() => []),
       listTraining().catch(() => []),
     ]);
-    const pending = people.filter((p) => p.status === "pending");
-    waiting = pending.length + members.filter((m) => m.status === "pending").length;
-    firstWaiting = pending[0]?.name ?? "";
+    // people asking to join, and children approved parents have added since
+    const names = awaitingApproval(people);
+    waiting = names.length + members.filter((m) => m.status === "pending").length;
+    firstWaiting = names[0] ?? "";
     nextTraining =
       training
         .filter((s) => myTeams.includes(s.team) && !s.cancelled && s.date >= now)
