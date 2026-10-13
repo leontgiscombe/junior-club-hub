@@ -371,6 +371,8 @@
 <main class="wrap">
   <!-- SUBS: the season so far, then a month's players, ticked off as they pay -->
   <section class="view active" id="view-subs">
+    <!-- a new team: the monthly fee comes first, or nobody owes anything -->
+    <div class="hint" id="fee-prompt" style="display:none"><b>Set the monthly fee first.</b> Until you do, nobody owes anything. <button class="btn btn-sm btn-primary" id="fee-prompt-btn" style="margin-top:8px">Set the Fee</button></div>
     <div class="card" id="dash-cards"></div>
     <div class="card">
       <div class="month-nav">
@@ -537,7 +539,8 @@
     // the club's colour, chosen on Coach Admin → Settings
     Object.entries(c.colourVars || {}).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
     TEAM_IDS = c.teams.map(t=>t.id);
-    TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.name }]));
+    // just the team ("Lions"), as the rest of the hub names it
+    TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.short || t.name }]));
     ['#club-badge', '#gate-crest', '#gate-head-crest'].forEach(sel=>{ const img = $(sel); if(img){ img.src = CLUB.crest; img.alt = CLUB.name; } });
     configReady();
   }
@@ -920,6 +923,7 @@
 
   // The season so far, at the top of Subs, and each of its months below the players.
   function renderDashboard(){
+    $("#fee-prompt").style.display = fee() > 0 ? 'none' : '';
     const collected = totalCollectedSubs();
     const outstanding = totalOutstanding();
     const {income, expense} = expenseTotals();
@@ -1360,6 +1364,10 @@
   const params = new URLSearchParams(location.search);
   let openOnView = ['subs','outstanding','expenses','settings'].includes(params.get('view')) ? params.get('view') : null;
 
+  $("#fee-prompt-btn").addEventListener('click', ()=>{
+    switchView('settings');
+    history.pushState({ fs: 'team' }, '', '#settings-team'); fsShow('team');
+  });
   function switchView(name){
     $$('.tab').forEach(t=>{ t.classList.toggle('active', t.dataset.view===name); t.setAttribute('aria-selected', t.dataset.view===name); });
     $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
@@ -1570,7 +1578,11 @@
     if(!todo.length){ box.style.display = 'none'; return; }
     box.style.display = '';
     box.innerHTML = '<p class="gate-sub" style="margin:0 0 6px">' + (todo.length === TEAM_IDS.length ? 'No team has a Finances password yet. Set one up to start tracking its subs.' : 'Not set up yet:') + '</p>'
-      + todo.map(id=>'<div class="ts-row"><span><b>'+esc(teamName(id))+'</b><span>Not set up yet</span></span><button class="btn btn-sm btn-primary" data-setup-team="'+esc(id)+'">Set Up</button></div>').join('');
+      + todo.map(id=>'<div class="ts-row"><span><b>'+esc(teamName(id))+'</b><span>Not set up yet</span></span>'
+        // set up by its treasurer or a club admin (or with the Coach Admin password, where a club has one)
+        + (coachPasswordOn || accountFor(id) ? '<button class="btn btn-sm btn-primary" data-setup-team="'+esc(id)+'">Set Up</button>' : '')
+        + '</div>').join('')
+      + (!coachPasswordOn && !account && accountChecked ? '<p class="gate-sub" style="margin:8px 0 0;font-size:13px">A team&rsquo;s treasurer or a club admin sets it up, once signed in.</p>' : '');
   }
   // The Coach Admin password is only for setting up a team without an account
   // that covers it: not signed in as a treasurer or club admin, or a treasurer
@@ -2038,7 +2050,7 @@
 
   /** The "open with your account" part of the gate. */
   async function setupAccountGate(){
-    try { await setupAccountGateNow(); } finally { accountChecked = true; updateSetupAdmin(); }
+    try { await setupAccountGateNow(); } finally { accountChecked = true; updateSetupAdmin(); renderTeamStatus(); }
   }
   async function setupAccountGateNow(){
     const box = $("#account-box");
@@ -2067,6 +2079,8 @@
   async function renderAccountTeams(){
     await teamsChecked;
     // a team with no password yet is set up from the list above, not opened
+    // their own teams with no password yet: set up from the list above first
+    const notYet = financeTeams ? financeTeams.filter(id=> teamsSetUp && !teamsSetUp[id]) : [];
     const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id))
       .sort((a, b)=> Number(b === treasurerOf) - Number(a === treasurerOf)); // their own team first
     let faceId = false;
@@ -2083,7 +2097,7 @@
       const name = esc(teamName(r.id));
       if(r.ready) return '<button class="btn btn-primary" data-escrow-team="'+esc(r.id)+'" data-face="'+(r.faceId?'1':'')+'" style="width:100%;margin-bottom:8px">Open '+name+(r.faceId && canPasskey() ? ' with Face ID' : '')+'</button>';
       return '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+name+'</strong>: type its password below just once — from then on your account opens it'+(faceId ? ' with Face ID' : '')+', with no password, on any device.</p>';
-    }).join('') + (!faceId && canPasskey() && rows.length ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, and your teams open with Face ID or a fingerprint.</p>' : '');
+    }).join('') + notYet.map(id=> '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+esc(teamName(id))+'</strong> isn&rsquo;t set up yet: tap its <strong>Set Up</strong> above. After that it opens here with no password.</p>').join('') + (!faceId && canPasskey() && rows.length ? '<p class="muted" style="font-size:12px;margin:4px 0 0">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, and your teams open with Face ID or a fingerprint.</p>' : '');
   }
   // Face ID (or a fingerprint) with the account's passkey, as the server's signin check wants it
   async function faceIdResponse(){
