@@ -1,6 +1,7 @@
 // Joining the club's hub: type the club's join code and your name, then wait
-// for a coach to approve you (lib/access.ts). A hub open to everyone just
-// links to its home page.
+// for a coach to approve you (lib/access.ts). A hub open to everyone is joined
+// the same way — anyone can look around it, but a parent joins to add their
+// children — with its code filled in.
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -37,22 +38,28 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={club.crest.src} alt={club.crest.alt} className="mx-auto h-20 w-auto" />
           <h1 className="mt-3 text-2xl font-extrabold text-gray-900 dark:text-gray-50">{club.name}</h1>
-          {access.private && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">This hub is for the club&apos;s members.</p>}
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {access.private
+              ? "This hub is for the club's members."
+              : "Anyone can look around. Join to add your children and hear from the club."}
+          </p>
         </div>
-        {access.private ? (
-          <JoinForm
-            initialStatus={me?.person?.status ?? "none"}
-            initialCode={normaliseCode(code ?? "").length === 6 ? showCode(normaliseCode(code ?? "")) : ""}
-            account={me ? { email: me.user.email, name: me.user.name } : null}
-          />
-        ) : (
-          // (a link, not a redirect: the hub may take a few seconds to notice it's open)
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">This hub is open to everyone.</p>
-            <Link href="/" className="mt-4 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
-              Open the Hub →
-            </Link>
-          </div>
+        <JoinForm
+          initialStatus={me?.person?.status ?? "none"}
+          // an open hub's code isn't a secret: it's filled in for them
+          initialCode={
+            normaliseCode(code ?? "").length === 6
+              ? showCode(normaliseCode(code ?? ""))
+              : !access.private && access.code
+                ? showCode(access.code)
+                : ""
+          }
+          account={me ? { email: me.user.email, name: me.user.name } : null}
+        />
+        {!access.private && (
+          <Link href="/" className="mt-4 block text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
+            Just looking? Open the Hub →
+          </Link>
         )}
       </div>
     </main>

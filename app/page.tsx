@@ -90,8 +90,8 @@ export default async function Home() {
   // the line under "Home": the club, and whose team this is
   const context = [
     CLUB.name,
-    kids.length
-      ? kids.map((k) => [k.name.split(" ")[0], teamName(k.team?.slug)].filter(Boolean).join(", ")).join(" · ")
+    kids.some((k) => !k.pending)
+      ? kids.filter((k) => !k.pending).map((k) => [k.name.split(" ")[0], teamName(k.team?.slug)].filter(Boolean).join(", ")).join(" · ")
       : teamName(person?.team?.slug),
   ]
     .filter(Boolean)
@@ -199,6 +199,31 @@ export default async function Home() {
             <span className="min-w-0 flex-1">
               <span className="block font-bold">Add your mobile number</span>
               <span className="block text-sm opacity-80">So the club can reach you, e.g. a reminder about subs</span>
+            </span>
+            <Chevron />
+          </Link>
+        )}
+
+        {/* signed in, but not in the club yet: join it, or wait for a coach */}
+        {me && me.person?.status !== "approved" && (
+          <Link
+            href="/join"
+            className="press flex items-center gap-4 rounded-3xl bg-green-50 px-4 py-3.5 text-green-900 dark:bg-green-400/10 dark:text-green-200"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-green-200/70 text-2xl dark:bg-green-400/20" aria-hidden="true">
+              {me.person?.status === "pending" ? "⏳" : "👋"}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold">
+                {me.person?.status === "pending" ? "Waiting for a coach to approve you" : `Join ${CLUB.name}`}
+              </span>
+              <span className="block text-sm opacity-80">
+                {me.person?.status === "pending"
+                  ? "You'll see your child's team here once they do"
+                  : me.person?.status === "declined"
+                    ? "A coach didn't approve your request — tap to ask again"
+                    : "Add your child, and get the club's updates"}
+              </span>
             </span>
             <Chevron />
           </Link>

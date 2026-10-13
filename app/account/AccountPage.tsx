@@ -307,7 +307,10 @@ export default function AccountPage() {
           {screen === "clubs" && (
             <Group>
               {account.clubs.length === 0 ? (
-                <p className="p-5 text-sm text-gray-500 dark:text-gray-400">You haven&apos;t joined a club yet. Ask your coach for the club code.</p>
+                <p className="p-5 text-sm text-gray-500 dark:text-gray-400">
+                  You haven&apos;t joined a club yet.{" "}
+                  <a href="/join" className="font-semibold text-green-700 dark:text-green-400">Join this club →</a>
+                </p>
               ) : (
                 account.clubs.map((c) => (
                   <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-4">

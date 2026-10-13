@@ -1,7 +1,8 @@
 // Joining a club, on its own address (lib/access.ts), with an account (lib/auth.ts).
 //   GET                          -> { private, status: "none" | "pending" | "approved" | "declined" }
-//   POST { code }                -> checks the club code: { status: "open" } if the hub is open to
-//                                   all, otherwise { status: "ok", teams } for the rest of the form
+//   POST { code }                -> checks the club code: { status: "ok", teams } for the rest of
+//                                   the form (a hub open to all is joined the same way: anyone can
+//                                   look around, but a parent joins to add their children)
 //   POST { code, name, phone?, relation, team?, children?: [{ name, team }], note? }   (signed in)
 //                                -> { status: "pending" }; the club's admins and coaches hear
 //                                   there's someone to approve (lib/notify.ts)
@@ -61,7 +62,6 @@ export async function POST(req: NextRequest) {
   if (code !== access.code) {
     return NextResponse.json({ error: "That isn't this club's code — check it with your coach" }, { status: 400 });
   }
-  if (!access.private) return NextResponse.json({ status: "open" });
   const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
 
   // just the code: the rest of the form

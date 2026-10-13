@@ -38,6 +38,12 @@ export default function JoinForm({
   const [busy, setBusy] = useState(false);
   const [askAgain, setAskAgain] = useState(false);
 
+  // a code from the join link (or an open hub's own): checked straight away
+  useEffect(() => {
+    if (initialCode && initialStatus === "none") document.getElementById("join-code-next")?.click();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
+
   // while waiting, look every 15 seconds for the coach's answer
   useEffect(() => {
     if (status !== "pending") return;
@@ -66,8 +72,7 @@ export default function JoinForm({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
-      if (data.status === "open") window.location.href = "/";
-      else if (data.status === "ok") {
+      if (data.status === "ok") {
         setTeams(data.teams);
         if (data.teams.length === 1) {
           setTeam(data.teams[0].slug);
@@ -135,7 +140,7 @@ export default function JoinForm({
           <span className="mt-1 block text-xs text-gray-400">Your coach can give you this.</span>
         </label>
         {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
-        <button disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
+        <button id="join-code-next" disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Checking…" : "Next"}
         </button>
         <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
