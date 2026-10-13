@@ -34,7 +34,8 @@ export const PAGES: PageEntry[] = [
   { title: "Your Account", where: "Account", href: "/account", words: "profile me settings", who: "signedIn" },
   { title: "Your Details", where: "Your Account", href: "/account#details", words: "name email change", who: "signedIn" },
   { title: "Profile Photo", where: "Your Account", href: "/account", words: "picture avatar photo", who: "signedIn" },
-  { title: "Your Children / Team", where: "Your Account", href: "/account#here", words: "child children kids add team", who: "signedIn" },
+  { title: "Your Children", where: "Your Account", href: "/account#here", words: "child children kids add son daughter medical photo", who: "signedIn" },
+  { title: "Your Team", where: "Your Account", href: "/account#team", words: "my team which team coach", who: "coach" },
   { title: "Your Clubs", where: "Your Account", href: "/account#clubs", words: "clubs switch other club", who: "signedIn" },
   { title: "Sign-In & Security", where: "Your Account", href: "/account#security", words: "passkey face id password security", who: "signedIn" },
   { title: "Appearance", where: "Your Account", href: "/account#appearance", words: "dark mode light theme wallpaper background colour", who: "signedIn" },
@@ -43,7 +44,7 @@ export const PAGES: PageEntry[] = [
   { title: "Delete Account", where: "Your Account", href: "/account#delete", words: "remove close account", who: "signedIn" },
 
   // treasurers
-  { title: "Financial Admin", where: "Page", href: "/finance", words: "finances subs money payments owed spending treasurer", who: "finance", feature: "financialAdmin", external: true },
+  { title: "Finances", where: "Page", href: "/finance", words: "finances subs money payments owed spending treasurer", who: "finance", feature: "financialAdmin", external: true },
 
   // coaches
   { title: "Coach Admin", where: "Page", href: "/admin", words: "coach tools admin", who: "coach" },
@@ -82,7 +83,7 @@ export const HELP_SECTIONS: { id: string; title: string; words: string }[] = [
   { id: "stats-tracker", title: "Stats Tracker", words: "stats" },
   { id: "player-of-the-month", title: "Player of the Month", words: "potm" },
   { id: "camera-and-kit", title: "Camera Register and Kit Responses", words: "camera kit requests" },
-  { id: "subs", title: "Financial Admin", words: "subs finance money" },
+  { id: "subs", title: "Finances", words: "subs finance money" },
   { id: "settings", title: "Settings", words: "settings" },
   { id: "end-of-season", title: "End of Season", words: "archive new season reset" },
   { id: "coachs-week", title: "A Coach's Week", words: "weekly checklist" },

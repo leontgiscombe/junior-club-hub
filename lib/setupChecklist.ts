@@ -94,7 +94,7 @@ export async function setupFor(tenant: string, user: User, person: Person | null
     {
       id: "crest",
       title: "Add your crest and club colour",
-      hint: "Your badge becomes the app's icon on everyone's phone.",
+      hint: "Your badge and colour show on every page of your club's hub.",
       href: "/admin/settings#crest",
       done: !!crest,
     },

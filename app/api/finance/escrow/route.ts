@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 const noStore = { headers: { "cache-control": "no-store" } };
 
 async function ready(): Promise<string | null> {
-  if (!(await getClub()).features.financialAdmin) return "Financial Admin is off";
+  if (!(await getClub()).features.financialAdmin) return "Finances is switched off";
   if (!financeConfigured()) return "storage not configured";
   return null;
 }

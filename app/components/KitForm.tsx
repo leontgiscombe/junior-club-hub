@@ -322,7 +322,7 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
 
       <button type="submit" disabled={!canSubmit}
         className="mt-2 w-full py-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-700 active:scale-95 shadow-md transition-all cursor-pointer disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed disabled:scale-100">
-        {submitting ? "Saving…" : "Continue →"}
+        {submitting ? "Sending…" : "Send Sizes"}
       </button>
       {!canSubmit && !submitting && (
         <p className="text-center text-xs text-gray-400">Choose your child and every size to continue</p>

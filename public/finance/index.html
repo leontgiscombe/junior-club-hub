@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Monthly subs and finance tracker for the club's teams">
 <meta name="theme-color" content="#1f7a3d">
-<title>Financial Admin</title>
+<title>Finances</title>
 <link rel="manifest" href="/finance/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/finance/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -482,7 +482,7 @@
     </div>
     <div class="panel fs-panel" data-fs="about">
       <div class="panel-head"><h3>About &amp; Privacy</h3></div>
-      <p class="muted" style="font-size:13px">This tracker holds children's and parents' personal details. It is encrypted with your admin password and stays only on this device/browser. Keep the device secure, only record what you need, and delete a player's record when they leave the team. Share backups securely.</p>
+      <p class="muted" style="font-size:13px">This tracker holds children's and parents' personal details. It is stored encrypted, and only your team's treasurer, the club's admins and anyone with the team password can open it. Keep your devices locked, only record what you need, and delete a player's record when they leave the team. Share backups securely.</p>
     </div>
   </section>
 </main>
@@ -522,6 +522,8 @@
   let TEAMS = {};      // id -> { name }
   let TEAM_IDS = [];
   let CLUB = { name: "", fullName: "", slogan: "", season: "" };
+  // whether the club has a shared Coach Admin password at all (clubs on accounts only don't)
+  let coachPasswordOn = true;
   let VAPID_PUBLIC = "";
   // the club's settings and teams, once loadConfig has them
   let configReady = null;
@@ -531,6 +533,7 @@
     if(!res.ok) throw new Error('config ' + res.status);
     const c = await res.json();
     CLUB = c.club; VAPID_PUBLIC = c.vapidPublicKey || "";
+    coachPasswordOn = c.coachPassword !== false;
     // the club's colour, chosen on Coach Admin → Settings
     Object.entries(c.colourVars || {}).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
     TEAM_IDS = c.teams.map(t=>t.id);
@@ -1110,7 +1113,7 @@
   // deleting takes their payments with it: say what comes off the totals
   function confirmDelete(p){
     const paid = playerBalance(p.id).paid;
-    return confirm('Delete ' + p.name + ' from Financial Admin?\n\nTheir payment history goes too'
+    return confirm('Delete ' + p.name + ' from Finances?\n\nTheir payment history goes too'
       + (paid > 0 ? ', and the ' + money(paid) + ' they paid this season comes off your totals' : '')
       + '. This can\u2019t be undone (except from a backup).');
   }
@@ -1574,7 +1577,7 @@
   // setting up a team that isn't theirs.
   function updateSetupAdmin(){
     const id = $("#setup-team").value;
-    const need = accountChecked && (!account || (!!id && !accountFor(id)));
+    const need = accountChecked && coachPasswordOn && (!account || (!!id && !accountFor(id)));
     $("#setup-admin").style.display = need ? '' : 'none';
     $("#setup-signin").style.display = accountChecked && !account ? '' : 'none';
     if(!need) $("#setup-admin").value = '';
@@ -1614,8 +1617,8 @@
     if(pass.length < 8){ err.textContent = 'The team password needs at least 8 characters.'; return; }
     if(pass !== pass2){ err.textContent = 'The two passwords don\u2019t match.'; return; }
     // signed in as a treasurer or club admin, the account is enough
-    if(!admin && !account){ err.textContent = 'Enter the Coach Admin password \u2014 or sign in as a treasurer or club admin.'; return; }
-    if(!admin && !accountFor(id)){ err.textContent = 'You\u2019re not ' + whose(teamName(id)) + ' treasurer \u2014 enter the Coach Admin password to set it up.'; return; }
+    if(!admin && !account){ err.textContent = coachPasswordOn ? 'Enter the Coach Admin password \u2014 or sign in as a treasurer or club admin.' : 'Sign in as a treasurer or club admin to set up a team.'; return; }
+    if(!admin && !accountFor(id)){ err.textContent = 'You\u2019re not ' + whose(teamName(id)) + ' treasurer' + (coachPasswordOn ? ' \u2014 enter the Coach Admin password to set it up.' : ' \u2014 its treasurer or a club admin sets it up.'); return; }
     const btn = $("#setup-btn"); btn.disabled = true; btn.textContent = 'Setting up\u2026';
     try {
       const raw = crypto.getRandomValues(new Uint8Array(32));
@@ -2012,7 +2015,7 @@
       extensions: { prf: { eval: { first: salt } } },
     } });
     const prf = cred.getClientExtensionResults().prf;
-    if(!prf || !prf.results || !prf.results.first) throw new Error('This browser can\u2019t use your passkey to open Financial Admin \u2014 try Safari or Chrome, or use the team password.');
+    if(!prf || !prf.results || !prf.results.first) throw new Error('This browser can\u2019t use your passkey to open Finances \u2014 try Safari or Chrome, or use the team password.');
     const material = await crypto.subtle.importKey('raw', prf.results.first, 'HKDF', false, ['deriveKey']);
     const key = await crypto.subtle.deriveKey({ name:'HKDF', hash:'SHA-256', salt: new Uint8Array(0), info: new TextEncoder().encode('gch-finance-passkey') }, material, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
     return { credId: b64u(cred.rawId), key };
@@ -2277,8 +2280,8 @@
     loadConfig().then(()=>{
       if(CLUB.features && CLUB.features.financialAdmin === false){
         // switched off on Coach Admin → Settings
-        $("#gate-title").textContent = 'Financial Admin is switched off';
-        $("#gate-sub").textContent = CLUB.name + ' isn\u2019t using Financial Admin.';
+        $("#gate-title").textContent = 'Finances is switched off';
+        $("#gate-sub").textContent = CLUB.name + ' isn\u2019t using Finances.';
         $("#gate-form").style.display = 'none';
         $("#setup-toggle").style.display = 'none';
         $("#gate-note").textContent = '';

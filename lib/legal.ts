@@ -4,7 +4,7 @@
 // PLATFORM_CONTACT_EMAIL to where questions should go (hello@…).
 import { PLATFORM_NAME, rootDomain } from "./tenantHost";
 
-export const LEGAL_UPDATED = "7 October 2026";
+export const LEGAL_UPDATED = "13 October 2026";
 
 export function operator() {
   const root = rootDomain().replace(/:\d+$/, "");

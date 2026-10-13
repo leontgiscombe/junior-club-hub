@@ -43,7 +43,7 @@ export default function PasskeyOffer({ next, hasOne }: { next: string; hasOne: b
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
         {hasOne
           ? "Add a passkey on this device too, and sign in here with Face ID, your fingerprint or your screen lock — no waiting for a code."
-          : "Add a passkey and sign in with Face ID, your fingerprint or your screen lock — no waiting for a code. Treasurers and club admins can open Financial Admin with it too."}
+          : "Add a passkey and sign in with Face ID, your fingerprint or your screen lock — no waiting for a code. Treasurers and club admins can open Finances with it too."}
       </p>
       {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
       <button onClick={add} disabled={busy} className="mt-5 w-full rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">

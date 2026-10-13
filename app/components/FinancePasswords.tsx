@@ -44,7 +44,7 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
     if (!fresh && !noCode && !code.trim()) {
       return setMessage({ ok: false, text: "Enter the team's recovery code, or tick the box if you don't have it." });
     }
-    if (!fresh && noCode && !confirm(`This permanently deletes ${teamName}'s Financial Admin records (players, payments and spending) and starts the team again. Carry on?`)) {
+    if (!fresh && noCode && !confirm(`This permanently deletes ${teamName}'s Finances records (players, payments and spending) and starts the team again. Carry on?`)) {
       return;
     }
     setBusy(true);
@@ -118,7 +118,7 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
 
       {fresh && team ? (
         <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">
-          This team hasn&apos;t got a Financial Admin password yet — choose one to set it up.
+          This team hasn&apos;t got a Finances password yet — choose one to set it up.
         </p>
       ) : (<>
       <label className="mt-3 block">

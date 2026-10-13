@@ -77,21 +77,39 @@ export default function PrivacyPage() {
               hub, only approved members can see it, and it shows full names.
             </>,
             <>
-              <strong>Financial Admin:</strong> subs, payments, parent contact details, notes and
-              spending. This is <strong>encrypted on the coach&apos;s device</strong> with the
-              team&apos;s own password before it&apos;s sent to us, so we only ever hold scrambled
-              data we cannot read.
+              <strong>Players&apos; medical notes and emergency contact (if added):</strong> kept with
+              the club, and seen only by the child&apos;s own parents or carers and the club&apos;s
+              coaches. They go when the child leaves the squad.
             </>,
             <>
-              <strong>Your account (if you have one):</strong> your email address and name, the clubs
-              you belong to and your role at each (e.g. coach, parent), and a cookie that keeps you
-              signed in on your device. There&apos;s no password — you sign in with a code we email
-              you. If you add a profile photo, we keep a small copy that only you can see; you can
-              remove it at any time. You can delete your account (and its photo) at any time from
-              its page.
+              <strong>Players&apos; photos (if added):</strong> a small copy, seen only by the
+              child&apos;s own parents or carers and the club&apos;s coaches — never on a public page.
             </>,
             <>
-              <strong>Members (if the club makes its hub private):</strong> the name of each person
+              <strong>Kit requests:</strong> what a parent asks the club for (item, size, quantity and
+              any note), with the child&apos;s name and who asked.
+            </>,
+            <>
+              <strong>Finances:</strong> subs, payments, parent contact details, notes and spending.
+              This is <strong>encrypted</strong> with the team&apos;s own key before it&apos;s stored.
+              So that the team&apos;s treasurer and the club&apos;s admins can open it with Face ID (or
+              their passkey) instead of a password, the hub also keeps that key, itself locked with a
+              separate secret held only by our server. Anyone who got hold of the database alone
+              couldn&apos;t read it, but our service can unlock it — and does so only to open it for the
+              people the club has made treasurer or club admin.
+            </>,
+            <>
+              <strong>Your account (if you have one):</strong> your email address, name and mobile
+              number (so your club can reach you, for example about subs), the clubs you belong to and
+              your role at each (e.g. coach, parent), and a cookie that keeps you signed in on your
+              device. There&apos;s no password: you sign in with a code we email you, or with a passkey
+              (Face ID, a fingerprint or your screen lock) — your device keeps the passkey&apos;s secret,
+              and we keep only the matching public part. If you add a profile photo, we keep a small
+              copy that only you can see; you can remove it at any time. You can delete your account
+              (and its photo) at any time from its page.
+            </>,
+            <>
+              <strong>Members:</strong> the name and mobile number of each person
               who asks to join, whether they&apos;re a parent, player or coach, their team, the names and
               teams of a parent&apos;s children (added by the parent — children don&apos;t have
               accounts — and seen by the club&apos;s coaches; once approved, a child is in the
@@ -100,8 +118,9 @@ export default function PrivacyPage() {
               It&apos;s only used to let them in.
             </>,
             <>
-              <strong>Reminders:</strong> if a coach turns on subs reminders, their browser&apos;s
-              notification address (no personal details).
+              <strong>Notifications:</strong> if a coach, club admin or treasurer turns on alerts or subs
+              reminders, their phone&apos;s or browser&apos;s notification address, linked to their
+              account so the right alerts reach them.
             </>,
             <>
               <strong>Players&apos; own devices:</strong> if a parent or coach sets up a child&apos;s own
@@ -148,7 +167,9 @@ export default function PrivacyPage() {
       <Part title="5. Children">
         <p>
           The hub is used by coaches and parents. Children&apos;s information is entered by adults
-          and kept to what a club needs to run its teams: names and football information. The
+          and kept to what a club needs to run its teams: names, football information, kit sizes,
+          and — only if a parent or coach adds them — a photo, medical notes and an emergency
+          contact, which only the child&apos;s own parents or carers and the club&apos;s coaches can see. The
           players&apos; Training Hub doesn&apos;t ask for or send any personal information. A child can
           only use it on their own device once one of their parents (or a coach) has set it up for
           them, and that device then opens only the Training Hub — nothing else in the club&apos;s hub.
@@ -201,8 +222,8 @@ export default function PrivacyPage() {
       <Part title="8. Keeping it safe">
         <p>
           Everything travels over an encrypted connection (HTTPS). Coach passwords are stored
-          hashed, Financial Admin is encrypted on the device, and each club&apos;s information is
-          kept separate from every other club&apos;s.
+          hashed, Finances is stored encrypted, and each club&apos;s information is kept separate
+          from every other club&apos;s.
         </p>
       </Part>
 

@@ -7,6 +7,7 @@ import { clubColourVars } from "@/lib/palette";
 import { getTenant } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
 import { vapidKeys } from "@/lib/vapid";
+import { sharedPasswordOn } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,8 @@ export async function GET() {
       format: teamFormat(t),
     })),
     vapidPublicKey: (await vapidKeys())?.publicKey ?? null,
+    // whether a shared coach password works here (Finances' set-up offers it only then)
+    coachPassword: await sharedPasswordOn(tenant),
     colourVars: clubColourVars(CLUB.colour),
   });
 }

@@ -19,7 +19,7 @@ const SECTIONS = [
   { id: "stats-tracker", title: "Stats Tracker" },
   { id: "player-of-the-month", title: "Player of the Month" },
   { id: "camera-and-kit", title: "Camera Register and Kit Responses" },
-  { id: "subs", title: "Financial Admin" },
+  { id: "subs", title: "Finances" },
   { id: "settings", title: "Settings" },
   { id: "end-of-season", title: "End of Season" },
   { id: "coachs-week", title: "A Coach's Week" },
@@ -183,8 +183,9 @@ export default function HelpManual() {
 
         <Section id="getting-started" title="Getting Started">
           <p>
-            Open the hub in your phone&apos;s browser; there is nothing to install. To keep it one
-            tap away, use your browser&apos;s Share menu, then <B>Add to Home Screen</B>.
+            Everyone signs in with their own email: type it, and we email a 6-digit code — there&apos;s
+            no password to remember. Then add a <B>passkey</B> (Your Account → Sign-In &amp; Security)
+            and you sign in with Face ID or a fingerprint from then on.
           </p>
           <p>
             A new club&apos;s admin sees <B>Set Up Your Club</B> at the top of Home and Coach Admin:
@@ -193,19 +194,21 @@ export default function HelpManual() {
             done (tap <B>Done</B> on the ones that are just a check), and the card goes when
             they&apos;re all done, or tap <B>Hide</B>.
           </p>
-          <p>
-            The home page has two cards: <B>Kit Sizes</B> for parents, and <B>Coach Admin</B> for
-            coaches, behind a password.
-          </p>
-          <H3>Signing In to Coach Admin</H3>
+          <H3>Finding Your Way Around</H3>
+          <Bullets>
+            <li>The <B>tab bar</B> at the bottom: Home, Training (the players&apos; Training Hub), Finances (treasurers and club admins), Kit and Coach. Choose your own in Your Account → <B>Tab Bar</B>.</li>
+            <li>Your <B>photo or initials</B> at the top left of every main page opens <B>Your Account</B>; the magnifying glass searches the hub.</li>
+            <li><B>Home</B> shows what&apos;s next (training and the next match), the last result, Finances for treasurers, and your <B>Shortcuts</B>. Press and hold a card or a shortcut to hide it or add more, then tap <B>Done</B>.</li>
+          </Bullets>
+          <H3>Getting Into Coach Admin</H3>
           <Steps>
-            <li>Tap <B>Coach Admin</B> on the home page.</li>
-            <li>Type the coaches&apos; password (ask the club if you don&apos;t have it) and sign in.</li>
-            <li>You now see a card for each tool. Tapping one opens it without asking for the password again.</li>
+            <li>A club admin invites you from Coach Admin → Settings → <B>Joining the Club</B> (or gives you the Coach role in <B>Members</B>).</li>
+            <li>Sign in with that email address. You&apos;re straight in — no code or approval needed.</li>
+            <li>Tap <B>Coach</B> on the tab bar. You see a card for each tool.</li>
           </Steps>
           <p>
             The tools are the <B>Match Log</B> (marked <em>Start here</em>), <B>Training Log</B>,{" "}
-            <B>Player of the Month</B>, <B>Training Plans</B>, <B>Stats Tracker</B>,{" "}
+            <B>Player of the Month</B>, <B>Training Plans</B>, <B>Stats Tracker</B>, <B>Members</B>,{" "}
             <B>Camera Register</B>, <B>Kit Responses</B>, <B>Settings</B> and this <B>Help</B>. Each has a{" "}
             round <B>back arrow</B> at the top left to get back.
           </p>
@@ -217,27 +220,39 @@ export default function HelpManual() {
         </Section>
 
         <Section id="parents" title="For Parents">
-          <p>Parents need no password. They can send their child&apos;s kit size, and nothing else.</p>
+          <H3>Joining</H3>
+          <Steps>
+            <li>Open the club&apos;s <B>join link</B> (the club shares it by WhatsApp or email, or as a QR code at training).</li>
+            <li>Sign in with your email, then add your name, mobile number and your child (their full name and team).</li>
+            <li>A coach approves you. Until then, Home says <B>Waiting for a coach to approve you</B>.</li>
+          </Steps>
+          <p>
+            Once you&apos;re in, Home shows your child&apos;s next training and match. Add another child,
+            their photo or their medical notes and emergency contact in Your Account → <B>Your Children</B>;
+            only you and the club&apos;s coaches see those.
+          </p>
           <H3>Sending a Kit Size</H3>
           <Steps>
-            <li>On the home page, tap <B>Kit Sizes</B>, then the child&apos;s team.</li>
-            <li>Choose the child from the team list (shown as first name and initial — or full names, if your hub is private). Not there? Pick <B>My child isn&apos;t listed</B> and type their name.</li>
+            <li>Tap <B>Kit</B> on the tab bar, then your child&apos;s team.</li>
+            <li>Choose your child. Not there? Pick <B>My child isn&apos;t listed</B> and type their name.</li>
             <li>Pick a <B>shirt</B>, <B>shorts</B> and <B>socks</B> size. A size guide is on the page.</li>
-            <li>Tap submit. The page shows <B>All done!</B> with the sizes chosen.</li>
+            <li>Tap <B>Send Sizes</B>. The page shows <B>All done!</B> with the sizes chosen.</li>
             <li>More than one child in the club? Tap <B>Submit Another Child</B>.</li>
           </Steps>
+          <p>
+            Need something during the season, like new shorts? Kit → <B>Request Kit</B> asks the coaches.
+          </p>
           <H3>Player Training Hub, for the Players</H3>
           <p>
-            The <B>Player Training Hub</B> card on the home page opens the players&apos; own app: a
-            tactical guide with pitch diagrams, a three-level quiz, weekly skill challenges and
-            position guides. No password is needed, and quiz scores and ticks stay on the
-            child&apos;s own phone or tablet.
+            <B>Training</B> on the tab bar opens the players&apos; own app: a tactical guide with pitch
+            diagrams, a three-level quiz, weekly skill challenges and position guides. You can also set
+            up your child&apos;s own phone or tablet for it, which then opens only the Training Hub.
           </p>
           <H3>Results</H3>
           <p>
-            The <B>Results</B> card shows parents each team&apos;s scores, league table and top
-            scorers. For non-competitive football it can be switched off, and coaches still log
-            every game as normal, so nothing is lost.
+            If the club turns them on, <B>Results</B> shows each team&apos;s scores, league table and top
+            scorers (add it to your tab bar, or search for it). For non-competitive football it can be
+            switched off, and coaches still log every game as normal, so nothing is lost.
           </p>
         </Section>
 
@@ -424,20 +439,22 @@ export default function HelpManual() {
           </p>
         </Section>
 
-        <Section id="subs" title="Financial Admin">
+        <Section id="subs" title="Finances">
           <p>
-            Financial Admin keeps each team&apos;s monthly subs, who has paid, the squad&apos;s
-            parent contacts and the team&apos;s spending. It has its <B>own password for each
-            team</B> (not the Coach Admin one), and everything is scrambled with that password
-            before it leaves your phone, so nobody can read it without it.
+            Finances keeps each team&apos;s monthly subs, who has paid, the squad&apos;s parent
+            contacts and the team&apos;s spending. Each team&apos;s records are kept apart and stored
+            encrypted. A team&apos;s <B>treasurer</B> (Members → their role, with the team they look
+            after) and the club&apos;s admins open it with Face ID — no password; anyone else needs
+            that team&apos;s own password.
           </p>
           <Steps>
-            <li>Tap <B>Finances</B> in the tab bar (or on the Team Hub&apos;s main page).</li>
-            <li>Type your team&apos;s subs password and tap <B>Unlock</B>. It opens your team.</li>
+            <li>Tap <B>Finances</B> on Home or the tab bar.</li>
             <li>
-              The first time, a team has no password yet: tap <B>Setting up a team for the first
-              time?</B>, choose the team, pick its password and enter the Coach Admin password.
+              A team that isn&apos;t set up yet shows <B>Set Up</B>: pick a team password (for anyone
+              who isn&apos;t its treasurer) and keep the recovery code it gives you somewhere safe.
             </li>
+            <li>Tap <B>Open … with Face ID</B> for your team. (A team set up before this needs its password typed once.)</li>
+            <li>In <B>Settings</B>, set the monthly fee first.</li>
             <li>
               In <B>Subs</B>, tap <B>Unpaid</B> beside a player when they pay; tap <B>Paid</B> to
               change how they paid or exempt them that month. Tap a name for their card.
@@ -446,9 +463,8 @@ export default function HelpManual() {
             <li>Tap the <B>padlock</B> at the top when you&apos;ve finished, especially on a shared device.</li>
           </Steps>
           <p>
-            Under <B>Settings</B> you can turn on <B>reminders</B>: your phone gets a nudge on the
-            1st and 15th of each month to check subs. On an iPhone, add the page to your home screen
-            first — it appears as <B>Finance</B> with a football-and-£ icon.
+            Players come from Members by themselves. Treasurers also get <B>Subs</B>, <B>Who Owes</B>,{" "}
+            <B>Spending</B> and <B>Finance Settings</B> shortcuts on Home.
           </p>
         </Section>
 
@@ -460,7 +476,7 @@ export default function HelpManual() {
             shows them straight away.
           </p>
           <Steps>
-            <li>Tap <B>Upload Crest</B> and pick the club&apos;s badge. A PNG with a see-through background looks best; it also becomes the home-screen icon.</li>
+            <li>Tap <B>Upload Crest</B> and pick the club&apos;s badge. A PNG with a see-through background looks best.</li>
             <li>Fill in any of the boxes. An empty box uses the default shown in it.</li>
             <li>Wait for <B>Saved ✓</B>. The preview at the top shows how the home page will look.</li>
           </Steps>
@@ -478,7 +494,7 @@ export default function HelpManual() {
           <H3>Parts of the Hub</H3>
           <p>
             Under <B>🧩 Parts of the Hub</B>, switch off anything the club doesn&apos;t use: results
-            for parents, the Player Training Hub, Kit Sizes, Financial Admin, Player of the Month,
+            for parents, the Player Training Hub, Kit Sizes, Finances, Player of the Month,
             Training Plans or the Camera Register. It leaves the home page and Coach Admin, and
             whatever was saved in it stays for when it&apos;s switched back on.
           </p>
@@ -558,9 +574,10 @@ export default function HelpManual() {
         <Section id="questions" title="Questions and Fixes">
           <dl className="space-y-3">
             {[
-              ["“Incorrect password”", "Check the coaches' password with the club. It's case-sensitive."],
+              ["Coach Admin says you're not a coach", "Ask a club admin to give you the Coach role in Members, using the email you sign in with."],
+              ["The sign-in code hasn't come", "Check your junk folder, and that the email address is right; you can ask for another after a minute."],
               ["A page opens on the wrong team", "Tap your team's tab once; your phone remembers it."],
-              ["A player isn't in the lists", "Add them in the Stats tracker (Edit), then go back."],
+              ["A player isn't in the lists", "Approve their parent's request in Members, or add them in the Stats tracker (Edit)."],
               ["A player's total looks wrong", "Correct the game or session it came from; the total follows."],
               ["A fixture is missing or has moved", "Tap Sync now in the match log, or add it by hand."],
               ["A game shows “no score logged”", "Enter the score, or tap ✓ Confirm 0–0."],
