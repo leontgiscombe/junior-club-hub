@@ -180,7 +180,7 @@ function PlanWeekCard({
 }
 
 export default function TrainingLog() {
-  const { TEAMS, teamName } = useTeams();
+  const { TEAMS } = useTeams();
   const { features } = useClub();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -338,7 +338,6 @@ export default function TrainingLog() {
     .filter((s) => s.date > todayStr)
     .sort((a, b) => a.date.localeCompare(b.date));
   const next = ahead.find((s) => !s.cancelled);
-  const unawarded = done.filter((s) => !s.cancelled && !s.bestTrainerId).length;
 
   // The team's plan, pinned to its training days (see lib/trainingPlanTypes.ts).
   const plan = plans.find((p) => p.team === team);
@@ -399,45 +398,45 @@ export default function TrainingLog() {
     );
   }
 
-  // One past session: its date, plan week, no-training toggle and best trainer.
-  function sessionCard(s: TrainingSession) {
+  // One past session, on one line: its date (and plan week), its best trainer
+  // to pick, and ••• for no training.
+  function sessionRow(s: TrainingSession) {
     const id = `${s.team}:${s.date}`;
     return (
-      <div
-        key={id}
-        className={`rounded-3xl p-4 shadow-sm ${s.cancelled ? "bg-white/60 dark:bg-white/5" : "bg-white dark:bg-[#1c1c1e]"}`}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm">
-            <span
-              className={`font-bold ${
-                s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
-              }`}
-            >
-              {when(s)}
-            </span>
-            {s.cancelled && (
-              <span className="ml-2 text-xs text-gray-400">No Training</span>
-            )}
-            {weekLabel(s)}
+      <div key={id} className="flex items-center gap-2 px-4 py-2.5">
+        <span className="min-w-0 flex-1">
+          <span className={`block text-sm font-semibold ${s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"}`}>
+            {formatDate(s.date)}
           </span>
-          {cancelButton(s)}
-        </div>
-        {!s.cancelled && (
-          <label className="mt-2 flex items-center gap-2">
-            <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-              Best Trainer
+          {(s.cancelled || planWeeks.has(s.date)) && (
+            <span className="block text-[11px] text-gray-400">
+              {s.cancelled ? "No training" : ""}
+              {!s.cancelled && weekLabel(s)}
             </span>
+          )}
+        </span>
+        {s.cancelled ? (
+          <button
+            onClick={() => patch(s, { action: "set-cancelled", cancelled: false })}
+            disabled={busy === id}
+            className="shrink-0 cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-40 dark:border-white/15 dark:text-gray-300"
+          >
+            Back On
+          </button>
+        ) : (
+          <>
             <select
               value={s.bestTrainerId}
-              onChange={(e) =>
-                patch(s, { action: "set-best-trainer", playerId: e.target.value })
-              }
+              onChange={(e) => patch(s, { action: "set-best-trainer", playerId: e.target.value })}
               disabled={busy === id}
               aria-label={`Best trainer on ${formatDate(s.date)}`}
-              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
+              className={`w-[46%] max-w-[13rem] shrink-0 rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] ${
+                s.bestTrainerId
+                  ? "border-gray-200 bg-white text-gray-900 dark:border-white/15 dark:text-gray-50"
+                  : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200"
+              }`}
             >
-              <option value="">— Not Awarded —</option>
+              <option value="">Best trainer…</option>
               {/* someone since removed from the squad still shows */}
               {s.bestTrainerId && !squad.some((p) => p.id === s.bestTrainerId) && (
                 <option value={s.bestTrainerId}>{playerName(s.bestTrainerId)}</option>
@@ -448,27 +447,59 @@ export default function TrainingLog() {
                 </option>
               ))}
             </select>
-          </label>
+            <button
+              onClick={() => {
+                const msg = `No training on ${formatDate(s.date)}?` + (s.bestTrainerId ? `\n\n${playerName(s.bestTrainerId)}'s best trainer award will be taken back.` : "");
+                if (confirm(msg)) patch(s, { action: "set-cancelled", cancelled: true });
+              }}
+              disabled={busy === id}
+              aria-label={`No training on ${formatDate(s.date)}`}
+              title="No training this week"
+              className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 dark:hover:bg-white/10"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+            </button>
+          </>
         )}
       </div>
     );
   }
 
+  const toAward = done.filter((s) => !s.cancelled && !s.bestTrainerId);
+  const rows = "flex flex-col divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e] dark:divide-white/10";
+  const chev = (open: boolean) => (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+  );
+  // what the team still needs, in one line
+  const todo: React.ReactNode[] = [];
+  if (squad.length === 0)
+    todo.push(
+      <Link key="squad" href={`/admin/members${keyQuery(key)}`} className="font-semibold text-amber-800 underline dark:text-amber-300">
+        No players yet: add them in Members
+      </Link>,
+    );
+  if (features.trainingPlans && !(focus && plan && focusWeek !== undefined))
+    todo.push(
+      <Link key="plan" href={`/admin/training/plans${keyQuery(key)}`} className="font-semibold text-green-700 dark:text-green-400">
+        {plan?.startDate ? "No plan for the next session" : "No training plan"} →
+      </Link>,
+    );
+
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title="Training Log" href={`/admin/stats${keyQuery(key)}`} />
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Team tabs */}
-        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
+      <div className="max-w-3xl mx-auto px-4 py-5">
+        {/* Teams, by their full names: they scroll sideways if there are many */}
+        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
           {TEAMS.map((t) => (
             <button
               key={t.slug}
               onClick={() => setTeam(t.slug)}
-              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
+              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold ${
                 team === t.slug
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
-                  : "text-gray-600 dark:text-gray-300"
+                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                  : "bg-white text-gray-700 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-200"
               }`}
             >
               {t.accent} {t.name}
@@ -480,47 +511,7 @@ export default function TrainingLog() {
           <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>
         )}
 
-        {/* Where the team stands */}
-        <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
-          <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Best Trainer</p>
-          {leaders.length === 0 ? (
-            <p className="mt-2 text-xs text-gray-400">
-              No awards yet — pick a best trainer against a session below and the
-              leaders show here.
-            </p>
-          ) : (
-            <ol className="mt-2 flex flex-col gap-1">
-              {leaders.map((p, i) => (
-                <li key={p.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-900 dark:text-gray-50">
-                    <span className="mr-2 text-xs font-bold text-gray-400">{i + 1}</span>
-                    {p.name}
-                  </span>
-                  <span className="font-extrabold text-green-700 tabular-nums dark:text-green-400">
-                    {p.bestTrainer}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            {next ? (
-              <>
-                Next Session:{" "}
-                <span className="font-semibold text-gray-700 dark:text-gray-200">{when(next)}</span>
-              </>
-            ) : (
-              "No more sessions scheduled this season."
-            )}
-          </p>
-          {unawarded > 0 && (
-            <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-              {unawarded} session{unawarded === 1 ? " has" : "s have"} no best trainer
-              yet — pick one, or mark it as no training.
-            </p>
-          )}
-        </div>
-
+        {/* Today's or the next session first: what coaches open it for */}
         {focus && plan && focusWeek !== undefined ? (
           <PlanWeekCard
             key={`${team}:${focus.date}`}
@@ -530,75 +521,77 @@ export default function TrainingLog() {
             drills={drillById}
             adminKey={key}
             team={team}
-            onPlan={(saved) =>
-              setPlans((prev) => prev.map((p) => (p.team === saved.team ? saved : p)))
-            }
+            onPlan={(saved) => setPlans((prev) => prev.map((p) => (p.team === saved.team ? saved : p)))}
           />
-        ) : !features.trainingPlans ? null : (
-          <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-            {plan?.startDate
-              ? `${teamName(team)}'s training plan has no week for the next session.`
-              : `${teamName(team)} has no training plan scheduled.`}{" "}
-            <Link
-              href={`/admin/training/plans${keyQuery(key)}`}
-              className="font-semibold text-green-700 hover:underline dark:text-green-400"
-            >
-              Training Plans →
-            </Link>
-          </p>
+        ) : (
+          <div className="mb-4 rounded-3xl bg-white px-4 py-3.5 shadow-sm dark:bg-[#1c1c1e]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{today ? "Today" : "Next Session"}</p>
+            <p className="mt-0.5 font-bold text-gray-900 dark:text-gray-50">{focus ? when(focus) : "No more sessions this season"}</p>
+          </div>
         )}
 
-        {squad.length === 0 && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-            No players in {teamName(team)} yet — add the squad on the{" "}
-            <Link
-              href={`/admin/stats${keyQuery(key)}`}
-              className="font-semibold underline"
-            >
-              Stats Tracker
-            </Link>{" "}
-            first.
-          </p>
+        {todo.length > 0 && (
+          <p className="mb-4 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">{todo}</p>
         )}
 
-        {/* Sessions so far, most recent first */}
+        {/* Sessions still to award, oldest last */}
+        {toAward.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
+              To Award <span className="font-semibold text-amber-600 dark:text-amber-400">{toAward.length}</span>
+            </h2>
+            <div className={rows}>{toAward.map((s) => sessionRow(s))}</div>
+            <p className="mt-1.5 px-1 text-xs text-gray-500 dark:text-gray-400">Pick each session&apos;s best trainer, or ••• if there was no training.</p>
+          </section>
+        )}
+
+        {/* Every session so far, by month, folded up */}
         {done.length > 0 && (
           <section className="mb-6">
-            <h2 className="mb-2.5 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Sessions So Far</h2>
-            <div className="flex flex-col gap-3">
-              {byMonth(done).map((group, gi) => {
-                // the latest month opens by itself; older ones fold up
-                const isOpen = monthToggles[group.month] ?? gi === 0;
+            <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Sessions So Far</h2>
+            <div className="flex flex-col gap-2">
+              {byMonth(done).map((group) => {
+                const isOpen = monthToggles[group.month] ?? false;
                 const needs = group.sessions.filter((s) => !s.cancelled && !s.bestTrainerId).length;
                 return (
                   <div key={group.month}>
                     <button
-                      onClick={() =>
-                        setMonthToggles((t) => ({ ...t, [group.month]: !isOpen }))
-                      }
+                      onClick={() => setMonthToggles((t) => ({ ...t, [group.month]: !isOpen }))}
                       aria-expanded={isOpen}
-                      className="mb-1 flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-1 text-left hover:text-green-700"
+                      className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-2xl bg-white px-4 py-3 text-left shadow-sm dark:bg-[#1c1c1e]"
                     >
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-gray-50">{group.month}</span>
                       <span className="flex items-center gap-2 text-xs">
                         <span className="text-gray-500 dark:text-gray-400">
                           {group.sessions.length} session{group.sessions.length === 1 ? "" : "s"}
                         </span>
-                        {needs > 0 && (
-                          <span className="font-semibold text-amber-700 dark:text-amber-300">{needs} to award</span>
-                        )}
-                        <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                        {needs > 0 && <span className="font-semibold text-amber-700 dark:text-amber-300">{needs} to award</span>}
+                        {chev(isOpen)}
                       </span>
                     </button>
-                    {isOpen && (
-                      <div className="flex flex-col gap-2">
-                        {group.sessions.map((s) => sessionCard(s))}
-                      </div>
-                    )}
+                    {isOpen && <div className={`mt-1.5 ${rows}`}>{group.sessions.map((s) => sessionRow(s))}</div>}
                   </div>
                 );
               })}
             </div>
+          </section>
+        )}
+
+        {/* The season's best trainers, once there are some */}
+        {leaders.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Best Trainers</h2>
+            <ol className={rows}>
+              {leaders.map((p, i) => (
+                <li key={p.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                  <span className="text-gray-900 dark:text-gray-50">
+                    <span className="mr-2 text-xs font-bold text-gray-400">{i + 1}</span>
+                    {p.name}
+                  </span>
+                  <span className="font-extrabold text-green-700 tabular-nums dark:text-green-400">{p.bestTrainer}</span>
+                </li>
+              ))}
+            </ol>
           </section>
         )}
 
@@ -607,7 +600,7 @@ export default function TrainingLog() {
           <section>
             <button
               onClick={() => setShowAhead((v) => !v)}
-              className="mb-2.5 flex w-full cursor-pointer items-center justify-between px-1 text-left"
+              className="mb-2 flex w-full cursor-pointer items-center justify-between px-1 text-left"
               aria-expanded={showAhead}
             >
               <span className="text-xl font-bold text-gray-900 dark:text-gray-50">
@@ -615,25 +608,18 @@ export default function TrainingLog() {
               </span>
               <span className="flex items-center gap-1 text-sm font-semibold text-green-700 dark:text-green-400">
                 {showAhead ? "Hide" : "Show"}
-                <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${showAhead ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                {chev(showAhead)}
               </span>
             </button>
             {showAhead && (
               <div className="flex flex-col gap-4">
                 {byMonth(ahead).map((group) => (
                   <div key={group.month}>
-                    <p className="mb-1 text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</p>
-                    <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e] dark:divide-white/10">
+                    <p className="mb-1 px-1 text-sm font-bold text-gray-700 dark:text-gray-200">{group.month}</p>
+                    <div className={rows}>
                       {group.sessions.map((s) => (
-                        <div
-                          key={s.date}
-                          className="flex items-center justify-between gap-2 px-4 py-3"
-                        >
-                          <span
-                            className={`text-sm ${
-                              s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"
-                            }`}
-                          >
+                        <div key={s.date} className="flex items-center justify-between gap-2 px-4 py-3">
+                          <span className={`text-sm ${s.cancelled ? "text-gray-400 line-through" : "text-gray-900 dark:text-gray-50"}`}>
                             {when(s)}
                             {weekLabel(s)}
                           </span>
