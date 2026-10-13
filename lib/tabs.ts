@@ -75,7 +75,7 @@ export function tabDef(id: TabId, ctx: TabContext): TabDef {
 export function availableTabs(ctx: TabContext): TabId[] {
   const out: TabId[] = ["home"];
   if (ctx.features.trainingHub !== false) out.push("training");
-  if (ctx.features.financialAdmin !== false && (ctx.canFinance || !ctx.signedIn)) out.push("finances");
+  if (ctx.features.financialAdmin !== false && ctx.canFinance) out.push("finances");
   if (ctx.features.kitSizes !== false) out.push("kit");
   if (ctx.canCoach) out.push("coach");
   if (ctx.publicResults) out.push("results");

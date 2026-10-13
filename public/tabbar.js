@@ -73,7 +73,7 @@
     };
     var can = ["home"];
     if (features.trainingHub !== false) can.push("training");
-    if (features.financialAdmin !== false && (canFinance || !signedIn)) can.push("finances");
+    if (features.financialAdmin !== false && canFinance) can.push("finances");
     if (features.kitSizes !== false) can.push("kit");
     if (canCoach) can.push("coach");
     if (publicResults) can.push("results");
