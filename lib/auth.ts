@@ -120,13 +120,14 @@ export async function setUserName(id: string, name: string): Promise<User | null
 }
 
 /**
- * Apple's App Review signs in with an account it can't get emails for:
- * REVIEW_EMAIL always gets the fixed code REVIEW_CODE (6 digits), and no
- * email is sent. Both unset (the default), there's no such account.
+ * Apple's App Review signs in with accounts it can't get emails for: each
+ * address in REVIEW_EMAIL (comma-separated, e.g. a club admin and a parent)
+ * always gets the fixed code REVIEW_CODE (6 digits), and no email is sent.
+ * Both unset (the default), there are no such accounts.
  */
 export function isReviewAccount(email: string): boolean {
-  const review = (process.env.REVIEW_EMAIL ?? "").trim().toLowerCase();
-  return !!review && email === review && /^\d{6}$/.test(reviewCode());
+  const review = (process.env.REVIEW_EMAIL ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return review.includes(email) && /^\d{6}$/.test(reviewCode());
 }
 const reviewCode = () => (process.env.REVIEW_CODE ?? "").trim();
 
