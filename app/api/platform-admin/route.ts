@@ -2,6 +2,8 @@
 // carries the admin key in the "x-platform-key" header.
 //   GET                                   -> { clubs (with their counts, last use and setup: lib/platformStats.ts),
 //                                             log, emailConfigured, backups, separateBackups }
+//   GET                                    -> also { feedback }: Help & Feedback messages (lib/feedback.ts)
+//   POST { action: "feedbackDone", feedbackId, done? } -> marks a message done (or not)
 //   POST { action: "demo", id }           -> fills an empty club with made-up teams, players and games (lib/demoSeed.ts)
 //   POST { action: "reset", id }          -> emails the club a password-reset link
 //   POST { action: "pause", id, reason? } -> the club's hub shows a "paused" page; nothing is deleted
@@ -12,6 +14,7 @@
 //   POST { action: "restore", id, date, confirm } -> puts a club back as it was in
 //                                            that day's backup (confirm repeats the id)
 import { seedDemoClub } from "@/lib/demoSeed";
+import { listFeedback, setFeedbackDone } from "@/lib/feedback";
 import { NextRequest, NextResponse } from "next/server";
 import { listBackups, restoreClub, separateBackupDb } from "@/lib/backup";
 import { emailConfigured } from "@/lib/email";
@@ -32,10 +35,10 @@ async function refuse(req: NextRequest): Promise<NextResponse | null> {
 export async function GET(req: NextRequest) {
   const refused = await refuse(req);
   if (refused) return refused;
-  const [records, backups, log] = await Promise.all([listTenantsForAdmin(), listBackups().catch(() => []), adminLog()]);
+  const [records, backups, log, feedback] = await Promise.all([listTenantsForAdmin(), listBackups().catch(() => []), adminLog(), listFeedback()]);
   const clubs = await Promise.all(records.map(clubStats));
   return NextResponse.json(
-    { clubs, log, emailConfigured: emailConfigured(), backups, separateBackups: separateBackupDb() },
+    { clubs, log, feedback, emailConfigured: emailConfigured(), backups, separateBackups: separateBackupDb() },
     { headers: { "cache-control": "no-store" } },
   );
 }
@@ -45,6 +48,12 @@ export async function POST(req: NextRequest) {
   if (refused) return refused;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
+
+  if (body?.action === "feedbackDone") {
+    const fid = typeof body.feedbackId === "string" ? body.feedbackId : "";
+    if (!(await setFeedbackDone(fid, body.done !== false))) return NextResponse.json({ error: "No such message" }, { status: 404 });
+    return NextResponse.json({ message: body.done !== false ? "Marked done" : "Marked not done" });
+  }
 
   if (body?.action === "demo") {
     const record = await getTenantRecord(id);

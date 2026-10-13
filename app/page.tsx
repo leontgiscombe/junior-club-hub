@@ -402,7 +402,7 @@ export default async function Home() {
         )}
 
         <p className={`wp-text text-center text-xs ${sub}`}>
-          <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link>
+          <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link> · <Link href="/support" className="hover:underline">Help</Link>
         </p>
       </main>
     </div>

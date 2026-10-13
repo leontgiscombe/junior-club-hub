@@ -16,6 +16,8 @@ export function LegalPage({ title, intro, children }: { title: string; intro: st
           <Link href="/privacy" className="font-semibold text-green-700 hover:underline dark:text-green-400">Privacy Policy</Link>
           {" · "}
           <Link href="/terms" className="font-semibold text-green-700 hover:underline dark:text-green-400">Terms of Use</Link>
+          {" · "}
+          <Link href="/support" className="font-semibold text-green-700 hover:underline dark:text-green-400">Help &amp; Support</Link>
         </p>
       </article>
     </main>

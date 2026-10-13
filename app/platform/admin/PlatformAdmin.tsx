@@ -33,7 +33,9 @@ type AdminClub = {
 };
 type Backup = { date: string; at: string; keys: number };
 type LogEntry = { at: string; action: string; club: string; detail?: string };
-type Action = { action: string; id: string; confirm?: string; date?: string; reason?: string; text?: string };
+type Action = { action: string; id: string; confirm?: string; date?: string; reason?: string; text?: string; feedbackId?: string; done?: boolean };
+type Feedback = { id: string; kind: "question" | "problem" | "idea"; message: string; name: string; email: string; club: string; page: string; device: string; at: string; done?: boolean };
+const KIND = { question: "❓ Question", problem: "🐞 Problem", idea: "💡 Suggestion" } as const;
 
 const KEY_STORE = "platform-admin-key";
 const DAY = 86400_000;
@@ -62,6 +64,8 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
   const [typedKey, setTypedKey] = useState("");
   const [clubs, setClubs] = useState<AdminClub[] | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [showDone, setShowDone] = useState(false);
   const [emailReady, setEmailReady] = useState(true);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [separateBackups, setSeparateBackups] = useState(true);
@@ -95,6 +99,7 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
         const data = await call(k);
         setClubs(data.clubs);
         setLog(data.log ?? []);
+        setFeedback(data.feedback ?? []);
         setEmailReady(data.emailConfigured);
         setBackups(data.backups ?? []);
         setSeparateBackups(data.separateBackups ?? true);
@@ -382,6 +387,51 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
               </div>
             )}
           </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="font-extrabold text-gray-900">
+            💬 Feedback{feedback.some((f) => !f.done) ? ` (${feedback.filter((f) => !f.done).length} new)` : ""}
+          </h2>
+          {feedback.some((f) => f.done) && (
+            <button onClick={() => setShowDone(!showDone)} className="text-sm font-semibold text-gray-500 hover:text-gray-800">
+              {showDone ? "Hide done" : "Show done"}
+            </button>
+          )}
+        </div>
+        {feedback.filter((f) => showDone || !f.done).length === 0 ? (
+          <p className="mt-2 text-sm text-gray-500">Nothing new. Questions, problems and suggestions from Help &amp; Feedback land here (and in your email).</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-gray-100">
+            {feedback
+              .filter((f) => showDone || !f.done)
+              .map((f) => (
+                <li key={f.id} className={`py-3 ${f.done ? "opacity-50" : ""}`}>
+                  <p className="text-xs font-semibold text-gray-500">
+                    {KIND[f.kind] ?? f.kind} · {new Date(f.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {f.club ? ` · ${f.club}` : ""}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-gray-900">{f.message}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {f.name ? `${f.name} · ` : ""}
+                    <a href={`mailto:${f.email}?subject=${encodeURIComponent(`Re: your ${KIND[f.kind]?.split(" ")[1]?.toLowerCase() ?? "message"}`)}`} className="font-semibold text-green-700 underline">
+                      {f.email}
+                    </a>
+                    {f.page ? ` · from ${f.page}` : ""}
+                  </p>
+                  {f.device && <p className="mt-0.5 truncate text-[11px] text-gray-400">{f.device}</p>}
+                  <button
+                    onClick={() => act({ action: "feedbackDone", id: "", feedbackId: f.id, done: !f.done })}
+                    disabled={busy}
+                    className="mt-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {f.done ? "Not Done" : "Mark Done"}
+                  </button>
+                </li>
+              ))}
+          </ul>
         )}
       </section>
 
