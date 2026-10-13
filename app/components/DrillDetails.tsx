@@ -28,8 +28,15 @@ export function KindBadge({ kind }: { kind: DrillKind }) {
 export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: string }) {
   const fileUrl = (name: string) =>
     `/api/training/files?key=${encodeURIComponent(adminKey)}&name=${encodeURIComponent(name)}`;
-  const images = drill.files.filter((f) => f.type === "image");
-  const pdfs = drill.files.filter((f) => f.type === "pdf");
+  // the drill pack's own files, then the photos and PDFs coaches have added
+  const uploadUrl = (id: string) =>
+    `/api/training/files?key=${encodeURIComponent(adminKey)}&drill=${encodeURIComponent(drill.id)}&file=${encodeURIComponent(id)}`;
+  const all = [
+    ...drill.files.map((f) => ({ key: f.name, label: f.label, type: f.type, url: fileUrl(f.name) })),
+    ...(drill.uploads ?? []).map((u) => ({ key: u.id, label: u.label, type: u.type, url: uploadUrl(u.id) })),
+  ];
+  const images = all.filter((f) => f.type === "image");
+  const pdfs = all.filter((f) => f.type === "pdf");
   const facts = [
     drill.topic ? `⚽ ${topicName(drill.topic)}` : "",
     drill.minutes ? `⏱ ${drill.minutes} min` : "",
@@ -41,15 +48,15 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
       {/* the session-plan pages first: the diagram is what's wanted at the pitch */}
       {images.map((f) => (
         <a
-          key={f.name}
-          href={fileUrl(f.name)}
+          key={f.key}
+          href={f.url}
           target="_blank"
           rel="noopener noreferrer"
           title={`${f.label} — open full size`}
           className="block overflow-hidden rounded-xl border border-gray-100 dark:border-white/10"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- served behind the admin password, so not through the image optimiser */}
-          <img src={fileUrl(f.name)} alt={`${drill.title}: ${f.label}`} className="w-full" />
+          <img src={f.url} alt={`${drill.title}: ${f.label}`} loading="lazy" className="w-full" />
         </a>
       ))}
       {facts.length > 0 && (
@@ -120,8 +127,8 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
       )}
       {pdfs.map((f) => (
         <a
-          key={f.name}
-          href={fileUrl(f.name)}
+          key={f.key}
+          href={f.url}
           target="_blank"
           rel="noopener noreferrer"
           className="self-start rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 dark:text-gray-200 dark:border-white/15"

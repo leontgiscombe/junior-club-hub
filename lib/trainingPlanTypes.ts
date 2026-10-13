@@ -44,6 +44,9 @@ export interface Drill {
   // Session-plan pages and PDFs, served to coaches by /api/training/files.
   // Only built-in drills have them (see lib/builtInDrills.ts).
   files: DrillFile[];
+  // Photos and PDFs a coach has added to the drill (lib/trainingPlans.ts
+  // addDrillUpload), served to coaches by /api/training/files.
+  uploads: DrillUpload[];
   // Ships with the app rather than being added by a coach: it can be edited,
   // but not deleted.
   builtIn: boolean;
@@ -55,6 +58,15 @@ export interface DrillFile {
   label: string;
   type: "image" | "pdf";
 }
+
+export interface DrillUpload {
+  id: string;
+  label: string; // the file's name as it was chosen, e.g. "Whiteboard.jpg"
+  type: "image" | "pdf";
+}
+
+/** A drill can have this many photos and PDFs of its own. */
+export const MAX_DRILL_UPLOADS = 3;
 
 export interface PlanWeek {
   id: string;

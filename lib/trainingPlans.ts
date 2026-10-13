@@ -16,7 +16,9 @@ import {
   type Drill,
   type DrillKind,
   type DrillTopic,
+  type DrillUpload,
   type TrainingPlan,
+  MAX_DRILL_UPLOADS,
 } from "./trainingPlanTypes";
 import { getKv } from "./kv";
 
@@ -26,6 +28,15 @@ export type { Drill, DrillKind, PlanWeek, TrainingPlan } from "./trainingPlanTyp
 
 const DRILLS_KEY = "drills";
 const PLANS_KEY = "training_plans";
+// the photos and PDFs coaches add to drills, keyed "<drill id>:<file id>" —
+// apart from the drills, so reading the library never loads them
+const FILES_KEY = "drill_files";
+
+// how big an added file may be (the photo is shrunk on the phone first)
+export const UPLOAD_LIMITS = {
+  image: { bytes: 700 * 1024, types: ["image/jpeg", "image/png", "image/webp"] },
+  pdf: { bytes: 1024 * 1024, types: ["application/pdf"] },
+} as const;
 
 function text(value: unknown, max: number): string {
   return String(value ?? "").trim().slice(0, max);
@@ -79,9 +90,22 @@ export function cleanDrill(raw: Partial<Drill> & Record<string, unknown>): Drill
     videoUrl: link(raw.videoUrl),
     // files and builtIn only ever come from lib/builtInDrills.ts (see listDrills)
     files: [],
+    // read back from storage; saveDrill keeps what's stored, whatever is sent
+    uploads: cleanUploads(raw.uploads),
     builtIn: false,
     updatedAt: text(raw.updatedAt, 40),
   };
+}
+
+function cleanUploads(value: unknown): DrillUpload[] {
+  return (Array.isArray(value) ? value : [])
+    .map((u) => ({
+      id: text(u?.id, 64),
+      label: text(u?.label, 80) || "File",
+      type: u?.type === "pdf" ? ("pdf" as const) : ("image" as const),
+    }))
+    .filter((u) => u.id)
+    .slice(0, MAX_DRILL_UPLOADS);
 }
 
 function cleanPlan(team: string, raw: Partial<TrainingPlan>): TrainingPlan {
@@ -138,7 +162,7 @@ export async function listDrills(): Promise<Drill[]> {
   const builtIn = BUILT_IN_DRILLS.map((d) => {
     const edited = stored.get(d.id);
     stored.delete(d.id);
-    return edited ? { ...edited, files: d.files, builtIn: true } : d;
+    return edited ? { ...edited, files: d.files, builtIn: true } : { ...d, uploads: d.uploads ?? [] };
   });
   return [...builtIn, ...stored.values()].sort((a, b) => a.title.localeCompare(b.title));
 }
@@ -157,10 +181,72 @@ export async function listPlans(): Promise<TrainingPlan[]> {
 export async function saveDrill(raw: Partial<Drill> & Record<string, unknown>): Promise<Drill> {
   const drill = cleanDrill({ ...raw, updatedAt: new Date().toISOString() });
   const kv = await getKv();
+  // its photos and PDFs are changed only by addDrillUpload / removeDrillUpload
+  drill.uploads = (await storedDrill(drill.id))?.uploads ?? [];
   if (kv) await kv.hset(DRILLS_KEY, { [drill.id]: JSON.stringify(drill) });
   // an edited built-in drill keeps its files, as listDrills reads it back
   const builtIn = BUILT_IN_DRILLS.find((d) => d.id === drill.id);
   return builtIn ? { ...drill, files: builtIn.files, builtIn: true } : drill;
+}
+
+/** A drill as stored — or, for a built-in drill not yet edited, as it ships. */
+async function storedDrill(id: string): Promise<Drill | null> {
+  const kv = await getKv();
+  const raw = kv ? await kv.hget<unknown>(DRILLS_KEY, id) : null;
+  if (raw) return cleanDrill(parse(raw));
+  const builtIn = BUILT_IN_DRILLS.find((d) => d.id === id);
+  return builtIn ? { ...builtIn, uploads: builtIn.uploads ?? [] } : null;
+}
+
+const asListed = (drill: Drill): Drill => {
+  const builtIn = BUILT_IN_DRILLS.find((d) => d.id === drill.id);
+  return builtIn ? { ...drill, files: builtIn.files, builtIn: true } : drill;
+};
+
+/**
+ * Add a photo or PDF to a drill. `data` is the file, base64; it has been
+ * checked for type and size by the caller (see UPLOAD_LIMITS).
+ */
+export async function addDrillUpload(
+  drillId: string,
+  file: { label: string; type: DrillUpload["type"]; mime: string; data: string }
+): Promise<Drill> {
+  const kv = await getKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  const drill = await storedDrill(drillId);
+  if (!drill) throw new Error("That drill isn't in the library");
+  if (drill.uploads.length >= MAX_DRILL_UPLOADS) {
+    throw new Error(`A drill can have ${MAX_DRILL_UPLOADS} photos or PDFs — remove one first`);
+  }
+  const upload: DrillUpload = { id: crypto.randomUUID(), label: text(file.label, 80) || "File", type: file.type };
+  await kv.hset(FILES_KEY, { [`${drillId}:${upload.id}`]: JSON.stringify({ mime: file.mime, data: file.data }) });
+  const saved: Drill = { ...drill, files: [], builtIn: false, uploads: [...drill.uploads, upload], updatedAt: new Date().toISOString() };
+  await kv.hset(DRILLS_KEY, { [drillId]: JSON.stringify(saved) });
+  return asListed(saved);
+}
+
+/** Take a photo or PDF off a drill. */
+export async function removeDrillUpload(drillId: string, uploadId: string): Promise<Drill> {
+  const kv = await getKv();
+  if (!kv) throw new Error("Storage isn't set up");
+  const drill = await storedDrill(drillId);
+  if (!drill) throw new Error("That drill isn't in the library");
+  await kv.hdel(FILES_KEY, `${drillId}:${uploadId}`);
+  const saved: Drill = { ...drill, files: [], builtIn: false, uploads: drill.uploads.filter((u) => u.id !== uploadId), updatedAt: new Date().toISOString() };
+  await kv.hset(DRILLS_KEY, { [drillId]: JSON.stringify(saved) });
+  return asListed(saved);
+}
+
+/** One of a drill's photos or PDFs, if the drill still has it. */
+export async function getDrillUpload(drillId: string, uploadId: string): Promise<{ upload: DrillUpload; mime: string; data: string } | null> {
+  const kv = await getKv();
+  const drill = await storedDrill(drillId);
+  const upload = drill?.uploads.find((u) => u.id === uploadId);
+  if (!kv || !upload) return null;
+  const raw = await kv.hget<unknown>(FILES_KEY, `${drillId}:${uploadId}`);
+  if (!raw) return null;
+  const { mime, data } = parse<{ mime: string; data: string }>(raw);
+  return { upload, mime, data };
 }
 
 /**
@@ -170,6 +256,8 @@ export async function saveDrill(raw: Partial<Drill> & Record<string, unknown>): 
 export async function deleteDrill(id: string): Promise<TrainingPlan[]> {
   const kv = await getKv();
   if (!kv) return listPlans();
+  const uploads = (await storedDrill(id))?.uploads ?? [];
+  if (uploads.length) await kv.hdel(FILES_KEY, ...uploads.map((u) => `${id}:${u.id}`));
   await kv.hdel(DRILLS_KEY, id);
   const plans = await listPlans();
   const changed: Record<string, string> = {};
