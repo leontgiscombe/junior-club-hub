@@ -162,6 +162,13 @@ export default function HelpManual() {
       <TopBar title="Help" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
+        <a href="/support?kind=problem#contact" className="press flex items-center justify-between gap-3 rounded-2xl bg-green-50 px-5 py-4 text-green-900 dark:bg-green-400/10 dark:text-green-200">
+          <span>
+            <span className="block font-bold">Stuck, or something not working?</span>
+            <span className="block text-sm opacity-80">Ask us, report a problem or suggest something</span>
+          </span>
+          <span aria-hidden="true">→</span>
+        </a>
         <nav id="contents" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Contents</p>
           <ol className="ml-5 list-decimal space-y-1 text-[15px]">

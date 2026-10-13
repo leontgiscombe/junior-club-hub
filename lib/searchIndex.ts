@@ -29,6 +29,7 @@ export const PAGES: PageEntry[] = [
   { title: "Sign In", where: "Account", href: "/signin", words: "log in login email passkey", who: "all" },
   { title: "Privacy Policy", where: "Legal", href: "/privacy", words: "gdpr data information", who: "all" },
   { title: "Terms of Use", where: "Legal", href: "/terms", words: "rules legal", who: "all" },
+  { title: "Help & Feedback", where: "Support", href: "/support", words: "help support contact question problem bug report feedback suggestion idea", who: "all" },
 
   // anyone signed in: Your Account's screens
   { title: "Your Account", where: "Account", href: "/account", words: "profile me settings", who: "signedIn" },

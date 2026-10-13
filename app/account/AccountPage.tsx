@@ -494,6 +494,7 @@ export default function AccountPage() {
         </Group>
 
         <Group>
+          <Row icon={ICONS.help} label="Help & Feedback" href="/support" />
           <Row icon={ICONS.shield} label="Privacy Policy" href="/privacy" />
           <Row icon={ICONS.doc} label="Terms" href="/terms" />
         </Group>

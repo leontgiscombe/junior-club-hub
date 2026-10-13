@@ -24,7 +24,7 @@ import { noteActive, pausedClub } from "./lib/clubStatus";
 import { tenantFromHost } from "./lib/tenantHost";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account|player\/find)(\/|$)/, /^\/(privacy|terms)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|finance\/cron-remind|auth|account|player\/find|feedback)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
 
 // what a private club's hub shows people who aren't members yet: the join
 // page, Coach Admin, password resets, the legal pages, pictures and files —
@@ -36,7 +36,7 @@ const OPEN_TO_ALL = [
   /^\/(signin|account)(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/reset-password$/,
-  /^\/(privacy|terms)$/,
+  /^\/(privacy|terms|support)$/,
   /^\/manifest\.webmanifest$/,
   /^\/poster\//,
   /^\/api\/(?!(club|submit|finance\/team|finance\/push)$)/,
@@ -49,7 +49,7 @@ const PLAYER_PATHS = [
   /^\/training-hub(\/|$)/,
   /^\/player$/,
   /^\/api\/(club|auth\/me|me\/club|player\/(me|progress|signout|link))$/,
-  /^\/(privacy|terms)$/,
+  /^\/(privacy|terms|support)$/,
   /^\/manifest\.webmanifest$/,
   /^\/poster\//,
   /\.(png|jpe?g|svg|webp|ico|js|css|woff2?|txt|webmanifest)$/,
