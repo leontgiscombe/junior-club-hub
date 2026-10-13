@@ -58,6 +58,10 @@ const PLAYER_PATHS = [
 export async function proxy(req: NextRequest) {
   const tenant = tenantFromHost(req.headers.get("host") ?? "");
   const { pathname } = req.nextUrl;
+  // Apple's association file, the same on every address and never behind a club's door
+  if (pathname === "/.well-known/apple-app-site-association") {
+    return NextResponse.rewrite(new URL("/api/apple-app-site-association", req.url));
+  }
   if (tenant === null) {
     if (pathname === "/") return NextResponse.rewrite(new URL("/platform", req.url));
     if (pathname === "/signup") return NextResponse.rewrite(new URL("/platform/signup", req.url));

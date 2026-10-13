@@ -120,6 +120,17 @@ export async function setUserName(id: string, name: string): Promise<User | null
 }
 
 /**
+ * Apple's App Review signs in with an account it can't get emails for:
+ * REVIEW_EMAIL always gets the fixed code REVIEW_CODE (6 digits), and no
+ * email is sent. Both unset (the default), there's no such account.
+ */
+export function isReviewAccount(email: string): boolean {
+  const review = (process.env.REVIEW_EMAIL ?? "").trim().toLowerCase();
+  return !!review && email === review && /^\d{6}$/.test(reviewCode());
+}
+const reviewCode = () => (process.env.REVIEW_CODE ?? "").trim();
+
+/**
  * Start signing in: a link (for this site) and a 6-digit code, both good for
  * 15 minutes, to email to `email`. The link holds a secret; the code is tried
  * at most 5 times.
@@ -127,7 +138,7 @@ export async function setUserName(id: string, name: string): Promise<User | null
 export async function startLogin(email: string, next: string): Promise<{ loginId: string; token: string; code: string }> {
   const loginId = randomBytes(9).toString("base64url");
   const token = randomBytes(24).toString("base64url");
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const code = isReviewAccount(email) ? reviewCode() : String(randomInt(0, 1_000_000)).padStart(6, "0");
   await kvCall([
     "SET",
     loginKey(loginId),
