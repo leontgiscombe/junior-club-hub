@@ -9,6 +9,7 @@ import { useMyTeam } from "@/lib/myTeam";
 import {
   DRILL_KINDS,
   DRILL_TOPICS,
+  MAX_DRILL_UPLOADS,
   topicName,
   scheduleWeeks,
   type Drill,
@@ -159,6 +160,48 @@ const SLOT_WORD: Record<DrillKind, [string, string]> = {
   game: ["game", "games"],
 };
 
+/**
+ * A photo or PDF chosen for a drill, as a data: URL ready to send. A photo is
+ * shrunk to a JPEG no more than 1600px a side (and made smaller still if it's
+ * over the limit), so even a phone camera's picture uploads quickly.
+ */
+async function fileForUpload(file: File): Promise<string> {
+  const read = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error("That file couldn't be read"));
+      r.readAsDataURL(blob);
+    });
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    if (file.size > 1024 * 1024) throw new Error(`${file.name} is over 1 MB — try a smaller PDF`);
+    return (await read(file)).replace(/^data:[^;]*;/, "data:application/pdf;");
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error(`${file.name} doesn't look like a photo or a PDF`));
+      el.src = url;
+    });
+    for (let max = 1600; ; max = Math.round(max * 0.8)) {
+      const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#fff"; // a see-through picture gets a white background
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const data = canvas.toDataURL("image/jpeg", 0.82);
+      if ((data.length * 3) / 4 < 650 * 1024 || max < 500) return data;
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 type SheetState =
   | { kind: "drill"; drillId: string; weekId?: string }
   | { kind: "pick"; weekId: string; slot: DrillKind }
@@ -196,6 +239,9 @@ export default function TrainingPlans() {
   // weeks before the one coming up stay folded away until asked for
   const [showEarlier, setShowEarlier] = useState(false);
   const [drillForm, setDrillForm] = useState<DrillDraft | null>(null);
+  // photos and PDFs picked for a drill not saved yet: they go up once it is
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [kindFilter, setKindFilter] = useState<DrillKind | "">("");
   const [topicFilter, setTopicFilter] = useState<DrillTopic | "">("");
   const [search, setSearch] = useState("");
@@ -423,18 +469,58 @@ export default function TrainingPlans() {
         action: "save-drill",
         drill: { ...drillForm, minutes: Number(drillForm.minutes) || 0 },
       });
-      const saved: Drill = data.drill;
-      setDrills((prev) =>
-        [...prev.filter((d) => d.id !== saved.id), saved].sort((a, b) =>
-          a.title.localeCompare(b.title)
-        )
-      );
+      let saved: Drill = data.drill;
+      for (const file of pendingFiles) {
+        try {
+          saved = (await post({ action: "add-file", drillId: saved.id, label: file.name, data: await fileForUpload(file) })).drill;
+        } catch (err) {
+          setError(err instanceof Error ? err.message : `${file.name} didn't upload`);
+        }
+      }
+      setPendingFiles([]);
+      putDrill(saved);
       setDrillForm(null);
       setSheet({ kind: "drill", drillId: saved.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't save");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function putDrill(saved: Drill) {
+    setDrills((prev) => [...prev.filter((d) => d.id !== saved.id), saved].sort((a, b) => a.title.localeCompare(b.title)));
+  }
+
+  /** Adds photos or PDFs to the drill being edited — at once if it's saved, else when it is. */
+  async function addFiles(drillId: string, files: File[], room: number) {
+    if (files.length > room) setError(`A drill can have ${MAX_DRILL_UPLOADS} photos or PDFs`);
+    const chosen = files.slice(0, Math.max(0, room));
+    if (!drillId) {
+      setPendingFiles((prev) => [...prev, ...chosen]);
+      return;
+    }
+    setUploading(true);
+    try {
+      for (const file of chosen) {
+        putDrill((await post({ action: "add-file", drillId, label: file.name, data: await fileForUpload(file) })).drill);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That didn't upload");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeFile(drillId: string, fileId: string, label: string) {
+    if (!confirm(`Remove ${label} from this drill?`)) return;
+    setUploading(true);
+    try {
+      putDrill((await post({ action: "remove-file", drillId, fileId })).drill);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That didn't save");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -990,10 +1076,73 @@ export default function TrainingPlans() {
             />,
             "Optional — a clip you've filmed, or a public video"
           )}
+          {(() => {
+            const uploads = (form.id && drillById.get(form.id)?.uploads) || [];
+            const count = uploads.length + pendingFiles.length;
+            const row = (key: string, icon: string, label: string, note: string, onRemove: () => void) => (
+              <li key={key} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5">
+                <span aria-hidden="true">{icon}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-gray-800 dark:text-gray-100">
+                  {label}
+                  {note && <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">{note}</span>}
+                </span>
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  disabled={uploading}
+                  className="shrink-0 cursor-pointer text-xs font-semibold text-red-600 disabled:opacity-40 dark:text-red-400"
+                >
+                  Remove
+                </button>
+              </li>
+            );
+            return (
+              <div>
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">Photos &amp; PDFs</span>
+                {count > 0 && (
+                  <ul className="mt-1 flex flex-col gap-1.5">
+                    {uploads.map((u) =>
+                      row(u.id, u.type === "pdf" ? "📄" : "🖼️", u.label, "", () => removeFile(form.id, u.id, u.label))
+                    )}
+                    {pendingFiles.map((f, i) =>
+                      row(`p${i}`, /pdf$/i.test(f.type || f.name) ? "📄" : "🖼️", f.name, "· adds when you save", () =>
+                        setPendingFiles((prev) => prev.filter((_, j) => j !== i))
+                      )
+                    )}
+                  </ul>
+                )}
+                {count < MAX_DRILL_UPLOADS && (
+                  <label
+                    className={`mt-1.5 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 py-2.5 text-sm font-bold text-gray-600 hover:border-green-400 hover:text-green-700 dark:border-white/20 dark:text-gray-300 ${uploading ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    {uploading ? "Uploading…" : "+ Add Photo or PDF"}
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      multiple
+                      className="sr-only"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        e.target.value = "";
+                        if (files.length) addFiles(form.id, files, MAX_DRILL_UPLOADS - count);
+                      }}
+                    />
+                  </label>
+                )}
+                <span className="mt-0.5 block text-[11px] text-gray-400">
+                  Up to {MAX_DRILL_UPLOADS}{" "}— a photo of the whiteboard, a drawn-up session or a PDF (up to 1 MB). Only
+                  the club&apos;s coaches can see them.
+                </span>
+              </div>
+            );
+          })()}
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <button
-            onClick={() => setDrillForm(null)}
+            onClick={() => {
+              setDrillForm(null);
+              setPendingFiles([]);
+            }}
             className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-gray-300 dark:text-gray-300 dark:border-white/15"
           >
             Cancel

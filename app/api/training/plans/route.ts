@@ -10,13 +10,19 @@
 //        action "check-owner"                  — just checks the owner password
 //        action "save-drill"   { drill }       — add, or update by id
 //        action "delete-drill" { id }          — also takes it out of every plan
+//        action "add-file"     { drillId, label, data } — adds a photo or PDF
+//                                               (data: a data: URL) to a drill
+//        action "remove-file"  { drillId, fileId }
 //        action "tick-drill"   { team, weekId, drillId, done } — tick a drill off
 //                                               as done in a week (saved at once)
 //        action "save-plan"    { team, plan }  — replaces that team's plan; its
 //                                               startDate must be a training Monday
 import { NextResponse } from "next/server";
 import {
+  UPLOAD_LIMITS,
+  addDrillUpload,
   deleteDrill,
+  removeDrillUpload,
   isBuiltInDrill,
   listDrills,
   listPlans,
@@ -59,7 +65,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   const body = await request.json().catch(() => ({}));
-  const ownerOnly = ["check-owner", "save-drill", "delete-drill"].includes(body.action);
+  const ownerOnly = ["check-owner", "save-drill", "delete-drill", "add-file", "remove-file"].includes(body.action);
   if (ownerOnly && (await drillsNeedOwnerKey())) {
     // wrong owner passwords are counted, so it can't be guessed
     if (await atLimit("drill-owner", 10)) {
@@ -90,6 +96,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That drill comes with the app" }, { status: 400 });
     }
     return NextResponse.json({ success: true, plans: await deleteDrill(id) });
+  }
+
+  if (body.action === "add-file") {
+    const match = typeof body.data === "string" ? /^data:([\w/+.-]+);base64,(.+)$/.exec(body.data) : null;
+    const mime = match?.[1] ?? "";
+    const type = (UPLOAD_LIMITS.pdf.types as readonly string[]).includes(mime)
+      ? "pdf"
+      : (UPLOAD_LIMITS.image.types as readonly string[]).includes(mime)
+        ? "image"
+        : null;
+    if (!match || !type) {
+      return NextResponse.json({ error: "Add a photo (JPEG, PNG or WebP) or a PDF" }, { status: 400 });
+    }
+    if (Buffer.byteLength(match[2], "base64") > UPLOAD_LIMITS[type].bytes) {
+      return NextResponse.json(
+        { error: type === "pdf" ? "That PDF is over 1 MB — try a smaller one" : "That photo is too big — try a smaller one" },
+        { status: 400 }
+      );
+    }
+    try {
+      const drill = await addDrillUpload(String(body.drillId ?? ""), {
+        label: String(body.label ?? ""),
+        type,
+        mime,
+        data: match[2],
+      });
+      return NextResponse.json({ success: true, drill });
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 400 });
+    }
+  }
+
+  if (body.action === "remove-file") {
+    try {
+      const drill = await removeDrillUpload(String(body.drillId ?? ""), String(body.fileId ?? ""));
+      return NextResponse.json({ success: true, drill });
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "That didn't save" }, { status: 400 });
+    }
   }
 
   if (body.action === "tick-drill") {

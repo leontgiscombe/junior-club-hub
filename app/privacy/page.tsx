@@ -131,6 +131,10 @@ export default function PrivacyPage() {
               club&apos;s coaches can remove the device at any time, and it all goes when the child leaves the squad.
             </>,
             <>
+              <strong>Coaches&apos; drill files:</strong> photos and PDFs a coach adds to a drill in
+              Training Plans, seen only by the club&apos;s coaches and deleted with the drill.
+            </>,
+            <>
               <strong>Kept only on your own device, never sent to us:</strong> on other devices, the
               Training Hub&apos;s quiz scores and challenge ticks; photos added to Player of the Month
               posters, and small settings like which team a coach looks after.

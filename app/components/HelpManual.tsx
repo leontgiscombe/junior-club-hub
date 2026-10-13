@@ -367,7 +367,9 @@ export default function HelpManual() {
           <H3>The Drill Library</H3>
           <p>
             <B>📚 Drill Library</B> lists every drill, with type and topic filters along the top and a
-            search. Tap a drill to read it, or to edit it.
+            search. Tap a drill to read it, or to edit it. A drill can have up to three{" "}
+            <B>photos or PDFs</B> (Edit → <B>+ Add Photo or PDF</B>), like a photo of the whiteboard
+            or a drawn-up session; the first photo shows at the top of the drill.
             Any coach can read it, but only the club owner can add or change drills (with{" "}
             <B>🔒 Owner</B> and their own password).
           </p>
