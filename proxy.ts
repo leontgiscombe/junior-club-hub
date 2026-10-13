@@ -22,6 +22,7 @@ import {
 } from "./lib/access";
 import { noteActive, pausedClub } from "./lib/clubStatus";
 import { tenantFromHost } from "./lib/tenantHost";
+import { isAppUserAgent } from "./lib/inApp";
 
 // what the platform's site needs: its pages and APIs, plus shared images
 const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|cron-backup|cron-trial|finance\/cron-remind|auth|account|player\/find|feedback)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
@@ -63,8 +64,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.rewrite(new URL("/api/apple-app-site-association", req.url));
   }
   if (tenant === null) {
-    if (pathname === "/") return NextResponse.rewrite(new URL("/platform", req.url));
-    if (pathname === "/signup") return NextResponse.rewrite(new URL("/platform/signup", req.url));
+    // in the App Store app, the platform's home and sign-up (with its prices) are the
+    // opening screen instead: nothing there points to paying on the website (lib/inApp.ts)
+    const app = isAppUserAgent(req.headers.get("user-agent"));
+    if (pathname === "/") return NextResponse.rewrite(new URL(app ? "/platform/start" : "/platform", req.url));
+    if (pathname === "/signup") return NextResponse.rewrite(new URL(app ? "/platform/start" : "/platform/signup", req.url));
     // the app's opening screen: find your club, as a player or a grown-up
     if (pathname === "/start") return NextResponse.rewrite(new URL("/platform/start", req.url));
     if (!PLATFORM_PATHS.some((p) => p.test(pathname))) return NextResponse.redirect(new URL("/", req.url));

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // the App Store app (its own project, built in Xcode)
+    "ios-app/**",
   ]),
 ]);
 

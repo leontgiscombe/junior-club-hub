@@ -5,15 +5,21 @@
 import { PLATFORM_NAME, rootDomain } from "@/lib/tenant";
 import NoTabBar from "../../components/NoTabBar";
 import StartScreen from "./StartScreen";
+import { currentUser } from "@/lib/auth";
+import { clubsOfUser } from "@/lib/userClubs";
+import { inApp } from "@/lib/inAppServer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: `Welcome – ${PLATFORM_NAME}` };
 
-export default function StartPage() {
+export default async function StartPage() {
+  // signed in: their clubs, one tap each
+  const user = await currentUser().catch(() => null);
+  const clubs = user ? (await clubsOfUser(user.id).catch(() => [])).map((c) => ({ name: c.name, home: c.url })) : null;
   return (
     <main className="themed relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-16">
       <NoTabBar />
-      <StartScreen platform={PLATFORM_NAME} root={rootDomain()} />
+      <StartScreen platform={PLATFORM_NAME} root={rootDomain()} clubs={clubs} appView={await inApp()} />
     </main>
   );
 }

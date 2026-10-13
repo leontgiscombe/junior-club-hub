@@ -4,6 +4,11 @@ The iOS app is a Capacitor wrapper around the live site
 (https://grassroots-club-hub.co.uk and each club's subdomain). This is the
 checklist for building and submitting it.
 
+**The wrapper is built: see `ios-app/README.md` for the step-by-step guide**
+(Mac setup, signing, App Store Connect text, screenshots, upload). The site
+detects the app by its user agent (`lib/inApp.ts`) and hides prices, plans and
+sign-up inside it; `/start` is its opening screen.
+
 ## Done in the website
 
 - **Apple association file**: served at `/.well-known/apple-app-site-association`
