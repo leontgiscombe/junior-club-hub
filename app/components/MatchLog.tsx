@@ -147,6 +147,9 @@ export default function MatchLog() {
 
   // the fixture being edited, and the details being typed into it
   const [editingId, setEditingId] = useState<string | null>(null);
+  // each game folds to one line; a game still to score, and the next one, open by themselves
+  const [openGames, setOpenGames] = useState<Record<string, boolean>>({});
+  const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState<Fixture>({
     opponent: "",
     date: "",
@@ -427,13 +430,17 @@ export default function MatchLog() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 6);
 
+  // a game folded to its one line unless tapped open; one still to score, and the next game, start open
+  const nextId = upcoming[0]?.id;
+  const gameOpen = (m: Match) => openGames[m.id] ?? ((isPlayed(m) && !m.resultLogged) || m.id === nextId);
+
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title="Match Log" href={`/admin/stats${keyQuery(key)}`} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Team tabs */}
-        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
+        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
           {TEAMS.map((t) => (
             <button
               key={t.slug}
@@ -442,10 +449,10 @@ export default function MatchLog() {
                 setTeam(t.slug);
                 setOpponent("");
               }}
-              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
+              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold ${
                 team === t.slug
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
-                  : "text-gray-600 dark:text-gray-300"
+                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                  : "bg-white text-gray-700 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-200"
               }`}
             >
               {t.accent} {t.name}
@@ -534,12 +541,27 @@ export default function MatchLog() {
         {/* Fixtures kept in step with FA Full-Time, for teams with a snippet */}
         <FaSync<Match> team={team} adminKey={key} onMatches={setMatches} />
 
-        {/* Add match */}
+        {/* Add match: folded behind a button once the team has games */}
+        {!(showAdd || shown.length === 0) ? (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="mb-4 w-full cursor-pointer rounded-2xl bg-white px-4 py-3 text-left text-sm font-bold text-green-700 shadow-sm dark:bg-[#1c1c1e] dark:text-green-400"
+          >
+            + Add a Game
+          </button>
+        ) : (
         <form
           onSubmit={addMatch}
           className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
         >
-          <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Add a Game for {teamName(team)}</p>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Add a Game for {teamName(team)}</p>
+            {shown.length > 0 && (
+              <button type="button" onClick={() => setShowAdd(false)} className="shrink-0 cursor-pointer text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Cancel
+              </button>
+            )}
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {/* League or one-off — available to every team */}
             <select
@@ -612,39 +634,15 @@ export default function MatchLog() {
           </div>
           {error && <p className="text-sm text-red-600 mt-3 dark:text-red-400">{error}</p>}
         </form>
-
-        {/* Who sets up whom */}
-        {topPairs.length > 0 && (
-          <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
-            <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Assist Combinations</p>
-            <div className="flex flex-col gap-2">
-              {topPairs.map((p) => (
-                <div
-                  key={`${p.assistId}|${p.scorerId}`}
-                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
-                >
-                  <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
-                    {playerName(p.assistId)}{" "}
-                    <span className="font-normal text-gray-400">→</span>{" "}
-                    {playerName(p.scorerId)}
-                  </span>
-                  <span className="shrink-0 text-sm font-extrabold text-green-700 tabular-nums dark:text-green-400">
-                    ×{p.count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
 
-        <p className="text-xs text-gray-500 mb-3 dark:text-gray-400">
-          {shown.length} game{shown.length === 1 ? "" : "s"} for {teamName(team)}
-        </p>
 
         {squad.length === 0 && (
-          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-            Add players to {teamName(team)} on the Stats Tracker first — you pick the
-            scorer and assister from the squad.
+          <p className="mb-3 px-1 text-xs">
+            <Link href={`/admin/members${keyQuery(key)}`} className="font-semibold text-amber-800 underline dark:text-amber-300">
+              No players in {teamName(team)} yet: add them in Members
+            </Link>{" "}
+            <span className="text-gray-500 dark:text-gray-400">— scorers and awards are picked from the squad.</span>
           </p>
         )}
 
@@ -771,7 +769,12 @@ export default function MatchLog() {
                 ) : (
                 <div className="flex items-center gap-3">
                   <GameBadge match={m} played={isPlayed(m)} />
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setOpenGames((o) => ({ ...o, [m.id]: !gameOpen(m) }))}
+                    aria-expanded={gameOpen(m)}
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                  >
                     <p className="truncate font-bold text-gray-900 dark:text-gray-50">vs {m.opponent || "TBC"}</p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-500 dark:text-gray-400">
                       <span>
@@ -785,7 +788,8 @@ export default function MatchLog() {
                       )}
                       {isPlayed(m) && !m.resultLogged && <span className="text-amber-700 dark:text-amber-300">No score logged</span>}
                     </p>
-                  </div>
+                  </button>
+                  <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${gameOpen(m) ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                   <button
                     onClick={() => startEdit(m)}
                     disabled={busyId === m.id}
@@ -810,6 +814,7 @@ export default function MatchLog() {
                 </div>
                 )}
 
+                {gameOpen(m) && editingId !== m.id && (<>
                 {/* Goals */}
                 {m.goals.length > 0 && (
                   <div className="mt-3 flex flex-col gap-1.5">
@@ -1101,11 +1106,38 @@ export default function MatchLog() {
                 </div>
                   </>
                 )}
+                </>)}
                 </div>
               </Fragment>
             ))}
           </div>
         )}
+
+        {/* Who sets up whom */}
+        {topPairs.length > 0 && (
+          <div className="mt-6 mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Assist Combinations</p>
+            <div className="flex flex-col gap-2">
+              {topPairs.map((p) => (
+                <div
+                  key={`${p.assistId}|${p.scorerId}`}
+                  className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
+                >
+                  <span className="flex-1 min-w-0 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
+                    {playerName(p.assistId)}{" "}
+                    <span className="font-normal text-gray-400">→</span>{" "}
+                    {playerName(p.scorerId)}
+                  </span>
+                  <span className="shrink-0 text-sm font-extrabold text-green-700 tabular-nums dark:text-green-400">
+                    ×{p.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
       </div>
     </main>
   );
