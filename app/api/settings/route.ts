@@ -21,6 +21,7 @@ import {
 } from "@/lib/settings";
 import { DEFAULT_TENANT, getTenant } from "@/lib/tenant";
 import { getTenantRecord, setTenantEmail, setTenantPassword } from "@/lib/tenants";
+import { readAccess } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,11 @@ async function snapshot() {
     crest: crest ? { width: crest.width, height: crest.height, updatedAt: crest.updatedAt } : null,
     kitImage: kit ? { width: kit.width, height: kit.height, updatedAt: kit.updatedAt } : null,
     teams,
-    account: record ? { email: record.email } : null,
+    // sharedPassword: whether a shared coach password is in use to be changed (a club that
+    // signed up without one, or switched it off, signs in with accounts only)
+    account: record
+      ? { email: record.email, sharedPassword: !record.noPassword && !(await readAccess(tenant!)).passwordOff }
+      : null,
   };
 }
 
@@ -92,6 +97,11 @@ export async function PUT(req: NextRequest) {
       if (password !== undefined) {
         if (typeof password !== "string" || password.length < 8) {
           return NextResponse.json({ error: "The new password needs at least 8 characters" }, { status: 400 });
+        }
+        // nothing to change when coaches only sign in with their own accounts: it would never work
+        const record = await getTenantRecord(tenant);
+        if (record?.noPassword || (await readAccess(tenant)).passwordOff) {
+          return NextResponse.json({ error: "This club has no shared coach password — everyone signs in with their own email" }, { status: 400 });
         }
         await setTenantPassword(tenant, password);
       }
