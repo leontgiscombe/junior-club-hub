@@ -4,6 +4,7 @@
 // kit picture, whether results are public, and its teams. Saved to the database and shown on
 // every page straight away; an empty box goes back to the default in
 // club.config.ts.
+import { isAppUserAgent } from "@/lib/inApp";
 import Link from "next/link";
 import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
@@ -747,7 +748,8 @@ export default function ClubSettings() {
             {/* a club on the platform: its free trial or plan (app/plans) */}
             {canAdmin && snap.plan && (
               <Group>
-                <Row icon={ICONS.money} label="Plan" detail={snap.plan} href="/plans" />
+                {/* in the App Store app, nothing points to paying on the website (lib/inApp.ts) */}
+                <Row icon={ICONS.money} label="Plan" detail={snap.plan} href={typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent) ? undefined : "/plans"} />
               </Group>
             )}
 

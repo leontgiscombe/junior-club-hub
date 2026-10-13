@@ -7,6 +7,8 @@ import { billingState, planForTeams, PLANS, TRIAL_DAYS } from "@/lib/billing";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { getTenantRecord } from "@/lib/tenants";
+import { redirect } from "next/navigation";
+import { inApp } from "@/lib/inAppServer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Plans", robots: { index: false } };
@@ -14,6 +16,8 @@ export const metadata = { title: "Plans", robots: { index: false } };
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
 export default async function PlansPage() {
+  // prices and plans aren't shown in the App Store app (lib/inApp.ts)
+  if (await inApp()) redirect("/");
   const tenant = await getTenant();
   const [club, teams, record] = await Promise.all([getClub(), getTeams().catch(() => []), tenant ? getTenantRecord(tenant) : null]);
   const state = record ? billingState(record.billing) : null;

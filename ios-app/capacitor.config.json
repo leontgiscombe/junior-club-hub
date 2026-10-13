@@ -1,0 +1,20 @@
+{
+  "appId": "uk.co.grassrootsclubhub.app",
+  "appName": "Club Hub",
+  "webDir": "www",
+  "server": {
+    "url": "https://grassroots-club-hub.co.uk/start",
+    "allowNavigation": ["grassroots-club-hub.co.uk", "*.grassroots-club-hub.co.uk"],
+    "errorPath": "offline.html"
+  },
+  "ios": {
+    "appendUserAgent": "GrassrootsClubHubApp",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false,
+    "backgroundColor": "#14532d"
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#14532d", "showSpinner": false },
+    "StatusBar": { "overlaysWebView": true }
+  }
+}

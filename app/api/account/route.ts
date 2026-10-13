@@ -9,23 +9,14 @@ import { clearSessionCookie, currentUser, deleteUser, setUserName, setUserPhone,
 import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
 import { leaveClub, onlyAdminOf } from "@/lib/people";
 import { getClubFor } from "@/lib/settings";
-import { tenantUrl } from "@/lib/tenant";
+import { clubsOfUser } from "@/lib/userClubs";
 import { deletePhoto } from "@/lib/userPhoto";
 
 export const dynamic = "force-dynamic";
 
 const notSignedIn = () => NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-async function clubsOf(userId: string) {
-  const ids = (await kvCall<string[]>(["SMEMBERS", userClubsKey(userId)])) ?? [];
-  const out = [];
-  for (const id of ids) {
-    const person = await readPerson(id, userId);
-    if (!person) continue;
-    out.push({ id, name: (await getClubFor(id)).name, url: tenantUrl(id), roles: person.roles, status: person.status, person: person.name });
-  }
-  return out;
-}
+const clubsOf = clubsOfUser;
 
 export async function GET() {
   const user = await currentUser();

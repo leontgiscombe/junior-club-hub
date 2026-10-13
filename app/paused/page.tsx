@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { pausedClub } from "@/lib/clubStatus";
 import { getClub } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
+import { inApp } from "@/lib/inAppServer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Paused", robots: { index: false } };
@@ -14,6 +15,7 @@ export default async function PausedPage() {
   const paused = tenant ? await pausedClub(tenant).catch(() => null) : null;
   if (!paused) redirect("/");
   const club = await getClub();
+  const appView = await inApp();
   return (
     <main className="themed flex min-h-screen items-center justify-center bg-[#f2f2f7] px-6 text-center dark:bg-black">
       <div className="max-w-sm">
@@ -24,12 +26,17 @@ export default async function PausedPage() {
             <h1 className="mt-5 text-2xl font-extrabold text-gray-900 dark:text-gray-50">{club.name}
               {club.name.endsWith("s") ? "\u2019" : "\u2019s"} free trial has ended</h1>
             <p className="mt-2 text-[15px] text-gray-500 dark:text-gray-400">
-              Nothing has been lost: every team, player and record is kept. A club admin chooses a plan, from £4.99 a
-              month, and the hub opens again straight away.
+              Nothing has been lost: every team, player and record is kept.{" "}
+              {appView
+                ? "Once a club admin has chosen a plan, the hub opens again straight away."
+                : "A club admin chooses a plan, from £4.99 a month, and the hub opens again straight away."}
             </p>
-            <Link href="/plans" className="mt-5 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
-              See the Plans
-            </Link>
+            {/* in the App Store app, nothing points to paying on the website (lib/inApp.ts) */}
+            {!appView && (
+              <Link href="/plans" className="mt-5 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
+                See the Plans
+              </Link>
+            )}
             <Link href="/support#contact" className="mt-3 block text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
               Questions? Get in touch
             </Link>

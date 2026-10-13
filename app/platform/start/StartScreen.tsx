@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import QrScanner from "../../components/QrScanner";
 import { readPlayerCode } from "@/lib/playerCode";
 
@@ -30,7 +30,19 @@ const remember = (c: Club) => {
 };
 const noop = () => () => {};
 
-export default function StartScreen({ platform, root }: { platform: string; root: string }) {
+export default function StartScreen({
+  platform,
+  root,
+  clubs,
+  appView,
+}: {
+  platform: string;
+  root: string;
+  // the signed-in account's clubs (null when signed out)
+  clubs: Club[] | null;
+  // inside the App Store app: no sign-up (lib/inApp.ts)
+  appView: boolean;
+}) {
   const remembered = parseClub(useSyncExternalStore(noop, readStored, () => null));
   const [forget, setForget] = useState(false);
   const [step, setStep] = useState<"choose" | "player" | "grownup">("choose");
@@ -40,6 +52,14 @@ export default function StartScreen({ platform, root }: { platform: string; root
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // the app opens straight onto the club picked last time (?pick shows this screen instead)
+  const rememberedHome = remembered?.home;
+  useEffect(() => {
+    if (appView && rememberedHome && !new URLSearchParams(window.location.search).has("pick")) {
+      window.location.replace(rememberedHome);
+    }
+  }, [appView, rememberedHome]);
 
   const playerCode = useCallback(async (c: string) => {
     setBusy(true);
@@ -107,7 +127,7 @@ export default function StartScreen({ platform, root }: { platform: string; root
   );
   const codeBox =
     "w-full rounded-xl border border-gray-200 px-4 py-3 text-center font-mono text-2xl tracking-[0.3em] text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
-  const showRemembered = remembered && !forget;
+  const showRemembered = remembered && !forget && !clubs?.length;
 
   return (
     <div className={card}>
@@ -131,6 +151,21 @@ export default function StartScreen({ platform, root }: { platform: string; root
               </button>
             </>
           )}
+          {clubs && clubs.length > 0 && (
+            <div className="mb-2 flex flex-col gap-2">
+              <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Your Clubs</p>
+              {clubs.map((c) => (
+                <a
+                  key={c.home}
+                  href={c.home}
+                  onClick={() => remember(c)}
+                  className={`${big} justify-center bg-green-600 text-white hover:bg-green-700`}
+                >
+                  {c.name}
+                </a>
+              ))}
+            </div>
+          )}
           <button onClick={() => setStep("player")} className={`${big} bg-green-50 text-green-900 dark:bg-green-400/10 dark:text-green-200`}>
             <span className="text-3xl">🏃</span>
             <span>
@@ -145,9 +180,16 @@ export default function StartScreen({ platform, root }: { platform: string; root
               <span className="block text-sm font-medium opacity-80">With our club&apos;s code</span>
             </span>
           </button>
-          <a href="/signup" className="mt-2 text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
-            Starting a club? Sign up
-          </a>
+          {!clubs && (
+            <a href="/signin?next=/start" className="mt-1 rounded-xl border border-green-600 py-3 text-center font-bold text-green-700 dark:text-green-400">
+              Already have an account? Sign In
+            </a>
+          )}
+          {!appView && (
+            <a href="/signup" className="mt-2 text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
+              Starting a club? Sign up
+            </a>
+          )}
         </div>
       )}
 
