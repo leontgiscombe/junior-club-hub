@@ -150,6 +150,7 @@ export default function ClubSettings() {
   const [draft, setDraft] = useState<ClubChanges>({});
   const [uploading, setUploading] = useState<"crest" | "kit" | null>(null);
   const [teams, setTeams] = useState<TeamDraft[]>([]);
+  const [faCodeEditing, setFaCodeEditing] = useState(false);
   // coaches can look; only club admins can change Settings
   const [canAdmin, setCanAdmin] = useState(true);
   // which setting is open (its own screen), or "" for the list
@@ -260,7 +261,7 @@ export default function ClubSettings() {
   }
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!snap || !canAdmin) return;
+    if (!snap || !canAdmin || faCodeEditing) return;
     const body = JSON.stringify({ changes: draft, teams: fromDrafts(teams) });
     const saved = JSON.stringify({ changes: snap.changes, teams: fromDrafts(snap.teams.map(toDraft)) });
     if (body === saved || body === lastSent.current) return;
@@ -271,7 +272,7 @@ export default function ClubSettings() {
     const t = setTimeout(() => autoSave(body), 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, teams, snap, canAdmin]);
+  }, [draft, teams, snap, canAdmin, faCodeEditing]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // the pictures save straight away, without touching changes not yet saved
@@ -667,7 +668,13 @@ export default function ClubSettings() {
             )}
             {screen === "teams" && (
               <>
-                <TeamsEditor teams={teams} setTeams={setTeams} initials={shown("initials")} adminKey={key} />
+                <TeamsEditor
+                  teams={teams}
+                  setTeams={setTeams}
+                  initials={shown("initials")}
+                  adminKey={key}
+                  onFaCodeEditing={setFaCodeEditing}
+                />
               </>
             )}
             {screen === "signin" && (
@@ -930,11 +937,13 @@ function TeamsEditor({
   setTeams,
   initials,
   adminKey,
+  onFaCodeEditing,
 }: {
   adminKey: string;
   teams: TeamDraft[];
   setTeams: (update: (teams: TeamDraft[]) => TeamDraft[]) => void;
   initials: string;
+  onFaCodeEditing: (editing: boolean) => void;
 }) {
   // an archived team being deleted for good (DeleteTeam)
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -1072,12 +1081,15 @@ function TeamsEditor({
                     inputMode="numeric"
                     maxLength={15}
                     placeholder="e.g. 460765991"
+                    onFocus={() => onFaCodeEditing(true)}
+                    onBlur={() => onFaCodeEditing(false)}
                     onChange={(e) => change(i, { faSnippet: e.target.value.replace(/\D/g, "") })}
                     className={input}
                   />
                   <span className="mt-1 block text-xs text-gray-400">
-                    From Full-Time admin → Media → Code Snippets → team fixtures: the number in
-                    <code className="mx-1">lrcode</code>. Fixtures then arrive in the Match Log by themselves.
+                    Enter only the digits from Full-Time admin → Media → Code Snippets → team fixtures:
+                    the number in <code className="mx-1">lrcode</code>, not the whole snippet. Fixtures then
+                    arrive in the Match Log by themselves.
                   </span>
                 </label>
                 <label>

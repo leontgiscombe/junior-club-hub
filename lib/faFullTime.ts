@@ -11,14 +11,6 @@
 // fixtures. Its code is the number in `var lrcode = '…'`.
 // Each team's code is set on Coach Admin → Settings; a team without one isn't
 // synced.
-import { CLUB } from "@/club.config";
-
-/** How our own teams are named on Full-Time, to tell us apart from the opposition. */
-const OUR_CLUB = new RegExp(
-  `^${CLUB.faClubName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`,
-  "i"
-);
-
 export interface FaFixture {
   faId: string; // Full-Time's fixture id — how a game is recognised on the next sync
   date: string; // YYYY-MM-DD
@@ -57,9 +49,17 @@ const clean = (el: Element | undefined) => (el?.textContent ?? "").replace(/\s+/
  * A game listed under another game's date, with no date row of its own, is one
  * Full-Time hasn't dated yet; it's left out (and counted) until it has one.
  */
-export function parseSnippet(root: ParentNode): { fixtures: FaFixture[]; undated: number } {
+export function parseSnippet(
+  root: ParentNode,
+  clubNames: readonly string[]
+): { fixtures: FaFixture[]; undated: number } {
   const fixtures: FaFixture[] = [];
   let undated = 0;
+  const clubPatterns = clubNames
+    .map((name) => name.trim())
+    .filter((name) => name && name !== "Your Club")
+    .map((name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`, "i"));
+  const isOurClub = (name: string) => clubPatterns.some((pattern) => pattern.test(name));
   let current: { date: string; time: string } | null = null;
   let usedHeader = false;
   for (const row of Array.from(root.querySelectorAll("tr"))) {
@@ -82,8 +82,8 @@ export function parseSnippet(root: ParentNode): { fixtures: FaFixture[]; undated
     usedHeader = true;
     const homeSide = clean(cells[1]);
     const awaySide = clean(cells[5]);
-    const home = OUR_CLUB.test(homeSide);
-    if (!home && !OUR_CLUB.test(awaySide)) continue;
+    const home = isOurClub(homeSide);
+    if (!home && !isOurClub(awaySide)) continue;
     fixtures.push({
       faId,
       date: current.date,

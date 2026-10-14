@@ -7,7 +7,7 @@
 // opened — at most once an hour per team on each device — and on "Sync now".
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSnippet, type FaFixture } from "@/lib/faFullTime";
-import { useTeams } from "./ClubProvider";
+import { useClub, useTeams } from "./ClubProvider";
 import { CLUB } from "@/club.config";
 
 interface SyncResult {
@@ -39,7 +39,10 @@ function saveResult(team: string, result: SyncResult) {
 }
 
 /** Load a snippet in a throwaway frame and read the fixtures it writes. */
-function loadSnippet(code: string): Promise<{ fixtures: FaFixture[]; undated: number }> {
+function loadSnippet(
+  code: string,
+  clubNames: readonly string[]
+): Promise<{ fixtures: FaFixture[]; undated: number }> {
   return new Promise((resolve, reject) => {
     const frame = document.createElement("iframe");
     frame.setAttribute("aria-hidden", "true");
@@ -59,7 +62,7 @@ function loadSnippet(code: string): Promise<{ fixtures: FaFixture[]; undated: nu
     const timer = window.setInterval(() => {
       const box = frame.contentDocument?.getElementById(`lrep${code}`);
       if (box && !box.textContent?.includes("Data loading")) {
-        const parsed = parseSnippet(box);
+        const parsed = parseSnippet(box, clubNames);
         done(() => resolve(parsed));
       } else if (Date.now() - started > 20000) {
         done(() => reject(new Error("Full-Time didn't answer")));
@@ -88,6 +91,7 @@ export default function FaSync<M>({
   adminKey: string;
   onMatches: (matches: M[]) => void;
 }) {
+  const club = useClub();
   const code = useTeams().findTeam(team)?.faSnippet;
   const [result, setResult] = useState<SyncResult | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -99,7 +103,11 @@ export default function FaSync<M>({
     setSyncing(true);
     let next: SyncResult;
     try {
-      const { fixtures, undated } = await loadSnippet(code);
+      const { fixtures, undated } = await loadSnippet(code, [
+        club.faClubName,
+        club.name,
+        club.fullName,
+      ]);
       const res = await fetch(`/api/stats/matches?key=${encodeURIComponent(adminKey)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,7 +130,7 @@ export default function FaSync<M>({
     setResult(next);
     setSyncing(false);
     running.current = false;
-  }, [code, adminKey, team, onMatches]);
+  }, [code, adminKey, team, onMatches, club.faClubName, club.name, club.fullName]);
 
   // On opening a team's log: show the last sync, and run one if it's been a while.
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -130,7 +138,7 @@ export default function FaSync<M>({
     if (!code) return;
     const last = readResult(team);
     setResult(last);
-    if (!last || last.error || Date.now() - last.at > AUTO_EVERY_MS) sync();
+    if (!last || last.error || last.games === 0 || Date.now() - last.at > AUTO_EVERY_MS) sync();
   }, [team, code, sync]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -147,6 +155,8 @@ export default function FaSync<M>({
             ? "Not synced yet."
             : result.error
               ? `Couldn't sync ${ago(result.at)} — ${result.error}.`
+              : result.games === 0
+                ? `No fixtures matched the club name in Full-Time ${ago(result.at)} — check the club name in Settings.`
               : `Synced ${ago(result.at)} · ${result.games} game${result.games === 1 ? "" : "s"}` +
                 (result.added || result.updated
                   ? ` (${result.added} added, ${result.updated} updated)`
