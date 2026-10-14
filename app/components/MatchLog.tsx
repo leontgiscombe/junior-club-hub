@@ -6,6 +6,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
 import FaSync from "./FaSync";
+import FinalScorePoster from "./FinalScorePoster";
 import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -815,6 +816,9 @@ export default function MatchLog() {
                 )}
 
                 {gameOpen(m) && editingId !== m.id && (<>
+                {m.resultLogged && (
+                  <FinalScorePoster match={m} teamName={teamName(m.team)} players={players} />
+                )}
                 {/* Goals */}
                 {m.goals.length > 0 && (
                   <div className="mt-3 flex flex-col gap-1.5">
