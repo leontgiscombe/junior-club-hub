@@ -8,8 +8,11 @@ you only rebuild the app to change its icon, name or permissions.
 Already set up for you in this folder and on the site:
 
 - App ID `uk.co.grassrootsclubhub.app`, name **Club Hub**, iPhone only, portrait.
-- The iOS home-screen icon is `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`
-  (1024 × 1024); replacing it requires rebuilding the iOS app.
+- The iOS home-screen icon is
+  `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`
+  (1024 × 1024). The launch screen artwork is in
+  `ios/App/App/Assets.xcassets/Splash.imageset/`. Changes to either require
+  rebuilding the iOS app.
 - Camera and photo permission messages, and "no special encryption" (no export paperwork).
 - Passkeys (Face ID sign-in) and links into the app (`App/App.entitlements`).
 - An offline screen with a Try Again button.
