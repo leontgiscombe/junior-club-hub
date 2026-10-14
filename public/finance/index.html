@@ -1553,7 +1553,6 @@
     $("#gate-pass").value=''; $("#gate-err").textContent='';
     $("#gate-btn").textContent = 'Unlock';
     $("#gate-note").innerHTML = 'Each team has its own password and its own data, shared across devices. Forgotten it? A club admin can reset it in Coach Admin \u2192 Settings \u2192 Sign-In &amp; Passwords.';
-    setTimeout(()=>$("#gate-pass").focus(), 50);
   }
   // The current auth for a team is the server's value if set, else the baked default.
   async function fetchAllRecords(){

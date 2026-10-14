@@ -92,14 +92,21 @@
       var d = DEFS[id];
       return tab(d[0], d[1], d[2], path === d[0], id === "coach" ? pending : 0);
     });
-    var style = document.createElement("style");
+    var style = document.getElementById("hub-tabbar-style");
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "hub-tabbar-style";
+      document.head.appendChild(style);
+    }
     style.textContent = css;
-    document.head.appendChild(style);
-    var nav = document.createElement("nav");
-    nav.id = "hub-tabbar";
+    var nav = document.getElementById("hub-tabbar");
+    if (!nav) {
+      nav = document.createElement("nav");
+      nav.id = "hub-tabbar";
+      document.body.appendChild(nav);
+    }
     nav.setAttribute("aria-label", "Main");
     nav.innerHTML = "<ul>" + tabs.join("") + "</ul>";
-    document.body.appendChild(nav);
   }
 
   var json = function (url) {

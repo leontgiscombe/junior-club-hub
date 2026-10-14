@@ -222,6 +222,17 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 /* a player's own device: just the Training Hub — no tab bar, no Search */
 html.player-mode #hub-tabbar{display:none!important}
 html.player-mode body{padding-bottom:max(24px,env(safe-area-inset-bottom))!important}
+#hub-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;padding:0 12px max(12px,env(safe-area-inset-bottom));pointer-events:none;font-family:-apple-system,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}
+#hub-tabbar ul{pointer-events:auto;list-style:none;margin:0 auto;padding:6px;max-width:576px;display:flex;gap:2px;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 8px 30px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5)}
+#hub-tabbar li{flex:1;list-style:none}
+#hub-tabbar a{position:relative;height:57px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:999px;font-size:11px;font-weight:600;color:#4b5563;text-decoration:none;transition:transform .12s ease,opacity .12s ease}
+#hub-tabbar a:active{transform:scale(.97);opacity:.85}
+#hub-tabbar a.on{background:rgba(21,128,61,.1);color:var(--color-green-700,#15803d);font-weight:700}
+#hub-tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html.dark #hub-tabbar ul{background:rgba(28,28,30,.85);box-shadow:0 8px 30px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.1)}
+html.dark #hub-tabbar a{color:#d1d5db}
+html.dark #hub-tabbar a.on{background:rgba(74,222,128,.15);color:#4ade80}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 /* the header row, as on Home: your photo, Search and the crest */
 /* exactly where Home's header row is: 28px down, 20px in, in a 536px-wide column */
 .hub-head{align-self:center;width:100%;max-width:536px;display:flex;align-items:center;justify-content:space-between;padding-top:calc(max(20px,env(safe-area-inset-top)) - 10px);margin-bottom:6px}
@@ -363,6 +374,14 @@ html.dark .guide-footer{color:#9ca3af}
 </style>
 </head>
 <body>
+
+<nav id="hub-tabbar" aria-label="Main">
+  <ul>
+    <li><a href="/" aria-label="Home"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></span>Home</a></li>
+    <li><a href="/training-hub" class="on" aria-current="page"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 4.5h-5L8 10z"/></svg></span>Training</a></li>
+    <li><a href="/kit"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z"/></svg></span>Kit</a></li>
+  </ul>
+</nav>
 
 <!-- ===== APP HOME ===== -->
 <div id="app-home">
