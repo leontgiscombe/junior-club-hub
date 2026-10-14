@@ -655,8 +655,9 @@ function PendingPerson({
             Their children: already in your squad? Pick them, so they aren&apos;t added twice.
           </p>
           {kids.map((c) => (
-            <label key={c.id} className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
-              <span className="min-w-0 flex-1 font-semibold">
+            // the child's name on its own line, the choice full width under it
+            <label key={c.id} className="mt-2 block text-sm text-gray-800 dark:text-gray-100">
+              <span className="block font-semibold">
                 {c.name}
                 {c.team && <span className="font-normal text-gray-500 dark:text-gray-400"> · {c.team.name}</span>}
               </span>
@@ -664,7 +665,7 @@ function PendingPerson({
                 value={links[c.id] ?? "new"}
                 onChange={(e) => setLinks({ ...links, [c.id]: e.target.value })}
                 aria-label={`Squad player for ${c.name}`}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
               >
                 <option value="new">New to the squad — add them</option>
                 {players

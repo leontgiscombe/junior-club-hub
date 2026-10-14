@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts) */(function(){try{var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set)}catch(e){}})()</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Monthly subs and finance tracker for the club's teams">
 <meta name="theme-color" content="#1f7a3d">
 <title>Finances</title>
@@ -62,7 +62,8 @@
   #sync-status:empty { display: none; }
 
   /* ── the sections: a segmented control, stuck to the top ── */
-  nav.tabs { position: sticky; top: 0; z-index: 20; padding: 12px 16px 10px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  /* solid, not blurred: a blur redrawn on every frame of scrolling made the page sluggish on a phone */
+  nav.tabs { position: sticky; top: 0; z-index: 20; padding: 12px 16px 10px; background: var(--bg); }
   .tabs-inner { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--fill); }
   .tab { flex: 1; min-width: 0; border: 0; background: none; border-radius: 8px; padding: 7px 4px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tab.active { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.04); }
