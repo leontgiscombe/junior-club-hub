@@ -1,6 +1,6 @@
 {
   "appId": "uk.co.grassrootsclubhub.app",
-  "appName": "Club Hub",
+  "appName": "Grassroots Club Hub",
   "webDir": "www",
   "server": {
     "url": "https://grassroots-club-hub.co.uk/start",

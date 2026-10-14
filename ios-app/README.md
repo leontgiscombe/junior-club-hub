@@ -7,7 +7,7 @@ you only rebuild the app to change its icon, name or permissions.
 
 Already set up for you in this folder and on the site:
 
-- App ID `uk.co.grassrootsclubhub.app`, name **Club Hub**, iPhone only, portrait.
+- App ID `uk.co.grassrootsclubhub.app`, name **Grassroots Club Hub**, iPhone only, portrait.
 - The iOS home-screen icon is
   `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`
   (1024 × 1024). The launch screen artwork is in
