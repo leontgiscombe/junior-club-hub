@@ -260,6 +260,14 @@ export default async function Home() {
         {/* a club admin who hasn't finished setting the club up */}
         {setup && <SetupCard steps={setup} />}
 
+        {person && kids.some((child) => !child.pending && child.team) && (
+          <Link href="/awards" className={`press ${card} flex items-center gap-4 px-4 py-3.5`}>
+            <Tile colour="bg-rose-700">{ICON.star}</Tile>
+            <span className="min-w-0 flex-1"><span className="block font-bold">End of Season Awards</span><span className={`block text-sm ${sub}`}>Your team&apos;s awards ballot</span></span>
+            <Chevron />
+          </Link>
+        )}
+
         {/* coaches: anyone waiting for approval */}
         {waiting > 0 && (
           <Link

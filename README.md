@@ -16,6 +16,15 @@ Upstash Redis database, set up for a club from one settings file.
   shirt, shorts and socks sizes; coaches see who's still to send.
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
+- **End of Season Awards** (`/awards`): approved parents vote for their children's
+  teams, with one editable ballot per account per award. First, second and third
+  choices earn 3, 2 and 1 points; second and third are optional. Parents cannot
+  see live results. Coach Admin's **End of Season Awards** creates, edits and
+  removes awards, opens/closes voting and shows results, including past seasons.
+  Percentages are shares of weighted points cast, not percentages of parents;
+  equal point totals share a rank. Nominees are the team's squad when the award
+  is created, and remain fixed with its team and season. Voting cannot reopen
+  for past seasons. Removing an award permanently removes its ballots too.
 - **Coach Admin** (`/admin`, behind the coach password):
   - **Match Log**: fixtures (synced from FA Full-Time if set up), scores,
     scorers and assists, awards and who played.
@@ -70,6 +79,9 @@ Set `ROOT_DOMAIN` (e.g. `grassroots-club-hub.co.uk`) and point it and its wildca
 
 Trying it locally: `ROOT_DOMAIN=localhost:3000 npm run dev`, then open
 `http://localhost:3000` (the platform) and `http://<club>.localhost:3000`.
+
+Awards regression checks: `node --test lib/seasonAwards.test.mjs` (scoring,
+API permissions and validation, ballot replacement, and storage key contracts).
 
 ## Hosting on Render
 
