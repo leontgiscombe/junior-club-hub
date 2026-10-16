@@ -7,7 +7,7 @@
 // Server only.
 import { createHash } from "crypto";
 import webpush from "web-push";
-import { joinAlertsKey, kvCall, type Person } from "./access";
+import { childrenOf, joinAlertsKey, kvCall, type Person } from "./access";
 import { sendEmail, simpleEmail } from "./email";
 import { rawKv } from "./kv";
 import { listPeople } from "./people";
@@ -49,7 +49,13 @@ export async function removeJoinAlert(tenant: string, endpoint: string) {
   await kvCall(["HDEL", joinAlertsKey(tenant), endpoint]);
 }
 
-export async function hasJoinAlert(tenant: string, endpoint: string): Promise<boolean> {
+export async function hasJoinAlert(tenant: string, endpoint: string, userId?: string): Promise<boolean> {
+  if (userId) {
+    const stored = await kvCall<string | null>(["HGET", joinAlertsKey(tenant), endpoint]);
+    try {
+      return !!stored && (JSON.parse(stored) as Alert).userId === userId;
+    } catch { return false; }
+  }
   return !!(await kvCall(["HEXISTS", joinAlertsKey(tenant), endpoint]));
 }
 
@@ -200,7 +206,7 @@ async function pushTo(
   const ids = new Set(people.map((p) => p.userId));
   const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
   // counts only — no names or addresses in the log
-  const summary = `${people.length} admins/coaches, ${emailed} emails, ${alerts.length} phones`;
+  const summary = `${people.length} recipients, ${emailed} emails, ${alerts.length} phones`;
   if (!alerts.length) {
     console.log(`${what} alerts (${tenant}): ${summary}`);
     return;
@@ -270,6 +276,23 @@ export async function notifyKitRequest(
     await pushTo(tenant, people, emails.size, "Kit request", { title: "Kit request", body: `${line} Tap to see it.`, url });
   } catch (e) {
     console.error("Kit request alerts not sent:", e);
+  }
+}
+
+export async function notifyAwardsActivated(
+  tenant: string,
+  request: { team: string; teamName: string; season: string },
+): Promise<void> {
+  try {
+    const people = (await listPeople(tenant)).filter((person) => person.status === "approved" &&
+      childrenOf(person).some((child) => !child.pending && child.team?.slug === request.team));
+    await pushTo(tenant, people, 0, "Season awards", {
+      title: "Season awards available",
+      body: `End of season awards for ${request.teamName} (${request.season}) are now available.`,
+      url: "/awards",
+    });
+  } catch (error) {
+    console.error("Season awards alerts not sent:", error);
   }
 }
 

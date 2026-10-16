@@ -21,6 +21,7 @@ export type SeasonAwardView = SeasonAward & {
 
 export type SeasonAwardsData = {
   season: string;
+  activeTeams: string[];
   teams: { slug: string; name: string }[];
   awards: SeasonAwardView[];
 };

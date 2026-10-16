@@ -120,6 +120,10 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
               {seasons.map((option) => <option key={option} value={option}>{option}</option>)}
             </select></label>
           </div>
+          {admin && season === data.season && <div className={panel}>
+            <label className="flex min-h-11 items-center gap-3 font-semibold"><input type="checkbox" className="h-5 w-5 shrink-0 accent-green-700" checked={data.activeTeams.includes(team)} disabled={saving || !team} onChange={(event) => void mutate({ action: "activate", team, active: event.target.checked }, event.target.checked ? "Awards activated for parents." : "Awards hidden from parents.")} />Activate awards for parents</label>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{data.activeTeams.includes(team) ? "Visible to parents" : "Hidden from parents"}</p>
+          </div>}
           {admin && season === data.season && <button className={`${command} self-start`} disabled={saving || !team} onClick={() => setEditing("new")}>Add Award</button>}
           {admin && editing && <AwardEditor key={editing === "new" ? `new-${team}` : editing.id} award={editing === "new" ? null : editing} team={team} allowOpen={season === data.season} saving={saving} onCancel={() => setEditing(null)} onSave={async (award) => { if (await mutate({ action: "save", award }, "Award saved.")) setEditing(null); }} />}
           {awards.length === 0 && <p className="wp-text py-4 text-center text-sm">{admin ? "No awards for this team and season." : "No awards are available for your team yet."}</p>}
@@ -161,7 +165,7 @@ function AwardVote({ award, saving, onSave }: { award: SeasonAwardView; saving: 
   const [draft, setDraft] = useState<string[] | null>(null);
   const choices = draft ?? award.ballot?.choices ?? [];
   const changed = JSON.stringify(choices) !== JSON.stringify(award.ballot?.choices ?? []);
-  const labels = ["1st choice (3 points)", "2nd choice (2 points, optional)", "3rd choice (1 point, optional)"];
+  const labels = ["1st choice", "2nd choice (optional)", "3rd choice (optional)"];
   return <form className={`${panel} space-y-4`} onSubmit={async (event) => { event.preventDefault(); if (await onSave(choices)) setDraft(null); }}>
     <div><h2 className="break-words text-lg font-bold">{award.title}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open ? (award.ballot ? "Ballot submitted" : "Voting open") : "Voting closed"}</p></div>
     {award.description && <p className="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">{award.description}</p>}

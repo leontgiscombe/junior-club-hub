@@ -216,9 +216,8 @@ export default function AccountPage() {
     if (canGoBack()) window.history.back();
     else window.location.href = "/";
   }, []);
-  // join requests are for coaches and club admins: nobody else asks (it would only be refused)
-  const coachSomewhere = !!account?.clubs.some((c) => c.roles.some((r) => r === "coach" || r === "admin"));
-  const { status: alerts } = useJoinRequests(undefined, coachSomewhere);
+  const approvedSomewhere = !!account?.clubs.some((club) => club.status === "approved");
+  const { status: alerts } = useJoinRequests(undefined, approvedSomewhere);
 
   // kept up to date without going out and back in: on opening your children or
   // team, on coming back to the app, and every few seconds while a child waits
