@@ -15,7 +15,7 @@ import { PlayerCareForm } from "./PlayerCare";
 import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
 
@@ -102,6 +102,9 @@ const when = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function MembersAdmin() {
+  const { screen, open } = useScreens("/admin/members");
+  const view = screen === "waiting" || screen === "access" ? screen : "members";
+  const [teamFilter, setTeamFilter] = useState("all");
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
@@ -301,11 +304,14 @@ export default function MembersAdmin() {
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-16">
       <TopBar title="Members" href={`/admin${keyQuery(key)}`} />
 
-      <div className="mx-auto max-w-2xl px-4">
+      <div className="mx-auto max-w-2xl px-4 py-4">
+        <ToolTabs label="Member views" tabs={[{ id: "members", label: "Members" }, { id: "waiting", label: "Approvals", count: waitingCount }, { id: "access", label: "Access" }]} value={view} onChange={(next) => { setProfile(null); open(next); }} panelId="members-panel" />
+        <div id="members-panel" role="tabpanel" aria-label={view}>
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
         {/* Waiting */}
-        <Fold id="waiting" title="Waiting for Approval" summary={waitingCount ? String(waitingCount) : "None"} alert={waitingCount > 0} forceOpen={waitingCount > 0}>
+        <div hidden={view !== "waiting"}>
+        <Fold id="waiting" title="Waiting for Approval" summary={waitingCount ? String(waitingCount) : "None"} alert={waitingCount > 0} forceOpen={view === "waiting"}>
           <div className="flex items-center justify-end">
             <button onClick={() => load(key)} disabled={busy} className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-40 dark:text-green-400">
               Refresh
@@ -324,24 +330,23 @@ export default function MembersAdmin() {
             </ul>
           )}
         </Fold>
+        </div>
 
         {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
-        <Fold id="members" title="Members" summary={String(approved.length)} defaultOpen>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Each team&apos;s coaches and staff, then its players with their parents or carers (guardians). Tap a role to give
-            or take it away — club admins and coaches can use Coach Admin.
-          </p>
+        <section hidden={view !== "members"}>
+          <label className="block"><span className="sr-only">Team</span><select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{snap.teams.map((team) => <option key={team.slug} value={team.slug}>{team.name}</option>)}</select></label>
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search players, parents or coaches"
+            aria-label="Search members"
             className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
           />
           {approved.length === 0 && snap.players.length === 0 && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No members yet.</p>}
 
           {/* children not yet in the squad */}
-          {unmatched.length > 0 && !q && (
+          {unmatched.length > 0 && !q && teamFilter === "all" && (
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-400/30 dark:bg-amber-400/10">
               <p className="font-bold text-amber-900 dark:text-amber-200">To Add to the Squad ({unmatched.length})</p>
               <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">Children of approved parents who aren&apos;t a squad player yet.</p>
@@ -366,7 +371,7 @@ export default function MembersAdmin() {
           )}
 
           {/* club-wide: admins and coaches with no one team */}
-          {clubWide.length > 0 && (
+          {clubWide.length > 0 && teamFilter === "all" && (
             <details open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
               <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
                 Club-Wide Staff <span className="font-semibold text-gray-500 dark:text-gray-400">({clubWide.length})</span>
@@ -379,8 +384,8 @@ export default function MembersAdmin() {
             </details>
           )}
 
-          {teamGroups.map((g) => (
-            <details key={g.slug || "none"} open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
+          {teamGroups.filter((group) => teamFilter === "all" || group.slug === teamFilter).map((g) => (
+            <details key={g.slug || "none"} open={!!q || teamFilter !== "all"} className="mt-4 rounded-lg border border-gray-100 bg-white dark:border-white/10 dark:bg-[#1c1c1e]">
               <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
                 {g.name}{" "}
                 <span className="font-semibold text-gray-500 dark:text-gray-400">
@@ -422,7 +427,7 @@ export default function MembersAdmin() {
               </div>
             </details>
           ))}
-          {carers.length > 0 && (
+          {carers.length > 0 && teamFilter === "all" && (
             <details open={!!q} className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
               <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
                 Parents & Carers <span className="font-semibold text-gray-500 dark:text-gray-400">({carers.length})</span>
@@ -464,8 +469,9 @@ export default function MembersAdmin() {
             />
           )}
           {q && !teamGroups.length && !clubWide.length && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No one matches “{search.trim()}”.</p>}
-        </Fold>
+        </section>
 
+        <div hidden={view !== "access"}>
         {/* how people get in: the club code, invites, who's allowed in, passwords */}
         <Link
           href={`/admin/settings${keyQuery(key)}#joining`}
@@ -499,7 +505,8 @@ export default function MembersAdmin() {
             </ul>
           </Fold>
         )}
-
+        </div>
+        </div>
       </div>
     </main>
   );

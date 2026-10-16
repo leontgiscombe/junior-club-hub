@@ -9,7 +9,7 @@ import { getMyTeam, setMyTeam } from "@/lib/myTeam";
 import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
 
@@ -148,6 +148,8 @@ function downloadOrderTotals(rows: KitRequest[], team: string) {
 // — used by the per-team admin pages at /kit/<team>/admin. With no prop it shows
 // all teams with a selector, used by the combined /kit/admin page.
 export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
+  const { screen, open } = useScreens("/admin/kit");
+  const view = screen === "requests" || screen === "waiting" ? screen : "sizes";
   const { TEAMS, teamName, isValidTeam } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
@@ -324,28 +326,16 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
       <TopBar title={<>{teamName(team)} – Kit Responses</>} href={`/admin${keyQuery(key)}`} />
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Team selector (combined admin only) */}
         {!lockedTeam && (
-          <div className="flex gap-2 mb-5">
-            {TEAMS.map((t) => (
-              <button
-                key={t.slug}
-                onClick={() => switchTeam(t.slug)}
-                className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
-                  team === t.slug
-                    ? "bg-green-600 border-green-600 text-white shadow"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
-                }`}
-              >
-                {t.accent} {t.name}
-              </button>
-            ))}
-          </div>
+          <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} disabled={loading} onChange={(event) => switchTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
         )}
+        <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes", count: submissions.length }, { id: "requests", label: "Requests", count: requests.filter((request) => !request.doneAt).length }, { id: "waiting", label: "Waiting", count: waiting.length }]} value={view} onChange={open} panelId="kit-panel" />
+        <div id="kit-panel" role="tabpanel" aria-label={view}>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 gap-3 mb-6">
+        <div hidden={view !== "sizes"} className="mb-5">
           <div className="bg-white rounded-2xl p-4 shadow-sm text-center dark:bg-[#1c1c1e]">
             <p className="text-2xl font-extrabold text-green-700 dark:text-green-400">{submissions.length}</p>
             <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
@@ -355,7 +345,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         </div>
 
         {/* Kit asked for during the season */}
-        {requests.length > 0 && (
+        {view === "requests" && requests.length > 0 && (
           <div className="mb-6">
             <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-50">
               Kit Requests{requests.some((r) => !r.doneAt) ? ` (${requests.filter((r) => !r.doneAt).length} to sort)` : ""}
@@ -487,7 +477,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         )}
 
         {/* Who still needs to send sizes */}
-        {waiting.length > 0 && (
+        {view === "waiting" && waiting.length > 0 && (
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:bg-amber-400/10 dark:border-amber-400/30">
             <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
               Still to Send ({waiting.length})
@@ -508,6 +498,9 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
           </div>
         )}
 
+        {view === "requests" && !requests.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No kit requests yet.</p>}
+        {view === "waiting" && !waiting.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">Everyone in this squad has sent their sizes.</p>}
+        <div hidden={view !== "sizes"}>
         {/* Actions */}
         <div className="flex flex-wrap gap-3 mb-5">
           <button
@@ -581,6 +574,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             ))}
           </div>
         )}
+        </div>
+        </div>
       </div>
     </main>
   );

@@ -5,10 +5,10 @@
 // page changes.
 import Link from "next/link";
 import { backOr } from "@/lib/back";
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { TopBar, useScreens } from "./SettingsUI";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -18,6 +18,7 @@ const SECTIONS = [
   { id: "training-plans", title: "Training Plans" },
   { id: "stats-tracker", title: "Stats Tracker" },
   { id: "player-of-the-month", title: "Player of the Month" },
+  { id: "season-awards", title: "End of Season Awards" },
   { id: "camera-and-kit", title: "Camera Register and Kit Responses" },
   { id: "subs", title: "Finances" },
   { id: "settings", title: "Settings" },
@@ -26,7 +27,11 @@ const SECTIONS = [
   { id: "questions", title: "Questions and Fixes" },
 ];
 
+const HelpTopic = createContext("");
+
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  const topic = useContext(HelpTopic);
+  if (topic !== id) return null;
   return (
     <section id={id} className="scroll-mt-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
       <h2 className="mb-3 text-lg font-extrabold text-gray-900 dark:text-gray-50">{title}</h2>
@@ -66,6 +71,10 @@ const B = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function HelpManual() {
+  const { screen, open } = useScreens("/admin/help");
+  const selected = SECTIONS.find((section) => section.id === screen);
+  const [search, setSearch] = useState("");
+  const topics = SECTIONS.filter((section) => section.title.toLowerCase().includes(search.toLowerCase()));
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
@@ -159,20 +168,22 @@ export default function HelpManual() {
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-12">
-      <TopBar title="Help" href={`/admin${keyQuery(key)}`} />
+      {selected ? <TopBar title={selected.title} onBack={() => open("contents")} /> : <TopBar title="Help" href={`/admin${keyQuery(key)}`} />}
 
+      <HelpTopic.Provider value={selected?.id ?? ""}>
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
-        <a href="/support?kind=problem#contact" className="press flex items-center justify-between gap-3 rounded-2xl bg-green-50 px-5 py-4 text-green-900 dark:bg-green-400/10 dark:text-green-200">
+        <a hidden={!!selected} href="/support?kind=problem#contact" className="press flex items-center justify-between gap-3 rounded-2xl bg-green-50 px-5 py-4 text-green-900 dark:bg-green-400/10 dark:text-green-200">
           <span>
             <span className="block font-bold">Stuck, or something not working?</span>
             <span className="block text-sm opacity-80">Ask us, report a problem or suggest something</span>
           </span>
           <span aria-hidden="true">→</span>
         </a>
-        <nav id="contents" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+        <nav hidden={!!selected} id="contents" className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
+          <label className="mb-4 block"><span className="sr-only">Search help topics</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search help topics" className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-[#1c1c1e]" /></label>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Contents</p>
           <ol className="ml-5 list-decimal space-y-1 text-[15px]">
-            {SECTIONS.map((s) => (
+            {topics.map((s) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} className="font-medium text-green-700 hover:text-green-800 dark:text-green-400">
                   {s.title}
@@ -180,6 +191,7 @@ export default function HelpManual() {
               </li>
             ))}
           </ol>
+          {!topics.length && <p role="status" className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">No matching help topics.</p>}
           <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-400/10 dark:text-green-200">
             <B>The one rule to know:</B> enter things once, in the right place. Games, goals and
             match awards go in the <B>Match Log</B>; each session&apos;s best trainer goes in the{" "}
@@ -280,6 +292,7 @@ export default function HelpManual() {
           <H3>Adding a Game by Hand</H3>
           <p>For friendlies, tournaments, or anything not on Full-Time:</p>
           <Steps>
+            <li>Open <B>Fixtures</B> and tap <B>Add a Game</B>.</li>
             <li>Pick the opponent from the list, or <B>Other Team…</B> and type a name.</li>
             <li>Set the date and kick-off, and choose <B>🏠 Home</B> or <B>🚌 Away</B>.</li>
             <li>Choose <B>🏆 League Game</B>, <B>🥇 Cup Game</B> or <B>🤝 Friendly</B>.</li>
@@ -290,7 +303,7 @@ export default function HelpManual() {
             players&apos; season totals and clean sheets.
           </p>
           <H3>Logging a Game After It&apos;s Played</H3>
-          <p>Find the game under <B>✅ Results</B> and fill in what you know:</p>
+          <p>Open <B>Results</B>, tap the game to open its details, and fill in what you know. The league table is under <B>Record</B>.</p>
           <Steps>
             <li><B>Goals:</B> pick the scorer and, if there was one, the assist, then tap <B>Add Goal</B>. ✕ removes a goal.</li>
             <li><B>Opponent&apos;s goals:</B> use the opponent&apos;s <B>scored</B> stepper.</li>
@@ -319,15 +332,16 @@ export default function HelpManual() {
             on; sessions already past stay as they were.
           </p>
           <p>
-            At the top is <B>Today</B> or the <B>Next Session</B>. With a training plan, it shows
+            <B>Upcoming</B> opens on <B>Today</B> or the <B>Next Session</B>. With a training plan, it shows
             that week&apos;s theme and drills; tap a drill to see it in full, and <B>Mark Done</B>{" "}
             once you&apos;ve run it.
           </p>
           <H3>Picking the Best Trainer</H3>
           <Steps>
-            <li>Find the session. They&apos;re grouped by month; older months are folded, showing how many still need an award.</li>
+            <li>Open <B>History</B> and find the session. Older months are folded, showing how many still need an award.</li>
             <li>Pick the player. It saves at once and adds to their <B>Best Trainer</B> total.</li>
             <li>Wrong player? Pick the right one, or <B>— Not Awarded —</B> to clear it.</li>
+            <li>The season&apos;s leaders are under <B>Best Trainers</B>.</li>
           </Steps>
           <H3>When Training Is Called Off</H3>
           <p>
@@ -382,24 +396,24 @@ export default function HelpManual() {
           </p>
           <H3>First Job of the Season: Add Your Squad</H3>
           <Steps>
-            <li>Pick your team and tap <B>✏️ Edit</B>.</li>
+            <li>Pick your team, open <B>Players</B> and tap <B>Add Players</B>.</li>
             <li>Type a name and tap <B>Add</B>, or <B>Paste a Squad</B>, one name per line.</li>
-            <li>Tap <B>✓ Done</B>.</li>
+            <li>A single saved player opens in their own detail screen.</li>
           </Steps>
           <p>
             Players must be in the squad before they can be picked as scorers or award winners.
           </p>
           <H3>What&apos;s on the Page</H3>
           <Bullets>
-            <li><B>Team stats:</B> the league record and clean sheets.</li>
-            <li><B>Σ Squad Totals</B>, <B>🎯 Milestones</B> and <B>🏅 Season Awards</B>.</li>
-            <li><B>Player cards:</B> folded to one row each; tap a player, or <B>Open All</B>.</li>
-            <li><B>Sort</B>, and <B>⬇ Export CSV</B> for a spreadsheet.</li>
+            <li><B>Team:</B> the next fixture, league record, clean sheets and squad totals.</li>
+            <li><B>Players:</B> search, sort and open an individual player.</li>
+            <li><B>Awards:</B> milestones, stats leaders and the parent awards tool.</li>
+            <li><B>Season management:</B> CSV exports, presentations, archive and restore.</li>
           </Bullets>
           <H3>Correcting a Number</H3>
           <p>
             Fix it at its source first: the game in the match log or the session in the training
-            log. Only if that isn&apos;t possible, tap <B>✏️ Edit</B> and use − and +.
+            log. Only if that isn&apos;t possible, open the player, tap <B>Correct Stats</B> and use − and +. Tap <B>Done</B> to lock corrections again.
           </p>
           <H3>Goalkeepers</H3>
           <p>
@@ -430,7 +444,18 @@ export default function HelpManual() {
           <p>The poster uses first names only, so it&apos;s safe to share.</p>
         </Section>
 
+        <Section id="season-awards" title="End of Season Awards">
+          <p>In Coach Admin, open <B>End of Season Awards</B> and choose the team and season.</p>
+          <Bullets>
+            <li><B>Awards:</B> add a category, or open an award to edit it, open or close voting, or delete it.</li>
+            <li><B>Results:</B> open an award to see its private standings and weighted vote shares.</li>
+            <li><B>Visibility:</B> activate awards for parents only when the team is ready. They stay hidden until activated.</li>
+          </Bullets>
+          <p>Activation sends an app notification to eligible parents with phone alerts enabled, never email. Each parent account can update its ballot while voting is open. Parents do not see live results or point values.</p>
+        </Section>
+
         <Section id="camera-and-kit" title="Camera Register and Kit Responses">
+          <p>Camera Register has <B>Upcoming</B>, <B>To Upload</B> and <B>Uploaded</B> views. Kit Responses has <B>Sizes</B>, <B>Requests</B> and <B>Waiting</B> views.</p>
           <H3>Camera Register</H3>
           <Steps>
             <li>Open <B>Camera Register</B>; it lists your home games from the match log.</li>
@@ -607,6 +632,7 @@ export default function HelpManual() {
           </dl>
         </Section>
       </div>
+      </HelpTopic.Provider>
     </main>
   );
 }
