@@ -42,8 +42,9 @@ Upstash Redis database, set up for a club from one settings file.
   - **Player of the Month**: worked out from the awards, with a poster to share.
   - **Training Plans**: each team's weeks of sessions from a shared drill
     library.
-  - **Stats Tracker**: season totals, milestones, awards, a presentation-evening
-    slideshow and end-of-season archiving.
+  - **Stats Tracker**: separate Team, Players and Awards views, searchable player
+    details with locked correction controls, and a separate Season Management
+    screen for CSV export, presentations, archiving and restoring past seasons.
   - **Camera Register**, **Kit Responses** and **Help** (the user manual).
 - **Financial Admin** (`/finance`): each team's subs, payments, parent contacts
   and spending, encrypted in the browser with the team's own password, plus
