@@ -17,9 +17,16 @@ Upstash Redis database, set up for a club from one settings file.
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
 - **End of Season Awards** (`/awards`): approved parents vote for their children's
-  teams, with one editable ballot per account per award. First, second and third
+  teams, with one editable ballot per account per award. Awards are hidden from
+  parents until a coach enables **Activate awards for parents** for that team and
+  season. This is separate from opening/closing each award's voting. Deactivation
+  hides Home, Search and direct access without deleting awards or ballots; a new
+  season starts inactive. Activation sends an app push notification (never email)
+  to approved parents with a child on that team who have enabled phone alerts in
+  Your Account. Repeated saves while already active do not send another alert.
+  First, second and third
   choices earn 3, 2 and 1 points; second and third are optional. Parents cannot
-  see live results. Coach Admin's **End of Season Awards** creates, edits and
+  see the point values or live results. Coach Admin's **End of Season Awards** creates, edits and
   removes awards, opens/closes voting and shows results, including past seasons.
   Percentages are shares of weighted points cast, not percentages of parents;
   equal point totals share a rank. Nominees are the team's squad when the award

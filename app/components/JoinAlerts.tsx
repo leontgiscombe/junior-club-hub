@@ -15,7 +15,7 @@ import { forgetToken, nativePush, nativeToken, savedToken } from "@/lib/nativePu
 // through Apple (lib/nativePush.ts), and an older build of the app without that shows none
 const inTheApp = () => typeof navigator !== "undefined" && isAppUserAgent(navigator.userAgent) && !nativePush();
 
-type Status = { pending: number; alerts: boolean; pushAvailable: boolean };
+type Status = { pending: number; alerts: boolean; pushAvailable: boolean; coach: boolean };
 
 const pushSupported = () =>
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -38,7 +38,7 @@ function sameBytes(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
   return x.every((v, i) => v === b[i]);
 }
 
-/** How many are waiting, and whether this phone has alerts on; null until known, or for someone who isn't a coach. */
+/** Coach-only request counts and this approved member's phone-alert status. */
 export function useJoinRequests(key: string = SESSION_KEY, enabled = true) {
   const [status, setStatus] = useState<Status | null>(null);
   const refresh = useCallback(async () => {
@@ -65,7 +65,7 @@ export function useJoinRequests(key: string = SESSION_KEY, enabled = true) {
   return { status, refresh };
 }
 
-/** Turning this phone's alerts on and off, for someone signed in as a club admin or coach. */
+/** Turning this approved member's phone alerts on and off. */
 function useAlertSwitch(refresh: () => void) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -217,16 +217,18 @@ export function AlertsPrompt({ status, refresh }: { status: Status | null; refre
   );
 }
 
-/** Your Account's section for this phone's alerts — only for club admins and coaches, on a club's own address. */
+/** Your Account's phone alerts for approved members, on a club's own address. */
 export function AlertsSettings({ className }: { className: string }) {
   const { status, refresh } = useJoinRequests();
   const { busy, note, turnOn, turnOff, test } = useAlertSwitch(refresh);
   if (!status?.pushAvailable || inTheApp()) return null;
   return (
     <section className={className} id="alerts">
-      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 Coach Alerts</h2>
+      <h2 className="font-extrabold text-gray-900 dark:text-gray-50">🔔 {status.coach ? "Coach Alerts" : "Award Alerts"}</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {status.alerts
+        {!status.coach
+          ? status.alerts ? "Season awards alerts are on for this phone." : "Season awards alerts are off for this phone."
+          : status.alerts
           ? "On for this phone — you get an alert when someone asks to join or a parent requests kit. Tapping it opens the right page."
           : "Get an alert on this phone when someone asks to join, or a parent requests kit. Club admins hear about every join request; coaches about their own team's, and their team's kit requests."}
       </p>
