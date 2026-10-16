@@ -3,6 +3,7 @@ import Image from "next/image";
 import { kitAspect } from "@/lib/clubSettings";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
+import HomeWallpaper from "../components/HomeWallpaper";
 import { canCoach, currentPerson } from "@/lib/people";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { getSubmissions } from "@/lib/storage";
@@ -48,7 +49,8 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
     status.set(slug, due.length ? `Still to send: ${due.map(first).join(" and ")}` : `Sent for ${theirs.map(first).join(" and ")} ✓`);
   }
   return (
-    <div className="themed flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
+    <div className="themed wp-page relative isolate flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
+      <HomeWallpaper />
       <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
 
       <main className="relative mx-auto mt-3 w-full max-w-md flex-1 px-4">
@@ -74,7 +76,7 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
         </div>
 
         {/* the teams, as Home's grouped rows */}
-        <h2 className="mt-6 mb-2.5 px-1 text-xl font-bold">
+        <h2 className="wp-text mt-6 mb-2.5 px-1 text-xl font-bold">
           {ownOnly ? (shown.length > 1 ? "Your children's teams" : "Your child's team") : "Choose your child's team"}
         </h2>
         <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
@@ -93,12 +95,12 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
             </Link>
           ))}
         </div>
-        <p className="mt-2.5 px-1 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p className="wp-text mt-2.5 px-1 text-center text-xs text-gray-500 dark:text-gray-400">
           It takes a minute, and there&apos;s a size guide to help.
           {ownOnly && TEAMS.length > shown.length && (
             <>
               {" "}
-              <Link href="/kit?all=1" className="font-semibold text-green-700 dark:text-green-400">
+              <Link href="/kit?all=1" className="wp-text font-semibold text-green-700 dark:text-green-400">
                 Show all teams
               </Link>
             </>

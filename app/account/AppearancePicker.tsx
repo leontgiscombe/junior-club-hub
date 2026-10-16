@@ -80,7 +80,7 @@ function WallpaperPicker() {
 
   return (
     <div className="mt-6">
-      <h2 className="px-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Home Wallpaper</h2>
+      <h2 className="px-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Wallpaper</h2>
       <div className="mt-2 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
         <div className="grid grid-cols-5 gap-2">
           {WALLPAPERS.map((w) => {
