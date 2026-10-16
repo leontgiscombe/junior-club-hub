@@ -24,7 +24,7 @@ import {
 } from "@/lib/playerOfMonth";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 interface Player {
   id: string;
@@ -132,6 +132,8 @@ function defaultMonth(months: string[]): string {
 }
 
 export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
+  const { screen, open } = useScreens("/admin/stats/player-of-the-month");
+  const view = screen === "poster" ? "poster" : "standings";
   const { TEAMS, teamName, findTeam } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
@@ -358,22 +360,9 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-12">
       <TopBar title="Player of the Month" href={`/admin${keyQuery(key)}`} />
 
-      <div className="max-w-3xl mx-auto px-4 py-5">
-        <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
-          {TEAMS.map((t) => (
-            <button
-              key={t.slug}
-              onClick={() => setTeam(t.slug)}
-              className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
-                team === t.slug
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
-                  : "text-gray-600 dark:text-gray-300"
-              }`}
-            >
-              {t.accent} {t.name}
-            </button>
-          ))}
-        </div>
+      <div className="mx-auto max-w-2xl px-4 py-4">
+        <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <ToolTabs label="Monthly award views" tabs={[{ id: "standings", label: "Standings" }, { id: "poster", label: "Poster" }]} value={view} onChange={open} />
 
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
@@ -401,7 +390,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             </label>
 
             {/* The standings */}
-            <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            <div hidden={view !== "standings"} className="mb-4 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <p className="mb-1 text-[17px] font-bold text-gray-900 dark:text-gray-50">
                 {mName} Standings
               </p>
@@ -463,6 +452,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               )}
             </div>
 
+            <div hidden={view !== "poster"}>
             {/* The winner's photo */}
             <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <p className="mb-1 text-[17px] font-bold text-gray-900 dark:text-gray-50">
@@ -619,6 +609,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           </>
         )}

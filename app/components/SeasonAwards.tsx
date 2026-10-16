@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SeasonAward, SeasonAwardsData, SeasonAwardView } from "@/lib/seasonAwards";
 import { accountKey, rememberCoachKey } from "./coachKey";
-import { ICONS, TopBar } from "./SettingsUI";
+import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 const panel = "rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
 const field = "mt-1 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base dark:border-white/20 dark:bg-[#1c1c1e]";
@@ -20,6 +20,9 @@ async function requestData(admin: boolean, key: string): Promise<SeasonAwardsDat
 }
 
 export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
+  const { screen, open, close } = useScreens(admin ? "/admin/awards" : "/awards");
+  const selectedId = admin ? screen.startsWith("award-") ? screen.slice(6) : screen.startsWith("result-") ? screen.slice(7) : "" : "";
+  const view = screen === "results" || screen.startsWith("result-") ? "results" : screen === "visibility" ? "visibility" : "awards";
   const [data, setData] = useState<SeasonAwardsData | null>(null);
   const [key, setKey] = useState("");
   const [password, setPassword] = useState("");
@@ -98,8 +101,8 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
   const seasons = data ? [...new Set([data.season, ...data.awards.map((award) => award.season)])] : [];
   const awards = data?.awards.filter((award) => award.team === team && award.season === season) ?? [];
   return (
-    <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
-      <TopBar title="End of Season Awards" href={admin ? "/admin" : "/"} />
+    <div className={`themed ${admin ? "" : "wp-page"} relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50`}>
+      {admin && (selectedId || editing) ? <TopBar title={editing ? editing === "new" ? "New Award" : "Edit Award" : awards.find((award) => award.id === selectedId)?.title || "Award Details"} onBack={() => { setEditing(null); close(); }} /> : <TopBar title="End of Season Awards" href={admin ? "/admin" : "/"} />}
       <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-5">
         {loading && <p className="wp-text" role="status">Loading awards...</p>}
         {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
@@ -110,32 +113,34 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
         </form>}
         {!loading && !data && !login && <button className={`${secondary} bg-white dark:bg-[#1c1c1e]`} onClick={() => window.location.reload()}>Retry</button>}
         {data && <>
-          <div className={`${panel} flex flex-wrap items-end gap-3`}>
+          {!selectedId && !editing && <div className={`${admin ? "" : panel} flex flex-wrap items-end gap-3`}>
             <label className="min-w-0 flex-1 text-sm font-semibold">Team<select className={field} value={team} onChange={(event) => { setTeam(event.target.value); setEditing(null); }} disabled={saving}>
               {data.teams.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}
             </select></label>
             <label className="min-w-0 flex-1 text-sm font-semibold">Season<select className={field} value={season} onChange={(event) => { setSeason(event.target.value); setEditing(null); }} disabled={saving}>
               {seasons.map((option) => <option key={option} value={option}>{option}</option>)}
             </select></label>
-          </div>
-          {admin && season === data.season && <div className={panel}>
+          </div>}
+          {admin && !selectedId && !editing && <ToolTabs label="Award views" tabs={[{ id: "awards", label: "Awards" }, { id: "results", label: "Results" }, { id: "visibility", label: "Visibility" }]} value={view} onChange={open} />}
+          {admin && view === "visibility" && season === data.season && <div className={panel}>
             <label className="flex min-h-11 items-center gap-3 font-semibold"><input type="checkbox" className="h-5 w-5 shrink-0 accent-green-700" checked={data.activeTeams.includes(team)} disabled={saving || !team} onChange={(event) => void mutate({ action: "activate", team, active: event.target.checked }, event.target.checked ? "Awards activated for parents." : "Awards hidden from parents.")} />Activate awards for parents</label>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{data.activeTeams.includes(team) ? "Visible to parents" : "Hidden from parents"}</p>
           </div>}
-          {admin && season === data.season && <button className={`${command} self-start`} disabled={saving || !team} onClick={() => setEditing("new")}>Add Award</button>}
-          {admin && editing && <AwardEditor key={editing === "new" ? `new-${team}` : editing.id} award={editing === "new" ? null : editing} team={team} allowOpen={season === data.season} saving={saving} onCancel={() => setEditing(null)} onSave={async (award) => { if (await mutate({ action: "save", award }, "Award saved.")) setEditing(null); }} />}
-          {awards.length === 0 && <p className="wp-text py-4 text-center text-sm">{admin ? "No awards for this team and season." : "No awards are available for your team yet."}</p>}
-          {awards.map((award) => admin ? <section key={award.id} className={`${panel} space-y-4`} aria-label={award.title}>
+          {admin && view === "visibility" && season !== data.season && <p className="wp-text py-6 text-center text-sm">Past-season voting is closed.</p>}
+          {admin && view === "awards" && !selectedId && !editing && season === data.season && <button className={`${command} self-start`} disabled={saving || !team} onClick={() => { setEditing("new"); open("new"); }}>Add Award</button>}
+          {admin && editing && <AwardEditor key={editing === "new" ? `new-${team}` : editing.id} award={editing === "new" ? null : editing} team={team} allowOpen={season === data.season} saving={saving} onCancel={() => { setEditing(null); close(); }} onSave={async (award) => { if (await mutate({ action: "save", award }, "Award saved.")) { setEditing(null); close(); } }} />}
+          {!editing && (!admin || view !== "visibility") && awards.length === 0 && <p className="wp-text py-4 text-center text-sm">{admin ? "No awards for this team and season." : "No awards are available for your team yet."}</p>}
+          {!editing && (!admin || view !== "visibility") && awards.filter((award) => !selectedId || award.id === selectedId).map((award) => admin && !selectedId ? <button key={award.id} onClick={() => open(`${view === "results" ? "result" : "award"}-${award.id}`)} className={`${panel} flex min-h-20 w-full items-center gap-3 text-left`}><span className="shrink-0 text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1"><span className="block break-words font-semibold">{award.title}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{award.open && award.season === data.season ? "Voting open" : "Voting closed"} · {award.ballotCount ?? 0} ballots</span></span><span aria-hidden="true" className="text-gray-400">›</span></button> : admin ? <section key={award.id} className={`${panel} space-y-4`} aria-label={award.title}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0"><h2 className="break-words text-lg font-bold">{award.title}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open && award.season === data.season ? "Voting open" : "Voting closed"} · {award.ballotCount ?? 0} ballots</p></div>
-              <button className={secondary} title={`Edit ${award.title}`} disabled={saving} onClick={() => setEditing({ ...award, open: award.open && award.season === data.season })}>Edit</button>
+              {view !== "results" && <button className={secondary} title={`Edit ${award.title}`} disabled={saving} onClick={() => { setEditing({ ...award, open: award.open && award.season === data.season }); open("edit"); }}>Edit</button>}
             </div>
             {award.description && <p className="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">{award.description}</p>}
-            <div className="flex flex-wrap items-center gap-3">
+            {view !== "results" && <div className="flex flex-wrap items-center gap-3">
               <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={award.open && award.season === data.season} disabled={saving || award.season !== data.season} onChange={(event) => void mutate({ action: "save", award: { ...award, open: event.target.checked } }, event.target.checked ? "Voting opened." : "Voting closed.")} />Voting open</label>
-              <button className={`${secondary} ml-auto text-red-700 dark:text-red-400`} title={`Delete ${award.title}`} aria-label={`Delete ${award.title}`} disabled={saving} onClick={() => { if (window.confirm(`Delete "${award.title}" and all its ballots? This cannot be undone.`)) void mutate({ action: "delete", id: award.id }, "Award deleted."); }}>{ICONS.bin}</button>
-            </div>
-            <AwardResults award={award} />
+              <button className={`${secondary} ml-auto text-red-700 dark:text-red-400`} title={`Delete ${award.title}`} aria-label={`Delete ${award.title}`} disabled={saving} onClick={async () => { if (window.confirm(`Delete "${award.title}" and all its ballots? This cannot be undone.`) && await mutate({ action: "delete", id: award.id }, "Award deleted.")) close(); }}>{ICONS.bin}</button>
+            </div>}
+            {view === "results" && <AwardResults award={award} />}
           </section> : <AwardVote key={award.id} award={award} saving={saving} onSave={(choices) => mutate({ id: award.id, choices }, "Your ballot has been saved.")} />)}
         </>}
       </main>

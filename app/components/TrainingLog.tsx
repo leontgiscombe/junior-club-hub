@@ -15,7 +15,7 @@ import {
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { timesLabel } from "@/lib/clubSettings";
 
 interface Player {
@@ -180,6 +180,8 @@ function PlanWeekCard({
 }
 
 export default function TrainingLog() {
+  const { screen, open } = useScreens("/admin/stats/training");
+  const view = screen === "history" || screen === "leaders" ? screen : "upcoming";
   const { TEAMS } = useTeams();
   const { features } = useClub();
   const [key, setKey] = useState("");
@@ -487,30 +489,18 @@ export default function TrainingLog() {
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
-      <TopBar title="Training Log" href={`/admin/stats${keyQuery(key)}`} />
+      <TopBar title="Training Log" href={`/admin${keyQuery(key)}`} />
 
-      <div className="max-w-3xl mx-auto px-4 py-5">
-        {/* Teams, by their full names: they scroll sideways if there are many */}
-        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-          {TEAMS.map((t) => (
-            <button
-              key={t.slug}
-              onClick={() => setTeam(t.slug)}
-              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold ${
-                team === t.slug
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                  : "bg-white text-gray-700 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-200"
-              }`}
-            >
-              {t.accent} {t.name}
-            </button>
-          ))}
-        </div>
+      <div className="mx-auto max-w-2xl px-4 py-4">
+        <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <ToolTabs label="Training views" tabs={[{ id: "upcoming", label: "Upcoming" }, { id: "history", label: "History", count: toAward.length }, { id: "leaders", label: "Best Trainers" }]} value={view} onChange={open} panelId="training-panel" />
+        <div id="training-panel" role="tabpanel" aria-label={view === "leaders" ? "Best Trainers" : view === "history" ? "History" : "Upcoming"}>
 
         {error && (
           <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>
         )}
 
+        <div hidden={view !== "upcoming"}>
         {/* Today's or the next session first: what coaches open it for */}
         {focus && plan && focusWeek !== undefined ? (
           <PlanWeekCard
@@ -533,9 +523,10 @@ export default function TrainingLog() {
         {todo.length > 0 && (
           <p className="mb-4 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">{todo}</p>
         )}
+        </div>
 
         {/* Sessions still to award, oldest last */}
-        {toAward.length > 0 && (
+        {view === "history" && toAward.length > 0 && (
           <section className="mb-6">
             <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
               To Award <span className="font-semibold text-amber-600 dark:text-amber-400">{toAward.length}</span>
@@ -546,7 +537,7 @@ export default function TrainingLog() {
         )}
 
         {/* Every session so far, by month, folded up */}
-        {done.length > 0 && (
+        {view === "history" && done.length > 0 && (
           <section className="mb-6">
             <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Sessions So Far</h2>
             <div className="flex flex-col gap-2">
@@ -578,7 +569,7 @@ export default function TrainingLog() {
         )}
 
         {/* The season's best trainers, once there are some */}
-        {leaders.length > 0 && (
+        {view === "leaders" && leaders.length > 0 && (
           <section className="mb-6">
             <h2 className="mb-2 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">Best Trainers</h2>
             <ol className={rows}>
@@ -596,7 +587,7 @@ export default function TrainingLog() {
         )}
 
         {/* The rest of the season */}
-        {ahead.length > 0 && (
+        {view === "upcoming" && ahead.length > 0 && (
           <section>
             <button
               onClick={() => setShowAhead((v) => !v)}
@@ -633,6 +624,9 @@ export default function TrainingLog() {
             )}
           </section>
         )}
+        {view === "history" && !done.length && !toAward.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No past sessions yet.</p>}
+        {view === "leaders" && !leaders.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No best trainer awards yet.</p>}
+        </div>
       </div>
     </main>
   );

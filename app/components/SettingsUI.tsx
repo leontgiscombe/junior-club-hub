@@ -5,7 +5,7 @@
 // detail, arrow), and each row opening its own screen. Your Account, Club
 // Settings and Financial Admin's settings all use it.
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { backOr } from "@/lib/back";
 
 /**
@@ -38,6 +38,28 @@ export function useScreens(base: string) {
 }
 
 export const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+export function ToolTabs({ label, tabs, value, onChange, panelId }: {
+  label: string;
+  tabs: { id: string; label: string; count?: number }[];
+  value: string;
+  onChange: (value: string) => void;
+  panelId?: string;
+}) {
+  const id = useId();
+  return <div role="tablist" aria-label={label} className="mb-5 flex border-b border-gray-200 dark:border-white/15">
+    {tabs.map((tab, index) => <button key={tab.id} id={`${id}-${tab.id}`} type="button" role="tab" aria-label={tab.count ? `${tab.label} (${tab.count})` : tab.label} aria-selected={value === tab.id} aria-controls={panelId} tabIndex={value === tab.id ? 0 : -1} onClick={() => onChange(tab.id)} onKeyDown={(event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+      onChange(tabs[next].id);
+      document.getElementById(`${id}-${tabs[next].id}`)?.focus();
+    }} className={`min-h-12 min-w-0 flex-1 border-b-2 px-2 py-3 text-sm font-semibold ${value === tab.id ? "border-green-700 text-green-700 dark:border-green-400 dark:text-green-400" : "border-transparent text-gray-500 dark:text-gray-400"}`}>
+      {tab.label}{!!tab.count && <span className="ml-1.5 text-xs tabular-nums">{tab.count}</span>}
+    </button>)}
+  </div>;
+}
+
 const svg = (children: React.ReactNode) => (
   <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true" {...stroke}>
     {children}

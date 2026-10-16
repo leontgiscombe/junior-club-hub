@@ -21,7 +21,7 @@ import {
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar } from "./SettingsUI";
 import { useScrollLock } from "./useScrollLock";
 
 type View = "plan" | "library";
@@ -1489,49 +1489,13 @@ export default function TrainingPlans() {
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-24">
       <TopBar title="Training Plans" href={`/admin${keyQuery(key)}`} />
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Plan / library switch */}
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
-          {(
-            [
-              ["plan", "Team Plans"],
-              ["library", `Drill Library (${drills.length})`],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => {
-                setView(v);
-                setSheet(null);
-              }}
-              className={`min-w-0 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
-                view === v
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
-                  : "text-gray-600 dark:text-gray-300"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <ToolTabs label="Training plan views" tabs={[{ id: "plan", label: "Team Plans" }, { id: "library", label: "Drill Library", count: drills.length }]} value={view} onChange={(next) => { setView(next as View); setSheet(null); }} />
 
         {/* Team tabs — plans only; the library is shared */}
         {view === "plan" && (
-          <div className="mb-5 flex gap-1 rounded-full bg-gray-200/80 p-1 dark:bg-white/10">
-            {TEAMS.map((t) => (
-              <button
-                key={t.slug}
-                onClick={() => switchTeam(t.slug)}
-                className={`min-w-0 flex-1 cursor-pointer truncate rounded-full px-3 py-2 text-sm font-semibold ${
-                  team === t.slug
-                    ? "bg-white text-gray-900 shadow-sm dark:bg-[#3a3a3c] dark:text-gray-50"
-                    : "text-gray-600 dark:text-gray-300"
-                }`}
-              >
-                {t.accent} {t.name}
-              </button>
-            ))}
-          </div>
+          <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => switchTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
         )}
 
         {error && (

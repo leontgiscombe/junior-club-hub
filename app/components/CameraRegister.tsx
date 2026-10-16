@@ -8,7 +8,7 @@ import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 // Home games come from the match log now, so a fixture is only entered once.
 // This page is the filming view of those same games.
@@ -36,6 +36,8 @@ function formatWhen(date: string, time: string) {
 }
 
 export default function CameraRegister() {
+  const { screen, open, close } = useScreens("/admin/camera");
+  const view = screen === "pending" || screen === "uploaded" ? screen : "upcoming";
   const { TEAMS, teamName, teamAccent } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -128,6 +130,7 @@ export default function CameraRegister() {
       if (!res.ok) throw new Error(data.error ?? "Could not import those fixtures");
       setMatches((prev) => [...prev, ...(data.matches ?? [])]);
       setLegacy(0);
+      close();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not import those fixtures");
     } finally {
@@ -172,18 +175,22 @@ export default function CameraRegister() {
     );
   }
 
-  const shown = matches
+  const filtered = matches
     .filter((m) => m.home)
     .filter((m) => filter === "all" || m.team === filter)
     .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`));
-  const uploadedCount = shown.filter((m) => m.footageUploaded).length;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  const upcoming = filtered.filter((match) => match.date >= today).reverse();
+  const pending = filtered.filter((match) => match.date < today && !match.footageUploaded);
+  const uploaded = filtered.filter((match) => match.footageUploaded);
+  const shown = view === "uploaded" ? uploaded : view === "pending" ? pending : upcoming;
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
-      <TopBar title="Camera Register" href={`/admin${keyQuery(key)}`} />
+      {screen === "import" ? <TopBar title="Import Camera Fixtures" onBack={close} /> : <TopBar title="Camera Register" href={`/admin${keyQuery(key)}`} />}
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {legacy > 0 && (
+      <div className="mx-auto max-w-2xl px-4 py-4">
+        {legacy > 0 && screen === "import" && (
           <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:bg-amber-400/10 dark:border-amber-400/40">
             <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
               {legacy} fixture{legacy === 1 ? "" : "s"} from the old register
@@ -206,31 +213,19 @@ export default function CameraRegister() {
 
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-4">
-          {(["all", ...TEAMS.map((t) => t.slug)] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`flex-1 py-2 px-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer ${
-                filter === f
-                  ? "bg-green-600 border-green-600 text-white shadow"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
-              }`}
-            >
-              {f === "all" ? "All" : `${teamAccent(f)} ${teamName(f)}`}
-            </button>
-          ))}
-        </div>
+        <div hidden={screen === "import"}>
+        <label className="mb-4 block"><span className="sr-only">Team</span><select value={filter} onChange={(event) => setFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <ToolTabs label="Camera views" tabs={[{ id: "upcoming", label: "Upcoming", count: upcoming.length }, { id: "pending", label: "To Upload", count: pending.length }, { id: "uploaded", label: "Uploaded", count: uploaded.length }]} value={view} onChange={open} panelId="camera-panel" />
+        <div id="camera-panel" role="tabpanel" aria-label={view}>
 
         <p className="text-xs text-gray-500 mb-3 dark:text-gray-400">
-          {shown.length} home game{shown.length === 1 ? "" : "s"} · {uploadedCount} uploaded
+          {shown.length} home game{shown.length === 1 ? "" : "s"}
         </p>
 
         {shown.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">🎬</p>
-            <p>No home games yet.</p>
+            <p>{view === "pending" ? "No uploads waiting." : view === "uploaded" ? "No uploaded footage yet." : "No upcoming home games."}</p>
             <Link
               href={`/admin/stats/matches${keyQuery(key)}`}
               className="mt-2 inline-block text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
@@ -249,7 +244,7 @@ export default function CameraRegister() {
                     : "bg-white border-gray-100 dark:bg-[#1c1c1e] dark:border-white/10"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <label
                     className="flex items-center cursor-pointer shrink-0"
                     title="Uploaded to Cloud"
@@ -269,7 +264,7 @@ export default function CameraRegister() {
                     />
                   </label>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 truncate dark:text-gray-50">
+                    <p className="break-words font-bold text-gray-900 dark:text-gray-50">
                       {teamAccent(m.team)} {teamName(m.team)}{" "}
                       <span className="text-gray-400 font-normal">vs</span> {m.opponent}
                     </p>
@@ -298,7 +293,7 @@ export default function CameraRegister() {
                       })
                     }
                     disabled={busyId === m.id}
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
+                    className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
                     aria-label={`Who has the camera for ${m.opponent}`}
                   >
                     <option value="">— Not set —</option>
@@ -313,6 +308,9 @@ export default function CameraRegister() {
             ))}
           </div>
         )}
+        </div>
+        {legacy > 0 && <button onClick={() => open("import")} className="mt-5 min-h-11 text-sm font-semibold text-amber-800 dark:text-amber-300">Import old fixtures ({legacy})</button>}
+        </div>
       </div>
     </main>
   );

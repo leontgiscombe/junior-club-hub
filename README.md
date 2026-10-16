@@ -36,16 +36,24 @@ Upstash Redis database, set up for a club from one settings file.
   is created, and remain fixed with its team and season. Voting cannot reopen
   for past seasons. Removing an award permanently removes its ballots too.
 - **Coach Admin** (`/admin`, behind the coach password):
-  - **Match Log**: fixtures (synced from FA Full-Time if set up), scores,
-    scorers and assists, awards and who played.
-  - **Training Log**: each Monday's session and its best trainer.
-  - **Player of the Month**: worked out from the awards, with a poster to share.
+  - **Match Log**: separate Fixtures, Results and Record views, with game details
+    and fixture creation on their own screens.
+  - **Training Log**: Upcoming, History and Best Trainers views for each team's
+    sessions, plans and training awards.
+  - **Player of the Month**: separate Standings and Poster views, preserving local
+    photo/word edits and poster sharing.
   - **Training Plans**: each team's weeks of sessions from a shared drill
     library.
   - **Stats Tracker**: separate Team, Players and Awards views, searchable player
     details with locked correction controls, and a separate Season Management
     screen for CSV export, presentations, archiving and restoring past seasons.
-  - **Camera Register**, **Kit Responses** and **Help** (the user manual).
+  - **Camera Register**: Upcoming, To Upload and Uploaded queues, with legacy import
+    on its own screen.
+  - **Kit Responses**: Sizes, Requests and Waiting views, retaining CSV exports.
+  - **Members**: searchable team directory, Approvals and Access views.
+  - **Season Awards**: award setup, private results and parent visibility controls
+    on separate views, with one award opened at a time.
+  - **Help**: a searchable topic index opening one article at a time.
 - **Financial Admin** (`/finance`): each team's subs, payments, parent contacts
   and spending, encrypted in the browser with the team's own password, plus
   monthly reminder notifications.

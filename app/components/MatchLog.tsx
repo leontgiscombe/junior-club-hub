@@ -10,7 +10,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 interface Player {
   id: string;
@@ -121,6 +121,9 @@ function formatDate(date: string) {
 }
 
 export default function MatchLog() {
+  const { screen, open, close } = useScreens("/admin/stats/matches");
+  const selectedId = screen.startsWith("match-") ? screen.slice(6) : "";
+  const view = screen === "results" || screen === "record" ? screen : "fixtures";
   const { TEAMS, teamName, findTeam } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -148,8 +151,6 @@ export default function MatchLog() {
   // the fixture being edited, and the details being typed into it
   const [editingId, setEditingId] = useState<string | null>(null);
   // each game folds to one line; a game still to score, and the next one, open by themselves
-  const [openGames, setOpenGames] = useState<Record<string, boolean>>({});
-  const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState<Fixture>({
     opponent: "",
     date: "",
@@ -237,6 +238,7 @@ export default function MatchLog() {
       setMatches((prev) => [...prev, data.match]);
       setOpponent("");
       setDate("");
+      open(`match-${data.match.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add the match");
     } finally {
@@ -431,38 +433,22 @@ export default function MatchLog() {
     .slice(0, 6);
 
   // a game folded to its one line unless tapped open; one still to score, and the next game, start open
-  const nextId = upcoming[0]?.id;
-  const gameOpen = (m: Match) => openGames[m.id] ?? ((isPlayed(m) && !m.resultLogged) || m.id === nextId);
+  const gameOpen = (match: Match) => match.id === selectedId;
+  const visibleGames = selectedId ? shown.filter((match) => match.id === selectedId) : view === "results" ? results : upcoming;
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
-      <TopBar title="Match Log" href={`/admin/stats${keyQuery(key)}`} />
+      {selectedId || screen === "add" ? <TopBar title={screen === "add" ? "Add Game" : shown.find((match) => match.id === selectedId)?.opponent || "Match Details"} onBack={() => { setEditingId(null); close(); }} /> : <TopBar title="Match Log" href={`/admin${keyQuery(key)}`} />}
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Team tabs */}
-        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-          {TEAMS.map((t) => (
-            <button
-              key={t.slug}
-              onClick={() => {
-                // Each team has its own league list, so start the opponent fresh.
-                setTeam(t.slug);
-                setOpponent("");
-              }}
-              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold ${
-                team === t.slug
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                  : "bg-white text-gray-700 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-200"
-              }`}
-            >
-              {t.accent} {t.name}
-            </button>
-          ))}
-        </div>
+        {!selectedId && screen !== "add" && <><label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => { setTeam(event.target.value); setOpponent(""); setEditingId(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label><ToolTabs label="Match views" tabs={[{ id: "fixtures", label: "Fixtures", count: upcoming.length }, { id: "results", label: "Results", count: results.length }, { id: "record", label: "Record" }]} value={view} onChange={open} panelId="matches-panel" /></>}
+        {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}</p>}
+        <div id="matches-panel" role={selectedId || screen === "add" ? undefined : "tabpanel"} aria-label={view}>
 
         {/* Our record so far — shown as soon as the team has any games, so the
             table is findable before the first result is in */}
-        {shown.length > 0 && (
+        {view === "record" && shown.length > 0 && (
           <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">League Record</p>
@@ -538,13 +524,14 @@ export default function MatchLog() {
           </div>
         )}
 
+        <div hidden={view !== "fixtures" || !!selectedId}>
         {/* Fixtures kept in step with FA Full-Time, for teams with a snippet */}
         <FaSync<Match> team={team} adminKey={key} onMatches={setMatches} />
 
         {/* Add match: folded behind a button once the team has games */}
-        {!(showAdd || shown.length === 0) ? (
+        {screen !== "add" ? (
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => open("add")}
             className="mb-4 w-full cursor-pointer rounded-2xl bg-white px-4 py-3 text-left text-sm font-bold text-green-700 shadow-sm dark:bg-[#1c1c1e] dark:text-green-400"
           >
             + Add a Game
@@ -557,7 +544,7 @@ export default function MatchLog() {
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">Add a Game for {teamName(team)}</p>
             {shown.length > 0 && (
-              <button type="button" onClick={() => setShowAdd(false)} className="shrink-0 cursor-pointer text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <button type="button" onClick={close} className="shrink-0 cursor-pointer text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Cancel
               </button>
             )}
@@ -635,8 +622,9 @@ export default function MatchLog() {
           {error && <p className="text-sm text-red-600 mt-3 dark:text-red-400">{error}</p>}
         </form>
         )}
+        </div>
 
-
+        <div hidden={view === "record" || screen === "add"}>
         {squad.length === 0 && (
           <p className="mb-3 px-1 text-xs">
             <Link href={`/admin/members${keyQuery(key)}`} className="font-semibold text-amber-800 underline dark:text-amber-300">
@@ -646,24 +634,14 @@ export default function MatchLog() {
           </p>
         )}
 
-        {shown.length === 0 ? (
+        {visibleGames.length === 0 ? (
           <p className="rounded-3xl bg-white p-6 text-center text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
-            No games yet — add this season&apos;s fixtures above.
+            {selectedId ? "This match is no longer available." : view === "results" ? "No results yet." : "No upcoming fixtures."}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {[...upcoming, ...results].map((m, i) => (
+            {visibleGames.map((m) => (
               <Fragment key={m.id}>
-                {i === 0 && upcoming.length > 0 && (
-                  <h2 className="px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
-                    Upcoming <span className="font-semibold text-gray-400">{upcoming.length}</span>
-                  </h2>
-                )}
-                {i === upcoming.length && results.length > 0 && (
-                  <h2 className="mt-3 px-1 text-xl font-bold text-gray-900 dark:text-gray-50">
-                    Results <span className="font-semibold text-gray-400">{results.length}</span>
-                  </h2>
-                )}
                 <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
                 {editingId === m.id ? (
                   /* Fixtures move — this changes the details without touching
@@ -771,7 +749,7 @@ export default function MatchLog() {
                   <GameBadge match={m} played={isPlayed(m)} />
                   <button
                     type="button"
-                    onClick={() => setOpenGames((o) => ({ ...o, [m.id]: !gameOpen(m) }))}
+                    onClick={() => { if (!selectedId) open(`match-${m.id}`); }}
                     aria-expanded={gameOpen(m)}
                     className="min-w-0 flex-1 cursor-pointer text-left"
                   >
@@ -791,7 +769,7 @@ export default function MatchLog() {
                   </button>
                   <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${gameOpen(m) ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
                   <button
-                    onClick={() => startEdit(m)}
+                    onClick={() => { startEdit(m); if (!selectedId) open(`match-${m.id}`); }}
                     disabled={busyId === m.id}
                     className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-green-700 dark:hover:bg-white/10"
                     title="Change the opponent, date, kick-off or venue"
@@ -1112,9 +1090,10 @@ export default function MatchLog() {
             ))}
           </div>
         )}
+        </div>
 
         {/* Who sets up whom */}
-        {topPairs.length > 0 && (
+        {view === "record" && topPairs.length > 0 && (
           <div className="mt-6 mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
             <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Assist Combinations</p>
             <div className="flex flex-col gap-2">
@@ -1136,8 +1115,8 @@ export default function MatchLog() {
             </div>
           </div>
         )}
-
-
+        {view === "record" && !shown.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No matches recorded yet.</p>}
+        </div>
       </div>
     </main>
   );
