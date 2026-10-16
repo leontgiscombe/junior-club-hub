@@ -1,4 +1,4 @@
-// The home screen's wallpaper (Your Account → Appearance), chosen per phone
+// The app's wallpaper (Your Account → Appearance), chosen per phone
 // and kept on it (localStorage): none, the club's colours, its paint-stroke
 // artwork, a pitch, or a photo of your own (made small first). Browser only.
 
@@ -14,7 +14,7 @@ export const WALLPAPERS: { kind: WallpaperKind; label: string }[] = [
 ];
 
 const KEY = "hub_wallpaper";
-/** Tells the home page to redraw when the choice changes on this phone. */
+/** Tells the app to redraw when the choice changes on this phone. */
 export const WALLPAPER_EVENT = "hub-wallpaper";
 
 export function loadWallpaper(): Wallpaper {

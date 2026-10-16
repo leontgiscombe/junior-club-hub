@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import KitForm from "../../components/KitForm";
 import KitHeader, { KitFooter } from "../../components/KitHeader";
-import HomeWallpaper from "../../components/HomeWallpaper";
 import { kitSquad } from "@/lib/kitSquad";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import { findTeam } from "@/lib/teams";
@@ -22,7 +21,6 @@ export default async function KitTeamPage({
 
   return (
     <div className="themed wp-page relative isolate flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
-      <HomeWallpaper />
       <KitHeader
         back={{ href: "/kit", label: "Teams" }}
         title={`${found.name} Kit`}

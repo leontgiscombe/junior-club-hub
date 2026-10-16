@@ -1,0 +1,32 @@
+body {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+}
+#app-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+#app-wallpaper > div {
+  position: absolute;
+  inset: 0;
+}
+.hub-wallpaper-shade {
+  background: linear-gradient(to bottom, rgb(0 0 0 / 55%), rgb(0 0 0 / 25%), rgb(0 0 0 / 45%));
+}
+@media screen {
+  html[data-wallpaper] :is(#app-home, #app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
+    background: rgb(242 242 247 / 88%) !important;
+  }
+  html.dark[data-wallpaper] :is(#app-home, #app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
+    background: rgb(0 0 0 / 65%) !important;
+  }
+  html[data-wallpaper] #screen-result {
+    background: rgb(0 0 0 / 65%) !important;
+  }
+}
+@media print {
+  #app-wallpaper { display: none !important; }
+}

@@ -22,7 +22,6 @@ import { getTenant } from "@/lib/tenant";
 import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
 import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
-import HomeWallpaper from "./components/HomeWallpaper";
 import AppHeader from "./components/AppHeader";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
 import HomeWidgets from "./components/HomeWidgets";
@@ -183,8 +182,6 @@ export default async function Home() {
 
   return (
     <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
-      {/* the wallpaper chosen on this phone, if any (Your Account → Appearance) */}
-      <HomeWallpaper />
       {/* a fresh copy whenever Home is come back to (e.g. after adding your mobile number) */}
       <RefreshOnReturn />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">

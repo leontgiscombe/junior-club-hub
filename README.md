@@ -7,6 +7,9 @@ Upstash Redis database, set up for a club from one settings file.
 
 - **Home** (`/`): the club's banner, crest and teams, with a card for each
   part of the hub.
+- **Appearance** (Your Account): the saved wallpaper follows every page,
+  including Coach Admin tools, Finances and the Training Hub. Cards and forms
+  keep readable backgrounds; printing and exported posters keep their own styles.
 - **Player Training Hub** (`/training-hub`): the players' own app, with a
   tactical guide and pitch diagrams, a three-level quiz, weekly skill
   challenges and position guides. It's one page, `public/training-hub/index.html`;

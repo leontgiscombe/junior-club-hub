@@ -5,6 +5,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import "./globals.css";
+import HomeWallpaper from "./components/HomeWallpaper";
 
 export default function GlobalError({
   error,
@@ -19,9 +20,10 @@ export default function GlobalError({
 
   return (
     <html lang="en" className="h-full">
-      <body className="flex min-h-full items-center justify-center bg-gray-50 p-6 text-center font-sans antialiased">
+      <body className="relative isolate flex min-h-full items-center justify-center bg-gray-50 p-6 text-center font-sans antialiased">
+        <HomeWallpaper />
         <title>Something went wrong</title>
-        <div className="max-w-sm">
+        <div className="max-w-sm rounded-lg bg-gray-50 p-6">
           <div className="text-5xl">⚽</div>
           <h1 className="mt-3 text-2xl font-extrabold text-gray-900">Something went wrong</h1>
           <p className="mt-2 text-gray-500">Sorry — that page hit a problem. We&apos;ve been told about it.</p>
