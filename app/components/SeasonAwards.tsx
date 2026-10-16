@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { SeasonAward, SeasonAwardsData, SeasonAwardView } from "@/lib/seasonAwards";
 import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, TopBar } from "./SettingsUI";
-import HomeWallpaper from "./HomeWallpaper";
 
 const panel = "rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
 const field = "mt-1 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base dark:border-white/20 dark:bg-[#1c1c1e]";
@@ -100,7 +99,6 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
   const awards = data?.awards.filter((award) => award.team === team && award.season === season) ?? [];
   return (
     <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
-      <HomeWallpaper />
       <TopBar title="End of Season Awards" href={admin ? "/admin" : "/"} />
       <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-5">
         {loading && <p className="wp-text" role="status">Loading awards...</p>}

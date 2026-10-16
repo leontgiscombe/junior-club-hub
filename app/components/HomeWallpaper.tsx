@@ -1,6 +1,6 @@
 "use client";
 
-// The home screen's wallpaper (lib/wallpaper.ts): a picture fixed behind the
+// The app's wallpaper (lib/wallpaper.ts): a picture fixed behind the
 // page, with a soft shade over it so the cards and headings stay readable.
 // While one is showing, <html data-wallpaper> turns the headings that sit on
 // it white (globals.css: .wp-text).
@@ -18,7 +18,7 @@ export function wallpaperStyle(w: Wallpaper): React.CSSProperties | null {
     case "brush":
       return {
         background: "var(--club-night, #060906) url(/poster/brush-background.jpg) center top / cover no-repeat",
-        filter: "var(--club-brush-filter)",
+        filter: "var(--club-brush-filter, none)",
       };
     case "pitch":
       return {
@@ -26,7 +26,7 @@ export function wallpaperStyle(w: Wallpaper): React.CSSProperties | null {
           "repeating-linear-gradient(180deg, #2f9a4c 0 56px, #23803c 56px 112px)",
       };
     case "photo":
-      return w.photo ? { background: `#000 url(${w.photo}) center / cover no-repeat` } : null;
+      return typeof w.photo === "string" && w.photo ? { background: `#000 url(${JSON.stringify(w.photo)}) center / cover no-repeat` } : null;
     default:
       return null;
   }
@@ -39,9 +39,11 @@ export default function HomeWallpaper() {
     read();
     window.addEventListener(WALLPAPER_EVENT, read);
     window.addEventListener("storage", read);
+    window.addEventListener("pageshow", read);
     return () => {
       window.removeEventListener(WALLPAPER_EVENT, read);
       window.removeEventListener("storage", read);
+      window.removeEventListener("pageshow", read);
     };
   }, []);
   const style = wallpaperStyle(wall);
@@ -55,7 +57,7 @@ export default function HomeWallpaper() {
   }, [style, wall.kind]);
   if (!style) return null;
   return (
-    <div aria-hidden="true" className="no-dark pointer-events-none fixed inset-0 -z-10">
+    <div id="app-wallpaper" aria-hidden="true" className="no-dark pointer-events-none fixed inset-0 -z-10 print:hidden">
       <div className="absolute inset-0 animate-[wp-in_400ms_ease-out]" style={style} />
       {/* a shade, darker at the top where the headings are */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/45" />

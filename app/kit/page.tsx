@@ -3,7 +3,6 @@ import Image from "next/image";
 import { kitAspect } from "@/lib/clubSettings";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import KitHeader, { KitFooter } from "../components/KitHeader";
-import HomeWallpaper from "../components/HomeWallpaper";
 import { canCoach, currentPerson } from "@/lib/people";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { getSubmissions } from "@/lib/storage";
@@ -50,7 +49,6 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
   }
   return (
     <div className="themed wp-page relative isolate flex min-h-screen flex-col bg-[#f2f2f7] dark:bg-black dark:text-gray-50">
-      <HomeWallpaper />
       <KitHeader title="Kit Sizes" subtitle={CLUB.fullName} />
 
       <main className="relative mx-auto mt-3 w-full max-w-md flex-1 px-4">

@@ -13,6 +13,7 @@ import { DARK_BAR, LIGHT_BAR, THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
 import TabBar from "./components/TabBar";
 import BackTracker from "./components/BackTracker";
 import NotificationNav from "./components/NotificationNav";
+import HomeWallpaper from "./components/HomeWallpaper";
 
 // Every page reads the club's saved settings, so none is built ahead of time.
 export const dynamic = "force-dynamic";
@@ -64,8 +65,9 @@ export default async function RootLayout({
   if (tenant && !(await tenantExists(tenant))) {
     return (
       <html lang="en" className="h-full">
-        <body className="flex min-h-full items-center justify-center bg-gray-50 p-6 text-center font-sans antialiased">
-          <div>
+        <body className="relative isolate flex min-h-full items-center justify-center bg-gray-50 p-6 text-center font-sans antialiased">
+          <HomeWallpaper />
+          <div className="max-w-sm rounded-lg bg-gray-50 p-6">
             <h1 className="text-2xl font-extrabold text-gray-900">There&apos;s no club here</h1>
             <p className="mt-2 text-gray-500">
               Check the address, or find your club on {PLATFORM_NAME}.
@@ -103,7 +105,8 @@ export default async function RootLayout({
         <meta name="theme-color" content={(await cookies()).get(THEME_COOKIE)?.value === "dark" ? DARK_BAR : LIGHT_BAR} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="min-h-full bg-gray-50 font-sans antialiased">
+      <body className="relative isolate min-h-full bg-gray-50 font-sans antialiased">
+        <HomeWallpaper />
         <ClubProvider club={club} teams={teams}>
           {children}
           {/* the app's tab bar — a club's hub only (not the platform's own site), and not for someone a private club hasn't let in yet */}

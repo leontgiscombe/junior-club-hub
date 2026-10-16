@@ -12,7 +12,6 @@ import { SESSION_KEY } from "@/lib/access";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import AppHeader, { type HeaderViewer } from "./AppHeader";
-import HomeWallpaper from "./HomeWallpaper";
 import { useClub } from "./ClubProvider";
 import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
@@ -227,8 +226,8 @@ export default function AdminHome({
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
-        <BrushBackdrop />
+      <main className="themed wp-page relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
+        <div className="wp-decoration absolute inset-0"><BrushBackdrop /></div>
         <div className="relative w-full max-w-sm">
           <div className="mb-6 text-center text-white">
             <Image
@@ -318,8 +317,6 @@ export default function AdminHome({
   // laid out like an app: a large title, then the tools as a grid of icons
   return (
     <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
-      {/* the wallpaper chosen on this phone, as on Home (Your Account → Appearance) */}
-      <HomeWallpaper />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         {/* header: your photo (Your Account), Search, the club's crest — as on Home */}
         <AppHeader viewer={viewer} crest={CLUB.crest} />
