@@ -26,6 +26,7 @@ const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
   "/admin/stats/matches": { colour: "bg-green-700", icon: <><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></> },
   "/admin/stats/training": { colour: "bg-cyan-700", icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
   "/admin/stats/player-of-the-month": { colour: "bg-amber-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
+  "/admin/awards": { colour: "bg-rose-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
   "/admin/training/plans": { colour: "bg-blue-700", icon: <><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></> },
   "/admin/stats": { colour: "bg-indigo-600", icon: <path d="M5 20V10M12 20V4M19 20v-7" /> },
   "/admin/camera": { colour: "bg-rose-700", icon: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></> },
@@ -85,6 +86,13 @@ const TOOLS: {
     title: "Player of the Month",
     feature: "playerOfMonth",
     body: "Each month's winner from the awards, with a poster to share.",
+  },
+  {
+    path: "/admin/awards",
+    icon: "Awards",
+    title: "End of Season Awards",
+    short: "Awards",
+    body: "Parents' ranked votes, award categories and results by team.",
   },
   {
     path: "/admin/training/plans",

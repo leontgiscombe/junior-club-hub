@@ -33,6 +33,7 @@ export const PAGES: PageEntry[] = [
 
   // anyone signed in: Your Account's screens
   { title: "Your Account", where: "Account", href: "/account", words: "profile me settings", who: "signedIn" },
+  { title: "End of Season Awards", where: "Parents", href: "/awards", words: "awards vote voting ballot first second third player season", who: "signedIn" },
   { title: "Your Details", where: "Your Account", href: "/account#details", words: "name email change", who: "signedIn" },
   { title: "Profile Photo", where: "Your Account", href: "/account", words: "picture avatar photo", who: "signedIn" },
   { title: "Your Children", where: "Your Account", href: "/account#here", words: "child children kids add son daughter medical photo", who: "signedIn" },
@@ -49,6 +50,7 @@ export const PAGES: PageEntry[] = [
 
   // coaches
   { title: "Coach Admin", where: "Page", href: "/admin", words: "coach tools admin", who: "coach" },
+  { title: "Manage Season Awards", where: "Coach Admin", href: "/admin/awards", words: "awards parents voting ballot results percentages categories", who: "coach" },
   { title: "Match Log", where: "Coach Admin", href: "/admin/stats/matches", words: "matches fixtures games goals scorers assists result score add match", who: "coach" },
   { title: "Training Log", where: "Coach Admin", href: "/admin/stats/training", words: "training sessions best trainer cancel no training", who: "coach" },
   { title: "Stats Tracker", where: "Coach Admin", href: "/admin/stats", words: "stats goals assists appearances saves totals csv", who: "coach" },
