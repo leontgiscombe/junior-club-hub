@@ -248,6 +248,7 @@ export default function KitForm({ team, squad, extras = [], fixedChild, initial,
           shortsSize,
           socksSize,
           ...(extras.length ? { extras: extraSizes } : {}),
+          ...(initial ? { replaces: initial.id } : {}),
         }),
       });
       const data = await res.json();
