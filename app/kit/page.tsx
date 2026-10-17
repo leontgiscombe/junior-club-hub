@@ -31,10 +31,8 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
     tenant ? currentPerson(tenant).catch(() => null) : null,
     searchParams,
   ]);
-  // a signed-in parent (or player) sees just their own children's teams — the app knows them;
-  // coaches, and anyone signed out, see every team (and a parent can still ask for them all)
   const person = me?.person?.status === "approved" ? me.person : null;
-  if (person && !all) return <ParentKit />;
+  if (person) return <ParentKit />;
   const mine = person && !canCoach(person) ? teamsOf(person) : [];
   const ownOnly = mine.length > 0 && !all;
   const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
