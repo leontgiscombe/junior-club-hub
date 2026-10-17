@@ -21,8 +21,14 @@ Upstash Redis database, set up for a club from one settings file.
   club-assigned teams; leaving an unsaved child screen discards its draft.
   Existing photos, medical/device controls, notifications, passkeys, email
   changes, sign-out and account deletion keep their original handlers.
-- **Kit Sizes** (`/kit`): parents pick their child from the squad and send
-  shirt, shorts and socks sizes; coaches see who's still to send.
+- **Your Kit** (`/kit`): approved accounts get a full-width kit banner and Sizes,
+  Requests and History views. Child sizing and basket requests open separately;
+  history contains only their family's submissions and their own completed
+  requests. Player IDs take precedence over names, with legacy name matching
+  only when unambiguous. Guests and `?all=1` retain the team picker; existing
+  `/kit/<team>` forms remain available. `/kit/request` forwards approved families
+  to the dashboard's request form. Existing extras, guidance, basket limits and
+  server-side withdrawal rules are preserved.
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
 - **End of Season Awards** (`/awards`): approved parents vote for their children's

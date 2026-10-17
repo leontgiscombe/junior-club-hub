@@ -9,6 +9,7 @@ import { getTenant } from "@/lib/tenant";
 import { currentPerson } from "@/lib/people";
 import { itemsFor } from "@/lib/kitItems";
 import { kitFamily, listKitRequests } from "@/lib/kitRequests";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Request Kit" };
@@ -26,6 +27,7 @@ export default async function KitRequestPage() {
     ? kitFamily(person).map((c) => ({ ...c, teamName: TEAMS.find((t) => t.slug === c.team)?.name ?? "" }))
     : [];
   const mine = person ? (await listKitRequests()).filter((r) => r.userId === person.userId) : [];
+  if (person && family.length) redirect("/kit#new-request");
 
   const panel = "rounded-3xl bg-white p-5 shadow-sm dark:bg-[#1c1c1e]";
   return (

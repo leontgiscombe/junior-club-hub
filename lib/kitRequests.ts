@@ -71,6 +71,6 @@ export async function deleteKitRequest(id: string, userId?: string): Promise<boo
 /** Who a signed-in person can ask for kit for: their children with a team, or themselves (a player). */
 export function kitFamily(person: Person): { id: string; name: string; team: string }[] {
   const kids = childrenOf(person);
-  if (kids.length) return kids.flatMap((k) => (k.team ? [{ id: k.id, name: k.name, team: k.team.slug }] : []));
+  if (kids.length) return kids.flatMap((k) => (!k.pending && k.team ? [{ id: k.id, name: k.name, team: k.team.slug }] : []));
   return person.team ? [{ id: "me", name: person.name, team: person.team.slug }] : [];
 }
