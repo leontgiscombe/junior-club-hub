@@ -6,7 +6,7 @@
 // children or team, passkeys, a club admin's or coach's join request alerts,
 // signing out, and deleting the account (which also takes you out of every club).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
+import { MAX_CHILDREN, ROLES, type Child, type MemberStatus, type Relation, type Role } from "@/lib/access";
 import ChildrenEditor, { toDrafts, type ChildDraft } from "../components/ChildrenEditor";
 import NameFields from "../components/NameFields";
 import EmailChange from "./EmailChange";
@@ -15,7 +15,7 @@ import { ChildAvatar } from "./ChildPhotos";
 import ProfilePhoto from "./ProfilePhoto";
 import AppearancePicker, { themeLabel } from "./AppearancePicker";
 import TabBarPicker from "./TabBarPicker";
-import { Group, ICONS, Row, TopBar, useScreens } from "../components/SettingsUI";
+import { Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "../components/SettingsUI";
 import { canGoBack } from "@/lib/back";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
 
@@ -119,14 +119,15 @@ export default function AccountPage() {
     });
   }, [loadHere]);
 
-  async function saveHere(part: "kids" | "team") {
-    if (!here?.person) return;
+  async function saveHere(part: "kids" | "team", nextKids = kids): Promise<boolean> {
+    if (!here?.person || busy) return false;
     setBusy(true);
     setHereMessage(null);
+    try {
     const res = await fetch("/api/me/club", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(part === "kids" ? { children: kids.filter((k) => k.name.trim()) } : { team: myTeam }),
+      body: JSON.stringify(part === "kids" ? { children: nextKids.filter((k) => k.name.trim()) } : { team: myTeam }),
     });
     if (res.ok) {
       const saved = ((await res.json().catch(() => null)) as { person?: Here["person"] } | null)?.person;
@@ -151,10 +152,15 @@ export default function AccountPage() {
             ? "Saved. The club's coaches have been told."
             : "Saved — the club's coaches will see it.",
       );
+      return true;
     } else {
       setHereMessage("That didn't save — try again");
+      return false;
     }
-    setBusy(false);
+    } catch {
+      setHereMessage("Couldn't connect. Your changes have not been saved.");
+      return false;
+    } finally { setBusy(false); }
   }
 
   async function saveName() {
@@ -211,6 +217,30 @@ export default function AccountPage() {
 
   // which screen is open: the main list, or one setting
   const { screen, open, close: closeScreen } = useScreens("/account");
+  const accountView = screen === "preferences" || screen === "security-home" ? screen : "family";
+  useEffect(() => {
+    let previous = window.location.hash.slice(1);
+    const discardChildDraft = () => {
+      const next = window.location.hash.slice(1);
+      if (previous.startsWith("child-") && previous !== next) {
+        try { setKids(JSON.parse(shownKids.current || "[]") as ChildDraft[]); } catch {}
+      }
+      previous = next;
+    };
+    window.addEventListener("hashchange", discardChildDraft);
+    return () => window.removeEventListener("hashchange", discardChildDraft);
+  }, []);
+  const childIndex = kids.findIndex((child, index) => screen === `child-${child.id ?? `draft-${index}`}`);
+  const selectedChild = childIndex >= 0 ? kids[childIndex] : null;
+  const childScreen = screen.startsWith("child-");
+  const leaveDetail = () => {
+    if (busy) return;
+    if (childScreen) {
+      try { setKids(JSON.parse(shownKids.current || "[]") as ChildDraft[]); } catch {}
+      setHereMessage(null);
+    }
+    closeScreen();
+  };
   const leave = useCallback(() => {
     // back where you came from in the hub, or home
     if (canGoBack()) window.history.back();
@@ -223,7 +253,7 @@ export default function AccountPage() {
   // team, on coming back to the app, and every few seconds while a child waits
   // for a coach
   useEffect(() => {
-    if (screen !== "here" && screen !== "team") return;
+    if (screen !== "here" && screen !== "team" && !screen.startsWith("child-")) return;
     const t = window.setTimeout(() => loadHere(), 0);
     return () => window.clearTimeout(t);
   }, [screen, loadHere]);
@@ -252,6 +282,20 @@ export default function AccountPage() {
     .map((w) => w[0]!.toUpperCase())
     .slice(0, 2)
     .join("");
+  function addChild() {
+    setHereMessage(null);
+    const empty = kids.findIndex((child) => !child.name.trim() && !child.id);
+    if (empty >= 0) { open(`child-draft-${empty}`); return; }
+    if (kids.length >= MAX_CHILDREN) return;
+    setKids([...kids, { name: "", team: "" }]);
+    open(`child-draft-${kids.length}`);
+  }
+  const childList = <>
+    <div className="mt-5 flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">Your Children</h2><button disabled={busy || kids.filter((child) => child.name.trim()).length >= MAX_CHILDREN} onClick={addChild} className="min-h-11 px-2 text-sm font-semibold text-green-700 disabled:opacity-40 dark:text-green-400">Add Child</button></div>
+    <Group>{kids.map((child, index) => child.name.trim() ? <Row key={child.id ?? `draft-${index}`} icon={ICONS.child} label={child.name} detail={child.pending ? "Pending approval" : here?.teams.find((team) => team.slug === child.team)?.name ?? "No team yet"} onClick={() => { setHereMessage(null); open(`child-${child.id ?? `draft-${index}`}`); }} /> : null)}</Group>
+    {!kids.some((child) => child.name.trim()) && <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">No children added yet.</p>}
+    {hereMessage && <p role="status" className="mt-3 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
+  </>;
 
   // one setting on its own screen
   const titles: Record<string, string> = {
@@ -264,15 +308,17 @@ export default function AccountPage() {
     appearance: "Appearance",
     tabs: "Tab Bar",
     delete: "Delete Account",
+    ...(childScreen ? { [screen]: selectedChild?.name || "Child Details" } : {}),
   };
   if (screen && titles[screen]) {
     return (
       <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black pb-16">
-        <TopBar title={titles[screen]} onBack={closeScreen} />
+        <TopBar title={titles[screen]} onBack={leaveDetail} />
         <div className="mx-auto max-w-xl px-4">
           {screen === "details" && (
             <Group>
               <div className="p-5">
+                <div className="mb-6 flex justify-center"><ProfilePhoto initials={initials} /></div>
                 <label className="block">
                   <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
                   <NameFields value={name} onChange={setName} label="Your" autoComplete className={input} />
@@ -336,17 +382,23 @@ export default function AccountPage() {
           )}
 
           {screen === "here" && shows.kids && here?.person && (
+            <div className="pb-5">{childList}</div>
+          )}
+
+          {childScreen && shows.kids && here?.person && selectedChild && (
             <Group>
               <div className="p-5">
                 <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                   {`Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`}
                 </p>
+                <fieldset disabled={busy}>
                 <ChildrenEditor
-                  value={kids}
+                  value={[selectedChild]}
                   teams={here.teams}
-                  onChange={setKids}
+                  onChange={(next) => setKids((all) => all.map((child, index) => index === childIndex ? next[0] : child))}
                   clubDecidesTeams
-                  confirmRemove
+                  showAdd={false}
+                  allowRemove={false}
                   // each child's card is headed by their photo, once they're in the squad
                   photo={(c, info) => (
                     <ChildAvatar
@@ -367,13 +419,19 @@ export default function AccountPage() {
                     </ChildAvatar>
                   )}
                 />
-                <button onClick={() => saveHere("kids")} disabled={busy} className="mt-3 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
-                  Save
+                <button onClick={async () => { if (await saveHere("kids") && window.location.hash.slice(1) === screen) closeScreen(); }} disabled={busy || !selectedChild.name.trim()} className="mt-3 flex min-h-11 items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40">
+                  {ICONS.doc}{busy ? "Saving..." : "Save Child"}
                 </button>
-                {hereMessage && <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
+                </fieldset>
+                {selectedChild.id && <button disabled={busy} onClick={async () => {
+                  if (!confirm(`Remove ${selectedChild.name} from your account? They stay in the club's squad and the club's coaches are told.`)) return;
+                  if (await saveHere("kids", kids.filter((_, index) => index !== childIndex)) && window.location.hash.slice(1) === screen) closeScreen();
+                }} className="mt-4 flex min-h-11 items-center gap-2 text-sm font-semibold text-red-700 disabled:opacity-40 dark:text-red-400">{ICONS.bin}Remove Child</button>}
+                {hereMessage && <p role="status" className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}
               </div>
             </Group>
           )}
+          {childScreen && !selectedChild && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">This child is no longer on your account.</p>}
 
           {(screen === "team" || (screen === "here" && !shows.kids)) && here?.person && (
             <Group>
@@ -464,26 +522,33 @@ export default function AccountPage() {
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black pb-16">
       <TopBar title="Your Account" onBack={leave} />
-      <div className="mx-auto max-w-xl px-4">
-        <div className="flex flex-col items-center pb-6 pt-2 text-center">
-          <ProfilePhoto initials={initials} />
-          <h1 className="mt-4 text-3xl font-semibold text-gray-900 dark:text-gray-50">{account.user.name || account.user.email.split("@")[0]}</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{account.user.email}</p>
+      <div className="mx-auto max-w-2xl px-4 py-4">
+        <div className="mb-5 flex items-center gap-4">
+          <ProfilePhoto initials={initials} compact />
+          <div className="min-w-0"><h1 className="break-words text-xl font-bold text-gray-900 dark:text-gray-50">{account.user.name || account.user.email.split("@")[0]}</h1><p className="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">{account.user.email}</p></div>
         </div>
+        <ToolTabs label="Account views" tabs={[{ id: "family", label: "Family" }, { id: "preferences", label: "Preferences" }, { id: "security-home", label: "Security" }]} value={accountView} onChange={open} panelId="account-panel" />
+        <div id="account-panel" role="tabpanel" aria-label={accountView === "security-home" ? "Security" : accountView === "preferences" ? "Preferences" : "Family"}>
 
+        <div hidden={accountView !== "family"}>
         <Group>
           <Row icon={ICONS.person} label="Your Details" onClick={() => open("details")} />
           <Row icon={ICONS.clubs} label="Your Clubs" detail={String(account.clubs.length)} onClick={() => open("clubs")} />
-          {here?.person && <Row icon={ICONS.child} label={titles.here} onClick={() => open("here")} />}
+          {here?.person && !shows.kids && <Row icon={ICONS.child} label={titles.here} onClick={() => open("here")} />}
           {here?.person && shows.kids && shows.team && <Row icon={ICONS.clubs} label="Your Team" onClick={() => open("team")} />}
         </Group>
+        {here?.person && shows.kids && childList}
+        </div>
 
+        <div hidden={accountView !== "security-home"}>
         {passkeys && (
           <Group>
             <Row icon={ICONS.key} label="Sign-In & Security" detail={passkeys.length ? `${passkeys.length} passkey${passkeys.length === 1 ? "" : "s"}` : undefined} onClick={() => open("security")} />
           </Group>
         )}
+        </div>
 
+        <div hidden={accountView !== "preferences"}>
         <Group>
           <Row icon={ICONS.moon} label="Appearance" detail={themeLabel()} onClick={() => open("appearance")} />
           <Row icon={ICONS.grid} label="Tab Bar" onClick={() => open("tabs")} />
@@ -491,7 +556,9 @@ export default function AccountPage() {
             <Row icon={ICONS.bell} label="Notifications" detail={alerts.alerts ? "On" : "Off"} onClick={() => open("alerts")} />
           )}
         </Group>
+        </div>
 
+        <div hidden={accountView !== "security-home"}>
         <Group>
           <Row icon={ICONS.help} label="Help & Feedback" href="/support" />
           <Row icon={ICONS.shield} label="Privacy Policy" href="/privacy" />
@@ -502,6 +569,8 @@ export default function AccountPage() {
           <Row icon={ICONS.out} label="Sign Out" onClick={signOut} />
           <Row icon={ICONS.bin} label="Delete Account" danger onClick={() => open("delete")} />
         </Group>
+        </div>
+        </div>
       </div>
     </main>
   );

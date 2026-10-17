@@ -7,6 +7,7 @@
 <link rel="apple-touch-icon" href="/hub-icon-180.png">
 <meta name="apple-mobile-web-app-title" content="Training">
 <title>Training Hub</title>
+<script src="/training-hub/home-navigation.js" defer></script>
 <link rel="stylesheet" href="/wallpaper.css">
 <script src="/wallpaper.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -373,6 +374,35 @@ html.dark .guide-footer{color:#9ca3af}
 .hs-empty{color:#6b7280;font-size:14px;text-align:center;padding:24px 8px}
 .hs-flash{animation:hsflash 1.6s ease}
 @keyframes hsflash{0%,40%{box-shadow:0 0 0 4px #f9a825}100%{box-shadow:none}}
+.home-hero.home-compact{max-width:576px;width:100%;margin:0 auto;padding:20px 20px 16px;background:none;color:#111827;align-items:stretch;text-align:left}
+.home-compact::before,.home-compact::after,.home-compact .main-badge,.home-compact .motto-row{display:none}
+.home-compact .hub-head{width:100%;margin-bottom:20px}
+.home-compact .home-title{font-family:inherit;font-size:22px;font-weight:800;line-height:1.3;letter-spacing:0;text-transform:none;text-shadow:none;color:#111827;overflow-wrap:anywhere}
+.home-compact .home-title2{font-family:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;color:#6b7280;margin-top:2px}
+.home-compact .home-sub{display:block;border:0;border-radius:0;padding:0;font-size:12px;color:#6b7280;margin-top:3px;letter-spacing:0;text-transform:none}
+.home-body{max-width:576px;margin:0 auto;padding:0 20px 32px;gap:18px}
+.hub-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #e5e7eb}
+.hub-views button{min-height:48px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:700;color:#6b7280;cursor:pointer}
+.hub-views button[aria-selected="true"]{border-bottom-color:var(--color-green-700,#15803d);color:var(--color-green-700,#15803d)}
+.hub-view-title{font-size:18px;font-weight:800;color:#111827;margin:0 0 12px;letter-spacing:0}
+.home-body .app-grid{display:flex;gap:0;width:100%;max-width:none;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / 5%)}
+.home-body .app-btn{min-height:76px;gap:12px;padding:16px;border-radius:0;border-bottom:1px solid #f1f2f4;background:none;color:#111827;box-shadow:none}
+.home-body .app-btn:last-child{border-bottom:0}
+.home-body .app-btn .btn-icon{height:36px;width:36px;flex-shrink:0;border-radius:0;background:none;font-size:24px}
+.home-body .app-btn .btn-text h3{font-family:inherit;font-size:15px;letter-spacing:0}
+.home-body .app-btn .btn-text p{color:#6b7280;font-size:12px;line-height:1.4}
+.home-body .app-btn .btn-ghost{display:none}
+.home-body .app-btn::after{font-size:22px;color:#9ca3af}
+.home-body .progress-card{border-radius:8px;box-shadow:0 1px 3px rgb(0 0 0 / 5%)}
+.home-body .tod-box{margin-top:24px;border:0;border-radius:0;background:none;border-top:1px solid #e5e7eb;padding:16px 0 0}
+.hub-progress-action{min-height:44px;margin-top:16px;padding:10px 16px;border:0;border-radius:8px;background:var(--color-green-700,#15803d);color:white;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+html.dark .home-compact .home-title,html.dark .hub-view-title,html.dark .home-body .app-btn{color:#f5f5f7}
+html.dark .home-compact .home-title2,html.dark .home-compact .home-sub,html.dark .home-body .app-btn .btn-text p{color:#9ca3af}
+html.dark .home-body .app-grid{background:#1c1c1e}
+html.dark .home-body .tod-box{background:none}
+html.dark .home-body .app-btn,html.dark .hub-views,html.dark .home-body .tod-box{border-color:rgb(255 255 255 / 10%)}
+html.dark .hub-views button{color:#9ca3af}
+html.dark .hub-views button[aria-selected="true"]{color:#4ade80;border-bottom-color:#4ade80}
 </style>
 </head>
 <body>
@@ -387,7 +417,7 @@ html.dark .guide-footer{color:#9ca3af}
 
 <!-- ===== APP HOME ===== -->
 <div id="app-home">
-  <div class="home-hero">
+  <div class="home-hero home-compact">
     <!-- like Home's header: your photo (Your Account, or Sign In), Search, the club's crest -->
     <div class="hub-head">
       <a class="hub-me" id="hub-me" href="/signin" aria-label="Sign in">
@@ -409,6 +439,12 @@ html.dark .guide-footer{color:#9ca3af}
     </div>
   </div>
   <div class="home-body">
+    <div class="hub-views" role="tablist" aria-label="Training views">
+      <button id="hub-tab-learn" type="button" role="tab" data-hub-view="learn" aria-controls="hub-learn" aria-selected="true">Learn</button>
+      <button id="hub-tab-practice" type="button" role="tab" data-hub-view="practice" aria-controls="hub-practice" aria-selected="false" tabindex="-1">Practice</button>
+      <button id="hub-tab-progress" type="button" role="tab" data-hub-view="progress" aria-controls="hub-progress" aria-selected="false" tabindex="-1">Progress</button>
+    </div>
+    <div id="hub-progress" role="tabpanel" aria-labelledby="hub-tab-progress" hidden>
     <div class="progress-card">
       <h2>&#x2B50; Your Progress</h2>
       <div class="prog-row"><span>&#x1F3AF; Skill challenges this week</span><b id="home-skills-count">0/0</b></div>
@@ -421,12 +457,29 @@ html.dark .guide-footer{color:#9ca3af}
         <div class="pb-pill exp"><span class="pb-lv">Expert</span><span class="pb-sc" id="home-pb-expert">&ndash;</span></div>
       </div>
     </div>
+    <button type="button" class="hub-progress-action" onclick="setHubHomeView('practice')">Weekly Challenges</button>
+    </div>
+    <div id="hub-learn" role="tabpanel" aria-labelledby="hub-tab-learn">
+    <h2 class="hub-view-title">How we play</h2>
     <div class="app-grid">
       <button class="app-btn btn-guide" onclick="showGuide()">
         <span class="btn-icon">&#x1F4CB;</span>
         <div class="btn-text"><h3>Tactical Guide</h3><p>How we play, with pitch diagrams for every position</p></div>
         <span class="btn-ghost">&#x26BD;</span>
       </button>
+      <button class="app-btn btn-positions" onclick="showPositions()">
+        <span class="btn-icon">&#x1F4CD;</span>
+        <div class="btn-text"><h3>Learning Positions</h3><p><span class="fmt-name">7v7</span> zone guide &mdash; where to be and why</p></div>
+      </button>
+    </div>
+    <div class="tod-box">
+      <span class="tod-label">&#x1F4A1; Tip of the Day</span>
+      <span class="tod-text" id="tod-text"></span>
+    </div>
+    </div>
+    <div id="hub-practice" role="tabpanel" aria-labelledby="hub-tab-practice" hidden>
+    <h2 class="hub-view-title">Test yourself</h2>
+    <div class="app-grid">
       <button class="app-btn btn-quiz" onclick="showQuiz()">
         <span class="btn-icon">&#x1F9E0;</span>
         <div class="btn-text"><h3>How We Play Quiz</h3><p>Test yourself &mdash; beginner, intermediate and expert</p></div>
@@ -437,15 +490,7 @@ html.dark .guide-footer{color:#9ca3af}
         <div class="btn-text"><h3>Skill Challenges</h3><p>This week&rsquo;s challenges to level up your game</p></div>
         <span class="btn-ghost">&#x1F3C6;</span>
       </button>
-      <button class="app-btn btn-positions" onclick="showPositions()">
-        <span class="btn-icon">&#x1F4CD;</span>
-        <div class="btn-text"><h3>Learning Positions</h3><p><span class="fmt-name">7v7</span> zone guide &mdash; where to be and why</p></div>
-        <span class="btn-ghost">&#x1F9ED;</span>
-      </button>
     </div>
-    <div class="tod-box">
-      <span class="tod-label">&#x1F4A1; Tip of the Day</span>
-      <span class="tod-text" id="tod-text"></span>
     </div>
     <p class="home-foot"><span data-club="slogan"></span></p>
   </div>
