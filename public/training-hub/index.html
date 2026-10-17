@@ -379,7 +379,7 @@ html.dark .guide-footer{color:#9ca3af}
 .home-compact .hub-head{width:100%;margin-bottom:20px}
 .home-compact .home-title{font-family:inherit;font-size:22px;font-weight:800;line-height:1.3;letter-spacing:0;text-transform:none;text-shadow:none;color:#111827;overflow-wrap:anywhere}
 .home-compact .home-title2{font-family:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;color:#6b7280;margin-top:2px}
-.home-compact .home-sub{display:block;border:0;border-radius:0;padding:0;font-size:12px;color:#6b7280;margin-top:3px;letter-spacing:0;text-transform:none}
+.home-compact .home-sub{display:block;border:0;border-radius:0;background:none;padding:0;font-size:12px;color:#6b7280;margin-top:3px;letter-spacing:0;text-transform:none}
 .home-body{max-width:576px;margin:0 auto;padding:0 20px 32px;gap:18px}
 .hub-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #e5e7eb}
 .hub-views button{min-height:48px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:700;color:#6b7280;cursor:pointer}
@@ -403,6 +403,16 @@ html.dark .home-body .tod-box{background:none}
 html.dark .home-body .app-btn,html.dark .hub-views,html.dark .home-body .tod-box{border-color:rgb(255 255 255 / 10%)}
 html.dark .hub-views button{color:#9ca3af}
 html.dark .hub-views button[aria-selected="true"]{color:#4ade80;border-bottom-color:#4ade80}
+/* a wallpaper (/wallpaper.js) shows straight through the main screen, as on Home: its loose text turns white */
+@media screen{
+html[data-wallpaper] #app-home{background:transparent!important}
+html[data-wallpaper] :is(.home-compact .home-title,.home-compact .home-title2,.home-compact .home-sub,.hub-view-title,.home-body .tod-text,.home-foot){color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+html[data-wallpaper] .hub-views{border-bottom-color:rgba(255,255,255,.3)}
+html[data-wallpaper] .hub-views button{color:rgba(255,255,255,.8);text-shadow:0 1px 3px rgba(0,0,0,.45)}
+html[data-wallpaper] .hub-views button[aria-selected="true"]{color:#fff;border-bottom-color:#fff}
+html[data-wallpaper] .home-body .tod-box{border-top-color:rgba(255,255,255,.3)}
+html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
+}
 </style>
 </head>
 <body>

@@ -17,10 +17,10 @@ body {
   background: linear-gradient(to bottom, rgb(0 0 0 / 55%), rgb(0 0 0 / 25%), rgb(0 0 0 / 45%));
 }
 @media screen {
-  html[data-wallpaper] :is(#app-home, #app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
+  html[data-wallpaper] :is(#app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
     background: rgb(242 242 247 / 88%) !important;
   }
-  html.dark[data-wallpaper] :is(#app-home, #app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
+  html.dark[data-wallpaper] :is(#app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
     background: rgb(0 0 0 / 65%) !important;
   }
   html[data-wallpaper] #screen-result {

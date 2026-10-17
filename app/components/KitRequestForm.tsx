@@ -120,7 +120,7 @@ export default function KitRequestForm({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="px-1 text-center text-[15px] text-gray-500 dark:text-gray-400">
+          <p className="wp-text px-1 text-center text-[15px] text-gray-500 dark:text-gray-400">
             Need something during the season — a bigger shirt, new socks? Ask here and your child&apos;s
             coaches get an alert.
           </p>
@@ -265,7 +265,7 @@ export default function KitRequestForm({
 
       {showHistory && mine.length > 0 && (
         <section>
-          <h2 className="mb-2 px-1 text-lg font-bold">Your Requests</h2>
+          <h2 className="wp-text mb-2 px-1 text-lg font-bold">Your Requests</h2>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
             {mine.map((r) => (
               <div key={r.id} className="flex items-center gap-3 px-4 py-3">
