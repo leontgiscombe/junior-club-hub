@@ -47,7 +47,7 @@ export function ToolTabs({ label, tabs, value, onChange, panelId }: {
   panelId?: string;
 }) {
   const id = useId();
-  return <div role="tablist" aria-label={label} className="mb-5 flex border-b border-gray-200 dark:border-white/15">
+  return <div role="tablist" aria-label={label} className="wp-tabs mb-5 flex border-b border-gray-200 dark:border-white/15">
     {tabs.map((tab, index) => <button key={tab.id} id={`${id}-${tab.id}`} type="button" role="tab" aria-label={tab.count ? `${tab.label} (${tab.count})` : tab.label} aria-selected={value === tab.id} aria-controls={panelId} tabIndex={value === tab.id ? 0 : -1} onClick={() => onChange(tab.id)} onKeyDown={(event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();

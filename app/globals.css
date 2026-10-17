@@ -57,6 +57,18 @@ body {
     color: #fff !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   }
+  /* tabs sitting on the wallpaper (SettingsUI ToolTabs) */
+  html[data-wallpaper] .wp-page .wp-tabs {
+    border-color: rgb(255 255 255 / 30%) !important;
+  }
+  html[data-wallpaper] .wp-page .wp-tabs > [role="tab"] {
+    color: rgb(255 255 255 / 80%) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  html[data-wallpaper] .wp-page .wp-tabs > [aria-selected="true"] {
+    color: #fff !important;
+    border-color: #fff !important;
+  }
   html[data-wallpaper] .wp-decoration {
     display: none;
   }
