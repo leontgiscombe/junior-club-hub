@@ -11,10 +11,16 @@ Upstash Redis database, set up for a club from one settings file.
   including Coach Admin tools, Finances and the Training Hub. Cards and forms
   keep readable backgrounds; printing and exported posters keep their own styles.
 - **Player Training Hub** (`/training-hub`): the players' own app, with a
-  tactical guide and pitch diagrams, a three-level quiz, weekly skill
-  challenges and position guides. It's one page, `public/training-hub/index.html`;
-  scores and ticks stay on the child's device. The guide's content is written
+  compact Learn, Practice and Progress home. Existing tactical guides, pitch
+  diagrams, all quiz levels, weekly challenges and position guides remain in
+  `public/training-hub/index.html`; navigation is in `home-navigation.js` beside
+  it. Existing scores and ticks stay on the child's device. The guide's content is written
   for under-10s playing 7v7 in a 2-3-1.
+- **Your Account** (`/account`): Family, Preferences and Security views, with
+  one child edited at a time. Child saves preserve the full sibling list and
+  club-assigned teams; leaving an unsaved child screen discards its draft.
+  Existing photos, medical/device controls, notifications, passkeys, email
+  changes, sign-out and account deletion keep their original handlers.
 - **Kit Sizes** (`/kit`): parents pick their child from the squad and send
   shirt, shorts and socks sizes; coaches see who's still to send.
 - **Results** (`/results`): scores, tables and top scorers for parents

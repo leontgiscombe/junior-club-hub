@@ -48,6 +48,8 @@ export default function ChildrenEditor({
   required = false,
   photo,
   confirmRemove = false,
+  showAdd = true,
+  allowRemove = true,
 }: {
   value: ChildDraft[];
   teams: TeamOption[];
@@ -63,12 +65,14 @@ export default function ChildrenEditor({
   photo?: (child: ChildDraft, info: ReactNode) => ReactNode;
   /** a parent's own account: check before taking off a child already saved */
   confirmRemove?: boolean;
+  showAdd?: boolean;
+  allowRemove?: boolean;
 }) {
   const set = (i: number, change: Partial<ChildDraft>) => onChange(value.map((c, j) => (j === i ? { ...c, ...change } : c)));
   const field =
     "rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const remove = (i: number) =>
-    value.length > 1 && (
+    allowRemove && value.length > 1 && (
       <button
         type="button"
         onClick={() => {
@@ -139,7 +143,7 @@ export default function ChildrenEditor({
             </div>
           );
         })}
-        {value.length < MAX_CHILDREN && (
+        {showAdd && value.length < MAX_CHILDREN && (
           <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="mt-3 self-start text-sm font-semibold text-green-700 hover:underline dark:text-green-400">
             {value.length ? "+ Add another child" : "+ Add a child"}
           </button>
@@ -161,7 +165,7 @@ export default function ChildrenEditor({
           {remove(i)}
         </div>
       ))}
-      {value.length < MAX_CHILDREN && (
+      {showAdd && value.length < MAX_CHILDREN && (
         <button type="button" onClick={() => onChange([...value, { name: "", team: "" }])} className="self-start text-sm font-semibold text-green-700 hover:underline dark:text-green-400">
           {value.length ? "+ Add another child" : "+ Add a child"}
         </button>

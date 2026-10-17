@@ -30,7 +30,7 @@ export async function squarePhoto(file: File): Promise<string> {
   }
 }
 
-export default function ProfilePhoto({ initials }: { initials: string }) {
+export default function ProfilePhoto({ initials, compact = false }: { initials: string; compact?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,9 +74,9 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex shrink-0 flex-col items-center">
       <div className="relative">
-        <span className="grid h-36 w-36 place-items-center overflow-hidden rounded-3xl bg-green-700 text-5xl font-semibold text-white shadow-lg">
+        <span className={`grid place-items-center overflow-hidden bg-green-700 font-semibold text-white ${compact ? "h-14 w-14 rounded-full text-lg shadow-sm" : "h-36 w-36 rounded-3xl text-5xl shadow-lg"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- your own photo, private to you */}
           {src ? <img src={src} alt="Your profile photo" className="h-full w-full object-cover" /> : initials}
         </span>
@@ -84,9 +84,10 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
           onClick={() => input.current?.click()}
           disabled={busy}
           aria-label={src ? "Change your photo" : "Add a photo"}
-          className="absolute -right-3 -top-3 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-lg ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10"
+          title={src ? "Change your photo" : "Add a photo"}
+          className={compact ? "absolute inset-0 grid h-14 w-14 place-items-center rounded-full disabled:opacity-50" : "absolute -right-3 -top-3 grid h-12 w-12 place-items-center rounded-full bg-white text-gray-900 shadow-lg ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10"}
         >
-          {busy ? (
+          {compact ? <span className="sr-only">Profile photo</span> : busy ? (
             <span className="text-sm font-bold">…</span>
           ) : (
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" aria-hidden="true">
@@ -96,7 +97,7 @@ export default function ProfilePhoto({ initials }: { initials: string }) {
           )}
         </button>
       </div>
-      {src && (
+      {src && !compact && (
         <button onClick={remove} disabled={busy} className="mt-2 text-xs font-semibold text-gray-400 hover:text-gray-600">
           Remove photo
         </button>
