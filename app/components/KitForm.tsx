@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { SquadOption } from "@/lib/kitSquad";
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { SIZES, SOCK_SIZES } from "@/lib/kitItems";
+import type { Submission } from "@/lib/storage";
 
 type Size = (typeof SIZES)[number];
 type SockSize = (typeof SOCK_SIZES)[number];
@@ -77,8 +78,8 @@ function SizeSelector<T extends string>({ step, label, emoji, value, onChange, s
   );
 }
 
-function SizeGuide() {
-  const [open, setOpen] = useState(false);
+export function SizeGuide({ defaultOpen = false }: { defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="bg-blue-50 rounded-2xl border border-blue-100 overflow-hidden dark:bg-blue-400/10 dark:border-blue-400/25">
       <button
@@ -198,16 +199,24 @@ function SuccessScreen({ childName, alreadySent, shirtSize, shortsSize, socksSiz
 
 const NOT_LISTED = "__not-listed__";
 
-export default function KitForm({ team, squad, extras = [] }: { team: string; squad: SquadOption[]; extras?: KitExtra[] }) {
+export default function KitForm({ team, squad, extras = [], fixedChild, initial, onSaved }: {
+  team: string; squad: SquadOption[]; extras?: KitExtra[];
+  fixedChild?: { id?: string; name: string };
+  initial?: Submission;
+  onSaved?: (result: { alreadySent: boolean }) => void;
+}) {
   // a child picked from the squad (their id), NOT_LISTED to type a name, or ""
-  const [picked, setPicked] = useState(squad.length ? "" : NOT_LISTED);
-  const [childName, setChildName] = useState("");
+  const [picked, setPicked] = useState(fixedChild ? fixedChild.id || NOT_LISTED : squad.length ? "" : NOT_LISTED);
+  const [childName, setChildName] = useState(fixedChild?.name ?? "");
   const [alreadySent, setAlreadySent] = useState(false);
-  const [shirtSize, setShirtSize] = useState<Size | null>(null);
-  const [shortsSize, setShortsSize] = useState<Size | null>(null);
-  const [socksSize, setSocksSize] = useState<SockSize | null>(null);
+  const [shirtSize, setShirtSize] = useState<Size | null>(SIZES.includes(initial?.shirtSize as Size) ? initial!.shirtSize as Size : null);
+  const [shortsSize, setShortsSize] = useState<Size | null>(SIZES.includes(initial?.shortsSize as Size) ? initial!.shortsSize as Size : null);
+  const [socksSize, setSocksSize] = useState<SockSize | null>(SOCK_SIZES.includes(initial?.socksSize as SockSize) ? initial!.socksSize as SockSize : null);
   // the club's extra items (jackets…): a size or "Not needed" for each
-  const [extraSizes, setExtraSizes] = useState<Partial<Record<KitExtra, string>>>({});
+  const [extraSizes, setExtraSizes] = useState<Partial<Record<KitExtra, string>>>(() => Object.fromEntries(extras.flatMap((item) => {
+    const value = initial?.extras?.[item];
+    return value && (value === NOT_NEEDED || SIZES.includes(value as Size)) ? [[item, value]] : [];
+  })));
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -218,8 +227,8 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
   const canSubmit = !!(hasChild && shirtSize && shortsSize && socksSize && extras.every((e) => extraSizes[e]) && !submitting);
 
   function reset() {
-    setResult(false); setChildName(""); setShirtSize(null); setShortsSize(null); setSocksSize(null); setExtraSizes({});
-    setPicked(squad.length ? "" : NOT_LISTED); setAlreadySent(false);
+    setResult(false); setChildName(fixedChild?.name ?? ""); setShirtSize(null); setShortsSize(null); setSocksSize(null); setExtraSizes({});
+    setPicked(fixedChild ? fixedChild.id || NOT_LISTED : squad.length ? "" : NOT_LISTED); setAlreadySent(false);
     setError(null);
   }
 
@@ -242,9 +251,10 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Something went wrong");
+      if (!res.ok || data.saved === false) throw new Error(data.error ?? "Your sizes could not be saved. Please try again.");
       setAlreadySent(!!data.alreadySent);
       setResult(true);
+      onSaved?.({ alreadySent: !!data.alreadySent });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -266,7 +276,7 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-8">
-      <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+      {fixedChild ? <div className="rounded-lg bg-white p-4 text-sm font-semibold shadow-sm dark:bg-[#1c1c1e]">{fixedChild.name}</div> : <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
         <label htmlFor="kit-child" className="block text-sm font-bold text-gray-700 mb-2 dark:text-gray-200">
           <Step n={1} done={hasChild} />
           👶 Your Child
@@ -299,7 +309,7 @@ export default function KitForm({ team, squad, extras = [] }: { team: string; sq
             }`}
           />
         )}
-      </div>
+      </div>}
 
       <SizeGuide />
       <SizeSelector step={2} label="Shirt Size"  emoji="👕" value={shirtSize}  onChange={setShirtSize}  sizes={SIZES} />

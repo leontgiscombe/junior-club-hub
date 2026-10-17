@@ -33,10 +33,14 @@ export default function KitRequestForm({
   family,
   items,
   initial,
+  showHistory = true,
+  onSent,
 }: {
   family: { id: string; name: string; teamName: string }[];
   items: KitItem[];
   initial: Mine[];
+  showHistory?: boolean;
+  onSent?: () => void;
 }) {
   const [childId, setChildId] = useState(family.length === 1 ? family[0].id : "");
   const [item, setItem] = useState<KitItem | null>(null);
@@ -86,6 +90,7 @@ export default function KitRequestForm({
       setSize("");
       setQuantity(1);
       setNote("");
+      onSent?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't send");
     } finally {
@@ -258,7 +263,7 @@ export default function KitRequestForm({
         </div>
       )}
 
-      {mine.length > 0 && (
+      {showHistory && mine.length > 0 && (
         <section>
           <h2 className="mb-2 px-1 text-lg font-bold">Your Requests</h2>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">

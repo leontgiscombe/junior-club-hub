@@ -7,10 +7,11 @@ import { canCoach, currentPerson } from "@/lib/people";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { getSubmissions } from "@/lib/storage";
 import { getTenant } from "@/lib/tenant";
+import ParentKit from "../components/ParentKit";
 
 export const metadata = {
-  title: "Kit Sizes – Pick Your Team",
-  description: "Choose your team to set your child's kit size for the season.",
+  title: "Your Kit",
+  description: "Your children's kit sizes, requests and submission history.",
 };
 
 function Chevron() {
@@ -33,6 +34,7 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
   // a signed-in parent (or player) sees just their own children's teams — the app knows them;
   // coaches, and anyone signed out, see every team (and a parent can still ask for them all)
   const person = me?.person?.status === "approved" ? me.person : null;
+  if (person && !all) return <ParentKit />;
   const mine = person && !canCoach(person) ? teamsOf(person) : [];
   const ownOnly = mine.length > 0 && !all;
   const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
