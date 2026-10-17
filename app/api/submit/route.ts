@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
-import { getSubmissions, saveSubmission } from "@/lib/storage";
+import { deleteSubmission, getSubmissions, saveSubmission } from "@/lib/storage";
 import { getClub, isTeam } from "@/lib/settings";
 import { squadPlayer } from "@/lib/kitSquad";
 import type { KitExtra } from "@/lib/clubSettings";
 import { overLimit } from "@/lib/rateLimit";
+import { getTenant } from "@/lib/tenant";
+import { currentPerson } from "@/lib/people";
+import { parentKitData } from "@/lib/parentKit";
+
+/** The earlier answers for the child whose submission `replaces` names, when the
+ *  signed-in parent is theirs — an update from Your Kit replaces them. */
+async function replacedSubmissions(team: string, replaces: string): Promise<string[]> {
+  const tenant = await getTenant();
+  const me = tenant ? await currentPerson(tenant) : null;
+  if (me?.person?.status !== "approved") return [];
+  const { family } = await parentKitData(me.person);
+  const child = family.find((c) => c.team === team && c.submissions.some((s) => s.id === replaces));
+  return child ? child.submissions.map((s) => s.id) : [];
+}
 
 export async function POST(request: Request) {
   // the form is open to anyone with the club's link: a family sends a few, a script many
@@ -49,8 +63,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
+    const replaces = typeof body.replaces === "string" && body.replaces ? await replacedSubmissions(team, body.replaces) : [];
+
     // the same child sent twice: say so rather than quietly keeping both
-    const existing = playerId
+    const existing = !replaces.length && playerId
       ? (await getSubmissions(team)).some((s) => s.playerId === playerId)
       : false;
 
@@ -62,6 +78,9 @@ export async function POST(request: Request) {
       socksSize,
       ...(Object.keys(extras).length ? { extras } : {}),
     });
+
+    // the new sizes are saved first, so a failure here never loses the old ones
+    if (saved) for (const id of replaces) await deleteSubmission(team, id);
 
     // nothing about the child goes back to the (public) page
     return NextResponse.json({ success: true, saved, alreadySent: existing });
