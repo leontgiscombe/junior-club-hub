@@ -206,6 +206,15 @@ export default function PrivacyPage() {
               <strong>Apple, Google or Mozilla</strong> — deliver notifications, if a coach turns
               them on.
             </>,
+            <>
+              <strong>Stripe</strong> and <strong>Apple</strong> — take a club&apos;s subscription
+              payments (Apple when it subscribes in the App Store app). They handle the card and
+              payment details; we never see or keep them.
+            </>,
+            <>
+              <strong>RevenueCat</strong> — keeps track of each club&apos;s subscription (its plan
+              and when it renews), whichever way the club paid. It knows the club, not its members.
+            </>,
           ]}
         />
         <p>

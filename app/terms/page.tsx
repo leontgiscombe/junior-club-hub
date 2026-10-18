@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { List, LegalPage, Part } from "../components/LegalPage";
 import { operator } from "@/lib/legal";
+import { PLANS, PLAN_IDS, TRIAL_DAYS, price, teamsLabel } from "@/lib/billing";
 import { PLATFORM_NAME } from "@/lib/tenant";
 
 export const metadata = { title: `Terms of Use – ${PLATFORM_NAME}` };
@@ -85,19 +86,37 @@ export default function TermsPage() {
           items={[
             "We work hard to keep the hub running and secure, but can't promise it will never be unavailable or that it will be free of mistakes.",
             "We may improve or change features. If we ever remove something important, we'll tell clubs first.",
-            "If the hub becomes a paid service, we'll explain the price and terms before any club is charged.",
           ]}
         />
       </Part>
 
-      <Part title="6. Ending">
+      <Part title="6. Plans and payment">
+        <List
+          items={[
+            `Every new club gets ${TRIAL_DAYS} days free, with every feature and no card needed.`,
+            <>
+              After that, the club needs a plan, priced by its number of teams:{" "}
+              {PLAN_IDS.map((id) => `${PLANS[id].name} (${teamsLabel(id).toLowerCase()}) ${price(PLANS[id].monthly)} a month or ${price(PLANS[id].yearly)} a year`).join("; ")}.
+              Parents, coaches and players never pay.
+            </>,
+            "A club admin can subscribe in the App Store app, where Apple takes the payment and Apple's own terms also apply, or directly with us by card, where our payment provider Stripe takes it.",
+            "Subscriptions renew automatically each month or year until they're cancelled. A club can cancel at any time: in the iPhone's Settings for a subscription bought through the App Store, or from the club's Plans page for one bought from us. It then runs to the end of the period already paid for.",
+            "We don't give refunds for part of a period, except where the law requires. Refunds for App Store purchases are handled by Apple.",
+            "If a club's trial or subscription ends without a plan, its hub is paused: nothing is deleted, and it carries on as before once a club admin subscribes.",
+            "If we change our prices, we'll tell clubs by email at least 30 days before a renewal at the new price.",
+            "None of this affects any rights you have by law.",
+          ]}
+        />
+      </Part>
+
+      <Part title="7. Ending">
         <p>
           A club can stop using the hub at any time and ask us to delete it. We may suspend or close
           a hub that breaks these terms, telling the club why where we can.
         </p>
       </Part>
 
-      <Part title="7. Liability">
+      <Part title="8. Liability">
         <p>
           The hub is a tool to help clubs run their teams; clubs remain responsible for their own
           decisions and records. As far as the law allows, we aren&apos;t liable for indirect losses,
@@ -107,7 +126,7 @@ export default function TermsPage() {
         </p>
       </Part>
 
-      <Part title="8. General">
+      <Part title="9. General">
         <p>
           We may update these terms; we&apos;ll update the date at the top and tell clubs about
           important changes by email. These terms are governed by the law of England and Wales.

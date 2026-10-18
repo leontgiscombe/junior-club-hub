@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Anton } from "next/font/google";
 import { PLATFORM_NAME } from "@/lib/tenant";
 import FindClub from "./FindClub";
+import PlanList from "../components/PlanList";
+import { TRIAL_DAYS } from "@/lib/billing";
 
 export const metadata = {
   title: `${PLATFORM_NAME} – Everything your junior football club needs`,
@@ -72,6 +74,18 @@ export default function PlatformHome() {
           ))}
         </section>
 
+        {/* the prices (never shown in the App Store app: proxy.ts sends it to /start instead) */}
+        <section id="pricing" className="mt-8">
+          <h2 className={`${display.className} text-3xl uppercase tracking-wide`}>Pricing</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            One price for the whole club, by its number of teams. {TRIAL_DAYS} days free first, no card needed.
+            Monthly or yearly; cancel any time. Parents, coaches and players never pay.
+          </p>
+          <div className="mt-4">
+            <PlanList />
+          </div>
+        </section>
+
         <section className="mt-8 rounded-3xl bg-gray-900 p-7 text-center text-white">
           <h2 className={`${display.className} text-3xl uppercase tracking-wide`}>Set Up in Minutes</h2>
           <p className="mx-auto mt-2 max-w-md text-gray-300">
@@ -91,6 +105,8 @@ export default function PlatformHome() {
           <a href="/privacy" className="hover:text-gray-300">Privacy</a>
           {" · "}
           <a href="/terms" className="hover:text-gray-300">Terms</a>
+          {" · "}
+          <a href="/support" className="hover:text-gray-300">Support</a>
         </p>
       </footer>
     </div>
