@@ -8,6 +8,7 @@ import { KIT_ITEMS, itemsFor } from "@/lib/kitItems";
 import type { ParentKitData, ParentKitChild } from "@/lib/parentKit";
 import type { Submission } from "@/lib/storage";
 import { useClub } from "./ClubProvider";
+import AppHeader, { type HeaderViewer } from "./AppHeader";
 import KitForm, { SizeGuide } from "./KitForm";
 import KitRequestForm from "./KitRequestForm";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
@@ -33,7 +34,7 @@ function SubmittedSizes({ submission }: { submission: Submission }) {
   return <dl className="wp-text grid grid-cols-2 gap-5 border-y border-gray-200 py-5 dark:border-white/15">{sizes.map((size) => <div key={size.label}><dt className={`wp-text text-xs ${muted}`}>{size.label}</dt><dd className="mt-1 break-words text-xl font-bold">{size.value}</dd></div>)}</dl>;
 }
 
-export default function ParentKit() {
+export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
   const CLUB = useClub();
   const { screen, open, close } = useScreens("/kit");
   const [data, setData] = useState<ParentKitData | null>(null);
@@ -108,7 +109,11 @@ export default function ParentKit() {
   const banner = <div className="relative w-full overflow-hidden rounded-lg bg-[var(--club-night)]" style={{ aspectRatio: kitAspect(CLUB.kitImage) }}><Image src={CLUB.kitImage.src} alt={`Home and away kit for ${CLUB.kitSeason}`} fill unoptimized={CLUB.kitImage.src.startsWith("/api/")} sizes="(max-width: 672px) calc(100vw - 32px), 640px" className="object-contain" priority /></div>;
 
   return <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
-    {detail ? <TopBar title={title} onBack={() => { if (!busy) { setError(""); setNotice(""); close(); } }} /> : <TopBar title="Your Kit" href="/" />}
+    {detail ? <TopBar title={title} onBack={() => { if (!busy) { setError(""); setNotice(""); close(); } }} /> : <header className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
+      {/* the Kit tab itself: like Home — your photo, Search and the crest, then a large title */}
+      <AppHeader viewer={viewer} crest={CLUB.crest} />
+      <div className="min-w-0"><h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Your Kit</h1><p className={`wp-text mt-0.5 truncate text-[15px] ${muted}`}>{CLUB.fullName} · {CLUB.kitSeason} season</p></div>
+    </header>}
     <main className="mx-auto max-w-2xl px-4 pb-12 pt-4">
       {notice && <p role="status" className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-200">{notice}</p>}
       {error && <div role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}<button onClick={() => void refresh()} className="ml-3 min-h-11 font-semibold underline">Retry</button></div>}
@@ -124,8 +129,7 @@ export default function ParentKit() {
                 : screen === "kit" ? <section>{banner}<p className={`wp-text mt-4 text-sm ${muted}`}>{CLUB.kitSeason} season · {CLUB.fullName}</p></section>
                   : detail ? <p className={`wp-text py-8 text-center text-sm ${muted}`}>This kit record is no longer available.</p>
                     : <>
-                      <button onClick={() => navigate("kit")} aria-label="View this season's kit" title="View this season's kit" className="mb-3 block w-full">{banner}</button>
-                      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2"><h1 className="wp-text text-xl font-bold">{selfOnly ? "Your kit" : "Your family's kit"}</h1><p className={`wp-text text-xs ${muted}`}>{CLUB.kitSeason} season</p></div>
+                      <button onClick={() => navigate("kit")} aria-label="View this season's kit" title="View this season's kit" className="mb-5 block w-full">{banner}</button>
                       <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes" }, { id: "requests", label: "Requests", count: pending.length }, { id: "history", label: "History", count: history.length + completed.length }]} value={view} onChange={navigate} panelId="parent-kit-panel" />
                       <section id="parent-kit-panel" role="tabpanel" aria-label={view}>
                         {view === "sizes" && <><h2 className="wp-text mb-3 text-lg font-bold">{selfOnly ? "Your sizes" : "Your children"}</h2><div className={`${surface} divide-y divide-gray-100 dark:divide-white/10`}>{family.map((entry) => <KitRow key={entry.id} title={entry.name} detail={entry.teamName} icon={ICONS.child} onClick={() => editChild(entry)}><span className={`shrink-0 text-xs font-semibold ${entry.submissions.length ? "text-green-700 dark:text-green-400" : "text-amber-800 dark:text-amber-300"}`}>{entry.submissions.length ? "Submitted" : "Needed"}</span></KitRow>)}</div>{!family.length && <p className={`wp-text py-6 text-sm ${muted}`}>No approved team members linked yet. <Link href="/account" className="font-semibold underline">Your Account</Link></p>}<button onClick={() => navigate("guide")} className="wp-text mt-5 min-h-11 text-sm font-semibold text-green-700 dark:text-green-400">Size Guide</button></>}

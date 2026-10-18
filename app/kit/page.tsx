@@ -7,6 +7,7 @@ import { canCoach, currentPerson } from "@/lib/people";
 import { childrenOf, teamsOf } from "@/lib/access";
 import { getSubmissions } from "@/lib/storage";
 import { getTenant } from "@/lib/tenant";
+import { getViewer } from "@/lib/viewer";
 import ParentKit from "../components/ParentKit";
 
 export const metadata = {
@@ -32,7 +33,7 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
     searchParams,
   ]);
   const person = me?.person?.status === "approved" ? me.person : null;
-  if (person) return <ParentKit />;
+  if (person) return <ParentKit viewer={await getViewer(tenant)} />;
   const mine = person && !canCoach(person) ? teamsOf(person) : [];
   const ownOnly = mine.length > 0 && !all;
   const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
