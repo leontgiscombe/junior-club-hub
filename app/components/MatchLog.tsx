@@ -804,6 +804,7 @@ export default function MatchLog() {
                         <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <circle cx="12" cy="12" r="9" />
                           <path d="m12 7 4 3-1.5 4.5h-5L8 10z" />
+                          <path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" />
                         </svg>
                         <span className="min-w-0 flex-1 truncate text-sm">
                           {g.scorerId ? (
