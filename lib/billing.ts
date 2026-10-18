@@ -23,6 +23,23 @@ export function planForTeams(teams: number): PlanId {
   return PLAN_IDS.find((p) => teams <= PLANS[p].teams) ?? "large";
 }
 
+/**
+ * Who a club pays through: the App Store app (In-App Purchase) or the website
+ * (RevenueCat Web Billing, through Stripe) — both kept by RevenueCat
+ * (lib/revenuecat.ts) — or "manual", a plan the platform admin set by hand.
+ */
+export type BillingSource = "apple" | "web" | "manual";
+
+/**
+ * A store product's plan. Products are named "<anything>.<plan>.<period>",
+ * e.g. "uk.co.grassrootsclubhub.club.monthly" or "starter_yearly"; null for
+ * anything else.
+ */
+export function planFromProduct(id: string): PlanId | null {
+  const m = /(?:^|[._-])(starter|club|large)[._-](monthly|yearly)$/.exec(id);
+  return m ? (m[1] as PlanId) : null;
+}
+
 export type Billing = {
   /** when the free trial ends (set when the club signs up) */
   trialEndsAt?: string;
@@ -31,6 +48,12 @@ export type Billing = {
   /** subscribed: on this plan, paid up to this date */
   plan?: PlanId;
   paidUntil?: string;
+  /** who the plan is paid through */
+  source?: BillingSource;
+  /** a store subscription that's been cancelled: it ends at paidUntil */
+  cancelled?: boolean;
+  /** a store subscription whose last payment failed (the store is retrying) */
+  billingIssue?: boolean;
   /** the trial reminders already emailed (days left: 7, 1) */
   reminded?: number[];
 };
