@@ -75,7 +75,7 @@ export function ChildAvatar({
       <span className="min-w-0 flex-1">
         {children}
         {playerId && (
-          <span className="mt-0.5 flex gap-4 text-sm font-semibold">
+          <span className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold">
             <button type="button" onClick={() => input.current?.click()} disabled={busy} className="text-green-700 disabled:opacity-40 dark:text-green-400">
               {busy ? "Saving…" : version ? "Change Photo" : "Add Photo"}
             </button>
