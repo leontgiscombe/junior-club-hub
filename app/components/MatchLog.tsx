@@ -121,7 +121,7 @@ function formatDate(date: string) {
 }
 
 export default function MatchLog() {
-  const { screen, open, close } = useScreens("/admin/stats/matches");
+  const { screen, open, switchTo, close } = useScreens("/admin/stats/matches");
   const selectedId = screen.startsWith("match-") ? screen.slice(6) : "";
   const view = screen === "results" || screen === "record" ? screen : "fixtures";
   const { TEAMS, teamName, findTeam } = useTeams();
@@ -442,7 +442,7 @@ export default function MatchLog() {
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Team tabs */}
-        {!selectedId && screen !== "add" && <><label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => { setTeam(event.target.value); setOpponent(""); setEditingId(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label><ToolTabs label="Match views" tabs={[{ id: "fixtures", label: "Fixtures", count: upcoming.length }, { id: "results", label: "Results", count: results.length }, { id: "record", label: "Record" }]} value={view} onChange={open} panelId="matches-panel" /></>}
+        {!selectedId && screen !== "add" && <><label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => { setTeam(event.target.value); setOpponent(""); setEditingId(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label><ToolTabs label="Match views" tabs={[{ id: "fixtures", label: "Fixtures", count: upcoming.length }, { id: "results", label: "Results", count: results.length }, { id: "record", label: "Record" }]} value={view} onChange={switchTo} panelId="matches-panel" /></>}
         {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}</p>}
         <div id="matches-panel" role={selectedId || screen === "add" ? undefined : "tabpanel"} aria-label={view}>
 

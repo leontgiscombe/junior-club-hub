@@ -12,6 +12,8 @@ import { backOr } from "@/lib/back";
  * Which screen is open: "" for the main list, or one setting's id. It's kept
  * in the address's # (so a phone's back gesture works, and a link can open a
  * setting directly); `base` is where closing a directly-opened one goes.
+ * `open` adds a step to the history (a screen you go into); `switchTo` doesn't
+ * (a tab).
  */
 export function useScreens(base: string) {
   const [screen, setScreen] = useState("");
@@ -27,6 +29,13 @@ export function useScreens(base: string) {
     window.location.hash = id;
     window.scrollTo(0, 0);
   }, []);
+  // another tab of the same page: swaps the # in place rather than adding a
+  // step, so back leaves the page instead of going through the tabs
+  const switchTo = useCallback((id: string) => {
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}${id ? `#${id}` : ""}`);
+    setScreen(id);
+    window.scrollTo(0, 0);
+  }, []);
   const close = useCallback(() => {
     if (pushed) window.history.back();
     else {
@@ -34,7 +43,7 @@ export function useScreens(base: string) {
       setScreen("");
     }
   }, [pushed, base]);
-  return { screen, open, close };
+  return { screen, open, switchTo, close };
 }
 
 export const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;

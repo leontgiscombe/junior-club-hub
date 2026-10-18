@@ -216,7 +216,7 @@ export default function AccountPage() {
   }
 
   // which screen is open: the main list, or one setting
-  const { screen, open, close: closeScreen } = useScreens("/account");
+  const { screen, open, switchTo, close: closeScreen } = useScreens("/account");
   const accountView = screen === "preferences" || screen === "security-home" ? screen : "family";
   useEffect(() => {
     let previous = window.location.hash.slice(1);
@@ -527,7 +527,7 @@ export default function AccountPage() {
           <ProfilePhoto initials={initials} compact />
           <div className="min-w-0"><h1 className="break-words text-xl font-bold text-gray-900 dark:text-gray-50">{account.user.name || account.user.email.split("@")[0]}</h1><p className="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">{account.user.email}</p></div>
         </div>
-        <ToolTabs label="Account views" tabs={[{ id: "family", label: "Family" }, { id: "preferences", label: "Preferences" }, { id: "security-home", label: "Security" }]} value={accountView} onChange={open} panelId="account-panel" />
+        <ToolTabs label="Account views" tabs={[{ id: "family", label: "Family" }, { id: "preferences", label: "Preferences" }, { id: "security-home", label: "Security" }]} value={accountView} onChange={switchTo} panelId="account-panel" />
         <div id="account-panel" role="tabpanel" aria-label={accountView === "security-home" ? "Security" : accountView === "preferences" ? "Preferences" : "Family"}>
 
         <div hidden={accountView !== "family"}>

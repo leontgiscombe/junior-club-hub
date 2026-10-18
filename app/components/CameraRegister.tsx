@@ -36,7 +36,7 @@ function formatWhen(date: string, time: string) {
 }
 
 export default function CameraRegister() {
-  const { screen, open, close } = useScreens("/admin/camera");
+  const { screen, open, switchTo, close } = useScreens("/admin/camera");
   const view = screen === "pending" || screen === "uploaded" ? screen : "upcoming";
   const { TEAMS, teamName, teamAccent } = useTeams();
   const [key, setKey] = useState("");
@@ -215,7 +215,7 @@ export default function CameraRegister() {
 
         <div hidden={screen === "import"}>
         <label className="mb-4 block"><span className="sr-only">Team</span><select value={filter} onChange={(event) => setFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
-        <ToolTabs label="Camera views" tabs={[{ id: "upcoming", label: "Upcoming", count: upcoming.length }, { id: "pending", label: "To Upload", count: pending.length }, { id: "uploaded", label: "Uploaded", count: uploaded.length }]} value={view} onChange={open} panelId="camera-panel" />
+        <ToolTabs label="Camera views" tabs={[{ id: "upcoming", label: "Upcoming", count: upcoming.length }, { id: "pending", label: "To Upload", count: pending.length }, { id: "uploaded", label: "Uploaded", count: uploaded.length }]} value={view} onChange={switchTo} panelId="camera-panel" />
         <div id="camera-panel" role="tabpanel" aria-label={view}>
 
         <p className="text-xs text-gray-500 mb-3 dark:text-gray-400">
