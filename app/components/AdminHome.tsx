@@ -22,7 +22,7 @@ const display = Anton({ weight: "400", subsets: ["latin"] });
 // Each tool's app-style icon: its tile colour and a line drawing — looks only;
 // the list and its order are below.
 const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
-  "/admin/stats/matches": { colour: "bg-green-700", icon: <><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /></> },
+  "/admin/stats/matches": { colour: "bg-green-700", icon: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></> },
   "/admin/stats/training": { colour: "bg-cyan-700", icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
   "/admin/stats/player-of-the-month": { colour: "bg-amber-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
   "/admin/awards": { colour: "bg-rose-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
