@@ -241,7 +241,7 @@ function winners(list: Player[], field: StatField) {
 
 export default function StatsTracker() {
   const { TEAMS, teamName } = useTeams();
-  const { screen, open, close } = useScreens("/admin/stats");
+  const { screen, open, switchTo, close } = useScreens("/admin/stats");
   const playerId = screen.startsWith("player-") ? screen.slice(7) : "";
   const view = playerId || screen === "add" ? "players" : ["players", "awards", "season", "totals"].includes(screen) ? screen : "team";
   const detail = !!playerId || ["add", "season", "totals"].includes(screen);
@@ -718,12 +718,12 @@ export default function StatsTracker() {
           <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">{season}</span>
         </div>}
         {!detail && <div role="tablist" aria-label="Stats views" className="mb-6 grid grid-cols-3 border-b border-gray-200 dark:border-white/15">
-          {(["team", "players", "awards"] as const).map((tab) => <button key={tab} role="tab" id={`stats-tab-${tab}`} aria-controls="stats-panel" tabIndex={view === tab ? 0 : -1} aria-selected={view === tab} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(tab); }} onKeyDown={(event) => {
+          {(["team", "players", "awards"] as const).map((tab) => <button key={tab} role="tab" id={`stats-tab-${tab}`} aria-controls="stats-panel" tabIndex={view === tab ? 0 : -1} aria-selected={view === tab} onClick={() => { setEditing(false); setEditingId(null); setError(null); switchTo(tab); }} onKeyDown={(event) => {
             if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
             event.preventDefault();
             const tabs = ["team", "players", "awards"];
             const index = event.key === "Home" ? 0 : event.key === "End" ? 2 : (tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : -1) + 3) % 3;
-            open(tabs[index]); document.getElementById(`stats-tab-${tabs[index]}`)?.focus();
+            switchTo(tabs[index]); document.getElementById(`stats-tab-${tabs[index]}`)?.focus();
           }} className={`min-h-12 border-b-2 text-sm font-semibold capitalize ${view === tab ? "border-green-700 text-green-700 dark:border-green-400 dark:text-green-400" : "border-transparent text-gray-500 dark:text-gray-400"}`}>{tab}</button>)}
         </div>}
 

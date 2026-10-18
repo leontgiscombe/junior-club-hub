@@ -180,7 +180,7 @@ function PlanWeekCard({
 }
 
 export default function TrainingLog() {
-  const { screen, open } = useScreens("/admin/stats/training");
+  const { screen, switchTo } = useScreens("/admin/stats/training");
   const view = screen === "history" || screen === "leaders" ? screen : "upcoming";
   const { TEAMS } = useTeams();
   const { features } = useClub();
@@ -493,7 +493,7 @@ export default function TrainingLog() {
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
-        <ToolTabs label="Training views" tabs={[{ id: "upcoming", label: "Upcoming" }, { id: "history", label: "History", count: toAward.length }, { id: "leaders", label: "Best Trainers" }]} value={view} onChange={open} panelId="training-panel" />
+        <ToolTabs label="Training views" tabs={[{ id: "upcoming", label: "Upcoming" }, { id: "history", label: "History", count: toAward.length }, { id: "leaders", label: "Best Trainers" }]} value={view} onChange={switchTo} panelId="training-panel" />
         <div id="training-panel" role="tabpanel" aria-label={view === "leaders" ? "Best Trainers" : view === "history" ? "History" : "Upcoming"}>
 
         {error && (

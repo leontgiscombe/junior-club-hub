@@ -148,7 +148,7 @@ function downloadOrderTotals(rows: KitRequest[], team: string) {
 // — used by the per-team admin pages at /kit/<team>/admin. With no prop it shows
 // all teams with a selector, used by the combined /kit/admin page.
 export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
-  const { screen, open } = useScreens("/admin/kit");
+  const { screen, switchTo } = useScreens("/admin/kit");
   const view = screen === "requests" || screen === "waiting" ? screen : "sizes";
   const { TEAMS, teamName, isValidTeam } = useTeams();
   const CLUB = useClub();
@@ -331,7 +331,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         {!lockedTeam && (
           <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} disabled={loading} onChange={(event) => switchTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
         )}
-        <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes", count: submissions.length }, { id: "requests", label: "Requests", count: requests.filter((request) => !request.doneAt).length }, { id: "waiting", label: "Waiting", count: waiting.length }]} value={view} onChange={open} panelId="kit-panel" />
+        <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes", count: submissions.length }, { id: "requests", label: "Requests", count: requests.filter((request) => !request.doneAt).length }, { id: "waiting", label: "Waiting", count: waiting.length }]} value={view} onChange={switchTo} panelId="kit-panel" />
         <div id="kit-panel" role="tabpanel" aria-label={view}>
 
         {/* Stats */}

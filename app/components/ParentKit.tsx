@@ -36,7 +36,7 @@ function SubmittedSizes({ submission }: { submission: Submission }) {
 
 export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
   const CLUB = useClub();
-  const { screen, open, close } = useScreens("/kit");
+  const { screen, open, switchTo, close } = useScreens("/kit");
   const [data, setData] = useState<ParentKitData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -130,7 +130,7 @@ export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
                   : detail ? <p className={`wp-text py-8 text-center text-sm ${muted}`}>This kit record is no longer available.</p>
                     : <>
                       <button onClick={() => navigate("kit")} aria-label="View this season's kit" title="View this season's kit" className="mb-5 block w-full">{banner}</button>
-                      <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes" }, { id: "requests", label: "Requests", count: pending.length }, { id: "history", label: "History", count: history.length + completed.length }]} value={view} onChange={navigate} panelId="parent-kit-panel" />
+                      <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes" }, { id: "requests", label: "Requests", count: pending.length }, { id: "history", label: "History", count: history.length + completed.length }]} value={view} onChange={(next) => { if (busy) return; setError(""); setNotice(""); switchTo(next); }} panelId="parent-kit-panel" />
                       <section id="parent-kit-panel" role="tabpanel" aria-label={view}>
                         {view === "sizes" && <><h2 className="wp-text mb-3 text-lg font-bold">{selfOnly ? "Your sizes" : "Your children"}</h2><div className={`${surface} divide-y divide-gray-100 dark:divide-white/10`}>{family.map((entry) => <KitRow key={entry.id} title={entry.name} detail={entry.teamName} icon={ICONS.child} onClick={() => editChild(entry)}><span className={`shrink-0 text-xs font-semibold ${entry.submissions.length ? "text-green-700 dark:text-green-400" : "text-amber-800 dark:text-amber-300"}`}>{entry.submissions.length ? "Submitted" : "Needed"}</span></KitRow>)}</div>{!family.length && <p className={`wp-text py-6 text-sm ${muted}`}>No approved team members linked yet. <Link href="/account" className="font-semibold underline">Your Account</Link></p>}<button onClick={() => navigate("guide")} className="wp-text mt-5 min-h-11 text-sm font-semibold text-green-700 dark:text-green-400">Size Guide</button></>}
                         {view === "requests" && <><div className="mb-4 flex items-center justify-between gap-3"><h2 className="wp-text text-lg font-bold">Open requests</h2><button disabled={!family.length} onClick={() => navigate("new-request")} className={command}>Request Kit</button></div><div className={`${surface} divide-y divide-gray-100 dark:divide-white/10`}>{pending.map((entry) => <KitRow key={entry.id} title={KIT_ITEMS[entry.item]?.label ?? entry.item} detail={`${entry.childName} · ${entry.size} · Qty ${entry.quantity}`} icon={ICONS.shirt} onClick={() => navigate(`request-${entry.id}`)}><span className={`text-xs ${muted}`}>Waiting</span></KitRow>)}</div>{!pending.length && <p className={`wp-text py-8 text-center text-sm ${muted}`}>No requests waiting.</p>}</>}

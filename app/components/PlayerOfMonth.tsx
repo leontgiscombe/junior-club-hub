@@ -132,7 +132,7 @@ function defaultMonth(months: string[]): string {
 }
 
 export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
-  const { screen, open } = useScreens("/admin/stats/player-of-the-month");
+  const { screen, switchTo } = useScreens("/admin/stats/player-of-the-month");
   const view = screen === "poster" ? "poster" : "standings";
   const { TEAMS, teamName, findTeam } = useTeams();
   const CLUB = useClub();
@@ -362,7 +362,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
-        <ToolTabs label="Monthly award views" tabs={[{ id: "standings", label: "Standings" }, { id: "poster", label: "Poster" }]} value={view} onChange={open} />
+        <ToolTabs label="Monthly award views" tabs={[{ id: "standings", label: "Standings" }, { id: "poster", label: "Poster" }]} value={view} onChange={switchTo} />
 
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 

@@ -20,7 +20,7 @@ async function requestData(admin: boolean, key: string): Promise<SeasonAwardsDat
 }
 
 export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
-  const { screen, open, close } = useScreens(admin ? "/admin/awards" : "/awards");
+  const { screen, open, switchTo, close } = useScreens(admin ? "/admin/awards" : "/awards");
   const selectedId = admin ? screen.startsWith("award-") ? screen.slice(6) : screen.startsWith("result-") ? screen.slice(7) : "" : "";
   const view = screen === "results" || screen.startsWith("result-") ? "results" : screen === "visibility" ? "visibility" : "awards";
   const [data, setData] = useState<SeasonAwardsData | null>(null);
@@ -121,7 +121,7 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
               {seasons.map((option) => <option key={option} value={option}>{option}</option>)}
             </select></label>
           </div>}
-          {admin && !selectedId && !editing && <ToolTabs label="Award views" tabs={[{ id: "awards", label: "Awards" }, { id: "results", label: "Results" }, { id: "visibility", label: "Visibility" }]} value={view} onChange={open} />}
+          {admin && !selectedId && !editing && <ToolTabs label="Award views" tabs={[{ id: "awards", label: "Awards" }, { id: "results", label: "Results" }, { id: "visibility", label: "Visibility" }]} value={view} onChange={switchTo} />}
           {admin && view === "visibility" && season === data.season && <div className={panel}>
             <label className="flex min-h-11 items-center gap-3 font-semibold"><input type="checkbox" className="h-5 w-5 shrink-0 accent-green-700" checked={data.activeTeams.includes(team)} disabled={saving || !team} onChange={(event) => void mutate({ action: "activate", team, active: event.target.checked }, event.target.checked ? "Awards activated for parents." : "Awards hidden from parents.")} />Activate awards for parents</label>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{data.activeTeams.includes(team) ? "Visible to parents" : "Hidden from parents"}</p>

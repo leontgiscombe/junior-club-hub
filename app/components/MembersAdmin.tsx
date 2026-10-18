@@ -102,7 +102,7 @@ const when = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function MembersAdmin() {
-  const { screen, open } = useScreens("/admin/members");
+  const { screen, switchTo } = useScreens("/admin/members");
   const view = screen === "waiting" || screen === "access" ? screen : "members";
   const [teamFilter, setTeamFilter] = useState("all");
   const [key, setKey] = useState("");
@@ -305,7 +305,7 @@ export default function MembersAdmin() {
       <TopBar title="Members" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto max-w-2xl px-4 py-4">
-        <ToolTabs label="Member views" tabs={[{ id: "members", label: "Members" }, { id: "waiting", label: "Approvals", count: waitingCount }, { id: "access", label: "Access" }]} value={view} onChange={(next) => { setProfile(null); open(next); }} panelId="members-panel" />
+        <ToolTabs label="Member views" tabs={[{ id: "members", label: "Members" }, { id: "waiting", label: "Approvals", count: waitingCount }, { id: "access", label: "Access" }]} value={view} onChange={(next) => { setProfile(null); switchTo(next); }} panelId="members-panel" />
         <div id="members-panel" role="tabpanel" aria-label={view}>
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
 
