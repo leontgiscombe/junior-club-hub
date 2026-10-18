@@ -391,7 +391,7 @@ export default function AccountPage() {
                 <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                   {`Their full name and team at ${here.club}, for the club's squad. Only the club's coaches and members see them.`}
                 </p>
-                <fieldset disabled={busy}>
+                <fieldset disabled={busy} className="min-w-0">
                 <ChildrenEditor
                   value={[selectedChild]}
                   teams={here.teams}
