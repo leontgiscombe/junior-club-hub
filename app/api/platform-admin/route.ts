@@ -77,10 +77,10 @@ export async function POST(req: NextRequest) {
       if (!plan) return NextResponse.json({ error: "Choose a plan" }, { status: 400 });
       const until = new Date(from(record.billing?.plan === plan ? record.billing?.paidUntil : undefined));
       until.setUTCMonth(until.getUTCMonth() + months);
-      await setTenantBilling(id, { plan, paidUntil: until.toISOString() });
+      await setTenantBilling(id, { plan, paidUntil: until.toISOString(), source: "manual", cancelled: null, billingIssue: null });
       message = `${record.name}: ${PLANS[plan].name} plan, paid up to ${until.toLocaleDateString("en-GB")}`;
     } else if (op === "unpaid") {
-      await setTenantBilling(id, { plan: null, paidUntil: null });
+      await setTenantBilling(id, { plan: null, paidUntil: null, source: null, cancelled: null, billingIssue: null });
       message = `${record.name}'s plan removed`;
     } else return NextResponse.json({ error: "Unknown change" }, { status: 400 });
     await logAdmin("Billing", id, message);

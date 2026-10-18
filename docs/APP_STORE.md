@@ -82,8 +82,9 @@ players, a match and a training session, so the reviewer sees a working hub.
   (Sentry) — all linked to the user, none used for tracking.
 - **Age rating and category**: for parents and coaches (not the Kids category);
   it has user-generated content inside private clubs.
-- **Subscriptions** (when added): through In-App Purchase (3.1.1), e.g. with
-  RevenueCat; no links to paying on the web in the UK app.
+- **Subscriptions**: through In-App Purchase (3.1.1) with RevenueCat, set up
+  as in `docs/SUBSCRIPTIONS.md`; clubs that paid on the website are recognised
+  in the app (3.1.3(b)). No links to paying on the web inside the UK app.
 - **Minimum functionality** (4.2): native notifications, Face ID, the camera
   QR scanner and a proper opening/offline screen are what make it more than a
   website in a frame.

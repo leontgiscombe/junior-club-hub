@@ -9,6 +9,8 @@ import { getTenant } from "@/lib/tenant";
 import { getTenantRecord } from "@/lib/tenants";
 import { redirect } from "next/navigation";
 import { inApp } from "@/lib/inAppServer";
+import { currentPerson } from "@/lib/people";
+import { revenueCatConfigured, syncClubBilling, webPurchaseUrl } from "@/lib/revenuecat";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Plans", robots: { index: false } };
@@ -19,8 +21,27 @@ export default async function PlansPage() {
   // prices and plans aren't shown in the App Store app (lib/inApp.ts)
   if (await inApp()) redirect("/");
   const tenant = await getTenant();
-  const [club, teams, record] = await Promise.all([getClub(), getTeams().catch(() => []), tenant ? getTenantRecord(tenant) : null]);
+  const [club, teams, me] = await Promise.all([
+    getClub(),
+    getTeams().catch(() => []),
+    tenant ? currentPerson(tenant).catch(() => null) : null,
+  ]);
+  const isAdmin = me?.person?.status === "approved" && me.person.roles.includes("admin");
+  let record = tenant ? await getTenantRecord(tenant) : null;
+  // a club admin sees it as RevenueCat has it now (lib/revenuecat.ts), not
+  // waiting on the webhook
+  let managementUrl: string | null = null;
+  if (tenant && isAdmin && record?.billing && revenueCatConfigured()) {
+    try {
+      managementUrl = (await syncClubBilling(tenant))?.managementUrl ?? null;
+      record = await getTenantRecord(tenant);
+    } catch (err) {
+      console.error("Plans: RevenueCat", err);
+    }
+  }
   const state = record ? billingState(record.billing) : null;
+  const billing = record?.billing;
+  const buyUrl = tenant && isAdmin ? webPurchaseUrl(tenant) : null;
   const suggested = planForTeams(Math.max(teams.length, 1));
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] px-5 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))] text-gray-900 dark:bg-black dark:text-gray-50">
@@ -46,14 +67,44 @@ export default async function PlansPage() {
         </p>
         <PlanList suggested={suggested} />
         <div className="rounded-2xl bg-white p-4 text-sm text-gray-600 dark:bg-[#1c1c1e] dark:text-gray-300">
-          <p className="font-bold text-gray-900 dark:text-gray-50">Subscribing</p>
-          <p className="mt-1">
-            Subscribing in the app is coming soon. Until then, a club admin can{" "}
-            <Link href="/support#contact" className="font-semibold text-green-700 underline dark:text-green-400">
-              get in touch
-            </Link>{" "}
-            and we&apos;ll set the club&apos;s plan up.
-          </p>
+          <p className="font-bold text-gray-900 dark:text-gray-50">{state?.kind === "paid" ? "Your subscription" : "Subscribing"}</p>
+          {state?.kind === "paid" ? (
+            <>
+              {billing?.billingIssue && <p className="mt-1 font-semibold text-red-700 dark:text-red-400">The last payment didn&apos;t go through, and it&apos;s being tried again. Please check the card.</p>}
+              {billing?.cancelled && <p className="mt-1 font-semibold text-amber-800 dark:text-amber-300">It&apos;s been cancelled, so it ends on {when(state.until)}. Everything&apos;s kept if you subscribe again.</p>}
+              <p className="mt-1">
+                {billing?.source === "apple"
+                  ? "Paid through the App Store. To change plan or cancel, open Settings on the iPhone it was bought on, tap your name, then Subscriptions."
+                  : billing?.source === "web"
+                    ? "Paid by card on this website."
+                    : "Set up for you by us. Get in touch to change it."}
+              </p>
+              {billing?.source === "web" && isAdmin && managementUrl && (
+                <a href={managementUrl} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-green-700 px-4 py-2 font-semibold text-white">
+                  Manage Billing
+                </a>
+              )}
+            </>
+          ) : state?.kind === "free" ? (
+            <p className="mt-1">Nothing to do — {club.name} doesn&apos;t pay.</p>
+          ) : buyUrl ? (
+            <>
+              <p className="mt-1">Pay monthly or yearly by card or Apple Pay. Change plan or cancel whenever you like.</p>
+              <a href={buyUrl} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-green-700 px-4 py-2 font-semibold text-white">
+                Subscribe
+              </a>
+            </>
+          ) : tenant && !isAdmin && webPurchaseUrl(tenant) ? (
+            <p className="mt-1">A club admin can subscribe here, or in the app.</p>
+          ) : (
+            <p className="mt-1">
+              A club admin can{" "}
+              <Link href="/support#contact" className="font-semibold text-green-700 underline dark:text-green-400">
+                get in touch
+              </Link>{" "}
+              and we&apos;ll set the club&apos;s plan up.
+            </p>
+          )}
         </div>
       </div>
     </main>
