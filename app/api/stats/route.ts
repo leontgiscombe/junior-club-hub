@@ -14,6 +14,7 @@ import {
 import { getCurrentSeason, listArchives } from "@/lib/season";
 import { isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
+import { playerPhotoVersions } from "@/lib/playerPhoto";
 
 export const runtime = "nodejs";
 
@@ -27,12 +28,14 @@ export async function GET(request: Request) {
   if (!(await isAuthorised(request))) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
-  const [players, season, archives] = await Promise.all([
+  const [players, season, archives, photos] = await Promise.all([
     listPlayers(),
     getCurrentSeason(),
     listArchives(),
+    // each player's photo version (lib/playerPhoto.ts), for the list's avatars
+    playerPhotoVersions().catch(() => ({})),
   ]);
-  return NextResponse.json({ players, season, archives });
+  return NextResponse.json({ players, season, archives, photos });
 }
 
 export async function POST(request: Request) {

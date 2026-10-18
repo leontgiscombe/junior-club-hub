@@ -194,6 +194,20 @@ function formatDate(iso: string) {
 
 // The stat cards on one player's card: the ones their position is judged on,
 // plus any other they have actually recorded (a keeper's goal, say).
+/** A player's photo (Members → profile; only coaches and their family can load it), or their initial. */
+function PlayerAvatar({ player, version, adminKey }: { player: Player; version?: string; adminKey: string }) {
+  return (
+    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">
+      {version ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a child's photo, private to the club's coaches and their family
+        <img src={`/api/players/photo?id=${encodeURIComponent(player.id)}&key=${encodeURIComponent(adminKey)}&v=${version}`} alt="" className="h-full w-full object-cover" />
+      ) : (
+        player.name.trim().slice(0, 1)
+      )}
+    </span>
+  );
+}
+
 function statsFor(player: Player) {
   const fields = new Set(statsForPlayer(player, STAT_ORDER));
   return STATS.filter((s) => fields.has(s.field));
@@ -252,6 +266,8 @@ export default function StatsTracker() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  // player id → photo version, for those with a photo (Members → profile)
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   // The match log's games, so this page can say what is already in there and
   // what still needs a score.
@@ -299,6 +315,7 @@ export default function StatsTracker() {
       if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
       setPlayers(data.players);
+      setPhotos(data.photos ?? {});
       setSeason(data.season ?? "");
       setArchives(data.archives ?? []);
       setAuthed(true);
@@ -1007,7 +1024,7 @@ export default function StatsTracker() {
         {selectedPlayer && <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm text-gray-500 dark:text-gray-400">{positionLabel(selectedPlayer.position)}</p><button disabled={!!busyId} onClick={() => { setEditing((current) => !current); setEditingId(null); }} className="flex min-h-11 items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{ICONS.doc}{editing ? "Done" : "Correct Stats"}</button></div>}
 
         {!playerId ? (
-          filtered.length ? <div className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">{filtered.map((player) => <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex min-h-19 w-full items-center gap-3 px-4 py-3 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">{player.name.trim().slice(0, 1)}</span><span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{player.name}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span><span className="mt-1 block text-xs tabular-nums text-gray-500 dark:text-gray-400">{statsFor(player).filter((stat) => player[stat.field] > 0).map((stat) => `${stat.icon} ${stat.short} ${player[stat.field]}`).join(" · ") || "No stats yet"}</span></span><span aria-hidden="true" className="shrink-0 text-gray-400">›</span></button>)}</div> : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
+          filtered.length ? <div className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">{filtered.map((player) => <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex min-h-19 w-full items-center gap-3 px-4 py-3 text-left"><PlayerAvatar player={player} version={photos[player.id]} adminKey={key} /><span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{player.name}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span><span className="mt-1 block text-xs tabular-nums text-gray-500 dark:text-gray-400">{statsFor(player).filter((stat) => player[stat.field] > 0).map((stat) => `${stat.icon} ${stat.short} ${player[stat.field]}`).join(" · ") || "No stats yet"}</span></span><span aria-hidden="true" className="shrink-0 text-gray-400">›</span></button>)}</div> : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
         ) : !selectedPlayer ? (
           <p role="status" className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">This player is not in the selected team.</p>
         ) : (
