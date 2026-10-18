@@ -912,7 +912,7 @@ export default function StatsTracker() {
                         {t.total}
                       </p>
                       <p className="text-[11px] text-gray-500 truncate dark:text-gray-400">
-                        {t.short}
+                        <span aria-hidden="true">{t.icon}</span> {t.short}
                       </p>
                     </div>
                   ))}
@@ -979,7 +979,7 @@ export default function StatsTracker() {
                         key={a.field}
                         className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                       >
-                        <span className="min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400">{a.label}</span>
+                        <span className="min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400"><span aria-hidden="true">{a.icon}</span> {a.label}</span>
                         <span className="min-w-0 flex-1 break-words text-right text-sm font-bold text-gray-900 dark:text-gray-50">
                           {a.result.names.join(", ")}
                         </span>
@@ -1007,7 +1007,7 @@ export default function StatsTracker() {
         {selectedPlayer && <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm text-gray-500 dark:text-gray-400">{positionLabel(selectedPlayer.position)}</p><button disabled={!!busyId} onClick={() => { setEditing((current) => !current); setEditingId(null); }} className="flex min-h-11 items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{ICONS.doc}{editing ? "Done" : "Correct Stats"}</button></div>}
 
         {!playerId ? (
-          filtered.length ? <div className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">{filtered.map((player) => <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex min-h-19 w-full items-center gap-3 px-4 py-3 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">{player.name.trim().slice(0, 1)}</span><span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{player.name}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span><span className="mt-1 block text-xs tabular-nums text-gray-500 dark:text-gray-400">{statsFor(player).filter((stat) => player[stat.field] > 0).map((stat) => `${stat.short} ${player[stat.field]}`).join(" · ") || "No stats yet"}</span></span><span aria-hidden="true" className="shrink-0 text-gray-400">›</span></button>)}</div> : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
+          filtered.length ? <div className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">{filtered.map((player) => <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex min-h-19 w-full items-center gap-3 px-4 py-3 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">{player.name.trim().slice(0, 1)}</span><span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{player.name}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span><span className="mt-1 block text-xs tabular-nums text-gray-500 dark:text-gray-400">{statsFor(player).filter((stat) => player[stat.field] > 0).map((stat) => `${stat.icon} ${stat.short} ${player[stat.field]}`).join(" · ") || "No stats yet"}</span></span><span aria-hidden="true" className="shrink-0 text-gray-400">›</span></button>)}</div> : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
         ) : !selectedPlayer ? (
           <p role="status" className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">This player is not in the selected team.</p>
         ) : (
@@ -1110,7 +1110,7 @@ export default function StatsTracker() {
                           className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:bg-white/5 dark:border-white/10"
                         >
                           <p className="text-xs font-medium text-gray-500 mb-1.5 truncate dark:text-gray-400">
-                            {s.label}
+                            <span aria-hidden="true">{s.icon}</span> {s.label}
                           </p>
                           {editing ? (
                             <div className="flex items-center justify-between gap-2">
