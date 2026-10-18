@@ -97,11 +97,12 @@ export default async function Home() {
   const showAwards = await parentAwardsVisible(person).catch(() => false);
   const isParentView = viewer.signedIn && !viewer.canCoach && !viewer.canFinance;
 
-  // the line under "Home": the club, and whose team this is
+  // the line under "Home": the club, and the team(s) Home is showing — no
+  // children's names, so they aren't on screenshots or a glance at the phone
   const context = [
     CLUB.name,
     kids.some((k) => !k.pending)
-      ? kids.filter((k) => !k.pending).map((k) => [k.name.split(" ")[0], teamName(k.team?.slug)].filter(Boolean).join(", ")).join(" · ")
+      ? [...new Set(kids.filter((k) => !k.pending).map((k) => teamName(k.team?.slug)).filter(Boolean))].join(" · ")
       : teamName(person?.team?.slug),
   ]
     .filter(Boolean)
