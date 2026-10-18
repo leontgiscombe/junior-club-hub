@@ -6,6 +6,6 @@ export const metadata = { title: "Kit Preview", robots: { index: false, follow: 
 
 export default async function KitPreviewPage({ searchParams }: { searchParams: Promise<{ live?: string }> }) {
   if (process.env.NODE_ENV !== "development") notFound();
-  if ((await searchParams).live === "1") return <ParentKit />;
+  if ((await searchParams).live === "1") return <ParentKit viewer={{ signedIn: true, initials: "AT", photo: null }} />;
   return <KitPreview />;
 }
