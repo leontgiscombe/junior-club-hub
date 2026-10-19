@@ -1,6 +1,6 @@
 // Who's signed in, and their place at this club.
 //   GET -> { user: { email, name, photo, initials } | null, person: { status, roles } | null, canCoach,
-//            passwordSignIn (whether this club's shared coach password still works) }
+//            passwordSignIn (whether this club's shared coach password still works), platformAdmin (its address, or null) }
 import { NextResponse } from "next/server";
 import { readAccess } from "@/lib/access";
 import { canCoach, currentPerson } from "@/lib/people";
@@ -9,6 +9,7 @@ import { currentUser } from "@/lib/auth";
 import { photoUrl } from "@/lib/userPhoto";
 import { financeTeamsOf } from "@/lib/financeDevices";
 import { hasOwnTeam } from "@/lib/access";
+import { platformAdminUrl } from "@/lib/platformAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,5 +45,7 @@ export async function GET() {
       : null,
     canCoach: canCoach(me.person),
     passwordSignIn,
+    // the platform admin's address, for whoever runs the platform (lib/platformAdmin.ts)
+    platformAdmin: platformAdminUrl(me.user.email),
   });
 }

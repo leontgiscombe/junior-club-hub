@@ -190,7 +190,7 @@ export default function AdminHome({
   }, []);
 
   // signed in with an account: who as, and whether they're a coach here
-  const [account, setAccount] = useState<{ email: string; canCoach: boolean } | null>(null);
+  const [account, setAccount] = useState<{ email: string; canCoach: boolean; platformAdmin?: string | null } | null>(null);
   // the club has switched its shared password off: accounts only
   const [passwordOff, setPasswordOff] = useState(false);
 
@@ -210,7 +210,7 @@ export default function AdminHome({
       .then((r) => r.json())
       .then(async (me) => {
         if (me?.passwordSignIn === false) setPasswordOff(true);
-        if (me?.user) setAccount({ email: me.user.email, canCoach: !!me.canCoach });
+        if (me?.user) setAccount({ email: me.user.email, canCoach: !!me.canCoach, platformAdmin: me.platformAdmin ?? null });
         // an account that can coach, or the coach password given earlier in this session
         const k = me?.canCoach ? SESSION_KEY : await accountKey();
         if (k) {
@@ -356,6 +356,24 @@ export default function AdminHome({
             })}
           </div>
         </div>
+
+        {/* whoever runs the platform: a way to its admin (lib/platformAdmin.ts) */}
+        {account?.platformAdmin && (
+          <a href={account.platformAdmin} className="press flex items-center gap-3 rounded-3xl bg-white px-5 py-4 shadow-sm dark:bg-[#1c1c1e]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-gray-900 text-white dark:bg-white dark:text-gray-900">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold text-gray-900 dark:text-gray-50">Platform Admin</span>
+              <span className="block text-sm text-gray-500 dark:text-gray-400">Every club on the platform · only you see this</span>
+            </span>
+            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        )}
 
         {account && key === SESSION_KEY && (
           <p className="wp-text text-center text-xs text-gray-500 dark:text-gray-400">

@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 import { rawKv } from "./kv";
 import { clientIp } from "./clientIp";
 import { currentPasskeyUser } from "./auth";
+import { rootDomain } from "./tenantHost";
 
 const MAX_FAILURES = 10; // an hour, per IP address
 
@@ -21,6 +22,16 @@ export const platformAdminEmails = () =>
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+
+/**
+ * The platform admin's address for an account on PLATFORM_ADMIN_EMAILS (for
+ * the shortcut on Your Account and Coach Admin), or null for everyone else.
+ */
+export function platformAdminUrl(email: string): string | null {
+  const root = rootDomain();
+  if (!root || !platformAdminEmails().includes(email.trim().toLowerCase())) return null;
+  return `${/^localhost(:|$)/.test(root) ? "http" : "https"}://${root}/platform/admin`;
+}
 
 export const platformAdminConfigured = () => keyConfigured() || platformAdminEmails().length > 0;
 

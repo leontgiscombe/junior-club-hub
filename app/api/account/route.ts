@@ -1,6 +1,6 @@
 // The signed-in person's own account.
 //   GET     -> { user, clubs: [{ id, name, url, roles, status }] }
-//   GET     -> { user: { email, name, phone }, clubs: [...] }
+//   GET     -> { user: { email, name, phone }, clubs: [...], platformAdmin (its address for whoever runs the platform, or null) }
 //   PATCH   { name, phone? } -> changes their name and mobile number (and at each of their clubs)
 //   DELETE  -> deletes the account (and its photo), signs out everywhere and leaves every club
 import { NextRequest, NextResponse } from "next/server";
@@ -8,6 +8,7 @@ import { kvCall, peopleKey, readPerson, type Person } from "@/lib/access";
 import { clearSessionCookie, currentUser, deleteUser, setUserName, setUserPhone, userClubsKey } from "@/lib/auth";
 import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
 import { leaveClub, onlyAdminOf } from "@/lib/people";
+import { platformAdminUrl } from "@/lib/platformAdmin";
 import { getClubFor } from "@/lib/settings";
 import { clubsOfUser } from "@/lib/userClubs";
 import { deletePhoto } from "@/lib/userPhoto";
@@ -26,7 +27,12 @@ export async function GET() {
   let name = user.name;
   const known = clubs.find((c) => c.person && c.person !== user.email.split("@")[0])?.person;
   if (!name && known) name = (await setUserName(user.id, known))?.name ?? known;
-  return NextResponse.json({ user: { email: user.email, name, phone: user.phone ?? "" }, clubs: clubs.map((c) => ({ id: c.id, name: c.name, url: c.url, roles: c.roles, status: c.status })) });
+  return NextResponse.json({
+    user: { email: user.email, name, phone: user.phone ?? "" },
+    clubs: clubs.map((c) => ({ id: c.id, name: c.name, url: c.url, roles: c.roles, status: c.status })),
+    // whoever runs the platform gets a shortcut to its admin (lib/platformAdmin.ts)
+    platformAdmin: platformAdminUrl(user.email),
+  });
 }
 
 export async function PATCH(req: NextRequest) {
