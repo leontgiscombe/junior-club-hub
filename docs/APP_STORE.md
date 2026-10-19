@@ -6,8 +6,9 @@ checklist for building and submitting it.
 
 **The wrapper is built: see `ios-app/README.md` for the step-by-step guide**
 (Mac setup, signing, App Store Connect text, screenshots, upload). The site
-detects the app by its user agent (`lib/inApp.ts`) and hides prices, plans and
-sign-up inside it; `/start` is its opening screen.
+detects the app by its user agent (`lib/inApp.ts`): inside it, clubs sign up
+and their admins subscribe with In-App Purchase, and nothing points to paying
+on the website; `/start` is its opening screen.
 
 ## Done in the website
 
@@ -37,7 +38,17 @@ sign-up inside it; `/start` is its opening screen.
 | `REVIEW_CODE` | Any 6 digits; give it to Apple in the Review Notes |
 
 Then make `REVIEW_EMAIL` a club admin of a demo club with some made-up teams,
-players, a match and a training session, so the reviewer sees a working hub.
+players, a match and a training session, so the reviewer sees a working hub:
+
+1. In the app (or on the website), **Start a New Club**, e.g. "Demo Juniors",
+   with the admin review email; sign in with `REVIEW_CODE`.
+2. Platform Admin → the club → **Fill With Demo Data**.
+3. Sign in as the parent review email and join the club with its code; approve
+   them in the club as the admin.
+4. Keep the club **on its free trial** (not Free or paid), so the reviewer sees
+   the plans in Settings → Plan. A new club gets 30 days; before each
+   submission, Platform Admin → the club → **Trial +30 Days** if it's running
+   low. (A club that's Free: **Stop Being Free** starts a 30-day trial.)
 
 ## To do in the wrapper project
 
