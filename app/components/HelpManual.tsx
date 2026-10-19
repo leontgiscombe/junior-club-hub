@@ -213,6 +213,13 @@ export default function HelpManual() {
             done (tap <B>Done</B> on the ones that are just a check), and the card goes when
             they&apos;re all done, or tap <B>Hide</B>.
           </p>
+          <H3>Which Email to Use</H3>
+          <Bullets>
+            <li>Sign in with <B>your own email</B>, not a shared club one. It&apos;s your personal account, not the club&apos;s.</li>
+            <li><B>One account does everything</B>: club admin, coach, treasurer and parent at the same club, and more than one club. There&apos;s no need for a second login or to invite yourself.</li>
+            <li>Other committee members use <B>their own emails</B>: make them admins in Coach Admin → <B>Members</B>. When someone steps down, take their role away and the club carries on.</li>
+            <li>A shared address (secretary@…) is still useful as the club&apos;s <B>contact email</B> in Settings, just not for signing in.</li>
+          </Bullets>
           <H3>Finding Your Way Around</H3>
           <Bullets>
             <li>The <B>tab bar</B> at the bottom: Home, Training (the players&apos; Training Hub), Finances (treasurers and club admins), Kit and Coach. Choose your own in Your Account → <B>Tab Bar</B>.</li>

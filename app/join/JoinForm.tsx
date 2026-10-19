@@ -162,8 +162,9 @@ export default function JoinForm({
     return (
       <div className="mt-6">
         <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">
-          That&apos;s the right code. Now sign in with your email — it makes your account, if you
-          haven&apos;t one, so you can open the hub on any device.
+          That&apos;s the right code. Now sign in with your own email — it makes your account, if you
+          haven&apos;t one, so you can open the hub on any device. Use your personal email rather than a
+          shared one: one account covers everything, whether you&apos;re a parent, a coach or both.
         </p>
         <SignInForm
           next={`/join?code=${encodeURIComponent(code)}`}
