@@ -21,6 +21,8 @@ export type Subscriber = {
     string,
     {
       expires_date?: string | null;
+      /** a failed renewal the store is still retrying: the club stays open until then */
+      grace_period_expires_date?: string | null;
       store?: string;
       unsubscribe_detected_at?: string | null;
       billing_issues_detected_at?: string | null;
@@ -42,11 +44,13 @@ export function planFromSubscriber(subscriber: Subscriber): StorePlan | null {
   let best: StorePlan | null = null;
   for (const [product, s] of Object.entries(subscriber.subscriptions ?? {})) {
     const plan = planFromProduct(product);
-    if (!plan || !s.expires_date || !Date.parse(s.expires_date)) continue;
-    if (best && Date.parse(best.paidUntil) >= Date.parse(s.expires_date)) continue;
+    // in a billing grace period, it runs to the end of that
+    const until = Math.max(Date.parse(s.expires_date ?? "") || 0, Date.parse(s.grace_period_expires_date ?? "") || 0);
+    if (!plan || !until) continue;
+    if (best && Date.parse(best.paidUntil) >= until) continue;
     best = {
       plan,
-      paidUntil: new Date(s.expires_date).toISOString(),
+      paidUntil: new Date(until).toISOString(),
       source: sourceOf(s.store),
       cancelled: !!s.unsubscribe_detected_at,
       billingIssue: !!s.billing_issues_detected_at,
