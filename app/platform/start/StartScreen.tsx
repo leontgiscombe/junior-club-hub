@@ -44,7 +44,6 @@ export default function StartScreen({
   appView: boolean;
 }) {
   const remembered = parseClub(useSyncExternalStore(noop, readStored, () => null));
-  const [forget, setForget] = useState(false);
   const [step, setStep] = useState<"choose" | "player" | "grownup">("choose");
   const [found, setFound] = useState<(Club & { join: string }) | null>(null);
   const [code, setCode] = useState("");
@@ -113,6 +112,8 @@ export default function StartScreen({
 
   const card = "w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]";
   const big = "flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left font-bold";
+  const option = "bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-gray-50";
+  const label = "text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
   const back = (
     <button
       onClick={() => {
@@ -127,7 +128,7 @@ export default function StartScreen({
   );
   const codeBox =
     "w-full rounded-xl border border-gray-200 px-4 py-3 text-center font-mono text-2xl tracking-[0.3em] text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
-  const showRemembered = remembered && !forget && !clubs?.length;
+  const showRemembered = remembered && !clubs?.length;
 
   return (
     <div className={card}>
@@ -141,19 +142,15 @@ export default function StartScreen({
 
       {step === "choose" && (
         <div className="flex flex-col gap-3">
+          {/* coming back: straight to your club, or sign in */}
           {showRemembered && (
-            <>
-              <a href={remembered.home} className={`${big} justify-center bg-green-600 text-white hover:bg-green-700`}>
-                Continue{remembered.name ? ` to ${remembered.name}` : ""}
-              </a>
-              <button onClick={() => setForget(true)} className="mb-2 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
-                A different club
-              </button>
-            </>
+            <a href={remembered.home} className={`${big} justify-center bg-green-600 text-white hover:bg-green-700`}>
+              Continue{remembered.name ? ` to ${remembered.name}` : ""}
+            </a>
           )}
           {clubs && clubs.length > 0 && (
-            <div className="mb-2 flex flex-col gap-2">
-              <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Your Clubs</p>
+            <>
+              <p className={label}>Your Clubs</p>
               {clubs.map((c) => (
                 <a
                   key={c.home}
@@ -164,32 +161,37 @@ export default function StartScreen({
                   {c.name}
                 </a>
               ))}
-            </div>
+            </>
           )}
-          <button onClick={() => setStep("player")} className={`${big} bg-green-50 text-green-900 dark:bg-green-400/10 dark:text-green-200`}>
-            <span className="text-3xl">🏃</span>
-            <span>
-              I&apos;m a Player
-              <span className="block text-sm font-medium opacity-80">With a code from my parent or coach</span>
-            </span>
-          </button>
-          <button onClick={() => setStep("grownup")} className={`${big} bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-gray-50`}>
-            <span className="text-3xl">👋</span>
-            <span>
-              I&apos;m a Parent or Coach
-              <span className="block text-sm font-medium opacity-80">With our club&apos;s code</span>
-            </span>
-          </button>
           {!clubs && (
-            <a href="/signin?next=/start" className="mt-1 rounded-xl border border-green-600 py-3 text-center font-bold text-green-700 dark:text-green-400">
+            <a
+              href="/signin?next=/start"
+              className={`${big} justify-center ${showRemembered ? "border border-green-600 text-green-700 dark:text-green-400" : "bg-green-600 text-white hover:bg-green-700"}`}
+            >
               Already have an account? Sign In
             </a>
           )}
-          <a href="/signup" className={`${big} bg-white text-gray-900 ring-1 ring-black/10 dark:bg-white/5 dark:text-gray-50 dark:ring-white/15`}>
+          {/* new here: join a club with its code, or start one */}
+          <p className={`${label} mt-3`}>New Here?</p>
+          <button onClick={() => setStep("grownup")} className={`${big} ${option}`}>
+            <span className="text-3xl">👋</span>
+            <span>
+              I&apos;m a Parent or Coach
+              <span className="block text-sm font-medium opacity-70">With our club&apos;s code</span>
+            </span>
+          </button>
+          <button onClick={() => setStep("player")} className={`${big} ${option}`}>
+            <span className="text-3xl">🏃</span>
+            <span>
+              I&apos;m a Player
+              <span className="block text-sm font-medium opacity-70">With my player code</span>
+            </span>
+          </button>
+          <a href="/signup" className={`${big} ${option}`}>
             <span className="text-3xl">🏟️</span>
             <span>
               Start a New Club
-              <span className="block text-sm font-medium opacity-80">Your club&apos;s own hub, 30 days free</span>
+              <span className="block text-sm font-medium opacity-70">Free for 30 days</span>
             </span>
           </a>
         </div>
