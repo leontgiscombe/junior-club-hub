@@ -17,7 +17,7 @@ const toAddress = (name: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 32);
 
-export default function SignupForm({ rootDomain }: { rootDomain: string }) {
+export default function SignupForm({ rootDomain, appView = false }: { rootDomain: string; appView?: boolean }) {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [addressTouched, setAddressTouched] = useState(false);
@@ -191,7 +191,10 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
       <button disabled={busy || !!addressError || !agreed} className="mt-1 cursor-pointer rounded-2xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
         {busy ? "Setting up…" : "Create Your Club's Hub"}
       </button>
-      <p className="text-center text-sm text-gray-500">30 days free, no card needed. Then from £4.99 a month, by how many teams you have.</p>
+      {/* in the App Store app the plans and their prices come from the App Store, later on */}
+      <p className="text-center text-sm text-gray-500">
+        {appView ? "30 days free, with everything included — no card needed." : "30 days free, no card needed. Then from £4.99 a month, by how many teams you have."}
+      </p>
     </form>
   );
 }

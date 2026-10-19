@@ -185,11 +185,13 @@ export default function StartScreen({
               Already have an account? Sign In
             </a>
           )}
-          {!appView && (
-            <a href="/signup" className="mt-2 text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
-              Starting a club? Sign up
-            </a>
-          )}
+          <a href="/signup" className={`${big} bg-white text-gray-900 ring-1 ring-black/10 dark:bg-white/5 dark:text-gray-50 dark:ring-white/15`}>
+            <span className="text-3xl">🏟️</span>
+            <span>
+              Start a New Club
+              <span className="block text-sm font-medium opacity-80">Your club&apos;s own hub, 30 days free</span>
+            </span>
+          </a>
         </div>
       )}
 
