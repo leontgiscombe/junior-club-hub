@@ -10,7 +10,6 @@ import { photoUrl } from "@/lib/userPhoto";
 import { financeTeamsOf } from "@/lib/financeDevices";
 import { hasOwnTeam } from "@/lib/access";
 import { platformAdminUrl } from "@/lib/platformAdmin";
-import { inApp } from "@/lib/inAppServer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +45,7 @@ export async function GET() {
       : null,
     canCoach: canCoach(me.person),
     passwordSignIn,
-    // the platform admin's address, for whoever runs the platform (lib/platformAdmin.ts),
-    // on the website only: never in the App Store app
-    platformAdmin: (await inApp()) ? null : platformAdminUrl(me.user.email),
+    // the platform admin's address, for whoever runs the platform (lib/platformAdmin.ts)
+    platformAdmin: platformAdminUrl(me.user.email),
   });
 }
