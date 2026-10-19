@@ -530,7 +530,7 @@ function ClubPanel({
         aria-modal="true"
         aria-label={c.name}
         onClick={(e) => e.stopPropagation()}
-        className="h-full w-full max-w-xl overflow-y-auto bg-gray-50 p-5 shadow-2xl"
+        className="h-full w-full max-w-xl overflow-y-auto overscroll-contain bg-gray-50 p-5 pb-[calc(env(safe-area-inset-bottom)+8rem)] pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -660,6 +660,8 @@ function ClubPanel({
             onClick={() => {
               setDeleting(!deleting);
               setConfirmText("");
+              // on a phone it opens at the very bottom: bring it up into view
+              setTimeout(() => document.getElementById("delete-club-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
             }}
             disabled={busy}
             className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
@@ -693,7 +695,7 @@ function ClubPanel({
         )}
 
         {deleting && (
-          <div className="mt-3 rounded-xl bg-red-50 p-3">
+          <div id="delete-club-confirm" className="mt-3 rounded-xl bg-red-50 p-3">
             <p className="text-sm text-red-800">
               This deletes <strong>{c.name}</strong> and everything in its hub, for good (a backup from the last 7 days can bring it back). Type{" "}
               <strong>{c.id}</strong> to confirm.
