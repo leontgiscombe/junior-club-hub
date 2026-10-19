@@ -148,12 +148,10 @@ export default function JoinForm({
             Already a member? Sign in
           </a>
         )}
-        <a href="/admin" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
-          I&apos;m a coach — sign in
-        </a>
-        <a href="/player" className="text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
-          I&apos;m a player — set up my device with a code
-        </a>
+        <p className="flex justify-center gap-5 text-sm font-semibold text-gray-500 dark:text-gray-400">
+          <a href="/admin" className="hover:text-green-700">Coach Sign In</a>
+          <a href="/player" className="hover:text-green-700">I&apos;m a Player</a>
+        </p>
       </form>
     );
   }
