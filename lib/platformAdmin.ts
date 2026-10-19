@@ -25,7 +25,8 @@ export const platformAdminEmails = () =>
 
 /**
  * The platform admin's address for an account on PLATFORM_ADMIN_EMAILS (for
- * the shortcut on Your Account and Coach Admin), or null for everyone else.
+ * the shortcut on Your Account and Coach Admin, on the website only — the
+ * APIs leave it out in the App Store app), or null for everyone else.
  */
 export function platformAdminUrl(email: string): string | null {
   const root = rootDomain();
