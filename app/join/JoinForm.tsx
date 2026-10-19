@@ -143,7 +143,22 @@ export default function JoinForm({
         <button id="join-code-next" disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Checking…" : "Next"}
         </button>
-        {!account && (
+        {account ? (
+          // signed in, but not with an account that's in this club: switching is a sign-out away
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Signed in as {account.email}.{" "}
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/auth/signout", { method: "POST" }).catch(() => {});
+                window.location.href = "/signin?next=/";
+              }}
+              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
+            >
+              Use another email
+            </button>
+          </p>
+        ) : (
           <a href="/signin?next=/" className="text-center text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400">
             Already a member? Sign in
           </a>
