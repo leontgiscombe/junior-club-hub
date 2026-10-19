@@ -51,12 +51,23 @@ export async function storeOptions(apiKey: string, tenant: string): Promise<Stor
   return options;
 }
 
+/** The plan product this club is subscribed to through the App Store now, if any. */
+export async function currentProduct(apiKey: string, tenant: string): Promise<string | null> {
+  await asClub(apiKey, tenant);
+  const { customerInfo } = (await call("getCustomerInfo")) as { customerInfo?: { activeSubscriptions?: string[] } };
+  return (customerInfo?.activeSubscriptions ?? []).find((id) => planFromProduct(id)) ?? null;
+}
+
 const cancelled = (err: unknown) => {
   const e = err as { code?: unknown; message?: unknown; data?: { userCancelled?: unknown } } | null;
   return e?.data?.userCancelled === true || e?.code === "1" || e?.code === 1 || /cancel/i.test(String(e?.message ?? ""));
 };
 
-/** Buy a plan with the App Store. False when they backed out of Apple's sheet. */
+/**
+ * Buy a plan with the App Store, or switch to it from the club's current one
+ * (the same subscription group, so Apple treats it as an upgrade or downgrade).
+ * False when they backed out of Apple's sheet.
+ */
 export async function buy(apiKey: string, tenant: string, option: StoreOption): Promise<boolean> {
   await asClub(apiKey, tenant);
   try {

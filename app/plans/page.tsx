@@ -66,7 +66,8 @@ export default async function PlansPage() {
           Every plan has every part of the hub. You pay by how many teams the club has — {club.name} has {teams.length} team
           {teams.length === 1 ? "" : "s"}.
         </p>
-        {appView && tenant && isAdmin && (state?.kind === "trial" || state?.kind === "ended") ? (
+        {/* in the app, an admin subscribes, or switches plan if the club pays through the App Store */}
+        {appView && tenant && isAdmin && (state?.kind === "trial" || state?.kind === "ended" || (state?.kind === "paid" && billing?.source === "apple")) ? (
           <AppPlans tenant={tenant} apiKey={process.env.REVENUECAT_APPLE_KEY || null} suggested={suggested} />
         ) : (
           <PlanList suggested={suggested} />
@@ -79,7 +80,9 @@ export default async function PlansPage() {
               {billing?.cancelled && <p className="mt-1 font-semibold text-amber-800 dark:text-amber-300">It&apos;s been cancelled, so it ends on {when(state.until)}. Everything&apos;s kept if you subscribe again.</p>}
               <p className="mt-1">
                 {billing?.source === "apple"
-                  ? "Paid through the App Store. To change plan or cancel, open Settings on the iPhone it was bought on, tap your name, then Subscriptions."
+                  ? appView && isAdmin
+                    ? "Paid through the App Store. Switch plan above. To cancel, open Settings on the iPhone it was bought on, tap your name, then Subscriptions."
+                    : "Paid through the App Store. To change plan or cancel, open Settings on the iPhone it was bought on, tap your name, then Subscriptions."
                   : billing?.source === "web"
                     ? appView ? "Paid by card on our website." : "Paid by card on this website."
                     : "Set up for you by us. Get in touch to change it."}
