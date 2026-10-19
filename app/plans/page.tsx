@@ -3,11 +3,11 @@
 // after its trial (proxy.ts), so its admins can sort it out.
 import Link from "next/link";
 import PlanList from "../components/PlanList";
+import AppPlans from "./AppPlans";
 import { billingState, planForTeams, PLANS, TRIAL_DAYS } from "@/lib/billing";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { getTenantRecord } from "@/lib/tenants";
-import { redirect } from "next/navigation";
 import { inApp } from "@/lib/inAppServer";
 import { currentPerson } from "@/lib/people";
 import { revenueCatConfigured, syncClubBilling, webPurchaseUrl } from "@/lib/revenuecat";
@@ -18,8 +18,9 @@ export const metadata = { title: "Plans", robots: { index: false } };
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
 export default async function PlansPage() {
-  // prices and plans aren't shown in the App Store app (lib/inApp.ts)
-  if (await inApp()) redirect("/");
+  // in the App Store app, plans are bought with In-App Purchase (AppPlans), and
+  // nothing points to paying on the website (lib/inApp.ts)
+  const appView = await inApp();
   const tenant = await getTenant();
   const [club, teams, me] = await Promise.all([
     getClub(),
@@ -65,7 +66,11 @@ export default async function PlansPage() {
           Every plan has every part of the hub. You pay by how many teams the club has — {club.name} has {teams.length} team
           {teams.length === 1 ? "" : "s"}.
         </p>
-        <PlanList suggested={suggested} />
+        {appView && tenant && isAdmin && (state?.kind === "trial" || state?.kind === "ended") ? (
+          <AppPlans tenant={tenant} apiKey={process.env.REVENUECAT_APPLE_KEY || null} suggested={suggested} />
+        ) : (
+          <PlanList suggested={suggested} />
+        )}
         <div className="rounded-2xl bg-white p-4 text-sm text-gray-600 dark:bg-[#1c1c1e] dark:text-gray-300">
           <p className="font-bold text-gray-900 dark:text-gray-50">{state?.kind === "paid" ? "Your subscription" : "Subscribing"}</p>
           {state?.kind === "paid" ? (
@@ -76,10 +81,10 @@ export default async function PlansPage() {
                 {billing?.source === "apple"
                   ? "Paid through the App Store. To change plan or cancel, open Settings on the iPhone it was bought on, tap your name, then Subscriptions."
                   : billing?.source === "web"
-                    ? "Paid by card on this website."
+                    ? appView ? "Paid by card on our website." : "Paid by card on this website."
                     : "Set up for you by us. Get in touch to change it."}
               </p>
-              {billing?.source === "web" && isAdmin && managementUrl && (
+              {billing?.source === "web" && isAdmin && managementUrl && !appView && (
                 <a href={managementUrl} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-green-700 px-4 py-2 font-semibold text-white">
                   Manage Billing
                 </a>
@@ -87,6 +92,12 @@ export default async function PlansPage() {
             </>
           ) : state?.kind === "free" ? (
             <p className="mt-1">Nothing to do — {club.name} doesn&apos;t pay.</p>
+          ) : appView ? (
+            <p className="mt-1">
+              {isAdmin
+                ? "Subscribe above with your Apple ID. One subscription covers the whole club."
+                : "A club admin can subscribe in the app. Parents, coaches and players never pay."}
+            </p>
           ) : buyUrl ? (
             <>
               <p className="mt-1">Pay monthly or yearly by card or Apple Pay. Change plan or cancel whenever you like.</p>

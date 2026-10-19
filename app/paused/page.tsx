@@ -28,15 +28,13 @@ export default async function PausedPage() {
             <p className="mt-2 text-[15px] text-gray-500 dark:text-gray-400">
               Nothing has been lost: every team, player and record is kept.{" "}
               {appView
-                ? "Your club's admin can sort this out."
+                ? "A club admin chooses a plan, and the hub opens again straight away."
                 : "A club admin chooses a plan, from £4.99 a month, and the hub opens again straight away."}
             </p>
-            {/* in the App Store app, nothing points to paying on the website (lib/inApp.ts) */}
-            {!appView && (
-              <Link href="/plans" className="mt-5 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
-                See the Plans
-              </Link>
-            )}
+            {/* in the App Store app, the plans are bought with In-App Purchase (app/plans/AppPlans.tsx) */}
+            <Link href="/plans" className="mt-5 block rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700">
+              See the Plans
+            </Link>
             <Link href="/support#contact" className="mt-3 block text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
               Questions? Get in touch
             </Link>
