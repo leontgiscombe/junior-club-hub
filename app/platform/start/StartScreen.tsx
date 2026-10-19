@@ -8,8 +8,11 @@ type Club = { name: string; home: string };
 const REMEMBER = "gch_start_club";
 
 // the club picked here last time, kept on this device only. The snapshot is the raw string, so it stays stable between renders.
+// ?forget: the club remembered here has gone (the "no club here" page), so it's dropped
+const forgetting = () => new URLSearchParams(window.location.search).has("forget");
 const readStored = () => {
   try {
+    if (forgetting()) return null;
     return localStorage.getItem(REMEMBER);
   } catch {
     return null;
@@ -54,6 +57,13 @@ export default function StartScreen({
 
   // the app opens straight onto the club picked last time (?pick shows this screen instead)
   const rememberedHome = remembered?.home;
+  useEffect(() => {
+    if (forgetting()) {
+      try {
+        localStorage.removeItem(REMEMBER);
+      } catch {}
+    }
+  }, []);
   useEffect(() => {
     if (appView && rememberedHome && !new URLSearchParams(window.location.search).has("pick")) {
       window.location.replace(rememberedHome);
