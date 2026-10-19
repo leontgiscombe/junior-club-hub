@@ -104,6 +104,9 @@ export default function JoinForm({
         >
           Check Again
         </button>
+        <div className="mt-4">
+          <SwitchAccount email={account?.email} />
+        </div>
       </div>
     );
   }
@@ -144,20 +147,7 @@ export default function JoinForm({
           {busy ? "Checking…" : "Next"}
         </button>
         {account ? (
-          // signed in, but not with an account that's in this club: switching is a sign-out away
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            Signed in as {account.email}.{" "}
-            <button
-              type="button"
-              onClick={async () => {
-                await fetch("/api/auth/signout", { method: "POST" }).catch(() => {});
-                window.location.href = "/signin?next=/";
-              }}
-              className="font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
-            >
-              Use another email
-            </button>
-          </p>
+          <SwitchAccount email={account.email} />
         ) : (
           <a href="/signin?next=/" className="text-center text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400">
             Already a member? Sign in
@@ -263,5 +253,24 @@ export default function JoinForm({
         {busy ? "Sending…" : "Ask to Join"}
       </button>
     </form>
+  );
+}
+
+/** Who's signed in, and a way to sign in as someone else instead (signed in, but not as a member here). */
+function SwitchAccount({ email }: { email?: string }) {
+  return (
+    <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+      {email ? <>Signed in as {email}. </> : null}
+      <button
+        type="button"
+        onClick={async () => {
+          await fetch("/api/auth/signout", { method: "POST" }).catch(() => {});
+          window.location.href = "/signin?next=/";
+        }}
+        className="font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
+      >
+        Use another email
+      </button>
+    </p>
   );
 }
