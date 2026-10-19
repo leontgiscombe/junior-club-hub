@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { FORMAT_AGES, GAME_FORMATS } from "@/lib/clubSettings";
 import SignInForm from "../../components/SignInForm";
 import { addPasskey, cancelled, supportsPasskeys } from "../../components/passkey";
+import { looksShared } from "@/lib/sharedEmail";
 
 const toAddress = (name: string) =>
   name
@@ -161,11 +162,19 @@ export default function SignupForm({ rootDomain }: { rootDomain: string }) {
         </span>
       </label>
       <label>
-        <span className="text-sm font-bold text-gray-800">Your email</span>
+        <span className="text-sm font-bold text-gray-800">Your own email</span>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={input} placeholder="you@example.com" />
-        <span className="mt-1 block text-xs text-gray-400">
-          You sign in with it — no password. We&apos;ll email you a code next. Never shown to anyone.
+        <span className="mt-1 block text-xs text-gray-500">
+          This is your own account, and you&apos;ll be the club&apos;s admin. Use your personal email, not a shared club one: the same account works if you&apos;re
+          also a coach or a parent, and other committee members can be made admins later with their own emails. No password: we&apos;ll email you a code.
         </span>
+        {/* a shared address works, but tangles things later: say so, gently */}
+        {looksShared(email, name) && (
+          <span className="mt-2 block rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            That looks like a shared club address. It&apos;s best to sign up with your own email: then the account stays yours, and handing the club on is
+            just making someone else an admin. If only you use this one, it&apos;s fine to carry on.
+          </span>
+        )}
       </label>
       <label className="flex cursor-pointer items-start gap-3 text-sm text-gray-600">
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} required className="mt-0.5 h-5 w-5 shrink-0 accent-green-600" />

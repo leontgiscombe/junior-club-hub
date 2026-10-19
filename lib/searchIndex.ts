@@ -78,7 +78,7 @@ export const PAGES: PageEntry[] = [
 
 /** Help's sections, by their # on the Help page (app/components/HelpManual.tsx). */
 export const HELP_SECTIONS: { id: string; title: string; words: string }[] = [
-  { id: "getting-started", title: "Getting Started", words: "start setup first" },
+  { id: "getting-started", title: "Getting Started", words: "start setup first email account personal own sign in" },
   { id: "parents", title: "For Parents", words: "parents share" },
   { id: "match-log", title: "Match Log", words: "matches goals" },
   { id: "training-log", title: "Training Log", words: "best trainer sessions" },
