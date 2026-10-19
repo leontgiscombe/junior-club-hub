@@ -9,7 +9,7 @@ import { MEMBER_COOKIE, normaliseCode, readMember, showCode } from "@/lib/access
 import { getAccess } from "@/lib/members";
 import { currentPerson } from "@/lib/people";
 import { getClub } from "@/lib/settings";
-import { requireTenant } from "@/lib/tenant";
+import { platformUrl, requireTenant, rootDomain } from "@/lib/tenant";
 import JoinForm from "./JoinForm";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +60,15 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           <Link href="/" className="mt-4 block text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">
             Just looking? Open the Hub →
           </Link>
+        )}
+        {/* back to the opening screen, which the app otherwise skips for the club picked last time */}
+        {rootDomain() && (
+          <a
+            href={platformUrl("/start?pick=1")}
+            className="mt-4 block border-t border-gray-100 pt-4 text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:border-white/10 dark:text-gray-400"
+          >
+            A different club, or starting a new one? →
+          </a>
         )}
       </div>
     </main>
