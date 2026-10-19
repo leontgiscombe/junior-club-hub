@@ -504,8 +504,8 @@ export default function AccountPage() {
                   Deletes your account and takes you out of every club. Your clubs keep their own records (like match logs). Type DELETE to confirm.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <input value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} placeholder="DELETE" aria-label="Type DELETE to confirm" className="min-w-0 flex-1 basis-32 rounded-lg border border-red-200 px-3 py-2 text-gray-900 focus:outline-none dark:text-gray-50 dark:border-red-400/30" />
-                  <button onClick={deleteAccount} disabled={busy || confirmDelete !== "DELETE"} className="rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50">
+                  <input value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} placeholder="DELETE" aria-label="Type DELETE to confirm" autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} className="min-w-0 flex-1 basis-32 rounded-lg border border-red-200 px-3 py-2 text-gray-900 focus:outline-none dark:text-gray-50 dark:border-red-400/30" />
+                  <button onClick={deleteAccount} disabled={busy || confirmDelete.trim().toUpperCase() !== "DELETE"} className="rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50">
                     Delete My Account
                   </button>
                 </div>
