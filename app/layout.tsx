@@ -73,7 +73,8 @@ export default async function RootLayout({
               Check the address, or find your club on {PLATFORM_NAME}.
             </p>
             {rootDomain() && (
-              <a href={platformUrl()} className="mt-4 inline-block font-bold text-green-700">
+              // the app would otherwise reopen this address, if it's the club it remembered
+              <a href={platformUrl("/start?pick=1&forget=1")} className="mt-4 inline-block font-bold text-green-700">
                 Find your club →
               </a>
             )}
