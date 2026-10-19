@@ -32,7 +32,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 
   return (
-    <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
+    <main className="themed flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -61,16 +61,13 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             Just looking? Open the Hub →
           </Link>
         )}
-        {/* back to the opening screen, which the app otherwise skips for the club picked last time */}
-        {rootDomain() && (
-          <a
-            href={platformUrl("/start?pick=1")}
-            className="mt-4 block border-t border-gray-100 pt-4 text-center text-sm font-semibold text-gray-500 hover:text-green-700 dark:border-white/10 dark:text-gray-400"
-          >
-            A different club, or starting a new one? →
-          </a>
-        )}
       </div>
+      {/* back to the opening screen, which the app otherwise skips for the club picked last time */}
+      {rootDomain() && (
+        <a href={platformUrl("/start?pick=1")} className="mt-5 text-sm font-semibold text-white/75 hover:text-white">
+          Not {club.name}? Switch Club
+        </a>
+      )}
     </main>
   );
 }
