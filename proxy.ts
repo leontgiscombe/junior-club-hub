@@ -64,11 +64,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.rewrite(new URL("/api/apple-app-site-association", req.url));
   }
   if (tenant === null) {
-    // in the App Store app, the platform's home and sign-up (with its prices) are the
-    // opening screen instead: nothing there points to paying on the website (lib/inApp.ts)
+    // in the App Store app, the platform's home (with its prices) is the opening
+    // screen instead; starting a club is in the app too, without the web prices
     const app = isAppUserAgent(req.headers.get("user-agent"));
     if (pathname === "/") return NextResponse.rewrite(new URL(app ? "/platform/start" : "/platform", req.url));
-    if (pathname === "/signup") return NextResponse.rewrite(new URL(app ? "/platform/start" : "/platform/signup", req.url));
+    if (pathname === "/signup") return NextResponse.rewrite(new URL("/platform/signup", req.url));
     // the app's opening screen: find your club, as a player or a grown-up
     if (pathname === "/start") return NextResponse.rewrite(new URL("/platform/start", req.url));
     if (!PLATFORM_PATHS.some((p) => p.test(pathname))) return NextResponse.redirect(new URL("/", req.url));
