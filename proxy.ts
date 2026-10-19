@@ -90,7 +90,7 @@ export async function proxy(req: NextRequest) {
       paused = await pausedClub(tenant);
     } catch {}
     // signing in, your account, help and the plans stay open: a club admin can still sort it out
-    const stillOpen = /^\/(signin|account|support|plans|privacy|terms)(\/|$)|^\/api\/(auth|account|feedback)(\/|$)/.test(pathname);
+    const stillOpen = /^\/(signin|account|support|plans|privacy|terms)(\/|$)|^\/api\/(auth|account|feedback|billing)(\/|$)/.test(pathname);
     if (paused && !stillOpen) {
       if (pathname.startsWith("/api/")) return NextResponse.json({ error: "This club's hub is paused" }, { status: 423 });
       headers.set(PATH_HEADER, "/paused");

@@ -16,8 +16,10 @@ Already set up for you in this folder and on the site:
 - Camera and photo permission messages, and "no special encryption" (no export paperwork).
 - Passkeys (Face ID sign-in) and links into the app (`App/App.entitlements`).
 - An offline screen with a Try Again button.
-- Inside the app, the site shows no prices, plans or sign-up (Apple's rule 3.1.1).
-  Clubs still sign up and choose plans on the website.
+- In-App Purchase through RevenueCat (`@revenuecat/purchases-capacitor`): club
+  admins subscribe on the Plans page inside the app, and clubs sign up in the
+  app too. Nothing in the app points to paying on the website (Apple's rule 3.1.1).
+  See `docs/SUBSCRIPTIONS.md`.
 
 ---
 
@@ -129,7 +131,7 @@ Club Hub is for members of grassroots football clubs. Sign in with email:
 - Parent: appreview.parent@grassroots-club-hub.co.uk
 On the sign-in screen enter the email, then the 6-digit code 061945 (no email is sent for these accounts).
 Both open our demo club, which has made-up teams, players, results and training.
-Coaches, parents and treasurers see different things. Clubs subscribe on our website; the app has no purchases.
+Coaches, parents and treasurers see different things. Only a club's admins can subscribe (Settings → Plan), with In-App Purchase; one subscription covers the whole club, and parents, coaches and players never pay.
 ```
 
 ## 6. Screenshots

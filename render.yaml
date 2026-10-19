@@ -61,12 +61,15 @@ services:
         sync: false
       # club subscriptions through RevenueCat (docs/SUBSCRIPTIONS.md): its secret
       # API key, the Authorization value its webhook sends, and the website's
-      # Web Purchase Link (without the customer id on the end)
+      # Web Purchase Link (without the customer id on the end); and its Apple
+      # public SDK key (appl_…), for subscribing in the App Store app
       - key: REVENUECAT_SECRET_KEY
         sync: false
       - key: REVENUECAT_WEBHOOK_AUTH
         sync: false
       - key: REVENUECAT_WEB_PURCHASE_URL
+        sync: false
+      - key: REVENUECAT_APPLE_KEY
         sync: false
       # optional: the owner's password for changing the built-in drill library
       - key: TRAINING_PLANS_OWNER_KEY

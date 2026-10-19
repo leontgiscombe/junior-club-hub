@@ -70,7 +70,7 @@ don't create products in Stripe: RevenueCat does that.
    long random value for the **Authorization header**
    (e.g. `Bearer` followed by 40 random characters).
 8. **API keys**: copy the **secret** API key (starts `sk_`). Also note the
-   **Apple public SDK key** (starts `appl_`); the App Store app will need it.
+   **Apple public SDK key** (starts `appl_`), for subscribing in the app.
 
 ## 4. Render
 
@@ -81,10 +81,19 @@ In the web service's **Environment**, add:
 | `REVENUECAT_SECRET_KEY` | the secret API key (step 3.8) |
 | `REVENUECAT_WEBHOOK_AUTH` | exactly the Authorization value from step 3.7 |
 | `REVENUECAT_WEB_PURCHASE_URL` | the Web Purchase Link from step 3.6 |
+| `REVENUECAT_APPLE_KEY` | the Apple public SDK key from step 3.8 |
 
 Once they're set, a club admin sees a **Subscribe** button on the club's
 **Plans** page, and a paid club shows how it pays (and **Manage Billing** for
 web payments).
+
+In the App Store app, the Plans page shows a club admin the plans at the App
+Store's prices, with **Subscribe** (Apple's purchase sheet) and **Restore
+Purchases** (`app/plans/AppPlans.tsx`). It buys as the club, `club:<club id>`,
+then reads the subscription straight back onto the club, so the hub opens at
+once. It needs an app build with the RevenueCat plugin (`ios-app/`, already
+added: run `npm install` and `npx cap sync ios` before archiving). Nothing in
+the app points to paying on the website.
 
 ## 5. Testing
 
@@ -93,13 +102,11 @@ web payments).
   check the club shows as paid there and in platform admin.
 - **App:** sandbox testers (App Store Connect → Users and Access → Sandbox)
   buy on a real iPhone; sandbox subscriptions renew every few minutes, so you
-  can watch renewals and expiry pause and unpause the test club.
+  can watch renewals and expiry pause and unpause the test club. Sign in to
+  the app as a test club's admin and open **Settings → Plan**.
 
 ## Still to do
 
-- **The in-app plans screen**: the RevenueCat plugin in `ios-app/`, a plans
-  screen for club admins (and only them) inside the app, and **Restore
-  Purchases**. Purchases are made as the club's customer, `club:<club id>`.
 - App Review notes: say that club admins subscribe in the app or on the
   website, that parents, coaches and players never pay, and give the review
   account a club on its trial so the plans show.

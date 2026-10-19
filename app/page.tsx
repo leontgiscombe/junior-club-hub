@@ -32,7 +32,6 @@ import SetupCard from "./components/SetupCard";
 import { setupFor } from "@/lib/setupChecklist";
 import { getTenantRecord } from "@/lib/tenants";
 import { billingState } from "@/lib/billing";
-import { inApp } from "@/lib/inAppServer";
 import { parentAwardsVisible } from "@/lib/seasonAwardsStorage";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
@@ -86,10 +85,9 @@ export default async function Home() {
   ]);
   const person = me?.person?.status === "approved" ? me.person : null;
   const setup = tenant && me ? await setupFor(tenant, me.user, me.person).catch(() => null) : null;
-  // a club admin, in the last week of the free trial: how long's left (lib/billing.ts) —
-  // not in the App Store app, where nothing points to paying on the website (lib/inApp.ts)
+  // a club admin, in the last week of the free trial: how long's left (lib/billing.ts)
   const trial =
-    tenant && person?.roles.includes("admin") && !(await inApp())
+    tenant && person?.roles.includes("admin")
       ? await getTenantRecord(tenant).then((r) => (r ? billingState(r.billing) : null)).catch(() => null)
       : null;
   const teamName = (slug?: string) => TEAMS.find((t) => t.slug === slug)?.name ?? "";
