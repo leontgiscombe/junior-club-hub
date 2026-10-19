@@ -377,11 +377,15 @@ export default function PlatformAdmin({ rootDomain }: { rootDomain: string }) {
                   onChange={(e) => setRestoreConfirm(e.target.value)}
                   placeholder={`type ${restoreId} to confirm`}
                   aria-label="Type the club's address to confirm"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="off"
+                  spellCheck={false}
                   className="min-w-0 flex-1 basis-40 rounded-lg border border-amber-300 bg-white px-3 py-2 text-gray-900 focus:outline-none"
                 />
                 <button
-                  onClick={() => act({ action: "restore", id: restoreId, confirm: restoreConfirm, date: restoreDate }, () => setRestoreConfirm(""))}
-                  disabled={busy || restoreConfirm !== restoreId}
+                  onClick={() => act({ action: "restore", id: restoreId, confirm: restoreConfirm.trim().toLowerCase(), date: restoreDate }, () => setRestoreConfirm(""))}
+                  disabled={busy || restoreConfirm.trim().toLowerCase() !== restoreId}
                   className="rounded-lg bg-amber-600 px-4 py-2 font-bold text-white hover:bg-amber-700 disabled:opacity-50"
                 >
                   Restore Club
@@ -699,13 +703,18 @@ function ClubPanel({
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 aria-label="Type the club's address to confirm"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
                 className="min-w-0 flex-1 basis-40 rounded-lg border border-red-300 bg-white px-3 py-2 text-gray-900 focus:outline-none"
               />
               <button
                 onClick={async () => {
-                  if (await act({ action: "delete", id: c.id, confirm: confirmText })) onClose();
+                  if (await act({ action: "delete", id: c.id, confirm: confirmText.trim().toLowerCase() })) onClose();
                 }}
-                disabled={busy || confirmText !== c.id}
+                // a phone's keyboard capitalises and adds spaces: those don't count
+                disabled={busy || confirmText.trim().toLowerCase() !== c.id}
                 className="rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 Delete Club
