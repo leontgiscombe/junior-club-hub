@@ -4,6 +4,7 @@
 // join, and each team's coaches, players and their parents. How people get in
 // (the club code, invites, passwords) is in Settings (ClubAccess.tsx).
 import Link from "next/link";
+import { likelyPlayer } from "@/lib/nameMatch";
 import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
@@ -50,18 +51,6 @@ type SquadPlayer = {
   /** a parent took them off their account (they may have left the club) */
   removed?: { by: string; at: string };
 };
-
-/** The squad player a new child most likely already is: same team, same first name (and surname initial, if given). */
-function likelyPlayer(child: { name: string; team?: { slug: string } }, players: SquadPlayer[]): string {
-  const [first, ...rest] = child.name.trim().toLowerCase().split(/\s+/);
-  const initial = rest.length ? rest[rest.length - 1][0] : "";
-  const match = players.find((p) => {
-    if (child.team && p.team !== child.team.slug) return false;
-    const [pf, ...pr] = p.name.trim().toLowerCase().split(/\s+/);
-    return pf === first && (!initial || (pr.length > 0 && pr[pr.length - 1][0] === initial));
-  });
-  return match?.id ?? "new";
-}
 
 /** "Coaches U10 Whites", "Plays for Hawks" — or just the team — for someone's own team, if they have one. */
 function ownTeamLine(m: Pick<Person, "relation" | "child" | "children" | "team"> & { roles?: Role[] }): string {
@@ -683,6 +672,9 @@ function PendingPerson({
                     </option>
                   ))}
               </select>
+              {links[c.id] && links[c.id] !== "new" && (
+                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">The closest name in the squad is picked — check it&apos;s the same child.</span>
+              )}
             </label>
           ))}
         </div>
