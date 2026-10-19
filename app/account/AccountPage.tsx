@@ -45,6 +45,8 @@ type Here = {
 type Account = {
   user: { email: string; name: string; phone?: string };
   clubs: { id: string; name: string; url: string; roles: Role[]; status: MemberStatus }[];
+  /** the platform admin's address, for whoever runs the platform */
+  platformAdmin?: string | null;
 };
 
 export default function AccountPage() {
@@ -559,6 +561,11 @@ export default function AccountPage() {
         </div>
 
         <div hidden={accountView !== "security-home"}>
+        {account.platformAdmin && (
+          <Group>
+            <Row icon={ICONS.shield} label="Platform Admin" detail="Every club" href={account.platformAdmin} />
+          </Group>
+        )}
         <Group>
           <Row icon={ICONS.help} label="Help & Feedback" href="/support" />
           <Row icon={ICONS.shield} label="Privacy Policy" href="/privacy" />
