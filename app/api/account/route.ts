@@ -9,7 +9,6 @@ import { clearSessionCookie, currentUser, deleteUser, setUserName, setUserPhone,
 import { BAD_PHONE, NEED_PHONE, cleanPhone } from "@/lib/phone";
 import { leaveClub, onlyAdminOf } from "@/lib/people";
 import { platformAdminUrl } from "@/lib/platformAdmin";
-import { inApp } from "@/lib/inAppServer";
 import { getClubFor } from "@/lib/settings";
 import { clubsOfUser } from "@/lib/userClubs";
 import { deletePhoto } from "@/lib/userPhoto";
@@ -31,9 +30,8 @@ export async function GET() {
   return NextResponse.json({
     user: { email: user.email, name, phone: user.phone ?? "" },
     clubs: clubs.map((c) => ({ id: c.id, name: c.name, url: c.url, roles: c.roles, status: c.status })),
-    // whoever runs the platform gets a shortcut to its admin (lib/platformAdmin.ts),
-    // on the website only: never in the App Store app
-    platformAdmin: (await inApp()) ? null : platformAdminUrl(user.email),
+    // whoever runs the platform gets a shortcut to its admin (lib/platformAdmin.ts)
+    platformAdmin: platformAdminUrl(user.email),
   });
 }
 
