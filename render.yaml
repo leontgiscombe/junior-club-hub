@@ -41,7 +41,13 @@ services:
         sync: false
       - key: PLATFORM_CONTACT_EMAIL
         sync: false
-      # the password for the platform admin page (/platform/admin), 12+ characters
+      # who runs the platform: their account email(s), comma-separated. Signed
+      # in with a passkey, they open the platform admin page (/platform/admin)
+      # straight away
+      - key: PLATFORM_ADMIN_EMAILS
+        sync: false
+      # the platform admin page's password (12+ characters): the way back in
+      # without a passkey
       - key: PLATFORM_ADMIN_KEY
         sync: false
       # optional, recommended: a second Upstash database for the nightly backups
