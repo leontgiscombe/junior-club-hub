@@ -177,10 +177,11 @@ export async function finishLoginWithCode(email: string, code: string): Promise<
 }
 
 /** A new signed-in session for `user`: its token, for the cookie. */
-export async function createSession(user: User): Promise<string> {
+/** A new signed-in session; `via` notes a passkey sign-in (what the platform admin asks for). */
+export async function createSession(user: User, via?: "passkey"): Promise<string> {
   const token = randomBytes(32).toString("base64url");
   const hash = await hashToken(token);
-  await kvCall(["SET", sessionKey(hash), JSON.stringify({ userId: user.id, at: new Date().toISOString() }), "EX", SESSION_DAYS * 86400]);
+  await kvCall(["SET", sessionKey(hash), JSON.stringify({ userId: user.id, at: new Date().toISOString(), ...(via ? { via } : {}) }), "EX", SESSION_DAYS * 86400]);
   await kvCall(["SADD", userSessionsKey(user.id), hash]);
   return token;
 }
@@ -231,6 +232,18 @@ export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
   const id = await sessionUserId(token).catch(() => null);
   return id ? getUser(id) : null;
+}
+
+/** The signed-in account, only if this session was signed in with a passkey. */
+export async function currentPasskeyUser(): Promise<User | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
+  if (!token) return null;
+  const raw = await kvCall(["GET", sessionKey(await hashToken(token))]).catch(() => null);
+  let s: { userId?: unknown; via?: unknown } | null = null;
+  try {
+    s = typeof raw === "string" ? JSON.parse(raw) : null;
+  } catch {}
+  return s?.via === "passkey" && typeof s.userId === "string" ? getUser(s.userId) : null;
 }
 
 /** Sign this device out. */

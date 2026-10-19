@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "That passkey didn't work here — sign in with your email instead" }, { status: 400 });
     }
     const res = NextResponse.json({ next: safeNext(body?.next) });
-    setSessionCookie(res, await createSession(user), req);
+    setSessionCookie(res, await createSession(user, "passkey"), req);
     setPasskeyHint(res, req, true);
     return res;
   }

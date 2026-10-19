@@ -5,10 +5,13 @@
 // setting up), open one for its admins, notes and actions — send a password
 // reset, pause or resume it, delete it — and restore a club from a backup.
 // Laid out like the hub's own screens: a large title, tabs, rounded groups,
-// and a sheet for each club. The key is kept for this browser tab only.
+// and a sheet for each club. Signed in to your own account with a passkey
+// (lib/platformAdmin.ts) it opens straight away; otherwise the admin key, kept
+// for this browser tab only.
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useScrollLock } from "../../components/useScrollLock";
+import { cancelled, signInWithPasskey, supportsPasskeys } from "../../components/passkey";
 import { FEATURES, type Feature } from "@/lib/clubSettings";
 import { PLANS, PLAN_IDS, billingState, planForTeams, price, type Billing, type PlanId } from "@/lib/billing";
 
@@ -155,11 +158,13 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [canPasskey, setCanPasskey] = useState(false);
 
+  // no key: the passkey session is what lets you in
   const call = useCallback(async (k: string, init?: Action) => {
     const res = await fetch("/api/platform-admin", {
       method: init ? "POST" : "GET",
-      headers: { "x-platform-key": k, ...(init ? { "Content-Type": "application/json" } : {}) },
+      headers: { ...(k ? { "x-platform-key": k } : {}), ...(init ? { "Content-Type": "application/json" } : {}) },
       body: init ? JSON.stringify(init) : undefined,
     });
     const data = await res.json().catch(() => ({}));
@@ -181,10 +186,12 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
         setSeparateBackups(data.separateBackups ?? true);
         setKey(k);
         try {
-          sessionStorage.setItem(KEY_STORE, k);
+          if (k) sessionStorage.setItem(KEY_STORE, k);
         } catch {}
+        return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
+        // quietly checking for a passkey session: not signed in isn't an error yet
+        if (k || (err as { status?: number }).status !== 401) setError(err instanceof Error ? err.message : "Something went wrong");
         if ((err as { status?: number }).status === 401) {
           setKey("");
           try {
@@ -194,6 +201,7 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
       } finally {
         setBusy(false);
       }
+      return false;
     },
     [call],
   );
@@ -203,9 +211,24 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
     try {
       saved = sessionStorage.getItem(KEY_STORE) ?? "";
     } catch {}
-    // (after this render, so the effect itself doesn't set state)
-    if (saved) void Promise.resolve().then(() => load(saved));
+    // (after this render, so the effect itself doesn't set state): the saved
+    // key, or else whether you're signed in with a passkey
+    void Promise.resolve().then(() => {
+      setCanPasskey(supportsPasskeys());
+      return load(saved);
+    });
   }, [load]);
+
+  async function passkeySignIn() {
+    setError(null);
+    try {
+      await signInWithPasskey("/platform/admin");
+    } catch (err) {
+      if (!cancelled(err)) setError(err instanceof Error ? err.message : "That passkey didn't work");
+      return;
+    }
+    if (!(await load(""))) setError("That account isn't one of the platform's admins.");
+  }
 
   async function act(body: Action, after?: () => void): Promise<boolean> {
     setBusy(true);
@@ -279,7 +302,7 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
     return list.sort(by[sort]);
   }, [clubs, search, filter, sort]);
 
-  if (!key || !clubs) {
+  if (!clubs) {
     return (
       <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-5 py-10">
         <Link href="/" className={`mb-6 inline-flex items-center gap-1 text-sm font-semibold ${muted} hover:text-green-700`}>
@@ -296,7 +319,21 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-green-700 text-white">{I.key}</span>
           <h1 className={`mt-4 text-2xl font-extrabold tracking-tight ${strong}`}>Platform Admin</h1>
           <p className={`mt-1 text-sm ${muted}`}>Every club on {platformName}, and what you can do for each.</p>
-          <label className={`mt-5 block text-sm font-semibold ${strong}`} htmlFor="admin-key">
+          {canPasskey && (
+            <>
+              <button type="button" onClick={passkeySignIn} disabled={busy} className={`${primary} mt-5 w-full gap-2`}>
+                {I.key}
+                Sign In With Passkey
+              </button>
+              <p className={`mt-2 text-center text-xs ${muted}`}>Face ID or Touch ID, with the passkey on your own {platformName} account.</p>
+              <div className={`my-5 flex items-center gap-3 text-xs ${muted}`}>
+                <span className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+                or use the admin key
+                <span className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+              </div>
+            </>
+          )}
+          <label className={`${canPasskey ? "" : "mt-5"} block text-sm font-semibold ${strong}`} htmlFor="admin-key">
             Admin key
           </label>
           <input
@@ -308,8 +345,8 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
             className={`${field} mt-1 w-full`}
           />
           {error && <p className="mt-3 text-sm font-semibold text-red-600 dark:text-red-400">{error}</p>}
-          <button type="submit" disabled={busy || !typedKey.trim()} className={`${primary} mt-5 w-full`}>
-            {busy ? "Checking…" : "Sign In"}
+          <button type="submit" disabled={busy || !typedKey.trim()} className={`${canPasskey ? pill + " min-h-11" : primary} mt-4 w-full`}>
+            {busy ? "Checking…" : "Sign In With Key"}
           </button>
         </form>
       </div>
@@ -347,10 +384,13 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
             {I.refresh}
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <button onClick={signOut} aria-label="Sign out" title="Sign out" className={pill}>
-            {I.out}
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
+          {/* with a passkey you're in as yourself: Back is the way out */}
+          {key && (
+            <button onClick={signOut} aria-label="Sign out" title="Sign out" className={pill}>
+              {I.out}
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          )}
         </div>
       </div>
 
