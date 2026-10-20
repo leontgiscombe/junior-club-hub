@@ -12,7 +12,11 @@ import { TopBar, useScreens } from "./SettingsUI";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
+  { id: "iphone-app", title: "The iPhone App" },
   { id: "parents", title: "For Parents" },
+  { id: "player-devices", title: "Players' Own Devices" },
+  { id: "members", title: "Members and Roles" },
+  { id: "account", title: "Your Account and Security" },
   { id: "match-log", title: "Match Log" },
   { id: "training-log", title: "Training Log" },
   { id: "training-plans", title: "Training Plans" },
@@ -22,6 +26,7 @@ const SECTIONS = [
   { id: "camera-and-kit", title: "Camera Register and Kit Responses" },
   { id: "subs", title: "Finances" },
   { id: "settings", title: "Settings" },
+  { id: "plans", title: "Plans and Subscriptions" },
   { id: "end-of-season", title: "End of Season" },
   { id: "coachs-week", title: "A Coach's Week" },
   { id: "questions", title: "Questions and Fixes" },
@@ -245,6 +250,29 @@ export default function HelpManual() {
           </p>
         </Section>
 
+        <Section id="iphone-app" title="The iPhone App">
+          <p>
+            Grassroots Club Hub is on the App Store for iPhone. It&apos;s the same hub as the website: anything changed in one
+            shows in the other straight away, and you sign in with the same email.
+          </p>
+          <H3>Getting Started in the App</H3>
+          <Steps>
+            <li>Download <B>Grassroots Club Hub</B> from the App Store and open it.</li>
+            <li>Already have an account? Tap <B>Already have an account? Sign In</B> and enter your email, then the code we send.</li>
+            <li>New here? Tap <B>I&apos;m a Parent or Coach</B> and type your club&apos;s code, or <B>I&apos;m a Player</B> with a code from a parent or coach.</li>
+            <li>Running a club that isn&apos;t on the hub yet? Tap <B>Start a New Club</B>. It&apos;s free for 30 days.</li>
+          </Steps>
+          <H3>More Than One Club</H3>
+          <p>
+            The app opens on the club you used last. To go to another, sign out (or, on a club&apos;s join page, tap{" "}
+            <B>Not … ? Switch Club</B>) and pick it from <B>Your Clubs</B>.
+          </p>
+          <H3>Face ID</H3>
+          <p>
+            After your first sign-in the app offers Face ID. Say yes and you won&apos;t need an emailed code on that phone again.
+          </p>
+        </Section>
+
         <Section id="parents" title="For Parents">
           <H3>Joining</H3>
           <Steps>
@@ -279,6 +307,87 @@ export default function HelpManual() {
             If the club turns them on, <B>Results</B> shows each team&apos;s scores, league table and top
             scorers (add it to your tab bar, or search for it). For non-competitive football it can be
             switched off, and coaches still log every game as normal, so nothing is lost.
+          </p>
+        </Section>
+
+        <Section id="player-devices" title="Players' Own Devices">
+          <p>
+            A player can have the <B>Training Hub</B> on their own phone or tablet, with no email or account. The device opens
+            only the Training Hub, as them, and keeps their quiz scores and challenges.
+          </p>
+          <H3>Setting Up a Device</H3>
+          <Steps>
+            <li>A parent opens Your Account → <B>Your Children</B> and taps their child (a coach can do it from the player&apos;s card in <B>Members</B>).</li>
+            <li>Tap <B>Set Up a Device</B>. A 6-digit code appears. It works once, for 10 minutes.</li>
+            <li>On the child&apos;s device, open the app or the club&apos;s website, tap <B>I&apos;m a Player</B> and type the code.</li>
+          </Steps>
+          <p>
+            Setting up a device signs any grown-up out of it, so a child never ends up in a parent&apos;s account.
+          </p>
+          <H3>Signing a Device Out</H3>
+          <p>
+            The same place lists every device set up for the child. Tap one to sign it out straight away, for example if a
+            tablet is lost or handed on. When a player leaves the club, their devices are signed out for you.
+          </p>
+        </Section>
+
+        <Section id="members" title="Members and Roles">
+          <p>
+            <B>Members</B> (Coach Admin) is where people join the club and where you decide what each person can do. Parents,
+            players and coaches ask to join with the club&apos;s code; nobody sees anything until they&apos;re approved.
+          </p>
+          <H3>Approving Someone</H3>
+          <Steps>
+            <li>Home shows how many are <B>waiting for approval</B>. Tap it, or open Members → <B>Waiting for Approval</B>.</li>
+            <li>Check you know them: their name, email, phone and who they say they are are shown.</li>
+            <li>For a parent, check each child. The hub picks the closest name in the squad; make sure it&apos;s the same child, or choose <B>New to the squad</B>.</li>
+            <li>Under <B>Approve as</B>, tick their roles, then tap <B>Approve</B>. Or <B>Decline</B> if you don&apos;t know them.</li>
+          </Steps>
+          <p>
+            Someone who says they&apos;re a coach starts as a parent: only tick <B>Coach</B> if you know them, as it opens Coach Admin.
+          </p>
+          <H3>What Each Role Can Do</H3>
+          <Bullets>
+            <li><B>Club admin:</B> everything, including Settings, roles, Plans, removing players and resetting Finances passwords.</li>
+            <li><B>Coach:</B> Coach Admin — match and training logs, stats, awards, kit responses and approving parents.</li>
+            <li><B>Treasurer:</B> Finances for their team (or every team, with no team set). A club admin sets a treasurer&apos;s team in Members.</li>
+            <li><B>Parent:</B> their own children&apos;s team, fixtures, results, kit and photos.</li>
+            <li><B>Player:</B> the Training Hub and their own team&apos;s fixtures.</li>
+          </Bullets>
+          <p>
+            Only a club admin can give or take away the admin, coach and treasurer roles, and only a club admin can take a
+            player out of the squad (which also removes their medical notes, photo and devices).
+          </p>
+        </Section>
+
+        <Section id="account" title="Your Account and Security">
+          <p>
+            Tap your <B>initials</B> or photo at the top left of Home to open Your Account. One account works for every club
+            you belong to, whether you&apos;re a parent, a coach or both.
+          </p>
+          <H3>Signing In</H3>
+          <p>
+            There are no passwords. Enter your email and we send a 6-digit code (and a link). Each code works once, for 15
+            minutes. Use your own email, not a shared club one, so the account stays yours.
+          </p>
+          <H3>Face ID and Passkeys</H3>
+          <p>
+            In <B>Sign-In &amp; Security</B>, tap <B>Add a Passkey</B> to sign in with Face ID, your fingerprint or your
+            phone&apos;s screen lock. It also opens your team&apos;s Finances without a password if you&apos;re its treasurer.
+          </p>
+          <H3>Changing Your Email</H3>
+          <p>
+            In <B>Your Details</B>, change your email. We send a code to the new address to check it&apos;s yours, then your
+            account moves to it at every club.
+          </p>
+          <H3>Deleting Your Account</H3>
+          <Steps>
+            <li>Open <B>Sign-In &amp; Security</B> and tap <B>Delete Account</B>.</li>
+            <li>Type <B>DELETE</B> to confirm.</li>
+          </Steps>
+          <p>
+            It removes your account, passkeys, sign-ins and your place at every club. If you&apos;re a club&apos;s only admin,
+            you&apos;re asked to make someone else an admin first, so the club isn&apos;t left without one.
           </p>
         </Section>
 
@@ -565,6 +674,58 @@ export default function HelpManual() {
             opponents. <B>+ Add Team</B> adds one, and the arrows change the order the tabs appear
             in. <B>Archive Team</B> hides a team everywhere but keeps its kit sizes, stats, logs and
             subs; <B>Bring Back</B> restores it. Changes save by themselves; a new team saves once it has a name.
+          </p>
+        </Section>
+
+        <Section id="plans" title="Plans and Subscriptions">
+          <p>
+            Every club starts with <B>30 days free</B>, with everything included and no card needed. After that, one
+            subscription covers the whole club. Parents, coaches and players never pay.
+          </p>
+          <H3>The Plans</H3>
+          <Bullets>
+            <li><B>Starter:</B> up to 3 teams.</li>
+            <li><B>Club:</B> up to 10 teams.</li>
+            <li><B>Large Club:</B> any number of teams.</li>
+          </Bullets>
+          <p>
+            Every plan has every part of the hub; you pay by how many teams you have. Pay monthly, or yearly and get two
+            months free.
+          </p>
+          <H3>Choosing a Plan</H3>
+          <Steps>
+            <li>A club admin opens Coach Admin → <B>Settings</B> → <B>Plan</B> (Home also shows a reminder in the last week of the trial).</li>
+            <li><B>In the iPhone app:</B> pick a plan and tap <B>Subscribe</B>. Apple takes the payment from your Apple ID.</li>
+            <li><B>On the website:</B> tap <B>Subscribe</B> and pay by card or Apple Pay.</li>
+          </Steps>
+          <p>
+            The club opens straight away. Either way works, and the club shows as paid in the app and on the website.
+          </p>
+          <H3>Changing Plan</H3>
+          <p>
+            Paid in the app? Open the same <B>Plan</B> screen, pick another plan and tap <B>Switch</B>. A bigger plan starts
+            straight away, and Apple credits what&apos;s left of the old one; a smaller plan starts at your next renewal. Paid on
+            the website? Use <B>Manage Billing</B> on the Plans page there. Adding more teams than your plan covers asks you
+            to move up a plan first.
+          </p>
+          <H3>Cancelling</H3>
+          <Bullets>
+            <li><B>Paid in the app:</B> on the iPhone it was bought on, open Settings → your name → <B>Subscriptions</B>.</li>
+            <li><B>Paid on the website:</B> Plans → <B>Manage Billing</B>.</li>
+          </Bullets>
+          <p>
+            The plan runs to the end of the month or year you&apos;ve paid for. If a card payment fails, the hub stays open
+            while it&apos;s tried again, and Plans asks you to check the card.
+          </p>
+          <H3>When the Trial or a Plan Ends</H3>
+          <p>
+            The hub pauses: everyone sees a page saying so, and <B>nothing is deleted</B>. As soon as a club admin chooses a
+            plan, it opens again exactly as it was.
+          </p>
+          <H3>Restore Purchases</H3>
+          <p>
+            New phone, or reinstalled the app? On the Plan screen, tap <B>Restore Purchases</B> with the same Apple ID you
+            subscribed with. A subscription always stays with the club it was bought for.
           </p>
         </Section>
 
