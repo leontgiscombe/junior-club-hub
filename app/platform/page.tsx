@@ -34,6 +34,16 @@ const STEPS = [
   ["Parents join, you approve", "Families sign in with their own email and add their child. You approve them and they're in."],
 ];
 
+// what's being built next (no dates: plans can change)
+const COMING = [
+  ["✅", "Availability", "Parents tap whether their child can make each match and training, and coaches see who's coming."],
+  ["📋", "Team Selection", "Pick the squad for a match and let the selected players' parents know."],
+  ["💬", "Messages", "Club, team and parent announcements in the app, instead of scattered group chats."],
+  ["📅", "Calendar Sync", "Fixtures and training in parents' own phone calendars, kept up to date."],
+  ["🔔", "Reminders", "A nudge the day before a match or training session."],
+  ["🤖", "Android App", "The app for Android phones, alongside the iPhone app."],
+];
+
 const FAQS = [
   ["Do parents have to pay?", "No. One subscription covers the whole club. Parents, coaches and players never pay anything."],
   ["Is children's information safe?", "Each club's hub is private to its approved members. Children's details, photos and medical notes are only seen by their own parents and the club's coaches, and team finances are stored encrypted."],
@@ -147,6 +157,25 @@ export default function PlatformHome() {
         </section>
 
         <section className="mt-10">
+          <h2 className={`${display.className} text-3xl uppercase tracking-wide`}>What&apos;s Coming</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            The aim is everything your club needs in one place. Next on the list:
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {COMING.map(([icon, title, body]) => (
+              <div key={title} className="flex gap-3 rounded-2xl border border-dashed border-gray-300 bg-white/60 p-4">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gray-100 text-2xl">{icon}</span>
+                <span>
+                  <span className="block font-extrabold text-gray-900">{title}</span>
+                  <span className="mt-0.5 block text-sm leading-relaxed text-gray-500">{body}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-gray-500">Plans can change. Tell us what you&apos;d like next using Get in Touch below.</p>
+        </section>
+
+        <section className="mt-10">
           <h2 className={`${display.className} text-3xl uppercase tracking-wide`}>Questions</h2>
           <div className="mt-4 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm">
             {FAQS.map(([q, a]) => (
@@ -166,8 +195,10 @@ export default function PlatformHome() {
           <span className="flex-1">
             <span className="block font-extrabold text-gray-900">Built by Leon, a coach at Pudsey Juniors</span>
             <span className="mt-1 block text-sm leading-relaxed text-gray-600">
-              I built the hub for my own club, to stop chasing kit sizes, results and subs across group chats — and now
-              other grassroots clubs can use it too. Questions, ideas or problems? I&apos;d love to hear from you.
+              I built the hub for my own club, to stop chasing kit sizes, results and subs across group chats. I&apos;m
+              growing it to replace the separate apps my team uses for availability, messages and reminders, so
+              everything&apos;s in one place — at Pudsey Juniors first, and for every club that joins. Questions, ideas or
+              problems? I&apos;d love to hear from you.
             </span>
           </span>
           {operator().email && (
