@@ -373,7 +373,7 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
   return (
     <>
       {/* the bar along the top: back to the platform, refresh, sign out */}
-      <div className="sticky top-0 z-30 border-b border-black/5 bg-[#f2f2f7]/85 backdrop-blur-xl dark:border-white/10 dark:bg-black/80">
+      <div className="wp-bar sticky top-0 z-30 border-b border-black/5 bg-[#f2f2f7]/85 backdrop-blur-xl dark:border-white/10 dark:bg-black/80">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4 pt-[env(safe-area-inset-top)]">
           <Link href="/" className={`inline-flex min-h-11 items-center gap-1 text-sm font-semibold ${muted} hover:text-green-700`}>
             {I.back}

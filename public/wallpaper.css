@@ -20,7 +20,16 @@ body {
   html[data-wallpaper] :is(#app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
     background: rgb(242 242 247 / 88%) !important;
   }
-  html.dark[data-wallpaper] :is(#app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz, .hs-sheet) {
+  /* light, as on the hub's tool pages (globals.css): the cards are dark already */
+  html.dark[data-wallpaper] :is(#app-guide, #app-skills, #app-positions, #screen-home, #screen-quiz) {
+    background: rgb(0 0 0 / 25%) !important;
+  }
+  /* the screens' top bars: see-through over the wallpaper, as the hub's (globals.css .wp-bar) */
+  html.dark[data-wallpaper] :is(.quiz-topbar, .guide-topbar, .skills-topbar, .pos-learn-topbar) {
+    background: rgb(0 0 0 / 20%) !important;
+  }
+  /* a sheet covers the page under it: kept dark so that doesn't show through */
+  html.dark[data-wallpaper] .hs-sheet {
     background: rgb(0 0 0 / 65%) !important;
   }
   html[data-wallpaper] #screen-result {
