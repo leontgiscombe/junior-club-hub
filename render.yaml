@@ -9,6 +9,13 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
+    # changes only to these don't rebuild the live site (saves pipeline minutes)
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - ios-app/**
+        - vercel.json
+        - "**/*.md"
     envVars:
       - key: NODE_VERSION
         value: "22"
