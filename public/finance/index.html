@@ -266,6 +266,9 @@
   .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
   .gate-card p.gate-sub { margin: 4px 0 18px; font-size: 14px; color: var(--muted); }
   .gate-card form, #account-box, #team-status { background: var(--card); border-radius: var(--radius); padding: 18px; text-align: left; }
+  /* signed in with a team that opens from the account: the password is behind a button */
+  #gate-form.collapsed { background: none; padding: 0; }
+  #gate-form.collapsed > :not(#use-pass), #gate-form:not(.collapsed) > #use-pass { display: none !important; }
   .ts-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--sep); }
   .ts-row:first-of-type { border-top: 0; padding-top: 4px; }
   .gate-card #team-status .btn { width: auto; flex-shrink: 0; padding: 8px 16px; font-size: 14px; }
@@ -327,6 +330,7 @@
       <p class="muted" id="account-or" style="font-size:12px;text-align:center;margin:10px 0 0;display:none">or use a team password</p>
     </div>
     <form id="gate-form">
+      <button class="btn" id="use-pass" type="button" style="width:100%">Use a Team Password</button>
       <input type="password" id="gate-pass" placeholder="Password" autocomplete="current-password">
       <input type="password" id="gate-pass2" placeholder="Confirm password" autocomplete="new-password" style="display:none">
       <div class="gate-err" id="gate-err"></div>
@@ -1552,9 +1556,16 @@
   }
 
   // ---------- Auth gate (multi-team: password selects the team, data syncs to server) ----------
+  // the gate's heading: opening from the account, or with a team password
+  const unlockTitle = ()=> $("#gate-form").classList.contains('collapsed') ? 'Open Your Team' : 'Enter Your Team Password';
+  function showUnlockHead(){
+    $("#gate-title").textContent = unlockTitle();
+    $("#gate-sub").textContent = CLUB.name + ($("#gate-form").classList.contains('collapsed')
+      ? ' \u2014 open your team\u2019s subs tracker below.'
+      : ' \u2014 enter your team\u2019s password to open its subs tracker.');
+  }
   function setupGate(){
-    $("#gate-title").textContent = 'Enter Your Team Password';
-    $("#gate-sub").textContent = CLUB.name + ' \u2014 enter your team\u2019s password to open its subs tracker.';
+    showUnlockHead();
     $("#gate-pass2").style.display = 'none';
     $("#gate-pass").value=''; $("#gate-err").textContent='';
     $("#gate-btn").textContent = 'Unlock';
@@ -1701,7 +1712,7 @@
     $("#setup-form").style.display = setupShown ? '' : 'none';
     $("#account-box").style.display = setupShown || !$("#account-who").innerHTML ? 'none' : '';
     $("#setup-toggle").style.display = setupShown ? '' : 'none';
-    $("#gate-title").textContent = setupShown ? 'Set Up ' + (team ? teamName(team) : 'a Team') : 'Enter Your Team Password';
+    $("#gate-title").textContent = setupShown ? 'Set Up ' + (team ? teamName(team) : 'a Team') : unlockTitle();
     $("#setup-err").textContent = '';
     renderTeamStatus();
     if(!setupShown) return;
@@ -1889,6 +1900,11 @@
   window.addEventListener('focus', ()=>{ pollRemote(); });
 
   $("#gate-form").addEventListener('submit', e=>{ e.preventDefault(); gateSubmit(); });
+  $("#use-pass").addEventListener('click', ()=>{
+    $("#gate-form").classList.remove('collapsed');
+    if(!setupShown) showUnlockHead();
+    $("#gate-pass").focus();
+  });
   $("#setup-form").addEventListener('submit', e=>{ e.preventDefault(); setupSubmit(); });
   $("#setup-toggle").addEventListener('click', e=> toggleSetup(e));
   document.addEventListener('click', e=>{
@@ -2198,6 +2214,11 @@
         return { id, ready: !!(d && d.ready), faceId: !!(d && d.faceId) };
       } catch(e){ return { id, ready: false }; }
     }));
+    // a team that opens from the account: the password box waits behind a button
+    const anyReady = rows.some(r=> r.ready);
+    $("#gate-form").classList.toggle('collapsed', anyReady);
+    $("#account-or").style.display = anyReady ? 'none' : '';
+    if(!setupShown) showUnlockHead();
     $("#account-teams").innerHTML = rows.map(r=>{
       const name = esc(teamName(r.id));
       if(r.ready) return '<button class="btn btn-primary" data-escrow-team="'+esc(r.id)+'" data-face="'+(r.faceId?'1':'')+'" style="width:100%;margin-bottom:8px">Open '+name+(r.faceId && canPasskey() ? ' with Face ID' : '')+'</button>';
