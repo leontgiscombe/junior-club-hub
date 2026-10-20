@@ -71,6 +71,10 @@ services:
         sync: false
       - key: REVENUECAT_APPLE_KEY
         sync: false
+      # the app's App Store listing, once it's live: the website shows a
+      # "Download on the App Store" badge linking to it
+      - key: APP_STORE_URL
+        sync: false
       # optional: the owner's password for changing the built-in drill library
       - key: TRAINING_PLANS_OWNER_KEY
         sync: false
