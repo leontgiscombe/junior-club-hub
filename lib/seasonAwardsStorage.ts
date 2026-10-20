@@ -1,6 +1,6 @@
 import { getKv, keyPrefix, rawKv } from "./kv";
 import { requireTenant } from "./tenant";
-import type { AwardBallot, SeasonAward } from "./seasonAwards";
+import { awardSlotsFor, type AwardBallot, type SeasonAward } from "./seasonAwards";
 import { childrenOf, type Person } from "./access";
 import { getCurrentSeason } from "./season";
 
@@ -41,8 +41,12 @@ export async function parentAwardsVisible(person: Person | null): Promise<boolea
   if (person?.status !== "approved") return false;
   const teams = childrenOf(person).filter((child) => !child.pending && child.team).map((child) => child.team!.slug);
   if (!teams.length) return false;
-  const activeTeams = await activeAwardTeams(await getCurrentSeason());
-  return teams.some((team) => activeTeams.includes(team));
+  const season = await getCurrentSeason();
+  const activeTeams = (await activeAwardTeams(season)).filter((team) => teams.includes(team));
+  if (!activeTeams.length) return false;
+  // and an award this season they have a ballot in (not only ones the coaches decide)
+  const kids = childrenOf(person);
+  return (await listSeasonAwards()).some((award) => award.season === season && activeTeams.includes(award.team) && awardSlotsFor(award, kids).length > 0);
 }
 
 export async function listSeasonAwards(): Promise<SeasonAward[]> {
