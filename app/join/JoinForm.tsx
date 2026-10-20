@@ -2,8 +2,8 @@
 
 // Ask to join: first the club's code; once it's right, sign in (or make an
 // account) with your email; then your name, who you are, your team and (for a
-// parent, or a coach who has a child at the club too) your child's name. Then you wait for a coach to approve you — this
-// page checks every so often by itself. The team list only shows once the code
+// parent, or a coach who has a child at the club too) your child's name. Then
+// you wait for a coach to approve you — this page checks every so often by itself. The team list only shows once the code
 // is right, and nobody sees the club's players here.
 import { useEffect, useState } from "react";
 import { RELATIONS, type Relation } from "@/lib/access";
