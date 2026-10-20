@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SeasonAward, SeasonAwardsData, SeasonAwardView } from "@/lib/seasonAwards";
+import { AWARD_VOTERS, VOTERS_LABEL, nomineesFor, votersOf, type AwardSlot, type AwardVoters, type SeasonAward, type SeasonAwardsData, type SeasonAwardView } from "@/lib/seasonAwards";
 import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
@@ -33,7 +33,7 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
   const [message, setMessage] = useState("");
   const [team, setTeam] = useState("");
   const [season, setSeason] = useState("");
-  const [editing, setEditing] = useState<SeasonAward | "new" | null>(null);
+  const [editing, setEditing] = useState<SeasonAwardView | "new" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,55 +130,84 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
           {admin && view === "awards" && !selectedId && !editing && season === data.season && <button className={`${command} self-start`} disabled={saving || !team} onClick={() => { setEditing("new"); open("new"); }}>Add Award</button>}
           {admin && editing && <AwardEditor key={editing === "new" ? `new-${team}` : editing.id} award={editing === "new" ? null : editing} team={team} allowOpen={season === data.season} saving={saving} onCancel={() => { setEditing(null); close(); }} onSave={async (award) => { if (await mutate({ action: "save", award }, "Award saved.")) { setEditing(null); close(); } }} />}
           {!editing && (!admin || view !== "visibility") && awards.length === 0 && <p className="wp-text py-4 text-center text-sm">{admin ? "No awards for this team and season." : "No awards are available for your team yet."}</p>}
-          {!editing && (!admin || view !== "visibility") && awards.filter((award) => !selectedId || award.id === selectedId).map((award) => admin && !selectedId ? <button key={award.id} onClick={() => open(`${view === "results" ? "result" : "award"}-${award.id}`)} className={`${panel} flex min-h-20 w-full items-center gap-3 text-left`}><span className="shrink-0 text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1"><span className="block break-words font-semibold">{award.title}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{award.open && award.season === data.season ? "Voting open" : "Voting closed"} · {award.ballotCount ?? 0} ballots</span></span><span aria-hidden="true" className="text-gray-400">›</span></button> : admin ? <section key={award.id} className={`${panel} space-y-4`} aria-label={award.title}>
+          {!editing && (!admin || view !== "visibility") && awards.filter((award) => !selectedId || award.id === selectedId).map((award) => admin && !selectedId ? <button key={award.id} onClick={() => open(`${view === "results" ? "result" : "award"}-${award.id}`)} className={`${panel} flex min-h-20 w-full items-center gap-3 text-left`}><span className="shrink-0 text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1"><span className="block break-words font-semibold">{award.title}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{status(award, data.season)}</span></span><span aria-hidden="true" className="text-gray-400">›</span></button> : admin ? <section key={award.id} className={`${panel} space-y-4`} aria-label={award.title}>
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0"><h2 className="break-words text-lg font-bold">{award.title}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open && award.season === data.season ? "Voting open" : "Voting closed"} · {award.ballotCount ?? 0} ballots</p></div>
+              <div className="min-w-0"><h2 className="break-words text-lg font-bold">{award.title}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{status(award, data.season)}</p></div>
               {view !== "results" && <button className={secondary} title={`Edit ${award.title}`} disabled={saving} onClick={() => { setEditing({ ...award, open: award.open && award.season === data.season }); open("edit"); }}>Edit</button>}
             </div>
             {award.description && <p className="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">{award.description}</p>}
+            {votersOf(award) === "coaches" && <p className="text-sm text-gray-500 dark:text-gray-400">The coaches choose the winner, so it isn&apos;t on the parents&apos; ballot.</p>}
             {view !== "results" && <div className="flex flex-wrap items-center gap-3">
-              <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={award.open && award.season === data.season} disabled={saving || award.season !== data.season} onChange={(event) => void mutate({ action: "save", award: { ...award, open: event.target.checked } }, event.target.checked ? "Voting opened." : "Voting closed.")} />Voting open</label>
+              {votersOf(award) !== "coaches" && <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={award.open && award.season === data.season} disabled={saving || award.season !== data.season} onChange={(event) => void mutate({ action: "save", award: { ...award, open: event.target.checked } }, event.target.checked ? "Voting opened." : "Voting closed.")} />Voting open</label>}
               <button className={`${secondary} ml-auto text-red-700 dark:text-red-400`} title={`Delete ${award.title}`} aria-label={`Delete ${award.title}`} disabled={saving} onClick={async () => { if (window.confirm(`Delete "${award.title}" and all its ballots? This cannot be undone.`) && await mutate({ action: "delete", id: award.id }, "Award deleted.")) close(); }}>{ICONS.bin}</button>
             </div>}
-            {view === "results" && <AwardResults award={award} />}
-          </section> : <AwardVote key={award.id} award={award} saving={saving} onSave={(choices) => mutate({ id: award.id, choices }, "Your ballot has been saved.")} />)}
+            {view === "results" && votersOf(award) !== "coaches" && <AwardResults award={award} />}
+          </section> : (award.slots ?? []).map((slot) => <AwardVote key={`${award.id}-${slot.forPlayer?.id ?? "me"}`} award={award} slot={slot} saving={saving} onSave={(choices) => mutate({ id: award.id, choices, ...(slot.forPlayer ? { forPlayer: slot.forPlayer.id } : {}) }, slot.forPlayer ? `${first(slot.forPlayer.name)}'s ballot has been saved.` : "Your ballot has been saved.")} />))}
         </>}
       </main>
     </div>
   );
 }
 
+/** The line under an award's name for coaches: who votes, and how voting's going. */
+function status(award: SeasonAwardView, season: string) {
+  const voters = votersOf(award);
+  if (voters === "coaches") return "Coaches decide";
+  return `${voters === "players" ? "Players vote" : "Parents vote"} · ${award.open && award.season === season ? "Voting open" : "Voting closed"} · ${award.ballotCount ?? 0} ballots`;
+}
+
+const first = (name: string) => name.trim().split(/\s+/)[0] || name;
+
 function AwardEditor({ award, team, allowOpen, saving, onSave, onCancel }: {
-  award: SeasonAward | null; team: string; allowOpen: boolean; saving: boolean;
+  award: SeasonAwardView | null; team: string; allowOpen: boolean; saving: boolean;
   onSave: (award: Partial<SeasonAward>) => Promise<void>; onCancel: () => void;
 }) {
   const [title, setTitle] = useState(award?.title ?? "");
   const [description, setDescription] = useState(award?.description ?? "");
   const [open, setOpen] = useState(award?.open ?? false);
-  return <form className={`${panel} space-y-3`} onSubmit={(event) => { event.preventDefault(); void onSave({ ...(award ? { id: award.id } : {}), team, title, description, open }); }}>
+  const [voters, setVoters] = useState<AwardVoters>(award ? votersOf(award) : "parents");
+  // ballots already cast were cast as one kind of voter
+  const locked = !!award?.ballotCount;
+  return <form className={`${panel} space-y-3`} onSubmit={(event) => { event.preventDefault(); void onSave({ ...(award ? { id: award.id } : {}), team, title, description, open: voters !== "coaches" && open, voters }); }}>
     <h2 className="text-lg font-bold">{award ? "Edit Award" : "New Award"}</h2>
     <label className="block text-sm font-semibold">Award name<input className={field} required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} disabled={saving} /></label>
     <label className="block text-sm font-semibold">Description<textarea className={field} rows={3} maxLength={500} value={description} onChange={(event) => setDescription(event.target.value)} disabled={saving} /></label>
-    <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={open} onChange={(event) => setOpen(event.target.checked)} disabled={saving || !allowOpen} />Voting open</label>
+    <label className="block text-sm font-semibold">Who votes<select className={field} value={voters} onChange={(event) => setVoters(event.target.value as AwardVoters)} disabled={saving || locked}>
+      {AWARD_VOTERS.map((option) => <option key={option} value={option}>{VOTERS_LABEL[option]}</option>)}
+    </select></label>
+    <p className="-mt-1 text-sm text-gray-500 dark:text-gray-400">{locked
+      ? "Ballots are in, so this can't change now."
+      : voters === "players"
+        ? "Each player gets one ballot, filled in by their parent. They can't vote for themselves."
+        : voters === "parents"
+          ? "Each parent gets one ballot of their own."
+          : "Not on the parents' ballot — the coaches choose the winner."}</p>
+    {voters !== "coaches" && <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={open} onChange={(event) => setOpen(event.target.checked)} disabled={saving || !allowOpen} />Voting open</label>}
     <div className="flex gap-3"><button className={command} disabled={saving || !title.trim()}>{ICONS.doc}{saving ? "Saving..." : "Save Award"}</button><button type="button" className={secondary} disabled={saving} onClick={onCancel}>Cancel</button></div>
   </form>;
 }
 
-function AwardVote({ award, saving, onSave }: { award: SeasonAwardView; saving: boolean; onSave: (choices: string[]) => Promise<boolean> }) {
+function AwardVote({ award, slot, saving, onSave }: { award: SeasonAwardView; slot: AwardSlot; saving: boolean; onSave: (choices: string[]) => Promise<boolean> }) {
   const [draft, setDraft] = useState<string[] | null>(null);
-  const choices = draft ?? award.ballot?.choices ?? [];
-  const changed = JSON.stringify(choices) !== JSON.stringify(award.ballot?.choices ?? []);
+  const ballot = slot.ballot;
+  const choices = draft ?? ballot?.choices ?? [];
+  const changed = JSON.stringify(choices) !== JSON.stringify(ballot?.choices ?? []);
+  // a players' award: this child's vote, cast by their parent, and not for themselves
+  const child = slot.forPlayer ? first(slot.forPlayer.name) : "";
+  const nominees = nomineesFor(award, slot.forPlayer?.id);
+  const saved = ballot ? `Ballot submitted${child && ballot.by ? ` by ${ballot.by}` : ""} on ${new Date(ballot.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : "";
   const labels = ["1st choice", "2nd choice (optional)", "3rd choice (optional)"];
   return <form className={`${panel} space-y-4`} onSubmit={async (event) => { event.preventDefault(); if (await onSave(choices)) setDraft(null); }}>
-    <div><h2 className="break-words text-lg font-bold">{award.title}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open ? (award.ballot ? "Ballot submitted" : "Voting open") : "Voting closed"}</p></div>
+    <div><h2 className="break-words text-lg font-bold">{award.title}{child && <span className="font-semibold text-gray-500 dark:text-gray-400"> · {child}&apos;s vote</span>}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open ? (saved || "Voting open") : "Voting closed"}</p></div>
+    {child && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">Vote for {child}: who would {child} pick? Ask them, and fill it in for them. {child} gets one vote, so if another parent has voted for {child} already, saving replaces it.</p>}
     {award.description && <p className="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">{award.description}</p>}
-    {labels.slice(0, Math.min(3, award.nominees.length)).map((label, index) => <label key={label} className="block text-sm font-semibold">{label}
+    {labels.slice(0, Math.min(3, nominees.length)).map((label, index) => <label key={label} className="block text-sm font-semibold">{label}
       <select className={field} value={choices[index] ?? ""} disabled={saving || !award.open || (index > 0 && !choices[index - 1])} required={index === 0} onChange={(event) => { const next = choices.slice(0, index); if (event.target.value) next.push(event.target.value); setDraft(next); }}>
         <option value="">{index === 0 ? "Choose a player" : "No choice"}</option>
-        {award.nominees.map((player) => <option key={player.id} value={player.id} disabled={choices.some((choice, position) => position !== index && choice === player.id)}>{player.name}</option>)}
+        {nominees.map((player) => <option key={player.id} value={player.id} disabled={choices.some((choice, position) => position !== index && choice === player.id)}>{player.name}</option>)}
       </select>
     </label>)}
-    {award.open && <button className={command} disabled={saving || !choices.length || !changed}>{ICONS.doc}{saving ? "Saving..." : award.ballot ? "Update Ballot" : "Submit Ballot"}</button>}
+    {award.open && <button className={command} disabled={saving || !choices.length || !changed}>{ICONS.doc}{saving ? "Saving..." : ballot ? "Update Ballot" : child ? `Submit ${child}'s Ballot` : "Submit Ballot"}</button>}
   </form>;
 }
 

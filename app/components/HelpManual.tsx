@@ -567,7 +567,15 @@ export default function HelpManual() {
             <li><B>Results:</B> open an award to see its private standings and weighted vote shares.</li>
             <li><B>Visibility:</B> activate awards for parents only when the team is ready. They stay hidden until activated.</li>
           </Bullets>
-          <p>Activation sends an app notification to eligible parents with phone alerts enabled, never email. Each parent account can update its ballot while voting is open. Parents do not see live results or point values.</p>
+          <H3>Who votes</H3>
+          <p>Each award has a <B>Who votes</B> setting:</p>
+          <Bullets>
+            <li><B>Players:</B> every player gets one ballot, which their parent fills in for them — e.g. Players&apos; Player. A player can&apos;t vote for themselves, and if both parents have accounts, the child still has one vote: whoever saves last decides it.</li>
+            <li><B>Parents &amp; supporters:</B> each parent account gets its own ballot — e.g. Parents&apos; Player of the Year.</li>
+            <li><B>Coaches decide:</B> not on the parents&apos; ballot at all; the coaches pick the winner.</li>
+          </Bullets>
+          <p>It can&apos;t be changed once ballots are in. To change it then, delete the award and add it again.</p>
+          <p>Activation sends an app notification to eligible parents with phone alerts enabled, never email. Ballots can be updated while voting is open. Parents do not see live results or point values.</p>
         </Section>
 
         <Section id="camera-and-kit" title="Camera Register and Kit Responses">

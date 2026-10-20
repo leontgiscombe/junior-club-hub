@@ -73,26 +73,27 @@ export async function awardBallots(id: string): Promise<AwardBallot[]> {
   return Object.values(all ?? {}).map((value) => parse<AwardBallot>(value));
 }
 
-export async function ownAwardBallot(id: string, userId: string): Promise<AwardBallot | null> {
-  const value = await (await database()).hget<unknown>(ballotsKey(id), userId);
+/** The ballot kept at `field` (ballotField: a parent's account, or a child's for a players' award). */
+export async function ownAwardBallot(id: string, field: string): Promise<AwardBallot | null> {
+  const value = await (await database()).hget<unknown>(ballotsKey(id), field);
   return value == null ? null : parse<AwardBallot>(value);
 }
 
-export async function submitAwardBallot(id: string, userId: string, season: string, choices: string[]): Promise<boolean> {
+export async function submitAwardBallot(id: string, field: string, season: string, choices: string[], by?: string): Promise<boolean> {
   const tenant = await requireTenant();
   await database();
   const kv = await rawKv();
   if (!kv) throw new Error("Awards storage is unavailable. Please try again later.");
   const prefix = keyPrefix(tenant);
-  const ballot: AwardBallot = { choices, updatedAt: new Date().toISOString() };
+  const ballot: AwardBallot = { choices, updatedAt: new Date().toISOString(), ...(by ? { by } : {}) };
   const result = await kv.eval(`
     local stored = redis.call('HGET', KEYS[1], ARGV[1])
     if not stored then return 0 end
     local award = cjson.decode(stored)
-    if not award.open or award.season ~= ARGV[2] then return 0 end
+    if not award.open or award.season ~= ARGV[2] or award.voters == 'coaches' then return 0 end
     if redis.call('HGET', KEYS[3], award.team) ~= 'true' then return 0 end
     redis.call('HSET', KEYS[2], ARGV[3], ARGV[4])
     return 1
-  `, [prefix + AWARDS_KEY, prefix + ballotsKey(id), prefix + activationKey(season)], [id, season, userId, JSON.stringify(ballot)]);
+  `, [prefix + AWARDS_KEY, prefix + ballotsKey(id), prefix + activationKey(season)], [id, season, field, JSON.stringify(ballot)]);
   return result === 1;
 }
