@@ -25,7 +25,9 @@ import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import AppHeader from "./components/AppHeader";
 import HomeShortcuts, { type ShortcutId } from "./components/HomeShortcuts";
 import HomeWidgets from "./components/HomeWidgets";
-import { HIDDEN_COOKIE } from "@/lib/homeWidgets";
+import { DEVICE_PROMPT_COOKIE, HIDDEN_COOKIE } from "@/lib/homeWidgets";
+import DevicePrompt from "./components/DevicePrompt";
+import { listPlayerDevices } from "@/lib/playerDevices";
 import { cookies } from "next/headers";
 import RefreshOnReturn from "./components/RefreshOnReturn";
 import SetupCard from "./components/SetupCard";
@@ -83,7 +85,8 @@ const ICON = {
 
 export default async function Home() {
   // the cards this phone has hidden (HomeWidgets)
-  const hiddenWidgets = ((await cookies()).get(HIDDEN_COOKIE)?.value ?? "").split(".").filter(Boolean);
+  const jar = await cookies();
+  const hiddenWidgets = (jar.get(HIDDEN_COOKIE)?.value ?? "").split(".").filter(Boolean);
   const tenant = await getTenant();
   const [CLUB, TEAMS, viewer, me] = await Promise.all([
     getClub(),
@@ -131,6 +134,15 @@ export default async function Home() {
     kitDue = who
       .filter((w) => !(sent.get(w.team) ?? []).some((s) => (w.playerId && s.playerId === w.playerId) || same(s.childName, w.name)))
       .map((w) => w.name.split(" ")[0]);
+  }
+
+  // ---- a parent's prompt to set up their children's own devices: the ones in
+  // the squad with none yet, unless this phone said Not now ----
+  let needDevice: { playerId: string; name: string }[] = [];
+  if (person && tenant && CLUB.features.trainingHub && jar.get(DEVICE_PROMPT_COOKIE)?.value !== "off") {
+    const inSquad = kids.flatMap((k) => (k.playerId && !k.pending ? [{ playerId: k.playerId, name: k.name }] : []));
+    const has = await Promise.all(inSquad.map((k) => listPlayerDevices(tenant, k.playerId).then((d) => d.length > 0).catch(() => true)));
+    needDevice = inSquad.filter((_, i) => !has[i]);
   }
 
   // ---- what's next, and the coaches' cards ----
@@ -385,6 +397,9 @@ export default async function Home() {
               : []),
           ]}
         />
+
+        {/* parents: set up a child's own device for the Training Hub */}
+        {needDevice.length > 0 && <DevicePrompt kids={needDevice} />}
 
         {/* coaches: shortcuts to the tools */}
         {viewer.canCoach && <HomeShortcuts available={available} defaults={defaults} />}
