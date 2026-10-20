@@ -1,6 +1,6 @@
 /** Where to go after signing in: a path on this site only (never another site). */
 export const safeNext = (v: unknown) =>
-  typeof v === "string" && v.startsWith("/") && !v.startsWith("//") && !v.includes("\\") ? v.slice(0, 300) : "/";
+  typeof v === "string" && v.startsWith("/") && !v.startsWith("//") && !v.includes("\\") && !/[\x00-\x20\x7f]/.test(v) ? v.slice(0, 300) : "/";
 
 /**
  * The address a request came to (its scheme and host), for redirects. The

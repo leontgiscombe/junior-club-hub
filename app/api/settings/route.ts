@@ -116,10 +116,13 @@ export async function PUT(req: NextRequest) {
       // a subscribed club's plan covers so many teams (lib/billing.ts): more needs the next plan up
       const here = await getTenant();
       const record = here && here !== DEFAULT_TENANT ? await getTenantRecord(here) : null;
+      const before = await getAllTeams();
       if (record) {
         const state = billingState(record.billing);
         const live = teams.filter((t) => !t.archived).length;
-        if (live > teamLimit(state) && state.kind === "paid") {
+        // only adding teams past the plan is stopped: a club already over it
+        // (teams made in the free trial) can still rename and reschedule
+        if (live > teamLimit(state) && live > before.filter((t) => !t.archived).length && state.kind === "paid") {
           return NextResponse.json(
             { error: `The ${PLANS[state.plan].name} plan covers up to ${PLANS[state.plan].teams} teams. Move to the next plan up (Plans, on Home) to add more.` },
             { status: 402 },
@@ -128,7 +131,6 @@ export async function PUT(req: NextRequest) {
       }
       // A team is never dropped, only archived, so its kit sizes, stats,
       // logs and subs stay put and it can be brought back.
-      const before = await getAllTeams();
       const missing = before.filter((t) => !teams.some((n) => n.slug === t.slug));
       if (missing.length) {
         return NextResponse.json(

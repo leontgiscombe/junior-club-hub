@@ -95,6 +95,13 @@ async function put(req: NextRequest) {
     // team password can work out; the server keeps just its SHA-256. Teams set
     // up before tokens existed have no writeHash until they next unlock.
     const auth = cleanAuth(body.auth);
+    // a new team's login record must carry its write token
+    if (!hasAuth && !auth?.writeHash) return NextResponse.json({ error: "bad login record" }, { status: 400 });
+    // a team from before write tokens has nothing a stranger couldn't send:
+    // only its signed-in treasurer or a club admin can save it (and give it one)
+    if (current && !current.writeHash && !(await financeUser(await requireTenant(), id))) {
+      return NextResponse.json({ error: "Sign in as the team's treasurer or a club admin to save this team" }, { status: 403 });
+    }
     if (current?.writeHash) {
       const token = req.headers.get("x-write-token") ?? "";
       const tokenOk = sameToken(token, current.writeHash);

@@ -7,12 +7,14 @@ import {
   addPlayer,
   listPlayers,
   updatePlayer,
-  deletePlayer,
   isPosition,
   STAT_FIELDS,
 } from "@/lib/statsStorage";
 import { getCurrentSeason, listArchives } from "@/lib/season";
-import { isCoach } from "@/lib/adminAuth";
+import { isClubAdmin, isCoach } from "@/lib/adminAuth";
+import { deleteSquadPlayer } from "@/lib/people";
+import { deletePlayerPhoto } from "@/lib/playerPhoto";
+import { requireTenant } from "@/lib/tenant";
 import { isTeam } from "@/lib/settings";
 import { playerPhotoVersions } from "@/lib/playerPhoto";
 
@@ -84,15 +86,18 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ success: ok });
 }
 
+// taking a player out of the squad is a club admin's, as in Members (app/api/players):
+// with their medical notes, devices, links to parents and photo
 export async function DELETE(request: Request) {
-  if (!(await isAuthorised(request))) {
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
-  }
   const { searchParams } = new URL(request.url);
+  if (!(await isClubAdmin(searchParams.get("key") ?? ""))) {
+    return NextResponse.json({ error: "Only a club admin can remove players" }, { status: 403 });
+  }
   const id = searchParams.get("id");
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
-  await deletePlayer(id);
+  await deleteSquadPlayer(await requireTenant(), id);
+  await deletePlayerPhoto(id).catch(() => {});
   return NextResponse.json({ success: true });
 }

@@ -11,7 +11,7 @@ import { getTenantRecord } from "@/lib/tenants";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (await overLimit("player-find", 10, 3600)) {
+  if (await overLimit("player-find", 10, 3600, false)) {
     return NextResponse.json({ error: "Too many tries — ask a grown-up for a new code and try again later" }, { status: 429 });
   }
   const code = (req.nextUrl.searchParams.get("code") ?? "").replace(/\D/g, "");

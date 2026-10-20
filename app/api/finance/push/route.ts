@@ -4,6 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
 import { requireTenant } from "@/lib/tenant";
 import { isTeam } from "@/lib/settings";
+import { isPushEndpoint } from "@/lib/pushEndpoint";
+import { overLimit } from "@/lib/rateLimit";
+
+// at most this many browsers per club get the reminder
+const MAX_SUBS = 500;
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +29,15 @@ async function handle(req: NextRequest, add: boolean) {
   const body = (await req.json().catch(() => null)) as { subscription?: Sub; team?: string } | null;
   const sub = body?.subscription;
   if (!sub?.endpoint) return NextResponse.json({ error: "missing subscription" }, { status: 400 });
+  if (add && !isPushEndpoint(sub.endpoint)) return NextResponse.json({ error: "That isn't a browser's push address" }, { status: 400 });
+  if (add && (await overLimit("finance-push", 20, 3600))) return NextResponse.json({ error: "Too many tries — wait a while" }, { status: 429 });
   try {
     // Drop any earlier record for this browser, then add the fresh one.
     await removeEndpoint(PUSH_SUBS_KEY, sub.endpoint);
     if (add) {
+      if (((await redis(["SCARD", PUSH_SUBS_KEY])) as number) >= MAX_SUBS) {
+        return NextResponse.json({ error: "Too many phones have reminders on for this club" }, { status: 409 });
+      }
       const team = body?.team && (await isTeam(body.team)) ? body.team : "";
       const record = { endpoint: sub.endpoint, keys: sub.keys, team, addedAt: new Date().toISOString() };
       await redis(["SADD", PUSH_SUBS_KEY, JSON.stringify(record)]);

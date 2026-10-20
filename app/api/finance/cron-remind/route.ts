@@ -14,9 +14,9 @@ export const dynamic = "force-dynamic";
 // gets the public one from /api/club.
 
 export async function GET(req: NextRequest) {
-  // With CRON_SECRET set, only Vercel Cron (which sends it) may trigger this.
+  // only the scheduler, which sends CRON_SECRET, may trigger this
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!financeConfigured()) return NextResponse.json({ error: "storage not configured" }, { status: 503 });

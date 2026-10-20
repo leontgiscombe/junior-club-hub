@@ -26,7 +26,10 @@ export async function parentKitData(person: Person): Promise<ParentKitData> {
   return {
     family: family.map((child) => {
       const linkedId = childrenOf(person).find((entry) => entry.id === child.id)?.playerId;
-      const named = roster.filter((player) => player.team === child.team && sameName(player.name, child.name));
+      // "me" (no children listed) is matched by their own name, which they can
+      // edit: only someone a coach approved as a player gets that, never a parent
+      const byName = child.id !== "me" || person.roles.includes("player");
+      const named = byName ? roster.filter((player) => player.team === child.team && sameName(player.name, child.name)) : [];
       const playerId = linkedId ?? (named.length === 1 ? named[0].id : undefined);
       const legacySafe = named.length <= 1 && (!linkedId || !named.length || named[0].id === linkedId);
       return {
@@ -35,7 +38,7 @@ export async function parentKitData(person: Person): Promise<ParentKitData> {
         ...(playerId ? { playerId } : {}),
         submissions: (submissions.get(child.team) ?? []).filter((submission) => submission.playerId
           ? !!playerId && submission.playerId === playerId
-          : legacySafe && sameName(submission.childName, child.name)).sort((first, second) => second.submittedAt.localeCompare(first.submittedAt)),
+          : byName && legacySafe && sameName(submission.childName, child.name)).sort((first, second) => second.submittedAt.localeCompare(first.submittedAt)),
       };
     }),
     requests: requests.filter((request) => request.userId === person.userId).map(({ id, team, childName, item, size, quantity, note, createdAt, doneAt }) => ({ id, team, childName, item, size, quantity, note, createdAt, doneAt })),

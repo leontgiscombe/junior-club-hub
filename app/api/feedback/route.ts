@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const user = await currentUser().catch(() => null);
   const email = user?.email ?? text(body?.email, 120).toLowerCase();
   if (!EMAIL.test(email)) return NextResponse.json({ error: "Enter your email, so we can reply" }, { status: 400 });
-  if (await overLimit("feedback", 8, 3600)) {
+  if (await overLimit("feedback", 8, 3600, false)) {
     return NextResponse.json({ error: "That's a lot of messages — try again in an hour, or email us" }, { status: 429 });
   }
   const club = (await getTenant()) ?? "";

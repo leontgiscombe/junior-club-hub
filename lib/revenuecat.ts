@@ -64,8 +64,17 @@ export function planFromSubscriber(subscriber: Subscriber): StorePlan | null {
  * billing at all) is never touched, and a plan the platform admin set by hand
  * that runs longer is kept.
  */
-export function billingChange(billing: Billing | undefined, store: StorePlan | null): Partial<Billing> | null {
-  if (!billing || !store) return null;
+export type BillingChange = { [K in keyof Billing]?: Billing[K] | null };
+
+export function billingChange(billing: Billing | undefined, store: StorePlan | null): BillingChange | null {
+  if (!billing) return null;
+  if (!store) {
+    // the store no longer has a subscription for the club at all (moved to
+    // another club, or removed): a plan the store gave goes with it
+    return billing.plan && (billing.source === "apple" || billing.source === "web")
+      ? { plan: null, paidUntil: null, source: null, cancelled: null, billingIssue: null }
+      : null;
+  }
   if (billing.source === "manual" && billing.paidUntil && Date.parse(billing.paidUntil) > Date.parse(store.paidUntil)) return null;
   const change: Partial<Billing> = { plan: store.plan, paidUntil: store.paidUntil, source: store.source, cancelled: store.cancelled, billingIssue: store.billingIssue };
   const same = (Object.keys(change) as (keyof Billing)[]).every((k) => (billing[k] ?? false) === (change[k] ?? false));
