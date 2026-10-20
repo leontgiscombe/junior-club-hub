@@ -1,3 +1,18 @@
+/**
+ * Who votes for an award: "players" — a ballot per child in the squad, filled
+ * in by their parent on their behalf, and not for themselves (Players' Player);
+ * "parents" — a ballot per parent's account (Parents' Player); "coaches" — the
+ * coaches choose, so it isn't on the parents' ballot at all. An award saved
+ * before there was a choice is "parents", which is how they all worked.
+ */
+export type AwardVoters = "players" | "parents" | "coaches";
+export const AWARD_VOTERS: AwardVoters[] = ["players", "parents", "coaches"];
+export const VOTERS_LABEL: Record<AwardVoters, string> = {
+  players: "Players (parents vote for their child)",
+  parents: "Parents & supporters",
+  coaches: "Coaches decide",
+};
+
 export type SeasonAward = {
   id: string;
   team: string;
@@ -6,15 +21,24 @@ export type SeasonAward = {
   description: string;
   open: boolean;
   nominees: { id: string; name: string }[];
+  voters?: AwardVoters;
 };
 
 export type AwardBallot = {
   choices: string[];
   updatedAt: string;
+  /** who saved it (a players' award ballot can be saved by either parent) */
+  by?: string;
+};
+
+/** One ballot a parent fills in: their own, or one on behalf of a child of theirs. */
+export type AwardSlot = {
+  forPlayer?: { id: string; name: string };
+  ballot: AwardBallot | null;
 };
 
 export type SeasonAwardView = SeasonAward & {
-  ballot?: AwardBallot | null;
+  slots?: AwardSlot[];
   ballotCount?: number;
   standings?: AwardStanding[];
 };
@@ -35,6 +59,31 @@ export type AwardStanding = {
   percentage: number;
   rank: number;
 };
+
+export const votersOf = (award: Pick<SeasonAward, "voters">): AwardVoters => award.voters ?? "parents";
+
+/** Where a ballot is kept: a players' award's under the child, so they get one vote however many parents they have. */
+export const ballotField = (userId: string, playerId?: string) => (playerId ? `player:${playerId}` : userId);
+
+/**
+ * The ballots a parent fills in for an award: none for the coaches' awards, one
+ * for each of their children in the award's team for a players' award, and
+ * their own for a parents' one.
+ */
+export function awardSlotsFor(
+  award: Pick<SeasonAward, "team" | "voters">,
+  kids: { playerId?: string; name: string; pending?: boolean; team?: { slug: string } }[],
+): { playerId?: string; name?: string }[] {
+  const voters = votersOf(award);
+  if (voters === "coaches") return [];
+  const mine = kids.filter((k) => !k.pending && k.team?.slug === award.team);
+  if (voters === "parents") return mine.length ? [{}] : [];
+  return mine.flatMap((k) => (k.playerId ? [{ playerId: k.playerId, name: k.name }] : []));
+}
+
+/** Who can be voted for: everyone nominated, except the child whose ballot it is. */
+export const nomineesFor = (award: Pick<SeasonAward, "nominees">, playerId?: string) =>
+  award.nominees.filter((n) => n.id !== playerId);
 
 export function validAwardChoices(value: unknown, playerIds: string[]): value is string[] {
   return Array.isArray(value) && value.length > 0 && value.length <= 3 &&

@@ -4,7 +4,7 @@ import { isCoach } from "@/lib/adminAuth";
 import { getTeams } from "@/lib/settings";
 import { getCurrentSeason } from "@/lib/season";
 import { listPlayers } from "@/lib/statsStorage";
-import { awardStandings, type SeasonAward } from "@/lib/seasonAwards";
+import { AWARD_VOTERS, awardStandings, votersOf, type AwardVoters, type SeasonAward } from "@/lib/seasonAwards";
 import { activeAwardTeams, awardBallots, getSeasonAward, listSeasonAwards, removeSeasonAward, saveSeasonAward, setAwardsActive } from "@/lib/seasonAwardsStorage";
 import { requireTenant } from "@/lib/tenant";
 import { notifyAwardsActivated } from "@/lib/notify";
@@ -57,19 +57,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Enter an award name (up to 100 characters), description (up to 500) and voting status." }, { status: 400 });
     }
     if (raw.id !== undefined && (typeof raw.id !== "string" || !raw.id)) return NextResponse.json({ error: "Invalid award." }, { status: 400 });
+    if (raw.voters !== undefined && !AWARD_VOTERS.includes(raw.voters)) return NextResponse.json({ error: "Choose who votes." }, { status: 400 });
     const existing = raw.id ? await getSeasonAward(raw.id) : null;
     if (raw.id && !existing) return NextResponse.json({ error: "Award not found." }, { status: 404 });
     const season = await getCurrentSeason();
     if (existing && existing.season !== season && raw.open) return NextResponse.json({ error: "Awards from past seasons cannot be reopened." }, { status: 400 });
     let award: SeasonAward;
     if (existing) {
-      award = { ...existing, title: raw.title.trim(), description: raw.description.trim(), open: raw.open };
+      const voters: AwardVoters = raw.voters ?? votersOf(existing);
+      // the ballots in already were cast as one kind of voter: who votes stays put
+      if (voters !== votersOf(existing) && (await awardBallots(existing.id)).length) {
+        return NextResponse.json({ error: "Ballots are already in, so who votes can't change. Delete the award and add it again to change it." }, { status: 409 });
+      }
+      award = { ...existing, title: raw.title.trim(), description: raw.description.trim(), open: raw.open, voters };
     } else {
       const teams = await getTeams();
       if (!teams.some((team) => team.slug === raw.team)) return NextResponse.json({ error: "Choose a team." }, { status: 400 });
       const nominees = (await listPlayers()).filter((player) => player.team === raw.team).map(({ id, name }) => ({ id, name }));
       if (!nominees.length) return NextResponse.json({ error: "Add players to this team's squad before creating an award." }, { status: 400 });
-      award = { id: crypto.randomUUID(), team: raw.team, season, title: raw.title.trim(), description: raw.description.trim(), open: raw.open, nominees };
+      award = { id: crypto.randomUUID(), team: raw.team, season, title: raw.title.trim(), description: raw.description.trim(), open: raw.open, nominees, voters: raw.voters ?? "parents" };
     }
     await saveSeasonAward(award);
     return NextResponse.json({ success: true });
