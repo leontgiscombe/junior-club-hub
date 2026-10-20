@@ -103,7 +103,7 @@ export default async function PlansPage() {
             </p>
           ) : buyUrl ? (
             <>
-              <p className="mt-1">Pay monthly or yearly by card. Change plan or cancel whenever you like.</p>
+              <p className="mt-1">Pay monthly or yearly by card or Apple Pay. Change plan or cancel whenever you like.</p>
               <a href={buyUrl} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-green-700 px-4 py-2 font-semibold text-white">
                 Subscribe
               </a>

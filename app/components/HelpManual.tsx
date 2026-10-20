@@ -704,7 +704,7 @@ export default function HelpManual() {
           <Steps>
             <li>A club admin opens Coach Admin → <B>Settings</B> → <B>Plan</B> (Home also shows a reminder in the last week of the trial).</li>
             <li><B>In the iPhone app:</B> pick a plan and tap <B>Subscribe</B>. Apple takes the payment from your Apple ID.</li>
-            <li><B>On the website:</B> tap <B>Subscribe</B> and pay by card.</li>
+            <li><B>On the website:</B> tap <B>Subscribe</B> and pay by card or Apple Pay.</li>
           </Steps>
           <p>
             The club opens straight away. Either way works, and the club shows as paid in the app and on the website.
