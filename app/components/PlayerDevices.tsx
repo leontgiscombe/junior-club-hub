@@ -19,21 +19,31 @@ export default function PlayerDevices({
   name,
   adminKey,
   className = "text-green-700 dark:text-green-400",
+  label = "Devices",
+  onClose,
 }: {
   playerId: string;
   name: string;
   /** a coach's key, in Coach Admin; parents are known by their account */
   adminKey?: string;
   className?: string;
+  /** the button's words (Home's device prompt says what it does) */
+  label?: string;
+  /** after the sheet's closed, e.g. to see whether a device was set up */
+  onClose?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const first = name.trim().split(/\s+/)[0] || "Their";
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={className}>
-        Devices
+        {label}
       </button>
-      {open && createPortal(<Sheet playerId={playerId} first={first} adminKey={adminKey} onClose={() => setOpen(false)} />, document.body)}
+      {open &&
+        createPortal(
+          <Sheet playerId={playerId} first={first} adminKey={adminKey} onClose={() => { setOpen(false); onClose?.(); }} />,
+          document.body,
+        )}
     </>
   );
 }
