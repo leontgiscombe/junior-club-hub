@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AWARD_VOTERS, VOTERS_LABEL, nomineesFor, votersOf, type AwardSlot, type AwardVoters, type SeasonAward, type SeasonAwardsData, type SeasonAwardView } from "@/lib/seasonAwards";
+import { AWARD_VOTERS, STARTER_AWARDS, VOTERS_LABEL, guessVoters, nomineesFor, votersOf, type AwardSlot, type AwardVoters, type SeasonAward, type SeasonAwardsData, type SeasonAwardView } from "@/lib/seasonAwards";
 import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
@@ -128,6 +128,14 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
           </div>}
           {admin && view === "visibility" && season !== data.season && <p className="wp-text py-6 text-center text-sm">Past-season voting is closed.</p>}
           {admin && view === "awards" && !selectedId && !editing && season === data.season && <button className={`${command} self-start`} disabled={saving || !team} onClick={() => { setEditing("new"); open("new"); }}>Add Award</button>}
+          {admin && view === "awards" && !selectedId && !editing && season === data.season && team && <QuickAdd
+            key={`${team}-${awards.length}`}
+            current={awards}
+            lastSeason={data.awards.filter((award) => award.team === team && award.season !== data.season)}
+            saving={saving}
+            onStarter={(titles) => mutate({ action: "starter", team, titles }, `${titles.length === 1 ? "Award" : "Awards"} added, with voting closed. Open voting on each one when you're ready.`)}
+            onCopy={() => mutate({ action: "copy", team }, "Last season's awards added, with voting closed.")}
+          />}
           {admin && editing && <AwardEditor key={editing === "new" ? `new-${team}` : editing.id} award={editing === "new" ? null : editing} team={team} allowOpen={season === data.season} saving={saving} onCancel={() => { setEditing(null); close(); }} onSave={async (award) => { if (await mutate({ action: "save", award }, "Award saved.")) { setEditing(null); close(); } }} />}
           {!editing && (!admin || view !== "visibility") && awards.length === 0 && <p className="wp-text py-4 text-center text-sm">{admin ? "No awards for this team and season." : "No awards are available for your team yet."}</p>}
           {!editing && (!admin || view !== "visibility") && awards.filter((award) => !selectedId || award.id === selectedId).map((award) => admin && !selectedId ? <button key={award.id} onClick={() => open(`${view === "results" ? "result" : "award"}-${award.id}`)} className={`${panel} flex min-h-20 w-full items-center gap-3 text-left`}><span className="shrink-0 text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1"><span className="block break-words font-semibold">{award.title}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{status(award, data.season)}</span></span><span aria-hidden="true" className="text-gray-400">›</span></button> : admin ? <section key={award.id} className={`${panel} space-y-4`} aria-label={award.title}>
@@ -165,7 +173,10 @@ function AwardEditor({ award, team, allowOpen, saving, onSave, onCancel }: {
   const [title, setTitle] = useState(award?.title ?? "");
   const [description, setDescription] = useState(award?.description ?? "");
   const [open, setOpen] = useState(award?.open ?? false);
-  const [voters, setVoters] = useState<AwardVoters>(award ? votersOf(award) : "parents");
+  // a new award's voters follow its name (guessVoters) until the coach picks
+  const [picked, setPicked] = useState<AwardVoters | null>(award ? votersOf(award) : null);
+  const voters = picked ?? guessVoters(title);
+  const setVoters = setPicked;
   // ballots already cast were cast as one kind of voter
   const locked = !!award?.ballotCount;
   return <form className={`${panel} space-y-3`} onSubmit={(event) => { event.preventDefault(); void onSave({ ...(award ? { id: award.id } : {}), team, title, description, open: voters !== "coaches" && open, voters }); }}>
@@ -181,10 +192,44 @@ function AwardEditor({ award, team, allowOpen, saving, onSave, onCancel }: {
         ? "Each player gets one ballot, filled in by their parent. They can't vote for themselves."
         : voters === "parents"
           ? "Each parent gets one ballot of their own."
-          : "Not on the parents' ballot — the coaches choose the winner."}</p>
+          : "Not on the parents' ballot — the coaches choose the winner."}{!award && !picked && title.trim() ? " Picked from the name — change it if it's wrong." : ""}</p>
     {voters !== "coaches" && <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5 accent-green-700" checked={open} onChange={(event) => setOpen(event.target.checked)} disabled={saving || !allowOpen} />Voting open</label>}
     <div className="flex gap-3"><button className={command} disabled={saving || !title.trim()}>{ICONS.doc}{saving ? "Saving..." : "Save Award"}</button><button type="button" className={secondary} disabled={saving} onClick={onCancel}>Cancel</button></div>
   </form>;
+}
+
+/**
+ * Adding awards in one go: the usual ones (each with who votes already set),
+ * and last season's. Open when the team has none yet; a button otherwise.
+ */
+function QuickAdd({ current, lastSeason, saving, onStarter, onCopy }: {
+  current: SeasonAwardView[]; lastSeason: SeasonAwardView[]; saving: boolean;
+  onStarter: (titles: string[]) => Promise<boolean>; onCopy: () => Promise<boolean>;
+}) {
+  const has = (title: string) => current.some((award) => award.title.trim().toLowerCase() === title.toLowerCase());
+  const missing = STARTER_AWARDS.filter((award) => !has(award.title));
+  const [show, setShow] = useState(current.length === 0);
+  const [ticked, setTicked] = useState<string[]>(missing.map((award) => award.title));
+  const last = [...new Set(lastSeason.map((award) => award.season))].sort().at(-1);
+  const copyable = lastSeason.filter((award) => award.season === last && !has(award.title));
+  if (!missing.length && !copyable.length) return null;
+  return <>
+    {copyable.length > 0 && <button type="button" className={`${secondary} self-start bg-white dark:bg-[#1c1c1e]`} disabled={saving} onClick={() => void onCopy()}>Copy {last} awards ({copyable.length})</button>}
+    {missing.length > 0 && !show && <button type="button" className={`${secondary} self-start bg-white dark:bg-[#1c1c1e]`} disabled={saving} onClick={() => setShow(true)}>Add the usual awards</button>}
+    {missing.length > 0 && show && <section className={`${panel} space-y-3`} aria-label="The usual awards">
+      <div><h2 className="text-lg font-bold">Add the usual awards</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Untick any you don&apos;t want. You can rename them, or change who votes, afterwards. They&apos;re added with voting closed.</p></div>
+      <ul className="divide-y divide-gray-100 dark:divide-white/10">
+        {missing.map((award) => <li key={award.title}><label className="flex min-h-12 items-center gap-3 py-2">
+          <input type="checkbox" className="h-5 w-5 shrink-0 accent-green-700" checked={ticked.includes(award.title)} disabled={saving} onChange={(event) => setTicked(event.target.checked ? [...ticked, award.title] : ticked.filter((t) => t !== award.title))} />
+          <span className="min-w-0 flex-1"><span className="block font-semibold">{award.title}</span><span className="block text-xs text-gray-500 dark:text-gray-400">{VOTERS_LABEL[award.voters]}</span></span>
+        </label></li>)}
+      </ul>
+      <div className="flex gap-3">
+        <button type="button" className={command} disabled={saving || !ticked.length} onClick={() => void onStarter(ticked)}>{saving ? "Adding..." : `Add ${ticked.length} Award${ticked.length === 1 ? "" : "s"}`}</button>
+        {current.length > 0 && <button type="button" className={secondary} disabled={saving} onClick={() => setShow(false)}>Cancel</button>}
+      </div>
+    </section>}
+  </>;
 }
 
 function AwardVote({ award, slot, saving, onSave }: { award: SeasonAwardView; slot: AwardSlot; saving: boolean; onSave: (choices: string[]) => Promise<boolean> }) {

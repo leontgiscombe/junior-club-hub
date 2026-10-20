@@ -563,7 +563,7 @@ export default function HelpManual() {
         <Section id="season-awards" title="End of Season Awards">
           <p>In Coach Admin, open <B>End of Season Awards</B> and choose the team and season.</p>
           <Bullets>
-            <li><B>Awards:</B> add a category, or open an award to edit it, open or close voting, or delete it.</li>
+            <li><B>Awards:</B> add a category, or open an award to edit it, open or close voting, or delete it. <B>Add the usual awards</B> adds the common ones in one go (Players&apos; Player, Parents&apos; Player, Manager&apos;s Player, Most Improved, Top Goalscorer, Club Person), each with who votes already set; <B>Copy last season&apos;s awards</B> brings back the names you used before. Both are added with voting closed, and can be renamed or removed.</li>
             <li><B>Results:</B> open an award to see its private standings and weighted vote shares.</li>
             <li><B>Visibility:</B> activate awards for parents only when the team is ready. They stay hidden until activated.</li>
           </Bullets>
@@ -574,7 +574,7 @@ export default function HelpManual() {
             <li><B>Parents &amp; supporters:</B> each parent account gets its own ballot — e.g. Parents&apos; Player of the Year.</li>
             <li><B>Coaches decide:</B> not on the parents&apos; ballot at all; the coaches pick the winner.</li>
           </Bullets>
-          <p>It can&apos;t be changed once ballots are in. To change it then, delete the award and add it again.</p>
+          <p>A new award&apos;s setting is picked from its name — anything that isn&apos;t clearly the players&apos; or parents&apos; award starts as <B>Coaches decide</B>, so it stays off the parents&apos; ballot unless you choose otherwise. It can&apos;t be changed once ballots are in. To change it then, delete the award and add it again.</p>
           <p>Activation sends an app notification to eligible parents with phone alerts enabled, never email. Ballots can be updated while voting is open. Parents do not see live results or point values.</p>
         </Section>
 
