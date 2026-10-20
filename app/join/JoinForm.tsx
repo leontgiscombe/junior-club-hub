@@ -2,8 +2,8 @@
 
 // Ask to join: first the club's code; once it's right, sign in (or make an
 // account) with your email; then your name, who you are, your team and (for a
-// parent) your child's name. Then you wait for a coach to approve you — this
-// page checks every so often by itself. The team list only shows once the code
+// parent, or a coach who has a child at the club too) your child's name. Then
+// you wait for a coach to approve you — this page checks every so often by itself. The team list only shows once the code
 // is right, and nobody sees the club's players here.
 import { useEffect, useState } from "react";
 import { RELATIONS, type Relation } from "@/lib/access";
@@ -32,6 +32,8 @@ export default function JoinForm({
   const [relation, setRelation] = useState<Relation | "">("");
   const [team, setTeam] = useState("");
   const [children, setChildren] = useState<ChildDraft[]>([{ name: "", team: "" }]);
+  // a coach, volunteer or anyone else who's also a parent here
+  const [alsoParent, setAlsoParent] = useState(false);
   // the teams, once the code has been checked
   const [teams, setTeams] = useState<TeamOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +58,8 @@ export default function JoinForm({
     return () => clearInterval(t);
   }, [status]);
 
+  const withKids = relation === "parent" || (alsoParent && relation !== "" && relation !== "player");
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -66,7 +70,7 @@ export default function JoinForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           teams
-            ? { code, name, phone, relation, team, children: children.filter((c) => c.name.trim()), note }
+            ? { code, name, phone, relation, team, children: withKids ? children.filter((c) => c.name.trim()) : [], note }
             : { code },
         ),
       });
@@ -211,19 +215,36 @@ export default function JoinForm({
           <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
         </div>
       ) : (
-        teams.length > 0 && (
-          <label>
-            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Team</span>
-            <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
-              <option value="">Not sure / more than one</option>
-              {teams.map((t) => (
-                <option key={t.slug} value={t.slug}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )
+        <>
+          {teams.length > 0 && (
+            <label>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Team</span>
+              <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
+                <option value="">Not sure / more than one</option>
+                {teams.map((t) => (
+                  <option key={t.slug} value={t.slug}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {relation && relation !== "player" && (
+            <label className="flex items-center gap-3 text-sm font-bold text-gray-800 dark:text-gray-100">
+              <input type="checkbox" checked={alsoParent} onChange={(e) => setAlsoParent(e.target.checked)} className="h-5 w-5 accent-green-600" />
+              I have a child who plays at the club
+            </label>
+          )}
+          {withKids && (
+            <div>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your child (or children)</span>
+              <span className="mb-2 block text-xs text-gray-400">
+                Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
+              </span>
+              <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
+            </div>
+          )}
+        </>
       )}
       <label>
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Mobile number</span>
@@ -239,7 +260,7 @@ export default function JoinForm({
           className={input}
         />
         <span className="mt-1 block text-xs text-gray-400">
-          {relation === "parent"
+          {withKids
             ? "So the club can reach you, and the team's treasurer can send a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
             : "So the club can reach you. Only the club's coaches and treasurer see it."}
         </span>

@@ -69,8 +69,9 @@ export async function POST(req: NextRequest) {
 
   const name = text(body.name, 60);
   const relation = (Object.keys(RELATIONS) as Relation[]).find((r) => r === body.relation);
-  // a parent's teams are their children's; anyone else picks their own
-  const children = relation === "parent" ? cleanChildren(body.children, teams) : [];
+  // a parent's teams are their children's; anyone else picks their own, and a
+  // coach or volunteer can add children of theirs who play here too
+  const children = relation && relation !== "player" ? cleanChildren(body.children, teams) : [];
   const team = relation === "parent" ? undefined : pickTeam(body.team, teams);
   const note = text(body.note, 120);
   if (!name) return NextResponse.json({ error: "Enter your name, so the coaches know who you are" }, { status: 400 });
