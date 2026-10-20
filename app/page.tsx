@@ -35,8 +35,16 @@ import { billingState } from "@/lib/billing";
 import { parentAwardsVisible } from "@/lib/seasonAwardsStorage";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+// the time now, "HH:MM", in the UK
+const clockNow = () => new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
   new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", ...opts });
+// "Today", "Tomorrow", or the day and date, for what's coming up
+const upcoming = (date: string) => {
+  const now = today();
+  const tomorrow = new Date(Date.parse(`${now}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return date === now ? "Today" : date === tomorrow ? "Tomorrow" : day(date, { weekday: "long", day: "numeric", month: "short" });
+};
 
 const card = "rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]";
 const sub = "text-gray-500 dark:text-gray-400";
@@ -137,6 +145,7 @@ export default async function Home() {
   if (showNext && tenant) {
     const myTeams = !viewer.canCoach ? familyTeams : person?.team ? [person.team.slug] : TEAMS.map((t) => t.slug);
     const now = today();
+    const clock = clockNow();
     const [people, members, matches, training] = await Promise.all([
       viewer.canCoach ? listPeople(tenant).catch(() => []) : [],
       viewer.canCoach ? listMembers(tenant).catch(() => []) : [],
@@ -149,7 +158,8 @@ export default async function Home() {
     firstWaiting = names[0] ?? "";
     nextTraining =
       training
-        .filter((s) => myTeams.includes(s.team) && !s.cancelled && s.date >= now)
+        // today's is done with once it's finished (or started, with no finish time)
+        .filter((s) => myTeams.includes(s.team) && !s.cancelled && s.date >= now && !(s.date === now && (s.end ?? s.start ?? "24:00") <= clock))
         .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? "").localeCompare(b.start ?? ""))[0] ?? null;
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
@@ -298,7 +308,7 @@ export default async function Home() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">{many ? `${teamName(nextTraining.team)} training` : "Training"}</span>
                     <span className={`block text-sm ${sub}`}>
-                      {day(nextTraining.date, { weekday: "long", day: "numeric", month: "short" })}
+                      {upcoming(nextTraining.date)}
                       {timesLabel(nextTraining) ? ` · ${timesLabel(nextTraining)}` : ""}
                     </span>
                   </span>
@@ -314,7 +324,7 @@ export default async function Home() {
                       {many ? `${teamName(nextMatch.team)} ` : ""}vs {nextMatch.opponent || "TBC"}
                     </span>
                     <span className={`block text-sm ${sub}`}>
-                      {day(nextMatch.date, { weekday: "long", day: "numeric", month: "short" })}
+                      {upcoming(nextMatch.date)}
                       {nextMatch.time ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>
                   </span>
