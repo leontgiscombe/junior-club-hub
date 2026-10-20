@@ -6,6 +6,7 @@ import { getTenant, rootDomain } from "@/lib/tenant";
 import { currentPlayer, playerView } from "@/lib/playerRequest";
 import NoTabBar from "../components/NoTabBar";
 import PlayerLinkForm from "./PlayerLinkForm";
+import AuthBackdrop from "../components/AuthBackdrop";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Player Setup", robots: { index: false } };
@@ -17,7 +18,8 @@ export default async function PlayerPage({ searchParams }: { searchParams: Promi
   const session = await currentPlayer();
   const player = session ? await playerView(session) : null;
   return (
-    <main className="themed relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-20">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-20">
+      <AuthBackdrop />
       <NoTabBar />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="mb-6 text-center">

@@ -11,6 +11,7 @@ import { currentPerson } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { platformUrl, requireTenant, rootDomain } from "@/lib/tenant";
 import JoinForm from "./JoinForm";
+import AuthBackdrop from "../components/AuthBackdrop";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,8 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 
   return (
-    <main className="themed flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 py-10">
+    <main className="themed relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-green-900 px-4 py-10">
+      <AuthBackdrop />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

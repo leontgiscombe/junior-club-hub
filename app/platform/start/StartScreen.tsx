@@ -143,7 +143,8 @@ export default function StartScreen({
   return (
     <div className={card}>
       <div className="mb-6 text-center">
-        <div className="text-4xl">⚽</div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- the app's logo (public/app-logo.jpg) */}
+        <img src="/app-logo.jpg" alt="" className="mx-auto h-16 w-16 rounded-[22%] shadow-md" />
         <h1 className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-gray-50">
           {step === "player" ? "I'm a Player" : step === "grownup" ? "Find Your Club" : "Welcome"}
         </h1>
