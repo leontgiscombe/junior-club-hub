@@ -4,12 +4,36 @@ import { isCoach } from "@/lib/adminAuth";
 import { getTeams } from "@/lib/settings";
 import { getCurrentSeason } from "@/lib/season";
 import { listPlayers } from "@/lib/statsStorage";
-import { AWARD_VOTERS, awardStandings, votersOf, type AwardVoters, type SeasonAward } from "@/lib/seasonAwards";
+import { AWARD_VOTERS, STARTER_AWARDS, awardStandings, guessVoters, votersOf, type AwardVoters, type SeasonAward } from "@/lib/seasonAwards";
 import { activeAwardTeams, awardBallots, getSeasonAward, listSeasonAwards, removeSeasonAward, saveSeasonAward, setAwardsActive } from "@/lib/seasonAwardsStorage";
 import { requireTenant } from "@/lib/tenant";
 import { notifyAwardsActivated } from "@/lib/notify";
 
 export const runtime = "nodejs";
+
+// a team's squad, as an award's nominees
+async function squad(team: string) {
+  return (await listPlayers()).filter((player) => player.team === team).map(({ id, name }) => ({ id, name }));
+}
+
+const sameTitle = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/**
+ * Add awards to a team's current season in one go (the usual ones, or last
+ * season's), voting closed, skipping any it has by that name already.
+ */
+async function addAwards(team: string, list: { title: string; description: string; voters?: AwardVoters }[]) {
+  if (!(await getTeams()).some((t) => t.slug === team)) return NextResponse.json({ error: "Choose a team." }, { status: 400 });
+  const nominees = await squad(team);
+  if (!nominees.length) return NextResponse.json({ error: "Add players to this team's squad before creating an award." }, { status: 400 });
+  const season = await getCurrentSeason();
+  const have = (await listSeasonAwards()).filter((a) => a.team === team && a.season === season);
+  const fresh = list.filter((x, i) => !have.some((a) => sameTitle(a.title, x.title)) && list.findIndex((y) => sameTitle(y.title, x.title)) === i);
+  for (const x of fresh) {
+    await saveSeasonAward({ id: crypto.randomUUID(), team, season, title: x.title, description: x.description, open: false, nominees, voters: x.voters ?? guessVoters(x.title) });
+  }
+  return NextResponse.json({ success: true, added: fresh.length });
+}
 
 async function authorised(request: Request) {
   return isCoach(request.headers.get("x-coach-key") || SESSION_KEY);
@@ -51,6 +75,22 @@ export async function POST(request: Request) {
       await removeSeasonAward(body.id);
       return NextResponse.json({ success: true });
     }
+    if (body.action === "starter") {
+      // the usual awards the coach ticked
+      if (typeof body.team !== "string" || !Array.isArray(body.titles) || !body.titles.length) return NextResponse.json({ error: "Choose at least one award." }, { status: 400 });
+      const chosen = STARTER_AWARDS.filter((s) => body.titles.includes(s.title));
+      if (chosen.length !== body.titles.length) return NextResponse.json({ error: "Choose from the usual awards." }, { status: 400 });
+      return addAwards(body.team, chosen);
+    }
+    if (body.action === "copy") {
+      // the most recent other season this team had awards in ("2025/26" sorts before "2026/27")
+      if (typeof body.team !== "string") return NextResponse.json({ error: "Choose a team." }, { status: 400 });
+      const season = await getCurrentSeason();
+      const earlier = (await listSeasonAwards()).filter((a) => a.team === body.team && a.season !== season);
+      const last = earlier.map((a) => a.season).sort().at(-1);
+      if (!last) return NextResponse.json({ error: "This team has no awards from an earlier season." }, { status: 404 });
+      return addAwards(body.team, earlier.filter((a) => a.season === last).map((a) => ({ title: a.title, description: a.description, voters: votersOf(a) })));
+    }
     if (body.action !== "save") return NextResponse.json({ error: "Unknown action." }, { status: 400 });
     const raw = body.award;
     if (!raw || typeof raw.title !== "string" || !raw.title.trim() || raw.title.trim().length > 100 || typeof raw.description !== "string" || raw.description.length > 500 || typeof raw.open !== "boolean") {
@@ -73,9 +113,9 @@ export async function POST(request: Request) {
     } else {
       const teams = await getTeams();
       if (!teams.some((team) => team.slug === raw.team)) return NextResponse.json({ error: "Choose a team." }, { status: 400 });
-      const nominees = (await listPlayers()).filter((player) => player.team === raw.team).map(({ id, name }) => ({ id, name }));
+      const nominees = await squad(raw.team);
       if (!nominees.length) return NextResponse.json({ error: "Add players to this team's squad before creating an award." }, { status: 400 });
-      award = { id: crypto.randomUUID(), team: raw.team, season, title: raw.title.trim(), description: raw.description.trim(), open: raw.open, nominees, voters: raw.voters ?? "parents" };
+      award = { id: crypto.randomUUID(), team: raw.team, season, title: raw.title.trim(), description: raw.description.trim(), open: raw.open, nominees, voters: raw.voters ?? guessVoters(raw.title) };
     }
     await saveSeasonAward(award);
     return NextResponse.json({ success: true });

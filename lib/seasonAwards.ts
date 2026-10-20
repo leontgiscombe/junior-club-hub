@@ -13,6 +13,28 @@ export const VOTERS_LABEL: Record<AwardVoters, string> = {
   coaches: "Coaches decide",
 };
 
+/** The usual end-of-season awards, for a team to add in one go (and rename or remove as they like). */
+export const STARTER_AWARDS: { title: string; description: string; voters: AwardVoters }[] = [
+  { title: "Players' Player of the Season", description: "Chosen by the players: who they most like playing alongside.", voters: "players" },
+  { title: "Parents' Player of the Year", description: "Chosen by the parents and supporters.", voters: "parents" },
+  { title: "Manager's Player of the Year", description: "", voters: "coaches" },
+  { title: "Most Improved Player", description: "", voters: "coaches" },
+  { title: "Top Goalscorer", description: "", voters: "coaches" },
+  { title: "Club Person of the Year", description: "For effort, attitude and being a great team-mate.", voters: "coaches" },
+];
+
+/**
+ * Who most likely votes for an award, from its name: the players' and parents'
+ * awards say so; anything else (Manager's Player, Most Improved, Top Scorer, a
+ * club's own) the coaches decide, so it's off the parents' ballot unless chosen.
+ */
+export function guessVoters(title: string): AwardVoters {
+  const t = title.toLowerCase().replace(/[’']/g, "");
+  if (/\bplayers player\b|\bplayers choice\b|voted by (the )?players/.test(t)) return "players";
+  if (/\bparent|\bsupporter|\bfans?\b/.test(t)) return "parents";
+  return "coaches";
+}
+
 export type SeasonAward = {
   id: string;
   team: string;
