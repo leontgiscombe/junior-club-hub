@@ -131,6 +131,8 @@ export async function setTenantBilling(id: string, change: { [K in keyof Billing
     if (v === null) delete billing[k];
     else (billing as Record<string, unknown>)[k] = v;
   }
+  // a founding club (no billing) that ends up with nothing set stays a founding club
+  if (!record.billing && !Object.keys(billing).length) return billing;
   await saveRecord({ ...record, billing });
   return billing;
 }
@@ -207,6 +209,10 @@ export async function deleteTenant(id: string): Promise<number | null> {
   await releaseCode(id);
   await kv.hdel(TENANTS_KEY, id);
   known.delete(id);
+  // its children's devices are signed in outside the club's keys: sign them
+  // out, so they don't open a new club that takes the address later
+  const { removeClubPlayerDevices } = await import("./playerDevices");
+  await removeClubPlayerDevices(id).catch((e) => console.error("Deleting a club's player devices", e));
   let deleted = 0;
   let cursor: string | number = 0;
   do {

@@ -534,12 +534,12 @@ export default function StatsTracker() {
       const response = await fetch(`/api/stats?key=${encodeURIComponent(key)}&id=${encodeURIComponent(p.id)}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { error?: string } | null)?.error);
       setPlayers((prev) => prev.filter((x) => x.id !== p.id));
       setEditing(false);
       open("players");
-    } catch {
-      setError("Could not remove the player. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : "Could not remove the player. Please try again.");
     } finally {
       setBusyId(null);
     }

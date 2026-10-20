@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const email = cleanEmail(body?.email);
   if (!EMAIL.test(email)) return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
-  if ((await tooMany(`platform:signin-ip:${clientIp(req.headers)}`, 20)) || (!isReviewAccount(email) && (await tooMany(`platform:signin-email:${email}`, 5)))) {
+  if ((await tooMany(`platform:signin-ip:${clientIp(req.headers)}`, 20)) || (await tooMany(`platform:signin-email:${email}`, isReviewAccount(email) ? 20 : 5))) {
     return NextResponse.json({ error: "Too many sign-in emails — try again in an hour" }, { status: 429 });
   }
   const next = safeNext(body?.next);

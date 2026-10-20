@@ -42,6 +42,11 @@ export async function PUT(req: NextRequest) {
   if (!ctx) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   if (!ctx.me.person) return NextResponse.json({ error: "Join the club first" }, { status: 404 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  // a treasurer's team is which team's Finances their account opens
+  // (lib/financeDevices.ts): only a club admin changes it, in Members
+  if (body && "team" in body && ctx.me.person.roles.includes("treasurer") && !ctx.me.person.roles.includes("admin")) {
+    return NextResponse.json({ error: "A club admin sets a treasurer's team, in Coach Admin → Members" }, { status: 403 });
+  }
   const before = childrenOf(ctx.me.person);
   const waitingBefore = new Set(before.flatMap((c) => (c.pending ? [c.id] : [])));
   let person = await updatePerson(ctx.tenant, ctx.me.user.id, {

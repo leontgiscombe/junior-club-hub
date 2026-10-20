@@ -6,7 +6,8 @@
 //   POST { action: "signin", response, next? }   -> { next } with the session cookie set
 //   DELETE ?id=                                  -> removes one of yours
 import { NextRequest, NextResponse } from "next/server";
-import { createSession, currentUser, getUser, setPasskeyHint, setSessionCookie } from "@/lib/auth";
+import { createSession, currentPasskeyUser, currentUser, getUser, setPasskeyHint, setSessionCookie } from "@/lib/auth";
+import { platformAdminEmails } from "@/lib/platformAdmin";
 import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
 import {
@@ -62,6 +63,13 @@ export async function POST(req: NextRequest) {
 
   const user = await currentUser();
   if (!user) return notSignedIn();
+  // a platform admin's passkey opens platform admin, so once they have one, a
+  // new one needs a passkey sign-in: an emailed code alone can't add one
+  if ((action === "add-options" || action === "add") && platformAdminEmails().includes(user.email.toLowerCase())) {
+    if ((await listPasskeys(user.id)).length && !(await currentPasskeyUser())) {
+      return NextResponse.json({ error: "Sign in with your passkey first to add another one" }, { status: 403 });
+    }
+  }
   if (action === "add-options") {
     if (await tooMany(req)) return NextResponse.json({ error: "Too many tries — wait a while" }, { status: 429 });
     return NextResponse.json(await registrationOptions(req, user));

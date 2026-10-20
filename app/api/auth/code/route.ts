@@ -2,6 +2,7 @@
 //   POST { email, code } -> { next } with the session cookie set
 import { NextRequest, NextResponse } from "next/server";
 import { cleanEmail, createSession, finishLoginWithCode, setSessionCookie } from "@/lib/auth";
+import { overLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,10 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const email = cleanEmail(body?.email);
   const code = typeof body?.code === "string" ? body.code : "";
+  // each code has 5 tries; this stops one device guessing at many accounts' codes
+  if (await overLimit("signin-code", 30, 3600, false)) {
+    return NextResponse.json({ error: "Too many tries — wait a while and try again" }, { status: 429 });
+  }
   const done = email && code ? await finishLoginWithCode(email, code) : null;
   if (!done) {
     return NextResponse.json({ error: "That code isn't right or has run out — check the latest email, or send a new one" }, { status: 400 });

@@ -22,6 +22,15 @@ export type User = { id: string; email: string; name: string; phone?: string; cr
 const SESSION_DAYS = 90;
 const LOGIN_SECONDS = 15 * 60;
 const MAX_CODE_TRIES = 5;
+/**
+ * Count a guess at a code, atomically (guesses sent all at once can't each see
+ * "no tries yet"). False once the code has had its tries.
+ */
+async function guessAllowed(key: string): Promise<boolean> {
+  const n = await kvCall<number>(["INCR", `${key}:tries`]);
+  if (n === 1) await kvCall(["EXPIRE", `${key}:tries`, LOGIN_SECONDS]);
+  return n <= MAX_CODE_TRIES;
+}
 
 const userKey = (id: string) => `platform:user:${id}`;
 const USERS_BY_EMAIL = "platform:user-by-email";
@@ -76,6 +85,8 @@ export async function startEmailChange(user: User, email: string): Promise<{ cod
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const change: EmailChange = { email, codeHash: sha(`${user.id}:${email}:${code}`), tries: 0 };
   await kvCall(["SET", emailChangeKey(user.id), JSON.stringify(change), "EX", LOGIN_SECONDS]);
+  // a fresh code gets fresh tries
+  await kvCall(["DEL", `${emailChangeKey(user.id)}:tries`]);
   return { code };
 }
 
@@ -83,6 +94,10 @@ export async function startEmailChange(user: User, email: string): Promise<{ cod
 export async function finishEmailChange(user: User, code: string): Promise<{ user: User; from: string } | { error: string }> {
   const change = parse<EmailChange>(await kvCall(["GET", emailChangeKey(user.id)]));
   if (!change) return { error: "That code has run out — ask for a new one" };
+  if (!(await guessAllowed(emailChangeKey(user.id)))) {
+    await kvCall(["DEL", emailChangeKey(user.id)]);
+    return { error: "That code has run out — ask for a new one" };
+  }
   if (!same(sha(`${user.id}:${change.email}:${code.replace(/\D/g, "")}`), change.codeHash)) {
     if (change.tries + 1 >= MAX_CODE_TRIES) await kvCall(["DEL", emailChangeKey(user.id)]);
     else await kvCall(["SET", emailChangeKey(user.id), JSON.stringify({ ...change, tries: change.tries + 1 }), "KEEPTTL"]);
@@ -167,6 +182,10 @@ export async function finishLoginWithCode(email: string, code: string): Promise<
   if (typeof loginId !== "string") return null;
   const login = parse<Login>(await kvCall(["GET", loginKey(loginId)]));
   if (!login) return null;
+  if (!(await guessAllowed(loginKey(loginId)))) {
+    await kvCall(["DEL", loginKey(loginId), loginEmailKey(email)]);
+    return null;
+  }
   if (!same(sha(`${loginId}:${code.replace(/\D/g, "")}`), login.codeHash)) {
     if (login.tries + 1 >= MAX_CODE_TRIES) await kvCall(["DEL", loginKey(loginId), loginEmailKey(email)]);
     else await kvCall(["SET", loginKey(loginId), JSON.stringify({ ...login, tries: login.tries + 1 }), "KEEPTTL"]);

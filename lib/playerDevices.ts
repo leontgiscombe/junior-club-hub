@@ -127,6 +127,16 @@ export async function removeAllPlayerDevices(tenant: string, playerId: string): 
   await kvCall(["DEL", progressKey(tenant, playerId)]);
 }
 
+/** Every player device of a club signed out (the club is being deleted). */
+export async function removeClubPlayerDevices(tenant: string): Promise<void> {
+  let cursor = "0";
+  do {
+    const [next, keys] = (await kvCall<[string | number, string[]]>(["SCAN", cursor, "MATCH", clubKey(tenant, "player-devices:*"), "COUNT", "500"])) ?? ["0", []];
+    for (const key of keys) await removeAllPlayerDevices(tenant, key.slice(key.lastIndexOf(":") + 1));
+    cursor = String(next);
+  } while (cursor !== "0");
+}
+
 /** The cookie that keeps a player's device signed in. */
 export const playerCookie = (secure: boolean) => ({
   name: PLAYER_COOKIE,

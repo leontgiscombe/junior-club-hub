@@ -11,7 +11,11 @@ export const DEFAULT_TENANT = "default";
 export const TENANT_ID = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
 /** Web addresses no club can have. */
-export const RESERVED = new Set(["www", "app", "api", "admin", "default", "mail", "help", "support", "status", "blog"]);
+export const RESERVED = new Set([
+  "www", "app", "api", "admin", "default", "mail", "help", "support", "status", "blog",
+  // look-alikes of the platform's own pages
+  "login", "signin", "signup", "account", "accounts", "auth", "billing", "pay", "payments", "platform", "secure", "security",
+]);
 
 /**
  * The platform's domain from ROOT_DOMAIN, forgiving the usual slips when it's
