@@ -8,6 +8,7 @@ import StartScreen from "./StartScreen";
 import { currentUser } from "@/lib/auth";
 import { clubsOfUser } from "@/lib/userClubs";
 import { inApp } from "@/lib/inAppServer";
+import AuthBackdrop from "../../components/AuthBackdrop";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: `Welcome – ${PLATFORM_NAME}` };
@@ -17,7 +18,8 @@ export default async function StartPage() {
   const user = await currentUser().catch(() => null);
   const clubs = user ? (await clubsOfUser(user.id).catch(() => [])).map((c) => ({ name: c.name, home: c.url })) : null;
   return (
-    <main className="themed relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-16">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-16">
+      <AuthBackdrop />
       <NoTabBar />
       <StartScreen platform={PLATFORM_NAME} root={rootDomain()} clubs={clubs} appView={await inApp()} />
     </main>

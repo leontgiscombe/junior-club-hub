@@ -7,6 +7,7 @@ import { PLATFORM_NAME, getTenant } from "@/lib/tenant";
 import BackButton from "../components/BackButton";
 import NoTabBar from "../components/NoTabBar";
 import SignInForm from "../components/SignInForm";
+import AuthBackdrop from "../components/AuthBackdrop";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign In", robots: { index: false } };
@@ -18,7 +19,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const tenant = await getTenant();
   const club = tenant ? await getClub() : null;
   return (
-    <main className="themed relative flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4 pb-10 pt-20">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-20">
+      <AuthBackdrop />
       <NoTabBar />
       <BackButton href="/" label="Home" className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
@@ -27,7 +29,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             // eslint-disable-next-line @next/next/no-img-element
             <img src={club.crest.src} alt={club.crest.alt} className="mx-auto h-16 w-auto" />
           ) : (
-            <div className="text-4xl">⚽</div>
+            // eslint-disable-next-line @next/next/no-img-element -- the app's logo (public/app-logo.jpg)
+            <img src="/app-logo.jpg" alt="" className="mx-auto h-16 w-16 rounded-[22%] shadow-md" />
           )}
           <h1 className="mt-3 text-2xl font-extrabold text-gray-900 dark:text-gray-50">Sign In</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{club ? club.name : PLATFORM_NAME}</p>
