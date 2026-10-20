@@ -7,6 +7,7 @@ import { overLimit } from "@/lib/rateLimit";
 import { getTenant } from "@/lib/tenant";
 import { currentPerson } from "@/lib/people";
 import { parentKitData } from "@/lib/parentKit";
+import { isClubMember } from "@/lib/clubMember";
 
 /** The earlier answers for the child whose submission `replaces` names, when the
  *  signed-in parent is theirs — an update from Your Kit replaces them. */
@@ -20,7 +21,11 @@ async function replacedSubmissions(team: string, replaces: string): Promise<stri
 }
 
 export async function POST(request: Request) {
-  // the form is open to anyone with the club's link: a family sends a few, a script many
+  // only the club's approved members send sizes
+  if (!(await isClubMember(await getTenant()))) {
+    return NextResponse.json({ error: "Join the club to send kit sizes" }, { status: 403 });
+  }
+  // a family sends a few, a script many
   if (await overLimit("kit-submit", 30, 3600)) {
     return NextResponse.json({ error: "That's a lot of kit forms — please try again later" }, { status: 429 });
   }

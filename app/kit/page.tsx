@@ -8,6 +8,7 @@ import { childrenOf, teamsOf } from "@/lib/access";
 import { getSubmissions } from "@/lib/storage";
 import { getTenant } from "@/lib/tenant";
 import { getViewer } from "@/lib/viewer";
+import { isClubMember } from "@/lib/clubMember";
 import ParentKit from "../components/ParentKit";
 
 export const metadata = {
@@ -34,6 +35,9 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
   ]);
   const person = me?.person?.status === "approved" ? me.person : null;
   if (person) return <ParentKit viewer={await getViewer(tenant)} />;
+  // sizes come from the club's members: anyone else sees the kit and how to join
+  const member = await isClubMember(tenant);
+  const waiting = me?.person?.status === "pending";
   const mine = person && !canCoach(person) ? teamsOf(person) : [];
   const ownOnly = mine.length > 0 && !all;
   const shown = ownOnly ? TEAMS.filter((t) => mine.includes(t.slug)) : TEAMS;
@@ -74,52 +78,72 @@ export default async function KitTeamPicker({ searchParams }: { searchParams: Pr
           </span>
         </div>
 
-        {/* the teams, as Home's grouped rows */}
-        <h2 className="wp-text mt-6 mb-2.5 px-1 text-xl font-bold">
-          {ownOnly ? (shown.length > 1 ? "Your children's teams" : "Your child's team") : "Choose your child's team"}
-        </h2>
-        <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
-          {shown.map((team) => (
-            <Link key={team.slug} href={`/kit/${team.slug}`} className="press flex items-center gap-4 px-4 py-3.5">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-green-50 text-2xl dark:bg-green-400/10">
-                {team.accent}
+        {!member && (
+          <div className="mt-6 rounded-3xl bg-white p-5 text-center shadow-sm dark:bg-[#1c1c1e]">
+            <h2 className="text-lg font-extrabold">{waiting ? "Waiting for a coach" : "Join to send kit sizes"}</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {waiting
+                ? "Once a coach approves you, you can send your child's sizes here."
+                : `Kit sizes come from ${CLUB.name}'s members. Join the club, add your child, and send their sizes once a coach has approved you.`}
+            </p>
+            {!waiting && (
+              <Link href="/join" className="press mt-4 block rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700">
+                Join the Club
+              </Link>
+            )}
+          </div>
+        )}
+
+        {member && (
+          <>
+            {/* the teams, as Home's grouped rows */}
+            <h2 className="wp-text mt-6 mb-2.5 px-1 text-xl font-bold">
+              {ownOnly ? (shown.length > 1 ? "Your children's teams" : "Your child's team") : "Choose your child's team"}
+            </h2>
+            <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
+              {shown.map((team) => (
+                <Link key={team.slug} href={`/kit/${team.slug}`} className="press flex items-center gap-4 px-4 py-3.5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-green-50 text-2xl dark:bg-green-400/10">
+                    {team.accent}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold">{team.name}</span>
+                    <span className={`block text-sm ${status.get(team.slug)?.endsWith("✓") ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
+                      {status.get(team.slug) ?? "Choose kit sizes"}
+                    </span>
+                  </span>
+                  <Chevron />
+                </Link>
+              ))}
+            </div>
+            <p className="wp-text mt-2.5 px-1 text-center text-xs text-gray-500 dark:text-gray-400">
+              It takes a minute, and there&apos;s a size guide to help.
+              {ownOnly && TEAMS.length > shown.length && (
+                <>
+                  {" "}
+                  <Link href="/kit?all=1" className="wp-text font-semibold text-green-700 dark:text-green-400">
+                    Show all teams
+                  </Link>
+                </>
+              )}
+            </p>
+
+            {/* kit during the season: a bigger shirt, new socks */}
+            <Link href="/kit/request" className="press mt-6 flex items-center gap-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 8 12 3l9 5v8l-9 5-9-5z" />
+                  <path d="M3 8l9 5 9-5M12 13v8" />
+                </svg>
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold">{team.name}</span>
-                <span className={`block text-sm ${status.get(team.slug)?.endsWith("✓") ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
-                  {status.get(team.slug) ?? "Choose kit sizes"}
-                </span>
+                <span className="block text-lg font-extrabold">Request Kit</span>
+                <span className="block text-sm text-gray-500 dark:text-gray-400">Need something during the season? Ask the coaches.</span>
               </span>
               <Chevron />
             </Link>
-          ))}
-        </div>
-        <p className="wp-text mt-2.5 px-1 text-center text-xs text-gray-500 dark:text-gray-400">
-          It takes a minute, and there&apos;s a size guide to help.
-          {ownOnly && TEAMS.length > shown.length && (
-            <>
-              {" "}
-              <Link href="/kit?all=1" className="wp-text font-semibold text-green-700 dark:text-green-400">
-                Show all teams
-              </Link>
-            </>
-          )}
-        </p>
-
-        {/* kit during the season: a bigger shirt, new socks */}
-        <Link href="/kit/request" className="press mt-6 flex items-center gap-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white">
-            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 8 12 3l9 5v8l-9 5-9-5z" />
-              <path d="M3 8l9 5 9-5M12 13v8" />
-            </svg>
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">Request Kit</span>
-            <span className="block text-sm text-gray-500 dark:text-gray-400">Need something during the season? Ask the coaches.</span>
-          </span>
-          <Chevron />
-        </Link>
+          </>
+        )}
       </main>
 
       <KitFooter />

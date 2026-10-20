@@ -425,7 +425,7 @@ export default async function Home() {
                   <span className="block text-lg font-extrabold">Kit Sizes</span>
                   <span className={`block text-sm ${sub}`}>
                     {!viewer.signedIn
-                      ? "Send your child's sizes for the new kit"
+                      ? "See the new kit, and join to send your child's sizes"
                       : kids.length
                         ? `Send ${kitDue.join(" and ")}'s sizes for the new kit`
                         : "Send your sizes for the new kit"}

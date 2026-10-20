@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import KitForm from "../../components/KitForm";
 import KitHeader, { KitFooter } from "../../components/KitHeader";
 import { kitSquad } from "@/lib/kitSquad";
 import { getClub, getTeams, requireFeature } from "@/lib/settings";
 import { findTeam } from "@/lib/teams";
+import { getTenant } from "@/lib/tenant";
+import { isClubMember } from "@/lib/clubMember";
 
 // the squad list comes from the stats tracker, so read it fresh each visit
 export const dynamic = "force-dynamic";
@@ -14,6 +16,8 @@ export default async function KitTeamPage({
   params: Promise<{ team: string }>;
 }) {
   await requireFeature("kitSizes");
+  // only the club's members send sizes: /kit tells anyone else how to join
+  if (!(await isClubMember(await getTenant()))) redirect("/kit");
   const { team } = await params;
   const found = findTeam(await getTeams(), team);
   if (!found) notFound();
