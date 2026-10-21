@@ -184,10 +184,10 @@ html[data-wallpaper] :is(.guide-head h1,.guide-head p){color:#fff!important;text
 #app-positions{display:none;min-height:100vh;background:#f3e5f5;}
 .pos-learn-topbar{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#4a148c,#7b1fa2);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:4px solid #f9a825;}
 .pos-learn-topbar-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;color:white;flex:1;text-align:center;}
-.pos-learn-hero{background:linear-gradient(135deg,#4a148c,#7b1fa2);padding:28px 20px 22px;text-align:center;border-bottom:5px solid #f9a825;}
-.pos-learn-hero h1{font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(1.5rem,5vw,2.2rem);color:#fff;letter-spacing:-0.5px;line-height:1.1;margin-bottom:6px;}
-.pos-learn-hero p{color:rgba(255,255,255,0.8);font-size:0.95rem;font-weight:600;margin-top:4px;}
-.pos-learn-badge{background:#f9a825;color:#4a148c;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.75rem;padding:5px 14px;border-radius:50px;text-transform:uppercase;letter-spacing:0.5px;display:inline-block;margin-bottom:10px;}
+.pos-learn-hero{max-width:552px;margin:0 auto;padding:8px 20px 4px;text-align:left;background:none;}
+.pos-learn-hero h1{font-weight:800;font-size:22px;line-height:1.3;color:#111827;}
+.pos-learn-hero p{color:#6b7280;font-size:13px;font-weight:600;margin-top:2px;}
+.pos-learn-badge{display:block;color:#15803d;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
 .pos-zone-rule{border-left:4px solid #7b1fa2;background:#ede7f6;padding:10px 14px;border-radius:0 8px 8px 0;margin:8px 0 0;font-size:0.87rem;font-weight:600;color:#333;line-height:1.5;}
 .pos-zone-rule strong{color:#4a148c;}
 .shape-switch{display:flex;gap:4px;margin:0 16px 4px;padding:4px;background:#e5e5ea;border-radius:14px;}
@@ -205,12 +205,12 @@ html.dark .shape-switch button[aria-selected="true"]{background:#3a3a3c;color:#f
 #app-skills{display:none;min-height:100vh;background:#e8f5e9;}
 .skills-topbar{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#1a5c2a 0%,#2d8a45 100%);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:4px solid #f9a825;}
 .skills-topbar-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;color:white;flex:1;text-align:center;}
-.skills-hero{background:linear-gradient(135deg,#1a5c2a,#2d8a45);padding:20px 16px 16px;text-align:center;border-bottom:4px solid #f9a825;}
-.skills-hero h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:white;}
-.skills-hero p{color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;margin-top:4px;}
-.skills-prog-bar{margin:10px 16px 0;background:rgba(255,255,255,0.2);border-radius:50px;height:10px;overflow:hidden;}
-.skills-prog-fill{height:100%;background:#f9a825;border-radius:50px;transition:width 0.4s;}
-.skills-prog-label{color:rgba(255,255,255,0.85);font-size:11px;font-weight:700;margin-top:6px;text-align:center;}
+.skills-hero{max-width:552px;margin:0 auto;padding:8px 20px 4px;text-align:left;}
+.skills-hero h2{font-weight:800;font-size:22px;line-height:1.3;color:#111827;}
+.skills-hero p{color:#6b7280;font-size:13px;font-weight:600;margin-top:2px;}
+.skills-prog-bar{margin:12px 0 0;background:#e5e7eb;border-radius:50px;height:6px;overflow:hidden;}
+.skills-prog-fill{height:100%;background:#15803d;border-radius:50px;transition:width 0.4s;}
+.skills-hero .skills-prog-label{color:#6b7280;font-size:12px;font-weight:700;margin-top:6px;}
 .skills-body{padding:0 16px 28px;max-width:520px;margin:0 auto;}
 .skills-cat-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;color:#1a5c2a;padding:16px 0 6px;border-bottom:2px solid #c8e6c9;margin-bottom:10px;}
 .skill-item{background:white;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border:1.5px solid #e0e0e0;cursor:pointer;transition:transform 0.1s;-webkit-tap-highlight-color:transparent;}
@@ -225,7 +225,9 @@ html.dark .shape-switch button[aria-selected="true"]{background:#3a3a3c;color:#f
 .btn-skills-reset{width:100%;padding:10px;background:transparent;border:1.5px solid #bbb;border-radius:50px;color:#888;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
 .gloss-search{width:100%;padding:10px 14px;border:2px solid #c8e6c9;border-radius:50px;font-size:14px;font-family:inherit;background:white;margin-bottom:14px;outline:none;}
 .gloss-search:focus{border-color:#2d8a45;}
-.gloss-item{background:white;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #2d8a45;}
+#glossary-list{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgb(0 0 0 / 5%);margin-bottom:24px}
+.gloss-item{padding:12px 16px;border-bottom:1px solid #f1f2f4}
+.gloss-item:last-child{border-bottom:0}
 .gloss-word{font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;color:#1a5c2a;margin-bottom:3px;}
 .gloss-def{font-size:12px;color:#444;line-height:1.5;}
 
@@ -323,9 +325,16 @@ html.dark .skill-item{background:#1c1c1e;border-color:#2c2c2e;box-shadow:none}
 html.dark .skill-name{color:#f5f5f7}
 html.dark .skill-item.done .skill-name{color:#86efac}
 html.dark .gloss-search{background:#1c1c1e;color:#f5f5f7;border-color:#2c2c2e}
-html.dark .gloss-item{background:#1c1c1e;box-shadow:none}
+html.dark #glossary-list{background:#1c1c1e;box-shadow:none}
+html.dark .gloss-item{border-color:rgb(255 255 255 / 10%)}
 html.dark .gloss-word{color:#86efac}
 html.dark .gloss-def{color:#d1d5db}
+html.dark .pos-learn-hero h1,html.dark .skills-hero h2{color:#f5f5f7}
+html.dark .pos-learn-hero p,html.dark .skills-hero p,html.dark .skills-hero .skills-prog-label{color:#9ca3af}
+html.dark .pos-learn-badge{color:#4ade80}
+html.dark .skills-prog-bar{background:rgb(255 255 255 / 12%)}
+html.dark .skills-prog-fill{background:#16a34a}
+html[data-wallpaper] :is(.pos-learn-hero h1,.pos-learn-hero p,.pos-learn-badge,.skills-hero h2,.skills-hero p,.skills-hero .skills-prog-label){color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 html.dark .progress-card,html.dark .home-body .tod-box{background:#1c1c1e;box-shadow:none}
 html.dark .progress-card h2{color:#86efac}
 html.dark .prog-row,html.dark .pb-title{color:#d1d5db}
@@ -344,7 +353,7 @@ html.dark .home-foot{color:#4ade80}
 body,#app-home,#app-guide,#app-skills,#app-positions,#screen-quiz{background:#f2f2f7}
 .quiz-topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12px}
 .quiz-topbar-title{flex:1;text-align:center}
-html.dark .quiz-topbar,.guide-topbar,.skills-topbar,.pos-learn-topbar{background:rgba(242,242,247,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:none;padding:max(12px,env(safe-area-inset-top)) 16px 12px}
+.quiz-topbar,.guide-topbar,.skills-topbar,.pos-learn-topbar{background:rgba(242,242,247,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:none;padding:max(12px,env(safe-area-inset-top)) 16px 12px}
 /* the drawn diagrams (the 7v7 guide's later ones, and the other formats'), on the same solid pitch as the 7v7 ones */
 #guide-content svg.pitch,#guide-gen svg.pitch,#pos-gen svg.pitch{background:#2e7d32}
 /* centred: the 48px back button is balanced by the bar's 44px spacer on the right, plus 4px */
@@ -352,13 +361,12 @@ html.dark .quiz-topbar,.guide-topbar,.skills-topbar,.pos-learn-topbar{background
 .quiz-topbar .back-btn,.guide-topbar .back-btn,.skills-topbar .back-btn,.pos-learn-topbar .back-btn{position:relative;width:48px;height:48px;background:#fff;border:none;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.05)}
 /* the arrow in the middle of the circle (the button's hidden words would push it up) */
 .quiz-topbar .back-btn::before,.guide-topbar .back-btn::before,.skills-topbar .back-btn::before,.pos-learn-topbar .back-btn::before{position:absolute;left:50%;top:50%;transform:translate(-35%,-50%) rotate(45deg)}
-.skills-hero,.pos-learn-hero{margin:4px 16px 16px;border-radius:24px;border-bottom:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
 .diagram-key{background:#fff;color:#333}
 html.dark .diagram-key{background:#1c1c1e;color:#e5e7eb}
 .section-header{background:none;color:#111827;border-left:none;border-radius:0;padding:0 4px;margin:28px 16px 10px;font-size:20px;font-weight:800}
 .card{border-radius:24px;border:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .skill-item{border-radius:18px;border-color:transparent;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.gloss-item{border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .skills-cat-title{color:#111827;font-size:18px;border-bottom:none;padding:20px 4px 8px}
 .app-btn{border-radius:20px}
 .guide-footer{background:none;color:#6b7280}
@@ -394,7 +402,8 @@ html.dark .guide-footer{color:#9ca3af}
 .home-body .app-grid{display:flex;gap:0;width:100%;max-width:none;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / 5%)}
 .home-body .app-btn{min-height:76px;gap:12px;padding:16px;border-radius:0;border-bottom:1px solid #f1f2f4;background:none;color:#111827;box-shadow:none}
 .home-body .app-btn:last-child{border-bottom:0}
-.home-body .app-btn .btn-icon{height:36px;width:36px;flex-shrink:0;border-radius:0;background:none;font-size:24px}
+.home-body .app-btn .btn-icon{height:36px;width:36px;flex-shrink:0;border-radius:10px;display:grid;place-items:center;color:#fff}
+.home-body .app-btn .btn-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .home-body .app-btn .btn-text h3{font-family:inherit;font-size:15px;letter-spacing:0}
 .home-body .app-btn .btn-text p{color:#6b7280;font-size:12px;line-height:1.4}
 .home-body .app-btn .btn-ghost{display:none}
@@ -486,12 +495,12 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <h2 class="hub-view-title">How we play</h2>
     <div class="app-grid">
       <button class="app-btn btn-guide" onclick="showGuide()">
-        <span class="btn-icon">&#x1F4CB;</span>
+        <span class="btn-icon" style="background:#15803d"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg></span>
         <div class="btn-text"><h3>Tactical Guide</h3><p>How we play, with pitch diagrams for every position</p></div>
         <span class="btn-ghost">&#x26BD;</span>
       </button>
       <button class="app-btn btn-positions" onclick="showPositions()">
-        <span class="btn-icon">&#x1F4CD;</span>
+        <span class="btn-icon" style="background:#6a1b9a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.4-6-10a6 6 0 0 1 12 0c0 4.6-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></span>
         <div class="btn-text"><h3>Learning Positions</h3><p><span class="fmt-name">7v7</span> zone guide &mdash; where to be and why</p></div>
       </button>
     </div>
@@ -504,12 +513,12 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <h2 class="hub-view-title">Test yourself</h2>
     <div class="app-grid">
       <button class="app-btn btn-quiz" onclick="showQuiz()">
-        <span class="btn-icon">&#x1F9E0;</span>
+        <span class="btn-icon" style="background:#e65100"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg></span>
         <div class="btn-text"><h3>How We Play Quiz</h3><p>Test yourself &mdash; beginner, intermediate and expert</p></div>
         <span class="btn-ghost">&#x2753;</span>
       </button>
       <button class="app-btn btn-skills" onclick="showSkills()">
-        <span class="btn-icon">&#x1F3AF;</span>
+        <span class="btn-icon" style="background:#1565c0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6"/></svg></span>
         <div class="btn-text"><h3>Skill Challenges</h3><p>This week&rsquo;s challenges to level up your game</p></div>
         <span class="btn-ghost">&#x1F3C6;</span>
       </button>
@@ -1021,7 +1030,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
 <!-- ===== SECTION 1.5: POSITIONS & SHAPE ===== -->
 <div class="section-wrapper">
-  <div class="section-header" style="background:#6a1b9a;border-left-color:#ce93d8;">📍 Positions &amp; Shape — Where to Stand</div>
+  <div class="section-header">📍 Positions &amp; Shape — Where to Stand</div>
   <div class="section-cards">
 
     <!-- Beehive vs Hold Shape -->
@@ -1349,7 +1358,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
 <!-- ===== SECTION 2: IN POSSESSION BASICS ===== -->
 <div class="section-wrapper">
-  <div class="section-header" style="background:#1565c0;border-left-color:#90caf9;">🧠 In Possession Basics — The Small Details</div>
+  <div class="section-header">🧠 In Possession Basics — The Small Details</div>
   <div class="section-cards">
 
     <!-- Scan before receiving -->
@@ -1518,7 +1527,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
 <!-- ===== SECTION 3: OUT OF POSSESSION BASICS ===== -->
 <div class="section-wrapper">
-  <div class="section-header" style="background:#b71c1c;border-left-color:#ef9a9a;">🛡️ Out of Possession Basics — How to Defend</div>
+  <div class="section-header">🛡️ Out of Possession Basics — How to Defend</div>
   <div class="section-cards">
 
     <!-- Jockeying -->
@@ -2048,7 +2057,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- ===== NEW SECTION: RULES ===== -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#37474f;border-left-color:#90a4ae;">📋 Rules — What's Different in 7v7</div>
+    <div class="section-header">📋 Rules — What's Different in 7v7</div>
     <div class="section-cards">
 
       <div class="card" data-pos="team">
@@ -2068,7 +2077,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- ===== NEW SECTION: GOALKEEPER ADVANCED ===== -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#e65100;border-left-color:#ffcc02;">🥅 Goalkeeper — Advanced Skills</div>
+    <div class="section-header">🥅 Goalkeeper — Advanced Skills</div>
     <div class="section-cards">
 
       <div class="card" data-pos="gk">
@@ -2148,7 +2157,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- ===== NEW SECTION: STRIKER ADVANCED ===== -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#1b5e20;border-left-color:#69f0ae;">⚽ Striker — Clever Play</div>
+    <div class="section-header">⚽ Striker — Clever Play</div>
     <div class="section-cards">
 
       <div class="card" data-pos="st">
@@ -2210,7 +2219,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- ===== NEW SECTION: MIDFIELD ADVANCED ===== -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#1565c0;border-left-color:#90caf9;">⚽ Midfield — Advanced Play</div>
+    <div class="section-header">⚽ Midfield — Advanced Play</div>
     <div class="section-cards">
 
       <div class="card" data-pos="mid">
@@ -2354,7 +2363,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- ===== NEW SECTION: DEFENDING ADVANCED ===== -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#b71c1c;border-left-color:#ef9a9a;">🛡️ Defending — Advanced Skills</div>
+    <div class="section-header">🛡️ Defending — Advanced Skills</div>
     <div class="section-cards">
 
       <div class="card" data-pos="def">
@@ -2502,7 +2511,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <div style="width:44px"></div>
   </div>
   <div class="skills-hero">
-    <h2>&#x1F3AF; Weekly Challenges</h2>
+    <h2>Weekly Challenges</h2>
     <p>Complete challenges to become a better player!</p>
     <div class="skills-prog-bar"><div class="skills-prog-fill" id="skills-fill" style="width:0%"></div></div>
     <p class="skills-prog-label" id="skills-label">0 of 20 challenges done this week</p>
@@ -2525,7 +2534,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- Formation overview -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#4a148c;border-left-color:#ce93d8;">&#x1F4D0; 7v7 Teaching Shape &mdash; 2-3-1 Formation</div>
+    <div class="section-header">&#x1F4D0; 7v7 Teaching Shape &mdash; 2-3-1 Formation</div>
     <div class="section-cards">
       <div class="card">
         <svg class="pitch" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
@@ -2574,7 +2583,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- Defensive Zone -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#0d47a1;border-left-color:#90caf9;">&#x1F6E1;&#xFE0F; Defensive Zone &mdash; DR &amp; DL</div>
+    <div class="section-header">&#x1F6E1;&#xFE0F; Defensive Zone &mdash; DR &amp; DL</div>
     <div class="section-cards">
       <div class="card">
         <svg class="pitch" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
@@ -2617,7 +2626,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- Wingers Zone -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#4a148c;border-left-color:#ce93d8;">&#x26A1; Wingers Zone &mdash; RM &amp; LM</div>
+    <div class="section-header">&#x26A1; Wingers Zone &mdash; RM &amp; LM</div>
     <div class="section-cards">
       <div class="card">
         <svg class="pitch" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
@@ -2664,7 +2673,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- Centre Midfielder Zone -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#1565c0;border-left-color:#90caf9;">&#x26BD; Centre Midfielder &mdash; CM</div>
+    <div class="section-header">&#x26BD; Centre Midfielder &mdash; CM</div>
     <div class="section-cards">
       <div class="card">
         <svg class="pitch" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
@@ -2720,7 +2729,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
 
   <!-- Striker Zone -->
   <div class="section-wrapper">
-    <div class="section-header" style="background:#bf360c;border-left-color:#ffab91;">&#x26BD; Striker Zone &mdash; ST</div>
+    <div class="section-header">&#x26BD; Striker Zone &mdash; ST</div>
     <div class="section-cards">
       <div class="card">
         <svg class="pitch" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
