@@ -87,6 +87,6 @@ export async function POST(req: NextRequest) {
       footer: `You're getting this because this email was used to sign ${name} up on ${PLATFORM_NAME}.`,
     }),
   });
-  // Coach Admin, with Set Up Your Club at the top
-  return NextResponse.json({ url: tenantUrl(address, "/admin") });
+  // their teams first (age group, formation, training days…), then Coach Admin with Set Up Your Club at the top
+  return NextResponse.json({ url: tenantUrl(address, "/admin/teams-setup") });
 }

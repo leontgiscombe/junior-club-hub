@@ -33,15 +33,15 @@ type Snapshot = {
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
-type TeamDraft = Omit<Team, "opponents"> & { opponentsText: string };
+export type TeamDraft = Omit<Team, "opponents"> & { opponentsText: string };
 
-const toDraft = (t: Team): TeamDraft => {
+export const toDraft = (t: Team): TeamDraft => {
   const { opponents, ...rest } = t;
   return { ...rest, opponentsText: (opponents ?? []).join("\n") };
 };
 
 /** The drafts as teams to save, giving each new team a slug from its name. */
-function fromDrafts(drafts: TeamDraft[]): Team[] {
+export function fromDrafts(drafts: TeamDraft[]): Team[] {
   const out: Team[] = [];
   for (const d of drafts) {
     const { opponentsText, ...rest } = d;
@@ -922,22 +922,29 @@ function TrainingDays({
   );
 }
 
-function TeamsEditor({
+/** The Teams editor: Settings → Teams, and the teams step after signing a club up (TeamsSetup). */
+export function TeamsEditor({
   teams,
   setTeams,
   initials,
   adminKey,
   onFaCodeEditing,
+  initialOpen = null,
+  footer,
 }: {
   adminKey: string;
   teams: TeamDraft[];
   setTeams: (update: (teams: TeamDraft[]) => TeamDraft[]) => void;
   initials: string;
   onFaCodeEditing: (editing: boolean) => void;
+  /** the team open to start with (by its place in `teams`) */
+  initialOpen?: number | null;
+  /** under the Add Team button, e.g. the plan that covers this many teams */
+  footer?: React.ReactNode;
 }) {
   // an archived team being deleted for good (DeleteTeam)
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(initialOpen);
   const active = teams.map((t, i) => ({ t, i })).filter(({ t }) => !t.archived);
   const archived = teams.map((t, i) => ({ t, i })).filter(({ t }) => t.archived);
 
@@ -1152,6 +1159,7 @@ function TeamsEditor({
       >
         + Add Team
       </button>
+      {footer}
 
       {archived.length > 0 && (
         <div className="mt-4">
