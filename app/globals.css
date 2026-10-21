@@ -41,6 +41,24 @@ body {
     animation: none;
   }
 }
+/* the loading dots (components/Skeleton.tsx: LoadingDots) swell in turn */
+@keyframes loading-dot {
+  0%, 80%, 100% {
+    transform: scale(0.3);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+.loading-dot {
+  animation: loading-dot 1.2s ease-in-out infinite both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot {
+    animation: none;
+    transform: scale(0.6);
+  }
+}
 
 @media screen {
   html[data-wallpaper] .min-h-screen:not(:where(.min-h-screen *, .no-dark, .no-dark *, .wp-page)) {
