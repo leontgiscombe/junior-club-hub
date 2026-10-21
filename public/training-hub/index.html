@@ -187,6 +187,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .shape-switch{display:flex;gap:4px;margin:0 16px 4px;padding:4px;background:#e5e5ea;border-radius:14px;}
 .shape-switch button{flex:1;border:none;background:none;border-radius:10px;padding:10px 0;font-family:inherit;font-size:15px;font-weight:800;color:#4b5563;cursor:pointer;}
 .shape-switch button[aria-selected="true"]{background:#fff;color:#4a148c;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+#guide-shape-switch{margin:4px 16px 12px}
 html.dark .shape-switch{background:#1c1c1e}
 html.dark .shape-switch button{color:#9ca3af}
 html.dark .shape-switch button[aria-selected="true"]{background:#3a3a3c;color:#d8b4fe}
@@ -519,6 +520,11 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <button class="back-btn" onclick="showAppHome()">&larr; Home</button>
     <span class="guide-topbar-title">Tactical Guide</span>
     <div style="width:44px"></div>
+  </div>
+  <!-- the 7v7 guide's shape: the 2-3-1 below, or the 3-2-1 (formats.js draws it) -->
+  <div class="shape-switch" id="guide-shape-switch" role="tablist" aria-label="Formation" style="display:none">
+    <button type="button" role="tab" data-shape="2-3-1" onclick="set7v7Shape('2-3-1')">2-3-1</button>
+    <button type="button" role="tab" data-shape="3-2-1" onclick="set7v7Shape('3-2-1')">3-2-1</button>
   </div>
   <div id="guide-cat-home">
   <div class="guide-hero">
@@ -2575,10 +2581,10 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <h1>Learning Positions</h1>
     <p>Using zones to stop players following the ball</p>
   </div>
-  <!-- 7v7 has two shapes to learn: the 2-3-1 below, or the 3-2-1 (formats.js draws it) -->
+  <!-- 7v7 has two shapes to learn: the 2-3-1 below, or the 3-2-1 (formats.js draws it); the same choice as the Tactical Guide -->
   <div class="shape-switch" id="shape-switch" role="tablist" aria-label="Formation">
-    <button type="button" role="tab" data-shape="2-3-1" onclick="show7v7Shape('2-3-1')">2-3-1</button>
-    <button type="button" role="tab" data-shape="3-2-1" onclick="show7v7Shape('3-2-1')">3-2-1</button>
+    <button type="button" role="tab" data-shape="2-3-1" onclick="set7v7Shape('2-3-1')">2-3-1</button>
+    <button type="button" role="tab" data-shape="3-2-1" onclick="set7v7Shape('3-2-1')">3-2-1</button>
   </div>
 
   <!-- Formation overview -->
