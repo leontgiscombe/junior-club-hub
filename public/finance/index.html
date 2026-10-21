@@ -321,15 +321,16 @@
     <p class="gate-kicker">Finances</p>
     <h2 id="gate-title">Enter Password</h2>
     <p class="gate-sub" id="gate-sub">This tracker is password protected.</p>
-    <!-- teams with no Finances password yet, each with its own Set Up button -->
-    <div id="team-status" style="display:none;margin-bottom:14px"></div>
+    <!-- the teams already set up (opened with the account) first, then the ones still to set up -->
     <div id="account-box" style="display:none;margin-bottom:14px">
       <p class="gate-sub" id="account-who" style="margin-bottom:10px;text-align:center"></p>
       <div id="account-teams"></div>
       <div class="gate-err" id="account-err"></div>
-      <p class="muted" id="account-or" style="font-size:12px;text-align:center;margin:10px 0 0;display:none">or use a team password</p>
     </div>
+    <!-- then teams with no Finances password yet, each with its own Set Up button -->
+    <div id="team-status" style="display:none;margin-bottom:14px"></div>
     <form id="gate-form">
+      <p class="muted" id="account-or" style="font-size:12px;text-align:center;margin:0 0 10px;display:none">or use a team password</p>
       <button class="btn" id="use-pass" type="button" style="width:100%">Use a Team Password</button>
       <input type="password" id="gate-pass" placeholder="Password" autocomplete="current-password">
       <input type="password" id="gate-pass2" placeholder="Confirm password" autocomplete="new-password" style="display:none">
@@ -2199,8 +2200,8 @@
   // its key (lib/financeEscrow.ts) — after the team is first opened.
   async function renderAccountTeams(){
     await teamsChecked;
-    // a team with no password yet is set up from the list above, not opened
-    // their own teams with no password yet: set up from the list above first
+    // a team with no password yet is set up from the list below, not opened
+    // their own teams with no password yet: set up from the list below first
     const notYet = financeTeams ? financeTeams.filter(id=> teamsSetUp && !teamsSetUp[id]) : [];
     const ids = TEAM_IDS.filter(id=> (!teamsSetUp || teamsSetUp[id]) && accountFor(id))
       .sort((a, b)=> Number(b === treasurerOf) - Number(a === treasurerOf)); // their own team first
@@ -2223,7 +2224,7 @@
       const name = esc(teamName(r.id));
       if(r.ready) return '<button class="btn btn-primary" data-escrow-team="'+esc(r.id)+'" data-face="'+(r.faceId?'1':'')+'" style="width:100%;margin-bottom:8px">Open '+name+(r.faceId && canPasskey() ? ' with Face ID' : '')+'</button>';
       return '<p class="muted" style="font-size:13px;margin:0 0 8px"><strong>'+name+'</strong>: type its password below just once — from then on your account opens it'+(faceId ? ' with Face ID' : '')+', with no password, on any device.</p>';
-    }).join('') + notYet.map(id=> '<p class="muted" style="font-size:13px;margin:0 0 8px;text-align:center"><strong>'+esc(teamName(id))+'</strong> isn&rsquo;t set up yet: tap its <strong>Set Up</strong> above. After that it opens here with no password.</p>').join('') + (!faceId && canPasskey() && rows.length ? '<p class="muted" style="font-size:12px;margin:4px 0 0;text-align:center">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, and your teams open with Face ID or a fingerprint.</p>' : '');
+    }).join('') + notYet.map(id=> '<p class="muted" style="font-size:13px;margin:0 0 8px;text-align:center"><strong>'+esc(teamName(id))+'</strong> isn&rsquo;t set up yet: tap its <strong>Set Up</strong> below. After that it opens here with no password.</p>').join('') + (!faceId && canPasskey() && rows.length ? '<p class="muted" style="font-size:12px;margin:4px 0 0;text-align:center">Tip: <a href="/account#security" style="color:var(--green);font-weight:700">add a passkey</a> to your account, and your teams open with Face ID or a fingerprint.</p>' : '');
   }
   // Face ID (or a fingerprint) with the account's passkey, as the server's signin check wants it
   async function faceIdResponse(){
