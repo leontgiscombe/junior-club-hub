@@ -35,6 +35,26 @@ const IMAGE_KEYS: Record<ImageSlot, { data: string; info: string }> = {
 export type StoredImage = { type: string; data: string; width: number; height: number; updatedAt: string };
 export type StoredCrest = StoredImage;
 
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+// the crest is small; the kit picture is a wide photo (both are shrunk in the browser first)
+const MAX_BYTES: Record<ImageSlot, number> = { crest: 400 * 1024, kit: 600 * 1024 };
+const MAX_SIDE: Record<ImageSlot, number> = { crest: 2000, kit: 2400 };
+
+/**
+ * A crest or kit picture as sent (a data: URL and its size), checked: a PNG,
+ * JPEG or WebP, a believable size and not too big. In Settings and sign-up.
+ */
+export function checkImage(slot: ImageSlot, input: { image?: unknown; width?: unknown; height?: unknown } | null | undefined): StoredImage | { error: string } {
+  const match = typeof input?.image === "string" ? /^data:([\w/+.-]+);base64,(.+)$/.exec(input.image) : null;
+  const width = Number(input?.width), height = Number(input?.height);
+  if (!match || !IMAGE_TYPES.includes(match[1])) return { error: "Use a PNG, JPEG or WebP image" };
+  if (!(width > 0 && height > 0 && width <= MAX_SIDE[slot] && height <= MAX_SIDE[slot])) {
+    return { error: "That image's size doesn't look right" };
+  }
+  if (Buffer.byteLength(match[2], "base64") > MAX_BYTES[slot]) return { error: "That image is too big — try a smaller one" };
+  return { type: match[1], data: match[2], width: Math.round(width), height: Math.round(height), updatedAt: new Date().toISOString() };
+}
+
 /** The database for `tenant`, or the request's club; null when there's no club. */
 async function kvFor(tenant?: string) {
   const t = tenant ?? (await getTenant());
@@ -79,8 +99,8 @@ export async function getImage(slot: ImageSlot): Promise<StoredImage | null> {
 }
 
 /** Save an uploaded picture, or remove it (null) to go back to the default. */
-export async function saveImage(slot: ImageSlot, image: StoredImage | null): Promise<void> {
-  const kv = await getKv();
+export async function saveImage(slot: ImageSlot, image: StoredImage | null, tenant?: string): Promise<void> {
+  const kv = await getKv(tenant);
   if (!kv) throw new Error("Storage isn't set up");
   const keys = IMAGE_KEYS[slot];
   if (image) {

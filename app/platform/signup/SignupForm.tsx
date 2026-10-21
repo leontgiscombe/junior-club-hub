@@ -1,6 +1,7 @@
 "use client";
 
-// Sign a club up, a step at a time: its name and web address; then each team
+// Sign a club up, a step at a time: its name and web address; its crest and
+// kit picture (both optional, Skip); then each team
 // — its name and age group, its formation (when the age group has more than
 // one), its training days and its FA Full-Time code (optional) — as many as
 // the club has, with the plan that covers them after the free trial; which of
@@ -9,11 +10,12 @@
 // with the code we email them (they're the club's admin, with their team),
 // and can add a passkey for next time.
 import { useEffect, useState } from "react";
-import { DEFAULT_TRAINING, FORMATIONS, FORMAT_AGES, GAME_FORMATS, type GameFormat, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, FORMATIONS, FORMAT_AGES, GAME_FORMATS, kitAspect, type GameFormat, type TrainingSlot } from "@/lib/clubSettings";
 import { PLANS, planForTeams, teamsLabel } from "@/lib/billing";
 import SignInForm from "../../components/SignInForm";
 import TrainingDays from "../../components/TrainingDays";
 import FaCodeHelp from "../../components/FaCodeHelp";
+import { BackgroundChoice, PICTURES, preparePicture, type Picture, type PictureSlot } from "../../components/clubPictures";
 import { addPasskey, cancelled, supportsPasskeys } from "../../components/passkey";
 import { looksShared } from "@/lib/sharedEmail";
 
@@ -28,10 +30,10 @@ const toAddress = (name: string) =>
 type Draft = { name: string; format: GameFormat | ""; formation: string; training: TrainingSlot[]; faSnippet: string };
 const newTeam = (): Draft => ({ name: "", format: "", formation: "", training: DEFAULT_TRAINING, faSnippet: "" });
 
-type Step = "club" | "team" | "formation" | "training" | "fa" | "more" | "mine" | "you";
+type Step = "club" | "crest" | "kit" | "team" | "formation" | "training" | "fa" | "more" | "mine" | "you";
 // the four parts the progress bar shows
-const PARTS = ["Your club", "Teams", "Your team", "Your email"];
-const partOf = (s: Step) => (s === "club" ? 0 : s === "mine" ? 2 : s === "you" ? 3 : 1);
+const PARTS = ["Your club", "Crest & kit", "Teams", "Your team", "Your email"];
+const partOf = (s: Step) => (s === "club" ? 0 : s === "crest" || s === "kit" ? 1 : s === "mine" ? 3 : s === "you" ? 4 : 2);
 
 export default function SignupForm({ rootDomain, appView = false }: { rootDomain: string; appView?: boolean }) {
   const [name, setName] = useState("");
@@ -43,6 +45,11 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
   const [cur, setCur] = useState(0);
   // which team the organiser coaches (by its place in teams), or -1 for none
   const [mine, setMine] = useState(-1);
+  // the crest and kit picture, made ready here and sent with the rest
+  const [pictures, setPictures] = useState<Partial<Record<PictureSlot, Picture>>>({});
+  // one with a plain background: both versions, to choose from
+  const [pick, setPick] = useState<{ slot: PictureSlot; original: Picture; cleaned: Picture } | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -112,6 +119,7 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
             ...(t.faSnippet ? { faSnippet: t.faSnippet } : {}),
           })),
           ...(mine >= 0 ? { myTeam: mine } : {}),
+          ...pictures,
           email,
           website,
           agreed,
@@ -191,17 +199,103 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
   let nextLabel = "Next";
   let canNext = true;
 
+  // on to the teams: back to one left half-filled, else the list (or the first one)
+  const toTeams = () => {
+    const unfinished = teams.findIndex((t) => !t.name.trim() || !t.format);
+    if (unfinished >= 0) {
+      setCur(unfinished);
+      go("team");
+    } else if (teams.length) go("more");
+    else startTeam();
+  };
+  // a picture chosen: made ready, or (a plain background) both versions offered
+  const choosePicture = async (slot: PictureSlot, file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    setPreparing(true);
+    try {
+      const made = await preparePicture(slot, file);
+      if ("cleaned" in made) setPick({ slot, ...made });
+      else {
+        setPick(null);
+        setPictures((p) => ({ ...p, [slot]: made.picture }));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : `That ${PICTURES[slot].name} didn't work — try another`);
+    } finally {
+      setPreparing(false);
+    }
+  };
+  // the crest and kit steps: a preview, Upload (or Change), and Remove
+  const pictureStep = (slot: PictureSlot) => {
+    const chosen = pictures[slot];
+    const kit = slot === "kit";
+    return (
+      <>
+        <h2 className={heading}>{kit ? "Your kit" : "Your club crest"}</h2>
+        <p className="-mt-2 text-sm text-gray-500">
+          {kit
+            ? "A picture of the new kit, shown on the Kit Sizes page so parents can see what they're choosing sizes for. A wide picture works best."
+            : "Shown across your hub, on posters, and as the app's icon for your club. A square picture works best."}
+        </p>
+        {/* on the dark colour it's shown on */}
+        <div
+          className={`grid place-items-center rounded-2xl p-3 ${kit ? "bg-[#0b2412]" : "mx-auto aspect-square w-40 bg-[radial-gradient(circle_at_50%_46%,#1f5c2c_0%,#0b2412_55%,#060906_100%)]"}`}
+          style={kit ? { aspectRatio: chosen ? kitAspect(chosen) : 16 / 9 } : undefined}
+        >
+          {chosen ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={chosen.image} alt={kit ? "Your kit" : "Your crest"} className="max-h-full max-w-full object-contain" />
+          ) : (
+            <span className="text-sm font-semibold text-white/60">{kit ? "No kit picture yet" : "No crest yet"}</span>
+          )}
+        </div>
+        {pick?.slot === slot ? (
+          <BackgroundChoice
+            what={PICTURES[slot].name}
+            pick={pick}
+            wide={kit}
+            busy={preparing}
+            onPick={(picture) => {
+              setPictures((p) => ({ ...p, [slot]: picture }));
+              setPick(null);
+            }}
+            onCancel={() => setPick(null)}
+          />
+        ) : (
+          <div className="flex items-center justify-center gap-5">
+            <label className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 hover:bg-gray-50">
+              {preparing ? "Getting it ready…" : chosen ? `Change ${kit ? "Picture" : "Crest"}` : `Upload ${kit ? "Kit Picture" : "Crest"}`}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                disabled={preparing}
+                onChange={(e) => {
+                  choosePicture(slot, e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {chosen && (
+              <button
+                type="button"
+                onClick={() => setPictures((p) => ({ ...p, [slot]: undefined }))}
+                className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-red-600"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+        <span className={hint}>Optional: you can add or change it any time in Settings.</span>
+      </>
+    );
+  };
+
   if (step === "club") {
     canNext = !!name.trim() && !!shownAddress && !addressError;
-    next = () => {
-      // back to a team left half-filled, else on to the teams (or the first one)
-      const unfinished = teams.findIndex((t) => !t.name.trim() || !t.format);
-      if (unfinished >= 0) {
-        setCur(unfinished);
-        go("team");
-      } else if (teams.length) go("more");
-      else startTeam();
-    };
+    next = () => go("crest");
     body = (
       <>
         <h2 className={heading}>Your club</h2>
@@ -228,6 +322,11 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
         </label>
       </>
     );
+  } else if (step === "crest" || step === "kit") {
+    canNext = !preparing && pick?.slot !== step;
+    next = step === "crest" ? () => go("kit") : toTeams;
+    nextLabel = pictures[step] ? "Next" : "Skip";
+    body = pictureStep(step);
   } else if (step === "team" && team) {
     canNext = !!team.name.trim() && !!team.format;
     next = () => go(shapes.length > 1 ? "formation" : "training");

@@ -9,11 +9,11 @@ import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
-import { removeBackground } from "@/lib/crestBackground";
 import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS, GAME_FORMATS, KIT_EXTRAS, isGameFormat, kitAspect, slugFor, teamFormat, teamFormation, type Feature, type KitExtra } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import TrainingDays from "./TrainingDays";
+import { BackgroundChoice, PICTURES, preparePicture, type Picture, type PictureSlot } from "./clubPictures";
 import FaCodeHelp from "./FaCodeHelp";
 import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -77,66 +77,6 @@ const FIELDS: { field: EditableText; label: string; hint: string }[] = [
   { field: "kitSeason", label: "Season", hint: "The season the kit forms collect sizes for, e.g. 2026/27." },
 ];
 
-/** Shrink an image file to fit within `max` pixels and turn it into a PNG data URL. */
-/** The picture as a data: URL no bigger than `max` pixels a side: a PNG (keeps a see-through background) or a JPEG (for photos). */
-type Picture = { image: string; width: number; height: number };
-const pictureOf = (canvas: HTMLCanvasElement, type = "image/png"): Picture => ({
-  image: canvas.toDataURL(type, 0.85),
-  width: canvas.width,
-  height: canvas.height,
-});
-
-/** A see-through kit picture has to be a PNG: made smaller until it's within the upload limit. */
-const KIT_PNG_BYTES = 560 * 1024;
-function pngWithin(canvas: HTMLCanvasElement, maxBytes: number): Picture {
-  let pic = pictureOf(canvas);
-  for (let scale = 0.85; (pic.image.length * 3) / 4 > maxBytes && scale > 0.2; scale -= 0.15) {
-    const smaller = document.createElement("canvas");
-    smaller.width = Math.max(1, Math.round(canvas.width * scale));
-    smaller.height = Math.max(1, Math.round(canvas.height * scale));
-    smaller.getContext("2d")!.drawImage(canvas, 0, 0, smaller.width, smaller.height);
-    pic = pictureOf(smaller);
-  }
-  return pic;
-}
-
-async function shrinkImage(
-  file: File,
-  { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
-): Promise<Picture> {
-  return pictureOf(await shrinkToCanvas(file, { max, type }), type);
-}
-
-async function shrinkToCanvas(
-  file: File,
-  { max = 512, type = "image/png" }: { max?: number; type?: "image/png" | "image/jpeg" } = {},
-): Promise<HTMLCanvasElement> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new window.Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("That file doesn't look like an image"));
-      el.src = url;
-    });
-    const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-    const width = Math.max(1, Math.round(img.naturalWidth * scale));
-    const height = Math.max(1, Math.round(img.naturalHeight * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d")!;
-    if (type === "image/jpeg") {
-      // a JPEG can't be see-through, so anything see-through becomes white
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, width, height);
-    }
-    ctx.drawImage(img, 0, 0, width, height);
-    return canvas;
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 export default function ClubSettings() {
   const router = useRouter();
@@ -277,42 +217,26 @@ export default function ClubSettings() {
   }, [draft, teams, snap, canAdmin, faCodeEditing]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // the pictures save straight away, without touching changes not yet saved
-  const PICTURES = {
-    crest: { name: "crest", shrink: { max: 512, type: "image/png" } },
-    kit: { name: "kit picture", shrink: { max: 1600, type: "image/jpeg" } },
-  } as const;
-
   // a crest or kit picture with a plain background: both versions, for the coach to pick from
-  const [bgPick, setBgPick] = useState<{ slot: keyof typeof PICTURES; original: Picture; cleaned: Picture } | null>(null);
+  const [bgPick, setBgPick] = useState<{ slot: PictureSlot; original: Picture; cleaned: Picture } | null>(null);
 
-  async function uploadPicture(slot: keyof typeof PICTURES, file: File | undefined, ready?: Picture) {
+  // the pictures save straight away, without touching changes not yet saved
+  async function uploadPicture(slot: PictureSlot, file: File | undefined, ready?: Picture) {
     if (!file && !ready) return;
-    const { name, shrink } = PICTURES[slot];
+    const { name } = PICTURES[slot];
     setUploading(slot);
     try {
       let picture = ready;
-      if (!picture && slot === "crest") {
-        const canvas = await shrinkToCanvas(file!, shrink);
-        const cleaned = removeBackground(canvas);
-        if (cleaned) {
-          setBgPick({ slot, original: pictureOf(canvas), cleaned: pictureOf(cleaned) });
+      if (!picture) {
+        const made = await preparePicture(slot, file!);
+        if ("cleaned" in made) {
+          setBgPick({ slot, ...made });
           return;
         }
-        picture = pictureOf(canvas);
-      }
-      if (!picture && slot === "kit") {
-        // worked on as a PNG, so a see-through version keeps its see-through parts
-        const canvas = await shrinkToCanvas(file!, { max: shrink.max, type: "image/png" });
-        const cleaned = removeBackground(canvas, { shaded: true });
-        if (cleaned) {
-          setBgPick({ slot, original: await shrinkImage(file!, shrink), cleaned: pngWithin(cleaned, KIT_PNG_BYTES) });
-          return;
-        }
+        picture = made.picture;
       }
       setBgPick(null);
-      const body = { ...(picture ?? (await shrinkImage(file!, shrink))), slot };
-      await send("POST", body, `New ${name} saved.`, { keepEdits: true });
+      await send("POST", { ...picture, slot }, `New ${name} saved.`, { keepEdits: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : `Could not upload that ${name}`);
     } finally {
@@ -320,7 +244,7 @@ export default function ClubSettings() {
     }
   }
 
-  async function resetPicture(slot: keyof typeof PICTURES) {
+  async function resetPicture(slot: PictureSlot) {
     const { name } = PICTURES[slot];
     if (!confirm(`Go back to the default ${name}?`)) return;
     setUploading(slot);
@@ -777,68 +701,6 @@ export default function ClubSettings() {
 // brought back, but never deleted.
 /** A team's training: each day it trains, with start and end times. */
 /** Offer a picture with its background taken off, or as it was uploaded; the coach taps one to save it. */
-function BackgroundChoice({
-  what,
-  pick,
-  wide = false,
-  busy,
-  onPick,
-  onCancel,
-}: {
-  what: string;
-  pick: { original: Picture; cleaned: Picture };
-  /** a wide picture (the kit): the two one above the other */
-  wide?: boolean;
-  busy: boolean;
-  onPick: (picture: Picture) => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/10">
-      <p className="text-sm font-bold text-gray-900 dark:text-gray-50">Take the background off?</p>
-      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-        Your {what} has a plain background. Here it is with that taken off, and as you uploaded it.
-      </p>
-      <div className={`mt-3 grid gap-3 ${wide ? "grid-cols-1" : "grid-cols-2"}`}>
-        {(
-          [
-            ["cleaned", "Background Off", pick.cleaned],
-            ["original", "As Uploaded", pick.original],
-          ] as const
-        ).map(([key, label, pic]) => (
-          <button
-            key={key}
-            onClick={() => onPick(pic)}
-            disabled={busy}
-            className={`cursor-pointer rounded-2xl border-2 p-2 text-sm font-bold disabled:opacity-50 ${
-              key === "cleaned"
-                ? "border-green-600 text-green-700 dark:text-green-400"
-                : "border-gray-200 text-gray-700 dark:border-white/15 dark:text-gray-200"
-            }`}
-          >
-            {/* on the dark colour it's shown on, so any leftover background shows */}
-            <span
-              className={`grid place-items-center rounded-xl p-3 ${
-                wide ? "bg-[var(--club-night)]" : "aspect-square bg-[radial-gradient(circle_at_50%_46%,#1f5c2c_0%,#0b2412_55%,#060906_100%)]"
-              }`}
-              style={wide ? { aspectRatio: kitAspect(pick.original) } : undefined}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={pic.image} alt="" className="max-h-full max-w-full object-contain" />
-            </span>
-            <span className="mt-2 block">Use {label}</span>
-          </button>
-        ))}
-      </div>
-      <button
-        onClick={onCancel}
-        className="mt-3 w-full cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
-      >
-        Cancel
-      </button>
-    </div>
-  );
-}
 
 function TeamsEditor({
   teams,
