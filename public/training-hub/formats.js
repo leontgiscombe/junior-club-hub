@@ -698,7 +698,7 @@ function applyHubFormat(f){
   if(!f || (f !== "7v7" && !HUB_FORMATS[f])) f = "7v7";
   HUB_FMT = f;
   const data = fmtData();
-  // 7v7 has two shapes (Learning Positions, the Tactical Guide and the quiz switch between them)
+  // 7v7 has two shapes (the header switch picks one; Learning Positions, the Tactical Guide and the quiz follow it)
   const is321 = !data && saved7v7Shape() === "3-2-1";
   const shape = data ? data.shape : is321 ? "3-2-1" : HUB_7V7.shape;
   // the quiz, challenges and tips
@@ -710,7 +710,9 @@ function applyHubFormat(f){
   // words that name the format
   document.querySelectorAll(".fmt-shape").forEach(function(e){ e.textContent = f + " · " + shape; });
   document.querySelectorAll(".fmt-name").forEach(function(e){ e.textContent = f; });
-  const qs = document.getElementById("quiz-shape-switch"); if(qs) qs.style.display = data ? "none" : "";
+  // the header's shape switch, for 7v7 only: there it shows the format, the switch the shape
+  const hs = document.getElementById("home-shape-switch");
+  if(hs){ hs.hidden = !!data; document.getElementById("home-fmt").textContent = data ? f + " · " + shape : f; }
   if(!data) markShapeSwitches(shape);
   document.querySelectorAll(".lev-count").forEach(function(e){ e.textContent = String(LEVELS[e.dataset.level].questions.length); });
   const tip = document.getElementById("tod-text");
@@ -776,14 +778,13 @@ function genGuide(){
     grid.appendChild(g);
     const list = gen.querySelector("#guide-gen-list");
     d.guide.forEach(function(c){ list.appendChild(genCard(c)); });
-    // under the top bar and the 7v7 shape switch
-    document.getElementById("guide-shape-switch").after(gen);
+    const topbar = document.querySelector("#app-guide .guide-topbar");
+    topbar.after(gen);
   }
   return gen;
 }
 function genGuideHome(){
   const gen = genGuide();
-  guideSwitch(true);
   document.getElementById("guide-cat-home").style.display = "none";
   document.getElementById("guide-content").style.display = "none";
   document.getElementById("guide-glossary").style.display = "none";
@@ -800,7 +801,6 @@ function genGuideHome(){
 function genGuidePos(cat){
   const d = guideData();
   const gen = genGuide();
-  guideSwitch(false);
   gen.querySelector(".guide-hero").style.display = "none";
   gen.querySelector("#guide-gen-cats").style.display = "none";
   gen.querySelector("#guide-gen-cats").nextElementSibling.style.display = "none";
@@ -1174,43 +1174,32 @@ function show7v7Shape(shape){
   const is321 = shape === "3-2-1";
   const own = gen321();
   Array.from(document.getElementById("app-positions").children).forEach(function(c){
-    if(c.classList.contains("pos-learn-topbar") || c.classList.contains("pos-learn-hero") || c.id === "shape-switch" || c.id === "pos-gen") return;
+    if(c.classList.contains("pos-learn-topbar") || c.classList.contains("pos-learn-hero") || c.id === "pos-gen") return;
     c.style.display = (c === own) === is321 ? "" : "none";
   });
   document.querySelector("#app-positions > .pos-learn-hero .pos-learn-badge").textContent = "7v7 · " + shape + " Formation";
-  markShapeSwitches(shape);
 }
 function saved7v7Shape(){ try { return localStorage.getItem("hub_7v7_shape") === "3-2-1" ? "3-2-1" : "2-3-1"; } catch{ return "2-3-1"; } }
 function markShapeSwitches(shape){
   document.querySelectorAll(".shape-switch button").forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.shape === shape)); });
 }
-/** The 7v7 shape picked with the switches (Learning Positions, the Tactical Guide and the quiz), remembered on this phone. */
+/** The 7v7 shape picked with the Training Hub's header switch, remembered on this phone. */
 function set7v7Shape(shape){
   if(shape !== "3-2-1") shape = "2-3-1";
   try { localStorage.setItem("hub_7v7_shape", shape); } catch{}
-  applyHubFormat("7v7");   // the quiz, and the guide drawn afresh
-  markShapeSwitches(shape);
-  if(document.getElementById("app-guide").style.display === "block") showGuideCatHome();
-  else if(document.getElementById("app-quiz").style.display === "block") refreshPBDisplay();
-  else show7v7Shape(shape);
+  applyHubFormat("7v7");   // the quiz, and the guide and positions drawn afresh when opened
 }
 /** The guide to draw: another format's, the 3-2-1's, or none (the page's own 2-3-1). */
 function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_321 : null); }
-/** The Tactical Guide's shape switch: on its home screen, for 7v7 only. */
-function guideSwitch(on){
-  const sw = document.getElementById("guide-shape-switch");
-  sw.style.display = on && !fmtData() ? "" : "none";
-  markShapeSwitches(saved7v7Shape());
-}
 
 /* ── Hooks into the page's own screens ── */
 (function(){
   const showGuide0 = showGuide, showGuideCatHome0 = showGuideCatHome, showGuidePos0 = showGuidePos, showGlossary0 = showGlossary, showPositions0 = showPositions;
   const hideGen = function(){ const g = document.getElementById("guide-gen"); if(g) g.style.display = "none"; };
-  showGuide = function(){ showGuide0(); if(guideData()) genGuideHome(); else { hideGen(); guideSwitch(true); } };
-  showGuideCatHome = function(){ if(guideData()) genGuideHome(); else { hideGen(); showGuideCatHome0(); guideSwitch(true); } };
-  showGuidePos = function(pos){ hideGen(); guideSwitch(false); showGuidePos0(pos); };
-  showGlossary = function(){ hideGen(); guideSwitch(false); showGlossary0(); if(guideData()){ const b = document.querySelector("#app-guide .back-btn"); b.onclick = genGuideHome; } };
+  showGuide = function(){ showGuide0(); if(guideData()) genGuideHome(); else hideGen(); };
+  showGuideCatHome = function(){ if(guideData()) genGuideHome(); else { hideGen(); showGuideCatHome0(); } };
+  showGuidePos = function(pos){ hideGen(); showGuidePos0(pos); };
+  showGlossary = function(){ hideGen(); showGlossary0(); if(guideData()){ const b = document.querySelector("#app-guide .back-btn"); b.onclick = genGuideHome; } };
   showPositions = function(){
     showPositions0();
     const data = fmtData();
