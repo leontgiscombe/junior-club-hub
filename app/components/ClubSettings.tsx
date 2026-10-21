@@ -10,9 +10,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, teamFormation, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS, GAME_FORMATS, KIT_EXTRAS, isGameFormat, kitAspect, slugFor, teamFormat, teamFormation, type Feature, type KitExtra } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
+import TrainingDays from "./TrainingDays";
 import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
@@ -33,15 +34,15 @@ type Snapshot = {
 };
 
 /** A team being edited: its opponents as one per line, and no slug until it's first saved. */
-export type TeamDraft = Omit<Team, "opponents"> & { opponentsText: string };
+type TeamDraft = Omit<Team, "opponents"> & { opponentsText: string };
 
-export const toDraft = (t: Team): TeamDraft => {
+const toDraft = (t: Team): TeamDraft => {
   const { opponents, ...rest } = t;
   return { ...rest, opponentsText: (opponents ?? []).join("\n") };
 };
 
 /** The drafts as teams to save, giving each new team a slug from its name. */
-export function fromDrafts(drafts: TeamDraft[]): Team[] {
+function fromDrafts(drafts: TeamDraft[]): Team[] {
   const out: Team[] = [];
   for (const d of drafts) {
     const { opponentsText, ...rest } = d;
@@ -838,113 +839,22 @@ function BackgroundChoice({
   );
 }
 
-function TrainingDays({
-  training,
-  onChange,
-  input,
-}: {
-  training: TrainingSlot[];
-  onChange: (training: TrainingSlot[]) => void;
-  input: string;
-}) {
-  const set = (n: number, patch: Partial<TrainingSlot>) =>
-    onChange(training.map((s, k) => (k === n ? { ...s, ...patch } : s)));
-  // the next day not taken, Monday first
-  const free = [1, 2, 3, 4, 5, 6, 0].find((d) => !training.some((s) => s.day === d));
-  const small = input.replace("mt-1 w-full", "w-full").replace("px-3", "px-2");
-  // iOS Safari gives time boxes a width of their own, wider than half the row: drop its styling so they fit
-  const timeBox = "block min-w-0 max-w-full appearance-none min-h-11 text-left [&::-webkit-date-and-time-value]:text-left";
-  return (
-    <div>
-      <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Training</span>
-      <div className="mt-1 flex flex-col gap-2">
-        {training.map((s, n) => (
-          <div key={n} className="rounded-xl bg-gray-50 p-2.5 dark:bg-white/5">
-            <div className="flex items-center gap-2">
-              <select
-                value={s.day}
-                aria-label="Day"
-                onChange={(e) => set(n, { day: Number(e.target.value) })}
-                className={`${small} min-w-0 flex-1 bg-white font-semibold dark:bg-[#1c1c1e]`}
-              >
-                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                  <option key={d} value={d} disabled={d !== s.day && training.some((o) => o.day === d)}>
-                    {WEEKDAYS[d]}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => onChange(training.filter((_, k) => k !== n))}
-                aria-label={`Remove ${WEEKDAYS[s.day]}`}
-                className="h-9 w-9 shrink-0 cursor-pointer rounded-lg text-lg text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-white/10"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="min-w-0">
-                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Starts</span>
-                <input
-                  type="time"
-                  value={s.start ?? ""}
-                  onChange={(e) => set(n, { start: e.target.value || undefined, ...(e.target.value ? {} : { end: undefined }) })}
-                  className={`${small} ${timeBox} bg-white dark:bg-[#1c1c1e]`}
-                />
-              </label>
-              <label className="min-w-0">
-                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Ends</span>
-                <input
-                  type="time"
-                  value={s.end ?? ""}
-                  disabled={!s.start}
-                  onChange={(e) => set(n, { end: e.target.value || undefined })}
-                  className={`${small} ${timeBox} bg-white disabled:opacity-40 dark:bg-[#1c1c1e]`}
-                />
-              </label>
-            </div>
-          </div>
-        ))}
-        {training.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No regular training.</p>}
-      </div>
-      {training.length < MAX_TRAINING_DAYS && free !== undefined && (
-        <button
-          onClick={() => onChange([...training, { day: free }])}
-          className="mt-2 cursor-pointer text-sm font-semibold text-green-700 hover:underline dark:text-green-400"
-        >
-          + Add a training day
-        </button>
-      )}
-      <span className="mt-1 block text-xs text-gray-400">
-        The Training Log, training plans and everyone&apos;s Up next follow these. A change applies from today;
-        sessions already past stay as they were.
-      </span>
-    </div>
-  );
-}
-
-/** The Teams editor: Settings → Teams, and the teams step after signing a club up (TeamsSetup). */
-export function TeamsEditor({
+function TeamsEditor({
   teams,
   setTeams,
   initials,
   adminKey,
   onFaCodeEditing,
-  initialOpen = null,
-  footer,
 }: {
   adminKey: string;
   teams: TeamDraft[];
   setTeams: (update: (teams: TeamDraft[]) => TeamDraft[]) => void;
   initials: string;
   onFaCodeEditing: (editing: boolean) => void;
-  /** the team open to start with (by its place in `teams`) */
-  initialOpen?: number | null;
-  /** under the Add Team button, e.g. the plan that covers this many teams */
-  footer?: React.ReactNode;
 }) {
   // an archived team being deleted for good (DeleteTeam)
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [open, setOpen] = useState<number | null>(initialOpen);
+  const [open, setOpen] = useState<number | null>(null);
   const active = teams.map((t, i) => ({ t, i })).filter(({ t }) => !t.archived);
   const archived = teams.map((t, i) => ({ t, i })).filter(({ t }) => t.archived);
 
@@ -1159,7 +1069,6 @@ export function TeamsEditor({
       >
         + Add Team
       </button>
-      {footer}
 
       {archived.length > 0 && (
         <div className="mt-4">

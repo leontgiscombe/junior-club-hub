@@ -24,6 +24,8 @@ export type TenantRecord = {
   paused?: { at: string; reason?: string };
   /** the free trial and plan (lib/billing.ts); none at all: a founding club, which never pays */
   billing?: Billing;
+  /** the team the person who signed the club up coaches (its slug): their account takes it the first time they sign in (lib/people.ts) */
+  ownerTeam?: string;
 };
 
 /** A club as the public can see it (find-your-club): no email or password. */
@@ -61,7 +63,7 @@ export async function addressProblem(id: string): Promise<string | null> {
 }
 
 /** Add a club. Returns false if its address was taken meanwhile. */
-export async function createTenant(input: { id: string; name: string; email: string; password?: string }): Promise<boolean> {
+export async function createTenant(input: { id: string; name: string; email: string; password?: string; ownerTeam?: string }): Promise<boolean> {
   const kv = await rawKv();
   if (!kv) throw new Error("Storage isn't set up");
   const salt = randomBytes(16);
@@ -75,6 +77,7 @@ export async function createTenant(input: { id: string; name: string; email: str
     passwordHash: await hash(input.password || randomBytes(24).toString("base64url"), salt),
     ...(input.password ? {} : { noPassword: true as const }),
     billing: newTrial(),
+    ...(input.ownerTeam ? { ownerTeam: input.ownerTeam } : {}),
   };
   const added = (await kv.hsetnx(TENANTS_KEY, input.id, JSON.stringify(record))) === 1;
   if (added) known.delete(input.id);

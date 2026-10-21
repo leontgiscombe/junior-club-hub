@@ -64,7 +64,8 @@ async function save(tenant: string, person: Person): Promise<void> {
 
 /**
  * `user`'s place at `tenant`, if they have one. The club's own email is made
- * its club admin the first time it signs in.
+ * its club admin the first time it signs in, with the team they said they
+ * coach when signing the club up.
  */
 export async function personFor(tenant: string, user: User): Promise<Person | null> {
   const person = await readPerson(tenant, user.id);
@@ -73,8 +74,10 @@ export async function personFor(tenant: string, user: User): Promise<Person | nu
     const record = await getTenantRecord(tenant);
     if (record && record.email.toLowerCase() === user.email) {
       const now = new Date().toISOString();
+      const ownTeam = !person?.team && record.ownerTeam ? (await getAllTeamsFor(tenant)).find((t) => t.slug === record.ownerTeam) : undefined;
       const owner: Person = {
         ...(person ?? { createdAt: now }),
+        ...(ownTeam ? { team: { slug: ownTeam.slug, name: ownTeam.name } } : {}),
         userId: user.id,
         name: person?.name || user.name || "Club admin",
         email: user.email,
