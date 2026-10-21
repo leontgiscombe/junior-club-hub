@@ -1607,4 +1607,6 @@ function chooseHubFormat(teamFormat, teamShape){
   try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); localStorage.removeItem("hub_7v7_shape"); } catch(e){}
   HUB_SHAPE = typeof teamShape === "string" ? teamShape : "";
   applyHubFormat(teamFormat || "7v7");
+  // the page is ready: its team's content is in (/loading-dots.js)
+  if(window.loadingDots) loadingDots.hide();
 }

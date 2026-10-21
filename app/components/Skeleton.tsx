@@ -35,11 +35,34 @@ export function LoadingDots() {
       aria-busy="true"
       aria-label="Loading"
     >
-      <div className="flex h-3.5 items-center gap-3" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="loading-dot h-3.5 w-3.5 rounded-full bg-gray-400 dark:bg-white/40" style={{ animationDelay: `${i * 160}ms` }} />
-        ))}
-      </div>
+      <Dots />
     </main>
+  );
+}
+
+/**
+ * The dots over the whole screen, below the tab bar: on the way to a page
+ * outside the app's own routes, which a loading.tsx can't cover (LeavingDots).
+ * public/loading-dots.js draws the same on those pages.
+ */
+export function LoadingCover() {
+  return (
+    <div
+      className="themed fixed inset-0 z-30 flex items-center justify-center bg-[#f2f2f7] dark:bg-black"
+      aria-busy="true"
+      aria-label="Loading"
+    >
+      <Dots />
+    </div>
+  );
+}
+
+function Dots() {
+  return (
+    <div className="flex h-3.5 items-center gap-3" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="loading-dot h-3.5 w-3.5 rounded-full bg-gray-400 dark:bg-white/40" style={{ animationDelay: `${i * 160}ms` }} />
+      ))}
+    </div>
   );
 }

@@ -11,6 +11,7 @@ import { clubColourVars } from "@/lib/palette";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import { DARK_BAR, LIGHT_BAR, THEME_COOKIE, THEME_SCRIPT } from "@/lib/theme";
 import TabBar from "./components/TabBar";
+import LeavingDots from "./components/LeavingDots";
 import BackTracker from "./components/BackTracker";
 import NotificationNav from "./components/NotificationNav";
 import HomeWallpaper from "./components/HomeWallpaper";
@@ -114,6 +115,7 @@ export default async function RootLayout({
           {tenant && !hideTeams && <TabBar viewer={viewer} />}
           <BackTracker />
           <NotificationNav />
+          <LeavingDots />
         </ClubProvider>
       </body>
     </html>
