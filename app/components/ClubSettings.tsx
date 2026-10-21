@@ -9,7 +9,7 @@ import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS, GAME_FORMATS, KIT_EXTRAS, isGameFormat, kitAspect, slugFor, teamFormat, teamFormation, type Feature, type KitExtra } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMATIONS, KIT_EXTRAS, TEAM_AGES, ageFormat, ageName, kitAspect, slugFor, teamAgeName, teamFormat, teamFormation, type Feature, type KitExtra } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import TrainingDays from "./TrainingDays";
@@ -53,12 +53,14 @@ function fromDrafts(drafts: TeamDraft[]): Team[] {
       accent: d.accent.trim() || "⚽",
       squadName: d.squadName?.trim() || undefined,
       faSnippet: d.faSnippet?.trim() || undefined,
+      age: d.age || undefined,
       format: d.format || undefined,
       opponents: opponentsText.split("\n").map((o) => o.trim()).filter(Boolean),
     };
     if (!team.opponents?.length) delete team.opponents;
     if (!team.squadName) delete team.squadName;
     if (!team.faSnippet) delete team.faSnippet;
+    if (!team.age) delete team.age;
     if (!team.format) delete team.format;
     // a shape its format has (changing the age group can leave one that isn't)
     if (!team.formation || !FORMATIONS[teamFormat(team)].includes(team.formation)) delete team.formation;
@@ -828,14 +830,22 @@ function TeamsEditor({
                 <label>
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Age group</span>
                   <select
-                    value={t.format ?? ""}
-                    onChange={(e) => change(i, { format: isGameFormat(e.target.value) ? e.target.value : undefined })}
+                    value={t.age ?? ""}
+                    onChange={(e) => {
+                      const age = Number(e.target.value);
+                      change(i, { age, format: ageFormat(age) });
+                    }}
                     className={input}
                   >
-                    <option value="">From the team name ({FORMAT_AGES[teamFormat({ name: t.name })]} · {teamFormat({ name: t.name })})</option>
-                    {GAME_FORMATS.map((f) => (
-                      <option key={f} value={f}>
-                        {FORMAT_AGES[f]} · {f}
+                    {/* saved before teams had a year: what it plays now, until one is picked */}
+                    {!t.age && (
+                      <option value="" disabled>
+                        Pick the year ({teamAgeName(t)} · {teamFormat(t)})
+                      </option>
+                    )}
+                    {TEAM_AGES.map((age) => (
+                      <option key={age} value={age}>
+                        {ageName(age)} · {ageFormat(age)}
                       </option>
                     ))}
                   </select>

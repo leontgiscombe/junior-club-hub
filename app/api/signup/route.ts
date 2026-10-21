@@ -6,7 +6,7 @@
 // sends them a code straight away) and is the club's admin, with their team;
 // everyone else joins with the club code and their own account.
 //   GET  ?address=riverside -> { ok } or { error } (is the address free?)
-//   POST { name, address, email, teams: [{ name, format?, formation?, training?, faSnippet? }],
+//   POST { name, address, email, teams: [{ name, age?, format?, formation?, training?, faSnippet? }],
 //          myTeam?: index into teams, crest?, kit?: { image, width, height }, website, agreed } -> { url }
 //   (or, from before teams: { …, team, format? } for a single team)
 import { NextRequest, NextResponse } from "next/server";
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const teamName = typeof r.name === "string" ? r.name.trim().slice(0, 30) : "";
     // only what sign-up asks for: no archived teams, history or opponents from here
     const team = teamName
-      ? ({ slug: slugFor(teamName, slugged), name: teamName, accent: "⚽", format: isGameFormat(r.format) ? r.format : undefined, formation: r.formation, training: r.training, faSnippet: r.faSnippet } as Team)
+      ? ({ slug: slugFor(teamName, slugged), name: teamName, accent: "⚽", age: r.age, format: isGameFormat(r.format) ? r.format : undefined, formation: r.formation, training: r.training, faSnippet: r.faSnippet } as Team)
       : null;
     if (team) slugged.push(team);
     slugAt.push(team?.slug);
