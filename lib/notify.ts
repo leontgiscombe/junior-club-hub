@@ -3,8 +3,10 @@
 // they've turned alerts on for (Your Account → Alerts). Club admins hear about
 // every join request; a coach hears about requests for their own team (or
 // every one, if they have no team). Kit requests go to the team's own coaches
-// (the admins only if it has none). No message has children's names in it.
-// Server only.
+// (the admins only if it has none). A member hears about their own things too:
+// being approved, a child added to the squad, kit they asked for being sorted —
+// and a treasurer with the App Store app, the subs reminder (web push doesn't
+// reach the app). No message has children's names in it. Server only.
 import { createHash } from "crypto";
 import webpush from "web-push";
 import { childrenOf, joinAlertsKey, kvCall, type Person } from "./access";
@@ -296,6 +298,101 @@ export async function notifyAwardsActivated(
   }
 }
 
+/** An email to one member, and an alert on any phone they've turned alerts on for. */
+async function tellMember(
+  tenant: string,
+  person: Person,
+  what: string,
+  message: { subject: string; heading: string; line: string; button: string; url: string; title: string },
+): Promise<void> {
+  const email = simpleEmail({
+    heading: message.heading,
+    paragraphs: [message.line],
+    button: { label: message.button, url: tenantUrl(tenant, message.url) },
+    footer: `${PLATFORM_NAME} · ${tenantUrl(tenant)}`,
+  });
+  const sent = await sendEmail({ to: person.email, subject: message.subject, ...email }).catch(() => false);
+  await pushTo(tenant, [person], sent ? 1 : 0, what, { title: message.title, body: `${message.line} Tap to open it.`, url: message.url });
+}
+
+/** Let someone know a coach has approved them. Never throws. */
+export async function notifyApproved(tenant: string, person: Person, clubName: string): Promise<void> {
+  try {
+    await tellMember(tenant, person, "Approved", {
+      subject: `You're in: ${clubName}`,
+      heading: "You've been approved",
+      line: `A coach has approved you at ${clubName}, so the hub is open to you now.`,
+      button: "Open the Hub",
+      url: "/",
+      title: "You're in",
+    });
+  } catch (e) {
+    console.error("Approved alert not sent:", e);
+  }
+}
+
+/** Let a parent know a coach has added a child of theirs to the squad. Never throws. */
+export async function notifyChildApproved(tenant: string, person: Person, teamName: string | null, clubName: string): Promise<void> {
+  try {
+    const squad = teamName ? `the ${teamName} squad` : "the squad";
+    await tellMember(tenant, person, "Child approved", {
+      subject: `Your child is in ${squad} at ${clubName}`,
+      heading: "Added to the squad",
+      line: `A coach has added your child to ${squad} at ${clubName}.`,
+      button: "Open the Hub",
+      url: "/",
+      title: "Added to the squad",
+    });
+  } catch (e) {
+    console.error("Child approved alert not sent:", e);
+  }
+}
+
+/** Let a family know a coach has sorted kit they asked for (once in half an hour, as a coach ticks off a basket). Never throws. */
+export async function notifyKitDone(tenant: string, userId: string, clubName: string): Promise<void> {
+  try {
+    const kv = await rawKv();
+    if (kv && !(await kv.set(`platform:kit-done-alert:${tenant}:${userId}`, 1, { nx: true, ex: REPEAT_GAP_SECONDS }))) return;
+    const person = (await listPeople(tenant)).find((p) => p.userId === userId && p.status === "approved");
+    if (!person) return;
+    await tellMember(tenant, person, "Kit sorted", {
+      subject: `Your kit request at ${clubName}`,
+      heading: "Your kit request is sorted",
+      line: `A coach at ${clubName} has marked kit you asked for as sorted. See it in Your Kit.`,
+      button: "Open Your Kit",
+      url: "/kit",
+      title: "Kit request sorted",
+    });
+  } catch (e) {
+    console.error("Kit sorted alert not sent:", e);
+  }
+}
+
+/**
+ * The subs reminder for treasurers with the App Store app's alerts on: the
+ * subs tracker's own reminders are web push, which doesn't reach the app.
+ * Returns how many phones took it. Never throws.
+ */
+export async function notifyTreasurersInApp(tenant: string, message: { title: string; body: string; url: string }): Promise<number> {
+  try {
+    if (!apnsConfigured()) return 0;
+    const treasurers = new Set(
+      (await listPeople(tenant)).filter((p) => p.status === "approved" && p.roles.includes("treasurer")).map((p) => p.userId),
+    );
+    const phones = (await listAlerts(tenant)).filter((a) => a.apns && treasurers.has(a.userId));
+    let sent = 0;
+    for (const a of phones) {
+      const r = await sendApns(a.apns!, { ...message, url: tenantUrl(tenant, message.url) });
+      if (r === "sent") sent++;
+      else if (r === "gone") await removeJoinAlert(tenant, a.endpoint).catch(() => {});
+    }
+    return sent;
+  } catch (e) {
+    console.error("Subs reminders to the app not sent:", e);
+    return 0;
+  }
+}
+
 /** A test alert to one of `userId`'s own phones. Returns why it failed, or null if the push service took it. */
 export async function sendTestAlert(tenant: string, userId: string, endpoint: string): Promise<string | null> {
   const alert = (await listAlerts(tenant)).find((a) => a.endpoint === endpoint && a.userId === userId);
@@ -310,7 +407,7 @@ export async function sendTestAlert(tenant: string, userId: string, endpoint: st
   try {
     await webpush.sendNotification(
       { endpoint: alert.endpoint, keys: alert.keys },
-      JSON.stringify({ title: "Test alert", body: "Join request alerts are working on this phone.", url: "/account#alerts" }),
+      JSON.stringify({ title: "Test alert", body: "Alerts are working on this phone.", url: "/account#alerts" }),
     );
     return null;
   } catch (err) {

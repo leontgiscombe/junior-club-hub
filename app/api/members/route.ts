@@ -27,6 +27,7 @@ import { SESSION_KEY, childrenOf, readPerson, showCode, type Role } from "@/lib/
 import { isClubAdmin, isCoach } from "@/lib/adminAuth";
 import { EMAIL, cleanEmail } from "@/lib/auth";
 import { sendEmail, simpleEmail } from "@/lib/email";
+import { notifyApproved, notifyChildApproved } from "@/lib/notify";
 import { decide, getAccess, listMembers, renewCode, setPasswordOff, setPrivate } from "@/lib/members";
 import {
   addChildrenToSquad,
@@ -124,13 +125,22 @@ export async function POST(req: NextRequest) {
   if (action === "approveChild" || action === "declineChild") {
     const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
     const link = typeof body?.link === "string" && body.link !== "new" ? body.link : undefined;
+    const userId = String(body?.userId ?? "");
+    const childId = String(body?.childId ?? "");
     const done = await decideChild(
       tenant,
-      String(body?.userId ?? ""),
-      String(body?.childId ?? ""),
+      userId,
+      childId,
       action === "approveChild" ? { approve: true, link, team: pickTeam(body?.team, teams) } : { approve: false },
     );
     if (!done) return NextResponse.json({ error: "That child isn't waiting any more" }, { status: 404 });
+    // the parent hears their child is in the squad (not a coach adding their own)
+    const parent = action === "approveChild" ? await readPerson(tenant, userId) : null;
+    const me = parent ? await currentPerson(tenant).catch(() => null) : null;
+    if (parent?.status === "approved" && me?.user.id !== userId) {
+      const child = childrenOf(parent).find((c) => c.id === childId);
+      await notifyChildApproved(tenant, parent, child?.team?.name ?? null, (await getClub()).name);
+    }
   } else if (action === "editPerson") {
     const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
     const done = await updatePerson(tenant, String(body?.userId ?? ""), {
@@ -145,17 +155,18 @@ export async function POST(req: NextRequest) {
     }
     const verb = action === "approvePerson" ? "approve" : action === "personRoles" ? "roles" : action === "declinePerson" ? "decline" : "remove";
     const userId = String(body?.userId ?? "");
+    const target = await readPerson(tenant, userId);
     // a coach can look after parents and players; anything to do with admins, coaches and treasurers is for club admins
-    if (!canAdmin) {
-      const target = await readPerson(tenant, userId);
-      if (privileged(roles) || privileged(target?.roles ?? [])) return adminsOnly();
-    }
+    if (!canAdmin && (privileged(roles) || privileged(target?.roles ?? []))) return adminsOnly();
     if (!(await decidePerson(tenant, userId, verb, roles))) {
       return NextResponse.json({ error: "That person isn't on the list any more" }, { status: 404 });
     }
     if (verb === "approve") {
       const links = body?.links && typeof body.links === "object" ? (body.links as Record<string, string>) : {};
       await addChildrenToSquad(tenant, userId, links);
+      // they hear they're in, unless they already were
+      const approved = target?.status !== "approved" ? await readPerson(tenant, userId) : null;
+      if (approved) await notifyApproved(tenant, approved, (await getClub()).name);
     }
   } else if (action === "approve" || action === "decline" || action === "remove") {
     if (!(await decide(tenant, String(body?.id ?? ""), action))) {
