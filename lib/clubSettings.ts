@@ -117,6 +117,10 @@ export function cleanChanges(input: unknown): ClubChanges {
 export const GAME_FORMATS = ["5v5", "7v7", "9v9", "11v11"] as const;
 export type GameFormat = (typeof GAME_FORMATS)[number];
 export const isGameFormat = (v: unknown): v is GameFormat => GAME_FORMATS.includes(v as GameFormat);
+/** The 7v7 shapes the Training Hub teaches: a 7v7 team plays 2-3-1 unless Settings says otherwise. */
+export const FORMATIONS_7V7 = ["2-3-1", "3-2-1"] as const;
+export type Formation7v7 = (typeof FORMATIONS_7V7)[number];
+export const isFormation7v7 = (v: unknown): v is Formation7v7 => FORMATIONS_7V7.includes(v as Formation7v7);
 /** Each format's age group, as clubs say it: "Under 9s & 10s". */
 export const FORMAT_AGES: Record<GameFormat, string> = {
   "5v5": "Under 7s & 8s",
@@ -143,6 +147,8 @@ export type Team = {
   accent: string;
   /** set in Settings for the Training Hub; unset means worked out (teamFormat) */
   format?: GameFormat;
+  /** a 7v7 team's shape, set in Settings: the Training Hub teaches its players this one (unset: 2-3-1) */
+  formation?: Formation7v7;
   squadName?: string;
   faSnippet?: string;
   opponents?: string[];
@@ -272,6 +278,7 @@ export function cleanTeams(input: unknown): Team[] | null {
     const squadName = text(r.squadName, 30);
     if (squadName) team.squadName = squadName;
     if (isGameFormat(r.format)) team.format = r.format;
+    if (isFormation7v7(r.formation)) team.formation = r.formation;
     const faSnippet = text(r.faSnippet, 15);
     if (/^\d+$/.test(faSnippet)) team.faSnippet = faSnippet;
     if (Array.isArray(r.opponents)) {

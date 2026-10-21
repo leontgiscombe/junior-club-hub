@@ -698,7 +698,7 @@ function applyHubFormat(f){
   if(!f || (f !== "7v7" && !HUB_FORMATS[f])) f = "7v7";
   HUB_FMT = f;
   const data = fmtData();
-  // 7v7 has two shapes (the header switch picks one; Learning Positions, the Tactical Guide and the quiz follow it)
+  // 7v7 has two shapes (the team's, set in Settings; Learning Positions, the Tactical Guide and the quiz follow it)
   const is321 = !data && saved7v7Shape() === "3-2-1";
   const shape = data ? data.shape : is321 ? "3-2-1" : HUB_7V7.shape;
   // the quiz, challenges and tips
@@ -710,10 +710,6 @@ function applyHubFormat(f){
   // words that name the format
   document.querySelectorAll(".fmt-shape").forEach(function(e){ e.textContent = f + " · " + shape; });
   document.querySelectorAll(".fmt-name").forEach(function(e){ e.textContent = f; });
-  // the header's shape switch, for 7v7 only: there it shows the format, the switch the shape
-  const hs = document.getElementById("home-shape-switch");
-  if(hs){ hs.hidden = !!data; document.getElementById("home-fmt").textContent = data ? f + " · " + shape : f; }
-  if(!data) markShapeSwitches(shape);
   document.querySelectorAll(".lev-count").forEach(function(e){ e.textContent = String(LEVELS[e.dataset.level].questions.length); });
   const tip = document.getElementById("tod-text");
   if(tip && TIPS.length) tip.textContent = TIPS[Math.floor(Date.now()/86400000) % TIPS.length];
@@ -1165,16 +1161,9 @@ function show7v7Shape(shape){
   });
   document.querySelector("#app-positions > .pos-learn-hero .pos-learn-badge").textContent = "7v7 · " + shape + " Formation";
 }
-function saved7v7Shape(){ try { return localStorage.getItem("hub_7v7_shape") === "3-2-1" ? "3-2-1" : "2-3-1"; } catch{ return "2-3-1"; } }
-function markShapeSwitches(shape){
-  document.querySelectorAll(".shape-switch button").forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.shape === shape)); });
-}
-/** The 7v7 shape picked with the Training Hub's header switch, remembered on this phone. */
-function set7v7Shape(shape){
-  if(shape !== "3-2-1") shape = "2-3-1";
-  try { localStorage.setItem("hub_7v7_shape", shape); } catch{}
-  applyHubFormat("7v7");   // the quiz, and the guide and positions drawn afresh when opened
-}
+/** A 7v7 team's shape, as the club set it (Coach Admin → Settings → the team's formation). */
+let HUB_7V7_SHAPE = "2-3-1";
+function saved7v7Shape(){ return HUB_7V7_SHAPE; }
 /** The guide to draw: another format's, the 3-2-1's, or none (the page's own 2-3-1). */
 function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_321 : null); }
 
@@ -1202,9 +1191,10 @@ function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_3
 })();
 
 /* ── The format: always the club's ── */
-/** The player's team's format, as the club set it (Coach Admin → Settings → the team's age group). Players can't change it. */
-function chooseHubFormat(teamFormat){
-  // an age group once picked on a phone (earlier versions let players choose) no longer counts
-  try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); } catch(e){}
+/** The player's team's format and 7v7 shape, as the club set them (Coach Admin → Settings → the team). Players can't change them. */
+function chooseHubFormat(teamFormat, teamShape){
+  // an age group or shape once picked on a phone (earlier versions let players choose) no longer counts
+  try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); localStorage.removeItem("hub_7v7_shape"); } catch(e){}
+  HUB_7V7_SHAPE = teamShape === "3-2-1" ? "3-2-1" : "2-3-1";
   applyHubFormat(teamFormat || "7v7");
 }
