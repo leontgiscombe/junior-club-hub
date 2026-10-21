@@ -759,23 +759,11 @@ function genGuide(){
     const counts = {};
     d.guide.forEach(function(c){ counts[c.cat] = (counts[c.cat] || 0) + 1; });
     gen.innerHTML =
-      '<div class="guide-hero"><h1>'+(document.querySelector('[data-club="name"]') || {}).textContent+'</h1>'+
-      '<p>How We Play &mdash; <span class="team-age">'+((document.querySelector(".team-age") || {}).textContent || "")+'</span>'+d.label+' &middot; '+d.shape+'</p></div>'+
-      '<div class="guide-cat-grid" id="guide-gen-cats"></div>'+
-      '<div style="padding:0 16px 28px;max-width:520px;margin:0 auto"><button class="btn-view-all" onclick="genGuidePos(\'all\')">📚 View All Cards</button></div>'+
+      '<div class="guide-head"><h1>How We Play</h1>'+
+      '<p><span class="team-age">'+((document.querySelector(".team-age") || {}).textContent || "")+'</span>'+d.label+' &middot; '+d.shape+'</p></div>'+
+      '<div class="guide-menu" id="guide-gen-cats"></div>'+
       '<div id="guide-gen-cards" style="display:none"><div class="section-cards" id="guide-gen-list" style="padding-top:12px"></div></div>';
-    const grid = gen.querySelector("#guide-gen-cats");
-    d.guideCats.forEach(function(c){
-      const b = document.createElement("button");
-      b.className = "guide-cat-tile"; b.style.background = c.bg;
-      b.onclick = function(){ genGuidePos(c.id); };
-      b.innerHTML = '<span class="guide-cat-icon">'+c.icon+'</span><span class="guide-cat-name">'+c.name+'</span><span class="guide-cat-count">'+(counts[c.id]||0)+' tips</span>';
-      grid.appendChild(b);
-    });
-    const g = document.createElement("button");
-    g.className = "guide-cat-tile"; g.style.background = "#455a64"; g.onclick = function(){ showGlossary(); };
-    g.innerHTML = '<span class="guide-cat-icon">📖</span><span class="guide-cat-name">Glossary</span><span class="guide-cat-count">'+(typeof GLOSSARY !== "undefined" ? GLOSSARY.length : "")+' terms</span>';
-    grid.appendChild(g);
+    buildGuideMenu(gen.querySelector("#guide-gen-cats"), d.guideCats, counts, genGuidePos);
     const list = gen.querySelector("#guide-gen-list");
     d.guide.forEach(function(c){ list.appendChild(genCard(c)); });
     const topbar = document.querySelector("#app-guide .guide-topbar");
@@ -789,9 +777,8 @@ function genGuideHome(){
   document.getElementById("guide-content").style.display = "none";
   document.getElementById("guide-glossary").style.display = "none";
   gen.style.display = "block";
-  gen.querySelector(".guide-hero").style.display = "";
+  gen.querySelector(".guide-head").style.display = "";
   gen.querySelector("#guide-gen-cats").style.display = "";
-  gen.querySelector("#guide-gen-cats").nextElementSibling.style.display = "";
   gen.querySelector("#guide-gen-cards").style.display = "none";
   const btn = document.querySelector("#app-guide .back-btn");
   btn.innerHTML = "&larr; Home"; btn.onclick = showAppHome;
@@ -801,9 +788,8 @@ function genGuideHome(){
 function genGuidePos(cat){
   const d = guideData();
   const gen = genGuide();
-  gen.querySelector(".guide-hero").style.display = "none";
+  gen.querySelector(".guide-head").style.display = "none";
   gen.querySelector("#guide-gen-cats").style.display = "none";
-  gen.querySelector("#guide-gen-cats").nextElementSibling.style.display = "none";
   gen.querySelector("#guide-gen-cards").style.display = "block";
   gen.querySelectorAll("#guide-gen-list .card").forEach(function(c){ c.style.display = (cat === "all" || c.dataset.pos === cat) ? "" : "none"; });
   const btn = document.querySelector("#app-guide .back-btn");

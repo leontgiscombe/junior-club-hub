@@ -42,12 +42,6 @@ body { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI'
 .back-btn::before { content:"";width:11px;height:11px;border-left:2.6px solid currentColor;border-bottom:2.6px solid currentColor;transform:translateX(2px) rotate(45deg);border-radius:1px; }
 .back-btn:hover { background:rgba(255,255,255,0.25); }
 :root { --green-dark:#1a5c2a; --green-mid:#2d8a45; --accent:#f9a825; }
-.guide-hero { background:linear-gradient(135deg,var(--green-dark) 0%,var(--green-mid) 100%); padding:28px 20px 22px; text-align:center; border-bottom:5px solid var(--accent); }
-.guide-hero h1 { font-family:'Nunito',sans-serif; font-weight:900; font-size:clamp(1.6rem,5vw,2.6rem); color:#fff; letter-spacing:-0.5px; line-height:1.1; }
-.guide-hero h1 span { color:var(--accent); }
-.guide-hero p { margin-top:8px; color:rgba(255,255,255,0.8); font-size:1rem; font-weight:600; }
-.mottos { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
-.motto { background:var(--accent); color:var(--green-dark); font-family:'Nunito',sans-serif; font-weight:800; font-size:0.78rem; padding:5px 14px; border-radius:50px; text-transform:uppercase; letter-spacing:0.5px; }
 .section-header { background:var(--green-dark); color:#fff; font-family:'Nunito',sans-serif; font-weight:900; font-size:1.15rem; padding:12px 20px; margin:28px 16px 0; border-radius:12px 12px 0 0; border-left:6px solid var(--accent); letter-spacing:0.2px; }
 .section-wrapper { margin-bottom:8px; }
 .section-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; padding:0 16px 4px; }
@@ -166,13 +160,27 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── Guide category nav ── */
-.guide-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 16px;max-width:520px;margin:0 auto}
-.guide-cat-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 8px 14px;border:none;border-radius:16px;cursor:pointer;color:white;font-family:'Nunito',sans-serif;text-align:center;min-height:90px;box-shadow:0 4px 16px rgba(0,0,0,0.22);transition:transform .15s}
-.guide-cat-tile:active{transform:scale(0.96)}
-.guide-cat-icon{font-size:26px;margin-bottom:4px;display:block}
-.guide-cat-name{font-size:13px;font-weight:800;display:block}
-.guide-cat-count{font-size:10px;opacity:0.8;margin-top:2px;display:block}
-.btn-view-all{width:100%;padding:13px;border:2px solid #2e7d32;background:white;color:#1b5e20;border-radius:50px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer}
+/* the Tactical Guide's menu: rows in a card, like the hub's own lists */
+.guide-head{max-width:552px;margin:0 auto;padding:8px 20px 16px}
+.guide-head h1{font-size:22px;font-weight:800;line-height:1.3;color:#111827}
+.guide-head p{font-size:13px;font-weight:600;color:#6b7280;margin-top:2px}
+.guide-menu{max-width:552px;margin:0 auto;padding:0 16px 28px}
+.guide-list{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgb(0 0 0 / 5%);margin-bottom:14px}
+.guide-row{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:12px 16px;border:0;border-bottom:1px solid #f1f2f4;background:none;font-family:inherit;text-align:left;color:#111827;cursor:pointer}
+.guide-row:last-child{border-bottom:0}
+.guide-row:active{background:rgba(0,0,0,.04)}
+.guide-row::after{content:"\203A";font-size:22px;line-height:1;color:#9ca3af}
+.guide-row-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;color:#fff}
+.guide-row-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.guide-row-text{flex:1;min-width:0}
+.guide-row-name{display:block;font-size:15px;font-weight:700}
+.guide-row-count{display:block;font-size:12px;color:#6b7280;margin-top:1px}
+html.dark .guide-head h1,html.dark .guide-row{color:#f5f5f7}
+html.dark .guide-head p,html.dark .guide-row-count{color:#9ca3af}
+html.dark .guide-list{background:#1c1c1e}
+html.dark .guide-row{border-color:rgb(255 255 255 / 10%)}
+html.dark .guide-row:active{background:rgba(255,255,255,.06)}
+html[data-wallpaper] :is(.guide-head h1,.guide-head p){color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .btn-skills{background:linear-gradient(135deg,#00695c,#00897b);color:white;}
 .btn-positions{background:linear-gradient(135deg,#4a148c,#7b1fa2);color:white;}
 #app-positions{display:none;min-height:100vh;background:#f3e5f5;}
@@ -312,7 +320,6 @@ html.dark .opt-btn.wrong,html.dark .feedback-box.wrong{background:rgba(229,57,53
 html.dark .feedback-box.correct .feedback-title,html.dark .feedback-box.correct .fb-guide-label{color:#86efac}
 html.dark .feedback-msg{color:#e5e7eb}
 html.dark .feedback-tip{color:#a1a1a8}
-html.dark .btn-view-all{background:#1c1c1e;color:#86efac;border-color:#4ade80}
 html.dark .pos-zone-rule{background:rgba(126,87,194,.2);color:#e5e7eb}
 html.dark .pos-zone-rule strong{color:#d8b4fe}
 html.dark .skills-cat-title{color:#86efac;border-bottom-color:#2c2c2e}
@@ -356,7 +363,7 @@ html.dark .quiz-choose{color:#9ca3af}
 .quiz-topbar .back-btn,.guide-topbar .back-btn,.skills-topbar .back-btn,.pos-learn-topbar .back-btn{position:relative;width:48px;height:48px;background:#fff;border:none;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.05)}
 /* the arrow in the middle of the circle (the button's hidden words would push it up) */
 .quiz-topbar .back-btn::before,.guide-topbar .back-btn::before,.skills-topbar .back-btn::before,.pos-learn-topbar .back-btn::before{position:absolute;left:50%;top:50%;transform:translate(-35%,-50%) rotate(45deg)}
-.guide-hero,.skills-hero,.pos-learn-hero{margin:4px 16px 16px;border-radius:24px;border-bottom:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.skills-hero,.pos-learn-hero{margin:4px 16px 16px;border-radius:24px;border-bottom:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .diagram-key{background:#fff;color:#333}
 html.dark .diagram-key{background:#1c1c1e;color:#e5e7eb}
 .section-header{background:none;color:#111827;border-left:none;border-radius:0;padding:0 4px;margin:28px 16px 10px;font-size:20px;font-weight:800}
@@ -364,7 +371,7 @@ html.dark .diagram-key{background:#1c1c1e;color:#e5e7eb}
 .skill-item{border-radius:18px;border-color:transparent;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .gloss-item{border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .skills-cat-title{color:#111827;font-size:18px;border-bottom:none;padding:20px 4px 8px}
-.guide-cat-tile,.app-btn{border-radius:20px}
+.app-btn{border-radius:20px}
 .guide-footer{background:none;color:#6b7280}
 html.dark .quiz-topbar,html.dark .guide-topbar,html.dark .skills-topbar,html.dark .pos-learn-topbar{background:rgba(0,0,0,.8)}
 html.dark .quiz-topbar-title,html.dark .guide-topbar-title,html.dark .skills-topbar-title,html.dark .pos-learn-topbar-title,html.dark .section-header,html.dark .skills-cat-title{color:#f5f5f7}
@@ -531,25 +538,12 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <div style="width:44px"></div>
   </div>
   <div id="guide-cat-home">
-  <div class="guide-hero">
-    <h1><span data-club="name">Your Club</span></h1>
-    <p>How We Play &mdash; <span class="team-age"></span>Visual Guide (<span class="fmt-shape">7v7 &middot; 2-3-1</span>)</p>
-    <div class="mottos">
-      <div class="motto">&#x26BD; <span data-club="slogan"></span></div>
-    </div>
+  <div class="guide-head">
+    <h1>How We Play</h1>
+    <p><span class="team-age"></span><span class="fmt-shape">7v7 &middot; 2-3-1</span></p>
   </div>
-  <div class="guide-cat-grid">
-    <button class="guide-cat-tile" style="background:#37474f" onclick="showGuidePos('team')"><span class="guide-cat-icon">👥</span><span class="guide-cat-name">Team</span><span class="guide-cat-count">18 tips</span></button>
-    <button class="guide-cat-tile" style="background:#e65100" onclick="showGuidePos('gk')"><span class="guide-cat-icon">🧤</span><span class="guide-cat-name">Goalkeeper</span><span class="guide-cat-count">6 tips</span></button>
-    <button class="guide-cat-tile" style="background:#1b5e20" onclick="showGuidePos('def')"><span class="guide-cat-icon">🛡️</span><span class="guide-cat-name">Defenders</span><span class="guide-cat-count">6 tips</span></button>
-    <button class="guide-cat-tile" style="background:#6a1b9a" onclick="showGuidePos('wide')"><span class="guide-cat-icon">⚡</span><span class="guide-cat-name">Wingers</span><span class="guide-cat-count">5 tips</span></button>
-    <button class="guide-cat-tile" style="background:#1565c0" onclick="showGuidePos('mid')"><span class="guide-cat-icon">🎯</span><span class="guide-cat-name">Centre Mid</span><span class="guide-cat-count">4 tips</span></button>
-    <button class="guide-cat-tile" style="background:#b71c1c" onclick="showGuidePos('st')"><span class="guide-cat-icon">⚽</span><span class="guide-cat-name">Strikers</span><span class="guide-cat-count">4 tips</span></button>
-    <button class="guide-cat-tile" style="background:#455a64" onclick="showGlossary()"><span class="guide-cat-icon">📖</span><span class="guide-cat-name">Glossary</span><span class="guide-cat-count">20 terms</span></button>
-  </div>
-  <div style="padding:0 16px 28px;max-width:520px;margin:0 auto">
-    <button class="btn-view-all" onclick="showGuidePos('all')">📚 View All Cards</button>
-  </div>
+  <!-- the categories, View All Cards and the Glossary, as rows like the hub's (buildGuideMenu) -->
+  <div class="guide-menu" id="guide-cat-menu"></div>
   </div>
 
   <div id="guide-content" style="display:none">
@@ -3523,6 +3517,42 @@ function initGuideDiagrams(){
   });
 }
 
+
+/* ── The Tactical Guide's menu: a row for each position, then View All Cards and the Glossary ── */
+const GUIDE_ICON={
+  team:'<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+  gk:'<path d="M7 12V6.5a1.5 1.5 0 0 1 3 0V11M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V12M16 11a1.5 1.5 0 0 1 3 0v3a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.8-2.4L3.4 15a1.5 1.5 0 0 1 2.3-1.9L7 14.5"/>',
+  def:'<path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/>',
+  wide:'<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
+  mid:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6"/>',
+  st:'<circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 4.5h-5L8 10z"/><path d="M12 3v4M21 10h-5M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19"/>',
+  all:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M6 6h12M8 3h8"/>',
+  glossary:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>'
+};
+GUIDE_ICON.wb=GUIDE_ICON.wide;
+function guideRow(icon,bg,name,sub,go){
+  const b=document.createElement('button');
+  b.type='button'; b.className='guide-row'; b.onclick=go;
+  b.innerHTML='<span class="guide-row-icon" style="background:'+bg+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+(GUIDE_ICON[icon]||GUIDE_ICON.st)+'</svg></span>'+
+    '<span class="guide-row-text"><span class="guide-row-name">'+name+'</span>'+(sub?'<span class="guide-row-count">'+sub+'</span>':'')+'</span>';
+  return b;
+}
+/** `cats` [{id,name,bg}], each with its count of tips; `pick(id)` opens one ('all' for every card). */
+function buildGuideMenu(menu,cats,counts,pick){
+  menu.innerHTML='<div class="guide-list"></div><div class="guide-list"></div>';
+  const lists=menu.children;
+  cats.forEach(c=>lists[0].appendChild(guideRow(c.id,c.bg,c.name,(counts[c.id]||0)+' tips',()=>pick(c.id))));
+  lists[1].appendChild(guideRow('all','#15803d','View All Cards','Every tip, one after another',()=>pick('all')));
+  lists[1].appendChild(guideRow('glossary','#455a64','Glossary',typeof GLOSSARY!=='undefined'?GLOSSARY.length+' terms':'',()=>showGlossary()));
+}
+// the page's own (7v7 2-3-1) guide: its counts from its cards
+document.addEventListener('DOMContentLoaded',()=>{
+  const cats=[{id:'team',name:'Team',bg:'#37474f'},{id:'gk',name:'Goalkeeper',bg:'#e65100'},{id:'def',name:'Defenders',bg:'#1b5e20'},
+    {id:'wide',name:'Wingers',bg:'#6a1b9a'},{id:'mid',name:'Centre Mid',bg:'#1565c0'},{id:'st',name:'Strikers',bg:'#b71c1c'}];
+  const counts={};
+  document.querySelectorAll('#guide-content .card').forEach(c=>(c.dataset.pos||'').split(' ').forEach(p=>{counts[p]=(counts[p]||0)+1;}));
+  buildGuideMenu(document.getElementById('guide-cat-menu'),cats,counts,pos=>showGuidePos(pos));
+});
 
 function showGuideCatHome(){
   document.getElementById('guide-cat-home').style.display='block';
