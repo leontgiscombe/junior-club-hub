@@ -188,6 +188,7 @@ svg.pitch { width:100%; border-radius:8px; display:block; }
 .shape-switch button{flex:1;border:none;background:none;border-radius:10px;padding:10px 0;font-family:inherit;font-size:15px;font-weight:800;color:#4b5563;cursor:pointer;}
 .shape-switch button[aria-selected="true"]{background:#fff;color:#4a148c;box-shadow:0 1px 3px rgba(0,0,0,.12);}
 #guide-shape-switch{margin:4px 16px 12px}
+#quiz-shape-switch{width:100%;max-width:360px;margin:16px auto 0}
 html.dark .shape-switch{background:#1c1c1e}
 html.dark .shape-switch button{color:#9ca3af}
 html.dark .shape-switch button[aria-selected="true"]{background:#3a3a3c;color:#d8b4fe}
@@ -2478,6 +2479,11 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
         <div class="motto-chip"><span data-club="slogan"></span></div>
       </div>
     </div>
+    <!-- the 7v7 quiz's shape: the 2-3-1, or the 3-2-1 (formats.js has its questions) -->
+    <div class="shape-switch" id="quiz-shape-switch" role="tablist" aria-label="Formation">
+      <button type="button" role="tab" data-shape="2-3-1" onclick="set7v7Shape('2-3-1')">2-3-1</button>
+      <button type="button" role="tab" data-shape="3-2-1" onclick="set7v7Shape('3-2-1')">3-2-1</button>
+    </div>
     <p class="quiz-choose">Choose your level</p>
     <div class="level-grid">
       <button class="level-btn lev-beginner" onclick="startQuiz('beginner')">
@@ -3614,8 +3620,8 @@ function refreshHomeProgress(){
 }
 
 /* ── PERSONAL BEST ── */
-/* each format's bests apart; 7v7 keeps the names it always had */
-function pbKey(level){return 'pj_best_'+(typeof HUB_FMT!=='undefined'&&HUB_FMT!=='7v7'?HUB_FMT+'_':'')+level;}
+/* each format's bests apart (and 7v7's 3-2-1 quiz); 7v7's 2-3-1 keeps the names it always had */
+function pbKey(level){return 'pj_best_'+(typeof HUB_FMT!=='undefined'&&HUB_FMT!=='7v7'?HUB_FMT+'_':typeof saved7v7Shape==='function'&&saved7v7Shape()==='3-2-1'?'7v7-321_':'')+level;}
 function getPB(level){try{return JSON.parse(localStorage.getItem(pbKey(level)))||null;}catch(e){return null;}}
 function setPB(level,score,total){
   const d=new Date();

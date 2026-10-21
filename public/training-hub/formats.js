@@ -698,9 +698,11 @@ function applyHubFormat(f){
   if(!f || (f !== "7v7" && !HUB_FORMATS[f])) f = "7v7";
   HUB_FMT = f;
   const data = fmtData();
-  const shape = data ? data.shape : HUB_7V7.shape;
+  // 7v7 has two shapes (Learning Positions, the Tactical Guide and the quiz switch between them)
+  const is321 = !data && saved7v7Shape() === "3-2-1";
+  const shape = data ? data.shape : is321 ? "3-2-1" : HUB_7V7.shape;
   // the quiz, challenges and tips
-  const quiz = data ? data.quiz : HUB_7V7.quiz;
+  const quiz = data ? data.quiz : is321 ? QUIZ_321 : HUB_7V7.quiz;
   ["beginner","intermediate","expert"].forEach(function(lv){ LEVELS[lv].questions = quiz[lv]; });
   SKILLS.splice(0, SKILLS.length, ...(data ? data.skills : HUB_7V7.skills));
   TIPS.splice(0, TIPS.length, ...(data ? data.tips : HUB_7V7.tips));
@@ -708,6 +710,8 @@ function applyHubFormat(f){
   // words that name the format
   document.querySelectorAll(".fmt-shape").forEach(function(e){ e.textContent = f + " · " + shape; });
   document.querySelectorAll(".fmt-name").forEach(function(e){ e.textContent = f; });
+  const qs = document.getElementById("quiz-shape-switch"); if(qs) qs.style.display = data ? "none" : "";
+  if(!data) markShapeSwitches(shape);
   document.querySelectorAll(".lev-count").forEach(function(e){ e.textContent = String(LEVELS[e.dataset.level].questions.length); });
   const tip = document.getElementById("tod-text");
   if(tip && TIPS.length) tip.textContent = TIPS[Math.floor(Date.now()/86400000) % TIPS.length];
@@ -960,6 +964,141 @@ const GUIDE_321 = {
     {cat:"st",title:"Lead the Press",d:"LeadPress",text:"When their defender has it, <strong>curve your run</strong> to push them one way. The team follows your lead."},
   ],
 };
+// the How We Play quiz for the 3-2-1 (its diagrams are the guide's, as D.f321_*)
+const QUIZ_321 = {
+  beginner:[
+    {section:"📍 Shape",q:"In our 3-2-1, how many defenders do we have when the other team has the ball?",diagram:"Shape",opts:[
+      {t:"Two",c:false,f:"That's the 2-3-1. In the 3-2-1 there are three."},
+      {t:"Three — the two wing backs and the CB",c:true,f:"Yes! LWB, CB and RWB make a back three."},
+      {t:"Just the goalkeeper",c:false,f:"The keeper is behind three defenders."},
+      {t:"Nobody — everyone attacks",c:false,f:"We always keep a back three when we don't have it."}],tip:"\"Three at the back, two in the middle, one up front.\""},
+    {section:"⚽ In Possession",q:"We've just won the ball. What do the wing backs do?",diagram:"Attack",opts:[
+      {t:"Stay next to the CB",c:false,f:"Then nobody gives us width. Get forward!"},
+      {t:"Run into the middle",c:false,f:"The middle is the CMs' job. Stay wide."},
+      {t:"Sprint up the touchlines to become wingers",c:true,f:"Exactly — wide and high, you're our wingers now."},
+      {t:"Go in goal",c:false,f:"That's the keeper's job!"}],tip:"\"Wing backs: wide and high with the ball.\""},
+    {section:"🔴 Out of Possession",q:"We've lost the ball. Where do the wing backs go?",diagram:"Defend",opts:[
+      {t:"Sprint back level with the CB",c:true,f:"Yes! That makes our back three."},
+      {t:"Stay up the pitch and wait",c:false,f:"Then the CB is on their own. Race back!"},
+      {t:"Chase the ball wherever it goes",c:false,f:"Get back into the back three first."},
+      {t:"Walk back slowly",c:false,f:"Sprint! A back three only works if you get there."}],tip:"\"Lose it? Wing backs race back.\""},
+    {section:"🥅 Goalkeeper",q:"The keeper has caught it. Who's usually the free player to roll it to?",diagram:"GKOut",opts:[
+      {t:"The striker, right up the other end",c:false,f:"Too far, and it's crowded. Look wide first."},
+      {t:"A wing back out wide",c:true,f:"Yes — the wing backs are usually the free players."},
+      {t:"Nobody — kick it out of play",c:false,f:"Keep it! Find a wing back or the CB."},
+      {t:"An opponent",c:false,f:"Find a teammate!"}],tip:"\"Keeper: roll it wide, quickly.\""},
+    {section:"⚽ Striker",q:"You're the striker, the ball comes to you and the wing backs aren't there yet. What do you do?",diagram:"HoldUp",opts:[
+      {t:"Shoot from the halfway line",c:false,f:"Too far out. Keep the ball until help arrives."},
+      {t:"Pass it back to the keeper",c:false,f:"Keep it up the pitch — hold it up."},
+      {t:"Run into three defenders",c:false,f:"You're on your own. Wait for support."},
+      {t:"Hold it up until they arrive, then play it wide",c:true,f:"Perfect — you're on your own up front, so keep it."}],tip:"\"Striker: hold it up for the wing backs.\""},
+    {section:"⚽ Midfield",q:"One of our two CMs runs forward. What does the other one do?",diagram:"Mids",opts:[
+      {t:"Runs forward too",c:false,f:"Then there's nobody in front of the defence."},
+      {t:"Stays in front of the back three",c:true,f:"Yes — one goes, one stays."},
+      {t:"Goes in goal",c:false,f:"Stay in midfield and protect the defence."},
+      {t:"Runs out wide",c:false,f:"The wing backs are wide. You stay central."}],tip:"\"CMs: one goes, one stays.\""},
+    {section:"⚡ Transition",q:"We've just lost the ball near their goal. What happens?",diagram:"Press",opts:[
+      {t:"Everyone stops and walks back",c:false,f:"Win it back! The nearest players press."},
+      {t:"Everyone chases the ball",c:false,f:"Only the nearest two — the wing backs recover."},
+      {t:"The nearest two press while the wing backs race back",c:true,f:"That's it — press and recover at the same time."},
+      {t:"The keeper runs up to help",c:false,f:"Keeper stays in goal!"}],tip:"\"Press near the ball, recover away from it.\""},
+    {section:"📖 Glossary",q:"What is a wing back?",diagram:null,opts:[
+      {t:"A defender who only stays in the box",c:false,f:"A wing back goes the whole length of the touchline."},
+      {t:"A striker who plays wide",c:false,f:"Close, but a wing back defends too."},
+      {t:"The keeper's helper",c:false,f:"Not quite!"},
+      {t:"A wide defender who becomes a winger when we have the ball",c:true,f:"Yes — defender without the ball, winger with it."}],tip:"\"Wing backs do both jobs.\""},
+  ],
+  intermediate:[
+    {section:"📍 Shape",q:"The ball is on the left and our left wing back has gone forward. What does the right wing back do?",diagram:"Balance",opts:[
+      {t:"Tucks in next to the CB",c:true,f:"Yes — so we always keep two at the back."},
+      {t:"Goes forward as well",c:false,f:"Then only the CB is left at the back."},
+      {t:"Stays right out on the touchline",c:false,f:"Tuck in — the ball is on the other side."},
+      {t:"Runs over to the left",c:false,f:"Stay on your side, but come narrower."}],tip:"\"One wing back goes, one stays.\""},
+    {section:"⚽ In Possession",q:"The left side is crowded with players. What's the best move?",diagram:"Switch",opts:[
+      {t:"Keep trying to dribble through",c:false,f:"Too crowded. Move it to the space."},
+      {t:"Kick it out for a throw",c:false,f:"Keep it! There's space on the other side."},
+      {t:"Switch it: wing back, to CM, to the other wing back",c:true,f:"Exactly — the far wing back will have loads of space."},
+      {t:"Pass back to the keeper every time",c:false,f:"Sometimes, but the switch is better here."}],tip:"\"Crowded? Switch it.\""},
+    {section:"🛡️ Defending",q:"Our left wing back is up the pitch and they break down that side. What does the CB do?",diagram:"Cover",opts:[
+      {t:"Stays in the middle and watches",c:false,f:"Then they've got a free run at goal. Slide across."},
+      {t:"Slides across to cover, and a CM drops into the middle",c:true,f:"Yes — that's how we cover the gap a wing back leaves."},
+      {t:"Shouts at the wing back",c:false,f:"Talk, yes — but cover first!"},
+      {t:"Goes forward to attack",c:false,f:"Defend first!"}],tip:"\"Cover the gap behind the wing back.\""},
+    {section:"🛡️ Defending",q:"The ball has gone up to the other end. What does the CB do?",diagram:"StepUp",opts:[
+      {t:"Stays on the edge of our box",c:false,f:"That leaves a big gap. Step up."},
+      {t:"Runs into their box",c:false,f:"Too far! Halfway is enough."},
+      {t:"Sits down for a rest",c:false,f:"Stay switched on!"},
+      {t:"Steps up towards halfway",c:true,f:"Yes — it keeps the team close together."}],tip:"\"Step up when the ball goes up.\""},
+    {section:"⚽ In Possession",q:"You're the left wing back and we have the ball. Where do you stand?",diagram:"WBHigh",opts:[
+      {t:"Wide and high, on the touchline",c:true,f:"Yes — so a CM can find you in space."},
+      {t:"Next to the CB",c:false,f:"That's where you go without the ball."},
+      {t:"In the middle, next to the striker",c:false,f:"Too narrow. Width is your job."},
+      {t:"Behind the keeper",c:false,f:"Get forward!"}],tip:"\"Wing backs: stay on the line.\""},
+    {section:"⚽ Midfield",q:"A CM gets the ball from the CB. What's a good next move?",diagram:"FeedWB",opts:[
+      {t:"Turn your back to the pitch",c:false,f:"Open your body so you can see forward."},
+      {t:"Open your body and play it out wide to a wing back",c:true,f:"Yes — the wing backs are your best friends."},
+      {t:"Pass straight back to the CB every time",c:false,f:"Sometimes, but look forward and wide first."},
+      {t:"Shoot from your own half",c:false,f:"Too far out!"}],tip:"\"CMs: feed the wing backs.\""},
+    {section:"🥅 Goalkeeper",q:"They're attacking. What's the keeper's big job in a 3-2-1?",diagram:"GKTalk",opts:[
+      {t:"Stay quiet and concentrate",c:false,f:"Talk! You can see everything."},
+      {t:"Run out to the halfway line",c:false,f:"Stay where you can save it."},
+      {t:"Tell the wing backs to drop and tell the CB who to pick up",c:true,f:"Exactly — organise the back three."},
+      {t:"Watch the crowd",c:false,f:"Eyes on the game!"}],tip:"\"Keeper: talk and organise.\""},
+    {section:"⚽ Striker",q:"Their defender has the ball. What does our striker do?",diagram:"LeadPress",opts:[
+      {t:"Stand still",c:false,f:"Lead the press!"},
+      {t:"Run straight at them as fast as you can",c:false,f:"Close — but curve your run."},
+      {t:"Run back to our box",c:false,f:"Stay up and press."},
+      {t:"Curve your run to push them one way",c:true,f:"Yes — the team follows your lead."}],tip:"\"Striker: curve your run.\""},
+  ],
+  expert:[
+    {section:"📍 Shape",q:"Where is the 3-2-1's weak spot?",diagram:"Cover",opts:[
+      {t:"The space behind a wing back who has gone forward",c:true,f:"Yes — that's why the CB and a CM slide across to cover it."},
+      {t:"In front of their goal",c:false,f:"That's where we want to be!"},
+      {t:"There isn't one",c:false,f:"Every shape has one. Know where it is!"},
+      {t:"Behind the striker",c:false,f:"Our CMs are there."}],tip:"\"Know the weak spot and cover it.\""},
+    {section:"⚽ In Possession",q:"Our left wing back is on the byline and their defenders are back in the box. What's the best ball?",diagram:"Cross",opts:[
+      {t:"A high cross into the crowd",c:false,f:"Their defenders are facing it. Look for a better option."},
+      {t:"A cut-back to a CM arriving",c:true,f:"Yes — they're running onto it, facing goal."},
+      {t:"Pass it back to the keeper",c:false,f:"We're nearly there — be brave!"},
+      {t:"Shoot from the byline",c:false,f:"There's no angle. Cut it back."}],tip:"\"At the byline? Cut it back.\""},
+    {section:"📍 Shape",q:"When both wing backs push on with the ball, what shape do we turn into?",diagram:"Attack",opts:[
+      {t:"A 3-2-1 still",c:false,f:"With the wing backs up, it's a different shape."},
+      {t:"All seven in a line",c:false,f:"Not quite!"},
+      {t:"A 1-4-1: CB, then wing backs and CMs across, then the striker",c:true,f:"Yes — four across the middle when we attack."},
+      {t:"A 5-0-1",c:false,f:"That's very defensive. We push on!"}],tip:"\"Three at the back without it, four across with it.\""},
+    {section:"📍 Shape",q:"Why shouldn't both wing backs go forward when we might lose the ball?",diagram:"Balance",opts:[
+      {t:"They'd get too tired",c:false,f:"Maybe, but there's a bigger problem."},
+      {t:"It's against the rules",c:false,f:"It's allowed — it's just risky."},
+      {t:"They'd block the striker",c:false,f:"Not really. Think about our defence."},
+      {t:"Only the CB would be left at the back if we lose it",c:true,f:"Exactly — always keep two at the back."}],tip:"\"Never both up when we could lose it.\""},
+    {section:"🔴 Out of Possession",q:"Without the ball, why do the two CMs sit just in front of the back three?",diagram:"Defend",opts:[
+      {t:"To stop passes through the middle",c:true,f:"Yes — no gaps between midfield and defence."},
+      {t:"To be nearer the striker",c:false,f:"The striker is the other way!"},
+      {t:"So they can rest",c:false,f:"They're working hard!"},
+      {t:"To take throw-ins",c:false,f:"Not their job here."}],tip:"\"Stay close — no gaps through the middle.\""},
+    {section:"📍 Shape",q:"Compared with our 2-3-1, what's the big change in the 3-2-1?",diagram:null,opts:[
+      {t:"No goalkeeper",c:false,f:"Always a keeper!"},
+      {t:"Two strikers",c:false,f:"Still one striker."},
+      {t:"One more defender, one fewer midfielder — and the width comes from the wing backs",c:true,f:"Yes — the wide players start as defenders."},
+      {t:"Nothing changes",c:false,f:"The shape is quite different."}],tip:"\"Wing backs do the width.\""},
+    {section:"⚡ Transition",q:"We've lost the ball. Why do only the nearest two press, not everyone?",diagram:"Press",opts:[
+      {t:"The others are lazy",c:false,f:"No — they have another job."},
+      {t:"The wing backs need to race back so we aren't caught out",c:true,f:"Yes — press near the ball, recover away from it."},
+      {t:"Pressing isn't allowed",c:false,f:"It is!"},
+      {t:"Everyone should press",c:false,f:"Then nobody's protecting our goal."}],tip:"\"Press and recover together.\""},
+  ],
+};
+["beginner","intermediate","expert"].forEach(function(lv){ QUIZ_321[lv] = fq(QUIZ_321[lv], "321"); });
+// the question shows just where everyone is; the answer shows the arrows and words too
+Object.keys(G321).forEach(function(k){
+  D["f321_"+k] = function(s){
+    const A0 = A, Lbl0 = Lbl;
+    A = Lbl = function(){};
+    try { G321[k](s); } finally { A = A0; Lbl = Lbl0; }
+  };
+  DG["f321_"+k] = G321[k];
+});
+
 const SHAPE_321 = {
   intro:"Three at the back, two in the middle, one up front — but the two wide defenders are <strong>wing backs</strong>: defenders without the ball, wide midfielders with it.",
   cards:[
@@ -1045,12 +1184,14 @@ function saved7v7Shape(){ try { return localStorage.getItem("hub_7v7_shape") ===
 function markShapeSwitches(shape){
   document.querySelectorAll(".shape-switch button").forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.shape === shape)); });
 }
-/** The 7v7 shape picked with the switches (Learning Positions and the Tactical Guide), remembered on this phone. */
+/** The 7v7 shape picked with the switches (Learning Positions, the Tactical Guide and the quiz), remembered on this phone. */
 function set7v7Shape(shape){
   if(shape !== "3-2-1") shape = "2-3-1";
   try { localStorage.setItem("hub_7v7_shape", shape); } catch{}
-  const g = document.getElementById("guide-gen"); if(g) g.remove();
+  applyHubFormat("7v7");   // the quiz, and the guide drawn afresh
+  markShapeSwitches(shape);
   if(document.getElementById("app-guide").style.display === "block") showGuideCatHome();
+  else if(document.getElementById("app-quiz").style.display === "block") refreshPBDisplay();
   else show7v7Shape(shape);
 }
 /** The guide to draw: another format's, the 3-2-1's, or none (the page's own 2-3-1). */
