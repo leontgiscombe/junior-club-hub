@@ -1,5 +1,6 @@
-// GET /api/training/files?key=...&name=...  -> a built-in drill's session-plan
-// file (a page image or the PDF), for signed-in coaches only.
+// GET /api/training/files?key=...&name=...  -> a built-in drill's file (its
+// diagram, drawn by the pack, or a page image or PDF kept in the pack), for
+// signed-in coaches only.
 // GET /api/training/files?key=...&drill=...&file=... -> a photo or PDF a coach
 // added to a drill (lib/trainingPlans.ts addDrillUpload), likewise. The files live in
 // the drill pack's drill-pack/files/ rather than public/, so they're never
@@ -9,12 +10,12 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { isCoach } from "@/lib/adminAuth";
-import { builtInFile } from "@/lib/builtInDrills";
+import { builtInDiagram, builtInFile } from "@/lib/builtInDrills";
 import { getDrillUpload } from "@/lib/trainingPlans";
 
 export const runtime = "nodejs";
 
-// by extension: the first drills' pages are PNGs, the season plan's JPEGs
+// by extension, for files kept in drill-pack/files/
 const CONTENT_TYPES: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -41,6 +42,21 @@ export async function GET(request: Request) {
   }
   const file = builtInFile(searchParams.get("name") ?? "");
   if (!file) return NextResponse.json({ error: "No such file" }, { status: 404 });
+
+  // a diagram the pack draws, rather than a file it keeps
+  const svg = builtInDiagram(file.name);
+  if (svg) {
+    return new NextResponse(svg, {
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Content-Disposition": `inline; filename="${file.name}"`,
+        // opened on its own, an SVG is a page: let it draw, but run nothing
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  }
 
   const body = await readFile(path.join(process.cwd(), "drill-pack", "files", file.name));
   return new NextResponse(new Uint8Array(body), {
