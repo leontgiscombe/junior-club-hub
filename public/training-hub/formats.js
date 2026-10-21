@@ -234,6 +234,92 @@ function pickQs(list, starts){
       "Have fun and try your best!",
     ],
   };
+
+  /* ── 5v5's other shape: the 2-1-1, two at the back ── */
+  const Q5 = HUB_FORMATS["5v5"].quiz;
+  const b211=[[18,100,"GK"],[75,60,"D"],[75,140,"D"],[145,100,"M"],[215,100,"S"]];
+  HUB_FORMATS["5v5"].shapes={"2-1-1":{
+    shape:"2-1-1",
+    diagrams:{
+      Spread(s){buildPitch(s);team(s,b211);B(s,87,64);opp(s,[[200,70],[200,130],[262,100],[302,100,"GK"]]);run(s,75,140,80,176);},
+      Swarm(s){buildPitch(s);team(s,[[18,100,"GK"],[80,70,"D"],[150,90,"S"],[166,106,"M"],[150,114,"D"]]);opp(s,[[160,94],[174,116],[262,100],[302,100,"GK"]]);B(s,160,104);run(s,150,124,150,172);Lbl(s,150,184,"FIND SPACE");},
+      PassFriend(s){buildPitch(s);team(s,b211);B(s,87,64);opp(s,[[112,146],[200,130],[262,100],[302,100,"GK"]]);pass(s,89,66,136,96);},
+      AllDefend(s){buildPitch(s);team(s,[[18,100,"GK"],[65,75,"D"],[65,125,"D"],[155,78,"M"],[190,118,"S"]]);opp(s,[[118,100],[165,50],[170,150],[302,100,"GK"]]);B(s,106,100);run(s,155,78,124,88);run(s,190,118,148,112);},
+      Shoot(s){buildPitch(s);team(s,[[18,100,"GK"],[90,70,"D"],[90,130,"D"],[180,100,"M"],[248,100,"S"]]);opp(s,[[225,60],[302,100,"GK"]]);B(s,260,100);pass(s,262,100,306,88);Lbl(s,262,128,"SHOOT!");},
+      Retreat(s){buildPitch(s);team(s,[[18,100,"GK"],[90,65,"D"],[90,135,"D"],[135,100,"M"],[150,60,"S"]]);opp(s,[[302,100,"GK"],[262,60],[262,140],[225,100]]);B(s,290,100);line(s,160,"HALFWAY");run(s,196,60,156,60);},
+      GKRoll(s){buildPitch(s);team(s,[[18,100,"GK"],[60,30,"D"],[60,170,"D"],[140,100,"M"],[215,100,"S"]]);B(s,30,100);opp(s,[[100,120],[178,130],[302,100,"GK"]]);pass(s,30,96,55,38);},
+      BacksWide(s){buildPitch(s);team(s,[[18,100,"GK"],[70,25,"D"],[70,175,"D"],[140,100,"M"],[215,100,"S"]]);B(s,30,100);opp(s,[[110,100],[262,100],[302,100,"GK"]]);pass(s,30,96,62,32);Lbl(s,70,52,"WIDE",undefined,undefined,40);Lbl(s,70,148,"WIDE",undefined,undefined,40);},
+      MiddleLink(s){buildPitch(s);team(s,b211);opp(s,[[170,62],[205,140],[302,100,"GK"]]);B(s,87,136);pass(s,89,134,136,104);pass(s,154,100,206,100);Lbl(s,150,140,"PASS IT ON",undefined,undefined,58);},
+      OneStays(s){buildPitch(s);team(s,[[18,100,"GK"],[120,60,"D"],[70,140,"D"],[160,105,"M"],[230,100,"S"]]);B(s,132,60);dribble(s,134,58,180,50);opp(s,[[200,75],[262,100],[302,100,"GK"]]);Lbl(s,72,172,"I'LL STAY",undefined,undefined,56);},
+      Rebound(s){buildPitch(s);team(s,[[18,100,"GK"],[110,70,"D"],[110,130,"D"],[190,100,"M"],[240,105,"S"]]);opp(s,[[302,100,"GK"]]);pass(s,248,104,298,104);B(s,282,130);run(s,244,112,276,128);Lbl(s,252,150,"FOLLOW IT IN");},
+      Look(s){buildPitch(s);team(s,b211);B(s,87,64);opp(s,[[112,146],[200,130],[302,100,"GK"]]);Lbl(s,75,28,"LOOK FIRST",undefined,undefined,66);pass(s,89,66,136,96);},
+      WinBack(s){buildPitch(s);team(s,[[18,100,"GK"],[95,70,"D"],[95,130,"D"],[150,76,"M"],[218,100,"S"]]);opp(s,[[184,100],[260,60],[302,100,"GK"]]);B(s,172,104);run(s,218,100,198,100);run(s,150,76,166,90);},
+    },
+    guideCats:[
+      {id:"team",name:"Team",icon:"👥",bg:"#37474f"},
+      {id:"gk",name:"Keeper",icon:"🧤",bg:"#e65100"},
+      {id:"def",name:"Back Players",icon:"🛡️",bg:"#1b5e20"},
+      {id:"mid",name:"Middle Player",icon:"🎯",bg:"#1565c0"},
+      {id:"st",name:"Front Player",icon:"⚽",bg:"#b71c1c"},
+    ],
+    guide:[
+      {cat:"team",title:"Spread Out",d:"Spread",text:"Don't all run to the ball like bees! <strong>Two at the back, one in the middle, one at the front</strong> — spread out so there's always a friend to pass to."},
+      {cat:"team",title:"Find Space",d:"Swarm",text:"If everyone's in a crowd, <strong>run away from the crowd</strong> to an empty space. Then shout for the ball!"},
+      {cat:"team",title:"Pass to a Friend",d:"PassFriend",text:"Look up. If a friend has <strong>lots of space</strong>, pass it to them with the inside of your foot."},
+      {cat:"team",title:"Everyone Defends",d:"AllDefend",text:"When the other team has the ball, <strong>everybody runs back</strong> to help. Even the front player!"},
+      {cat:"team",title:"Win It Back",d:"WinBack",text:"Lost the ball? <strong>Try to win it straight back</strong> — the nearest player goes first."},
+      {cat:"team",title:"The Retreat Line",d:"Retreat",text:"When their keeper has the ball for a goal kick, <strong>go back into your own half</strong> and wait until it's played. Then you can go and win it!"},
+      {cat:"team",title:"Look Before It Comes",d:"Look",text:"Before the ball gets to you, <strong>have a quick look</strong> around. Then you know where to go next."},
+      {cat:"gk",title:"Ready Position",d:"Ready",text:"Feet apart, knees bent, <strong>hands ready</strong> in front of you. Stay on your toes!"},
+      {cat:"gk",title:"Roll It Out",d:"GKRoll",text:"Caught it? Great! Now <strong>roll it quickly</strong> to a back player who's gone wide."},
+      {cat:"def",title:"Stay Goal Side",d:"GoalSide",text:"Stand <strong>between the attacker and your goal</strong>. Don't dive in — stay on your feet and slow them down."},
+      {cat:"def",title:"Go Wide for the Keeper",d:"BacksWide",text:"Our keeper has the ball? The two back players <strong>run out wide, one each side</strong>, so the keeper can roll it to you."},
+      {cat:"def",title:"One Goes, One Stays",d:"OneStays",text:"If one back player <strong>dribbles forward</strong>, the other <strong>stays back</strong> to look after our goal. Tell each other!"},
+      {cat:"mid",title:"Pass It On",d:"MiddleLink",text:"You're in the middle of everything! <strong>Get the ball from the back players</strong> and pass it on to the front player — then run to help."},
+      {cat:"st",title:"Shoot!",d:"Shoot",text:"Can you see the goal? <strong>Have a shot!</strong> Aim for the corners, away from the keeper."},
+      {cat:"st",title:"Follow It In",d:"Rebound",text:"After you shoot, <strong>keep running</strong> towards the goal. If the keeper drops it, you can score!"},
+    ],
+    positions:{
+      intro:"In 5v5 everyone gets a go in every position. In our 2-1-1 there are two back players, one in the middle and one at the front. These are your jobs in each one.",
+      shape:b211,
+      roles:[
+        {l:"GK",name:"Keeper",zone:"Your goal and the area in front of it.",have:"Roll it to a back player who's gone wide.",not:"Stay in front of the goal, ready. Shout “keeper's ball!” when it's yours."},
+        {l:"D",name:"Back Players",zone:"In front of our goal, one on each side.",have:"Go wide when our keeper has it. If one of you dribbles forward, the other stays back.",not:"Stand between the ball and our goal. Don't dive in."},
+        {l:"M",name:"Middle Player",zone:"The middle of the pitch, up and down.",have:"Get the ball from the back players and pass it on.",not:"Run back and help the back players."},
+        {l:"S",name:"Front Player",zone:"Near their goal.",have:"Find space and shoot when you can!",not:"Chase the ball back first — you're a defender too."},
+      ],
+      rule:"Two at the back, one in the middle, one at the front — and if everyone's in one place, go somewhere else!",
+    },
+    quiz:{
+      beginner:[
+        ...pickQs(Q5.beginner, ["Everyone is running at the ball.","You have the ball and a friend is free.","The other team has the ball. Who helps to defend?","You can see the goal and nobody is in the way."]),
+        {section:"⚽ With the Ball",q:"You're the middle player and a back player has the ball. Where should you be?",diagram:"MiddleLink",opts:[
+          {t:"Somewhere they can pass to me",c:true,f:"Yes! Then you can pass it on to the front player."},
+          {t:"Right next to them",c:false,f:"Too close! Find a space they can pass to."},
+          {t:"Behind our goal",c:false,f:"Be where they can pass to you."},
+          {t:"Sitting down",c:false,f:"Up you get — find a space!"}],tip:"\"Get it, pass it on!\""},
+        ...pickQs(Q5.beginner, ["Your friend makes a mistake."]),
+      ],
+      intermediate:[
+        ...pickQs(Q5.intermediate, ["Their keeper has the ball for a goal kick."]),
+        {section:"⚽ With the Ball",q:"Our keeper has the ball. Where should the two back players go?",diagram:"BacksWide",opts:[
+          {t:"Out wide, one on each side",c:true,f:"Yes! Now the keeper can roll it to you."},
+          {t:"Both stand next to the keeper",c:false,f:"Too close! Go wide, one each side."},
+          {t:"Both run up to their goal",c:false,f:"Go wide so the keeper can roll it to you."},
+          {t:"Both stand in the middle together",c:false,f:"Spread out — one each side."}],tip:"\"Keeper's ball? Go wide!\""},
+        ...pickQs(Q5.intermediate, ["An attacker is dribbling at our goal.","You've just passed the ball.","The keeper catches the ball.","You shot and the keeper saved it."]),
+      ],
+      expert:[
+        ...pickQs(Q5.expert, ["Which foot can you pass with?","We just lost the ball.","Before the ball comes to you"]),
+        {section:"🔴 Without the Ball",q:"One back player has dribbled forward. What should the other back player do?",diagram:"OneStays",opts:[
+          {t:"Stay back to look after our goal",c:true,f:"Yes! One goes, one stays."},
+          {t:"Run forward too",c:false,f:"Then nobody's looking after our goal!"},
+          {t:"Go in goal",c:false,f:"The keeper's there — stay back in front of it."},
+          {t:"Run off the pitch",c:false,f:"Stay back and look after our goal."}],tip:"\"One goes, one stays!\""},
+        ...pickQs(Q5.expert, ["Is there offside in 5v5?","A player on the other team falls and is hurt."]),
+      ],
+    },
+  }};
 })();
 
 /* ════════════ 9v9 · under-11s and under-12s ════════════ */
