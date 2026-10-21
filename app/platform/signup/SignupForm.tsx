@@ -13,6 +13,7 @@ import { DEFAULT_TRAINING, FORMATIONS, FORMAT_AGES, GAME_FORMATS, type GameForma
 import { PLANS, planForTeams, teamsLabel } from "@/lib/billing";
 import SignInForm from "../../components/SignInForm";
 import TrainingDays from "../../components/TrainingDays";
+import FaCodeHelp from "../../components/FaCodeHelp";
 import { addPasskey, cancelled, supportsPasskeys } from "../../components/passkey";
 import { looksShared } from "@/lib/sharedEmail";
 
@@ -286,25 +287,20 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
     body = (
       <>
         <h2 className={heading}>FA Full-Time code for {teamName}</h2>
-        <label>
-          <span className="text-sm font-bold text-gray-800">Code (optional)</span>
-          <input
-            value={team.faSnippet}
-            inputMode="numeric"
-            maxLength={15}
-            placeholder="e.g. 460765991"
-            onChange={(e) => change({ faSnippet: e.target.value.replace(/\D/g, "") })}
-            className={input}
-          />
-          <span className={hint}>
-            From{" "}
-            <a href="https://fulltime-admin.thefa.com/CreateCodeSnippet.html" target="_blank" rel="noopener noreferrer" className="font-semibold text-green-700 underline">
-              Full-Time admin → Media → Code Snippets
-            </a>{" "}
-            → team fixtures: just the number in <code>lrcode</code>. Fixtures then arrive in the Match
-            Log by themselves. You can add it later in Settings.
-          </span>
-        </label>
+        <div>
+          <label>
+            <span className="text-sm font-bold text-gray-800">Code (optional)</span>
+            <input
+              value={team.faSnippet}
+              inputMode="numeric"
+              maxLength={15}
+              placeholder="e.g. 460765991"
+              onChange={(e) => change({ faSnippet: e.target.value.replace(/\D/g, "") })}
+              className={input}
+            />
+          </label>
+          <FaCodeHelp after="You can add it later in Settings." />
+        </div>
       </>
     );
   } else if (step === "more") {
