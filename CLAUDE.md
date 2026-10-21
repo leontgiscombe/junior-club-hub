@@ -20,3 +20,16 @@ Changes go through `staging` first, so the owner can test them before they're li
 
 If the owner asks for a change to go straight live, it can go to `main` without
 staging; afterwards merge `main` back into `staging` so the two don't drift apart.
+
+### Render builds cost the owner pipeline minutes
+
+Every build of `main` comes out of the owner's monthly Render pipeline minutes, so:
+
+- **Never start a Render deploy by hand** (no `trigger_deploy`, no Manual Deploy).
+  Render deploys `main` by itself, but it can take 10 minutes or more to start; a
+  deploy started by hand on top of it builds the same commit twice. If one truly
+  hasn't started 20 minutes after the merge, tell the owner instead.
+- **Ship in batches:** let changes collect on `staging` and ship them together when
+  the owner says so, rather than one build per small change.
+- Changes only to `docs/`, `ios-app/`, `vercel.json` or `.md` files don't rebuild
+  the live site (`buildFilter` in `render.yaml`).
