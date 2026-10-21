@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSubmissions, deleteSubmission } from "@/lib/storage";
 import { isCoach } from "@/lib/adminAuth";
-import { isTeam } from "@/lib/settings";
+import { getClub, isTeam } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
 import { deleteKitRequest, listKitRequests, setKitRequestDone, type KitRequest } from "@/lib/kitRequests";
+import { notifyKitDone } from "@/lib/notify";
+import { getTenant } from "@/lib/tenant";
+import { currentPerson } from "@/lib/people";
 
 export const runtime = "nodejs";
 
@@ -56,8 +59,15 @@ export async function PATCH(request: Request) {
       ? NextResponse.json({ success: true })
       : NextResponse.json({ error: "No such request" }, { status: 404 });
   }
+  const wasDone = !!(await listKitRequests()).find((r) => r.id === id)?.doneAt;
   const updated = await setKitRequestDone(id, Boolean(body.done));
   if (!updated) return NextResponse.json({ error: "No such request" }, { status: 404 });
+  // the family hears it's sorted (not a coach ticking off their own)
+  const tenant = await getTenant();
+  if (updated.doneAt && !wasDone && tenant) {
+    const me = await currentPerson(tenant).catch(() => null);
+    if (me?.user.id !== updated.userId) await notifyKitDone(tenant, updated.userId, (await getClub()).name);
+  }
   return NextResponse.json({ success: true, request: forCoaches(updated) });
 }
 

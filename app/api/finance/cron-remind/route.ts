@@ -1,12 +1,15 @@
 // Vercel Cron (see vercel.json): on the 1st and 15th of each month, nudges
 // every manager, in every club, who turned on reminders in the subs tracker to check who has
-// paid. It sends a generic message only and never reads the encrypted team data.
+// paid — and treasurers with the App Store app's alerts on, since the tracker's
+// web push doesn't reach the app (lib/notify.ts). It sends a generic message only
+// and never reads the encrypted team data.
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { getAllTeamsFor, getClubFor } from "@/lib/settings";
 import { allTenantIds } from "@/lib/tenants";
 import { financeConfigured, financeKeys, redis } from "@/lib/financeStorage";
 import { setUpVapid } from "@/lib/vapid";
+import { notifyTreasurersInApp } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +38,13 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   let removed = 0;
   let total = 0;
+  let app = 0;
 
   // every club on the platform, one at a time
   for (const tenant of await allTenantIds()) {
     const [CLUB, TEAMS] = await Promise.all([getClubFor(tenant), getAllTeamsFor(tenant)]);
     if (!CLUB.features.financialAdmin) continue;
+    app += await notifyTreasurersInApp(tenant, { title: `${CLUB.name} — subs reminder`, body, url: "/finance" });
     const SUBS = financeKeys(tenant).pushSubs;
     const members = ((await redis(["SMEMBERS", SUBS])) as string[] | null) ?? [];
     total += members.length;
@@ -73,5 +78,5 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, sent, removed, total });
+  return NextResponse.json({ ok: true, sent, removed, total, app });
 }
