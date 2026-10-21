@@ -1,5 +1,5 @@
-// Signing a club up on the platform: its name, web address, the organiser's
-// email and its teams (each one's age group, formation, training days and FA
+// Signing a club up on the platform: its name, web address, crest and kit
+// pictures (both optional), the organiser's email and its teams (each one's age group, formation, training days and FA
 // Full-Time code), and which of them the organiser coaches. Creates the club
 // with them, and answers with the club's own address. There is no shared
 // coach password: the organiser signs in with their email (the sign-up form
@@ -7,14 +7,14 @@
 // everyone else joins with the club code and their own account.
 //   GET  ?address=riverside -> { ok } or { error } (is the address free?)
 //   POST { name, address, email, teams: [{ name, format?, formation?, training?, faSnippet? }],
-//          myTeam?: index into teams, website, agreed } -> { url }
+//          myTeam?: index into teams, crest?, kit?: { image, width, height }, website, agreed } -> { url }
 //   (or, from before teams: { …, team, format? } for a single team)
 import { NextRequest, NextResponse } from "next/server";
 import { rawKv } from "@/lib/kv";
 import { cleanTeams, isGameFormat, slugFor, type Team } from "@/lib/clubSettings";
 import { showCode } from "@/lib/access";
 import { getAccess, setPasswordOff, setPrivate } from "@/lib/members";
-import { saveClubChanges, saveTeams } from "@/lib/settings";
+import { checkImage, saveClubChanges, saveImage, saveTeams, type ImageSlot, type StoredImage } from "@/lib/settings";
 import { sendEmail, simpleEmail } from "@/lib/email";
 import { operator } from "@/lib/legal";
 import { PLATFORM_NAME, getTenant, platformUrl, tenantUrl } from "@/lib/tenant";
@@ -66,6 +66,14 @@ export async function POST(req: NextRequest) {
   const mine = typeof body.myTeam === "number" ? slugAt[body.myTeam] : undefined;
   if (!name) return NextResponse.json({ error: "Enter the club's name" }, { status: 400 });
   if (!teams) return NextResponse.json({ error: "Add at least one team" }, { status: 400 });
+  // the crest and kit pictures, checked as Settings checks them, before anything is made
+  const pictures: [ImageSlot, StoredImage][] = [];
+  for (const slot of ["crest", "kit"] as const) {
+    if (!body[slot]) continue;
+    const picture = checkImage(slot, body[slot] as Record<string, unknown>);
+    if ("error" in picture) return NextResponse.json({ error: `The ${slot === "kit" ? "kit picture" : "crest"}: ${picture.error}` }, { status: 400 });
+    pictures.push([slot, picture]);
+  }
   if (body.agreed !== true) {
     return NextResponse.json({ error: "Please agree to the Terms of Use to sign up" }, { status: 400 });
   }
@@ -87,6 +95,7 @@ export async function POST(req: NextRequest) {
   await saveClubChanges({ name, fullName: name }, address);
   // each team's age group and formation decide the Training Hub its players see
   await saveTeams(teams, address);
+  for (const [slot, picture] of pictures) await saveImage(slot, picture, address);
   // new hubs are private: parents join with the club code and a coach approves them
   await setPrivate(address, true);
   // coaches sign in with their own accounts, not a shared password
