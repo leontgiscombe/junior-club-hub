@@ -10,7 +10,7 @@
 // with the code we email them (they're the club's admin, with their team),
 // and can add a passkey for next time.
 import { useEffect, useState } from "react";
-import { DEFAULT_TRAINING, FORMATIONS, FORMAT_AGES, GAME_FORMATS, kitAspect, type GameFormat, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, FORMATIONS, TEAM_AGES, ageFormat, ageName, kitAspect, type GameFormat, type TrainingSlot } from "@/lib/clubSettings";
 import { PLANS, planForTeams, teamsLabel } from "@/lib/billing";
 import SignInForm from "../../components/SignInForm";
 import TrainingDays from "../../components/TrainingDays";
@@ -27,8 +27,9 @@ const toAddress = (name: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 32);
 
-type Draft = { name: string; format: GameFormat | ""; formation: string; training: TrainingSlot[]; faSnippet: string };
-const newTeam = (): Draft => ({ name: "", format: "", formation: "", training: DEFAULT_TRAINING, faSnippet: "" });
+// format follows from the age group (ageFormat), set with it
+type Draft = { name: string; age: number; format: GameFormat | ""; formation: string; training: TrainingSlot[]; faSnippet: string };
+const newTeam = (): Draft => ({ name: "", age: 0, format: "", formation: "", training: DEFAULT_TRAINING, faSnippet: "" });
 
 type Step = "club" | "crest" | "kit" | "team" | "formation" | "training" | "fa" | "more" | "mine" | "you";
 // the four parts the progress bar shows
@@ -113,7 +114,7 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
           address: shownAddress,
           teams: teams.map((t) => ({
             name: t.name.trim(),
-            format: t.format || undefined,
+            ...(t.age ? { age: t.age } : {}),
             ...(t.formation ? { formation: t.formation } : {}),
             training: t.training,
             ...(t.faSnippet ? { faSnippet: t.faSnippet } : {}),
@@ -339,19 +340,23 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
         </label>
         <div>
           <span className="text-sm font-bold text-gray-800">Age group</span>
-          <div className="mt-1 flex flex-col gap-2">
-            {GAME_FORMATS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => change({ format: f, formation: FORMATIONS[f].includes(team.formation) ? team.formation : "" })}
-                className={choice(team.format === f)}
-              >
-                {FORMAT_AGES[f]} <span className="font-normal text-gray-500">· {f}</span>
-              </button>
-            ))}
+          <div className="mt-1 grid grid-cols-3 gap-2">
+            {TEAM_AGES.map((age) => {
+              const format = ageFormat(age);
+              return (
+                <button
+                  key={age}
+                  type="button"
+                  onClick={() => change({ age, format, formation: FORMATIONS[format].includes(team.formation) ? team.formation : "" })}
+                  className={choice(team.age === age).replace("text-left", "text-center")}
+                >
+                  U{age}
+                  <span className="block text-xs font-normal text-gray-500">{format}</span>
+                </button>
+              );
+            })}
           </div>
-          <span className={hint}>The Training Hub gives the team&apos;s players the guide, quiz and challenges for their age.</span>
+          <span className={hint}>Each age plays its own format (shown under it). The Training Hub gives the team&apos;s players the guide, quiz and challenges for it.</span>
         </div>
       </>
     );
@@ -425,7 +430,7 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
               <span className="min-w-0">
                 <span className="block truncate font-bold text-gray-900">{t.name.trim()}</span>
                 <span className="block text-xs text-gray-500">
-                  {t.format && FORMAT_AGES[t.format]} · {t.format} · {t.formation || (t.format ? FORMATIONS[t.format][0] : "")}
+                  {t.age ? ageName(t.age) : ""} · {t.format} · {t.formation || (t.format ? FORMATIONS[t.format][0] : "")}
                 </span>
               </span>
               <span className="shrink-0 text-sm font-semibold text-green-700">Edit</span>
