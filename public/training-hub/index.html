@@ -190,15 +190,6 @@ html[data-wallpaper] :is(.guide-head h1,.guide-head p){color:#fff!important;text
 .pos-learn-badge{display:block;color:#15803d;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
 .pos-zone-rule{border-left:4px solid #7b1fa2;background:#ede7f6;padding:10px 14px;border-radius:0 8px 8px 0;margin:8px 0 0;font-size:0.87rem;font-weight:600;color:#333;line-height:1.5;}
 .pos-zone-rule strong{color:#4a148c;}
-.shape-switch{display:flex;gap:4px;margin:0 16px 4px;padding:4px;background:#e5e5ea;border-radius:14px;}
-.shape-switch[hidden]{display:none}
-#home-shape-switch{width:180px;margin:10px 0 0}
-#home-shape-switch button{padding:6px 0;font-size:13px}
-.shape-switch button{flex:1;border:none;background:none;border-radius:10px;padding:10px 0;font-family:inherit;font-size:15px;font-weight:800;color:#4b5563;cursor:pointer;}
-.shape-switch button[aria-selected="true"]{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(0,0,0,.12);}
-html.dark .shape-switch{background:#1c1c1e}
-html.dark .shape-switch button{color:#9ca3af}
-html.dark .shape-switch button[aria-selected="true"]{background:#3a3a3c;color:#fff}
 .tod-box{background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);border-radius:14px;padding:12px 16px;margin-top:14px;width:100%;max-width:360px;text-align:left;}
 .tod-label{font-size:10px;font-weight:800;color:#f9a825;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;display:block;}
 .tod-text{font-size:13px;color:white;font-weight:600;line-height:1.45;}
@@ -461,11 +452,6 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <h1 class="home-title"><span data-club="name">Your Club</span></h1>
     <p class="home-title2">Training Hub</p>
     <p class="home-sub"><span class="team-age"></span><span class="fmt-shape" id="home-fmt">7v7 &middot; 2-3-1</span></p>
-    <!-- 7v7 has two shapes: the whole hub (Learning Positions, the Tactical Guide, the quiz) follows this -->
-    <div class="shape-switch" id="home-shape-switch" role="tablist" aria-label="Formation" hidden>
-      <button type="button" role="tab" data-shape="2-3-1" onclick="set7v7Shape('2-3-1')">2-3-1</button>
-      <button type="button" role="tab" data-shape="3-2-1" onclick="set7v7Shape('3-2-1')">3-2-1</button>
-    </div>
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>
     </div>
@@ -3871,14 +3857,14 @@ fetch('/api/auth/me', { cache:'no-store' }).then(function(r){ return r.ok ? r.js
 }).catch(function(){});
 function showTeam(teams){
   var find = function(slug){ return teams.find(function(x){ return x.id === slug; }) || null; };
-  // their team's name in the headers, and its format decides the guide, quiz and challenges (formats.js)
+  // their team's name in the headers, and its format (and a 7v7 team's shape) decides the guide, quiz and challenges (formats.js)
   var put = function(t){
     if(t){
       var name = t.short || t.name;
       document.querySelectorAll('.team-age').forEach(function(el){ el.textContent = name + ' \u00b7 '; });
       document.querySelectorAll('.team-age-after').forEach(function(el){ el.textContent = ' \u00b7 ' + name; });
     }
-    chooseHubFormat(t && t.format);
+    chooseHubFormat(t && t.format, t && t.shape);
   };
   var onThisPhone = function(){ try { return find(localStorage.getItem('club:my-team') || ''); } catch(e){ return null; } };
   HUB_PLAYER.then(function(pl){
