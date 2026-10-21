@@ -17,8 +17,12 @@ export const isThemeChoice = (v: unknown): v is ThemeChoice => v === "light" || 
 export const LIGHT_BAR = "#f2f2f7";
 export const DARK_BAR = "#000000";
 
-/** Runs before the page is drawn: sets "dark" on <html> for the saved choice (or the phone's, for "system"). */
-export const THEME_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE}=(\\w+)/);var t=m?m[1]:"system";var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){var d=t==="dark"||(t==="system"&&q.matches);document.documentElement.classList.toggle("dark",d);var c=d?"${DARK_BAR}":"${LIGHT_BAR}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){if(m.getAttribute("content")!==c)m.setAttribute("content",c)})};set();new MutationObserver(set).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:["content"]});q.addEventListener("change",function(){var n=document.cookie.match(/(?:^|; )${THEME_COOKIE}=(\\w+)/);t=n?n[1]:"system";set()})}catch(e){}})()`;
+/**
+ * Runs before the page is drawn: sets "dark" on <html> for the saved choice (or the phone's, for "system").
+ * Read again whenever the page is shown (back to it, or back to the app), so a choice made
+ * on another page, or the phone switching, shows straight away.
+ */
+export const THEME_SCRIPT = `(function(){try{var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){var m=document.cookie.match(/(?:^|; )${THEME_COOKIE}=(\\w+)/);var t=m?m[1]:"system";var d=t==="dark"||(t==="system"&&q.matches);document.documentElement.classList.toggle("dark",d);var c=d?"${DARK_BAR}":"${LIGHT_BAR}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){if(m.getAttribute("content")!==c)m.setAttribute("content",c)})};set();new MutationObserver(set).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:["content"]});q.addEventListener("change",set);addEventListener("pageshow",set);document.addEventListener("visibilitychange",function(){if(!document.hidden)set()})}catch(e){}})()`;
 
 /** Save a choice on this device and switch to it now. */
 export function applyTheme(choice: ThemeChoice) {
