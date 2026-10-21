@@ -107,6 +107,8 @@
     }
     nav.setAttribute("aria-label", "Main");
     nav.innerHTML = "<ul>" + tabs.join("") + "</ul>";
+    // kept so the page can show this bar straight away next time, before it's worked out again (training-hub/index.html)
+    try { localStorage.setItem("hub_tabbar:" + path, nav.innerHTML); } catch (e) {}
   }
 
   var json = function (url) {

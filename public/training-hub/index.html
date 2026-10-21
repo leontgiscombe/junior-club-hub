@@ -434,6 +434,8 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <li><a href="/kit"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z"/></svg></span>Kit</a></li>
   </ul>
 </nav>
+<!-- this phone's own tab bar from last time (tabbar.js keeps it), so the usual three don't flash first -->
+<script>try{var hubBar=localStorage.getItem("hub_tabbar:"+(location.pathname.replace(/\/+$/,"")||"/"));if(hubBar)document.getElementById("hub-tabbar").innerHTML=hubBar}catch(e){}</script>
 
 <!-- ===== APP HOME ===== -->
 <div id="app-home">
