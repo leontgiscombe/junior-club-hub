@@ -3579,7 +3579,7 @@ function refreshHomeProgress(){
 
 /* ── PERSONAL BEST ── */
 /* each format's bests apart (and 7v7's 3-2-1 quiz); 7v7's 2-3-1 keeps the names it always had */
-function pbKey(level){return 'pj_best_'+(typeof HUB_FMT!=='undefined'&&HUB_FMT!=='7v7'?HUB_FMT+'_':typeof saved7v7Shape==='function'&&saved7v7Shape()==='3-2-1'?'7v7-321_':'')+level;}
+function pbKey(level){return 'pj_best_'+(typeof hubBestPrefix==='function'?hubBestPrefix():'')+level;}
 function getPB(level){try{return JSON.parse(localStorage.getItem(pbKey(level)))||null;}catch(e){return null;}}
 function setPB(level,score,total){
   const d=new Date();
