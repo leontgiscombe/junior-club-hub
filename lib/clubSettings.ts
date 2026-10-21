@@ -123,7 +123,7 @@ export const isGameFormat = (v: unknown): v is GameFormat => GAME_FORMATS.includ
  * content in the hub too (public/training-hub/formats.js, the format's `shapes`).
  */
 export const FORMATIONS: Record<GameFormat, readonly string[]> = {
-  "5v5": ["1-2-1"],
+  "5v5": ["1-2-1", "2-1-1"],
   "7v7": ["2-3-1", "3-2-1"],
   "9v9": ["3-2-3", "3-3-2"],
   "11v11": ["4-3-3", "4-4-2"],
