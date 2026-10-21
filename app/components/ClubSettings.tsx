@@ -14,6 +14,7 @@ import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS, GAME_FOR
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import TrainingDays from "./TrainingDays";
+import FaCodeHelp from "./FaCodeHelp";
 import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
@@ -1000,28 +1001,22 @@ function TeamsEditor({
                   </label>
                 )}
                 <TrainingDays training={t.training ?? DEFAULT_TRAINING} onChange={(training) => change(i, { training })} input={input} />
-                <label>
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">FA Full-Time code (optional)</span>
-                  <input
-                    value={t.faSnippet ?? ""}
-                    inputMode="numeric"
-                    maxLength={15}
-                    placeholder="e.g. 460765991"
-                    onFocus={() => onFaCodeEditing(true)}
-                    onBlur={() => onFaCodeEditing(false)}
-                    onChange={(e) => change(i, { faSnippet: e.target.value.replace(/\D/g, "") })}
-                    className={input}
-                  />
-                  <span className="mt-1 block text-xs text-gray-400">
-                    Enter only the digits from{" "}
-                    <a href="https://fulltime-admin.thefa.com/CreateCodeSnippet.html" target="_blank" rel="noopener noreferrer" className="font-semibold text-green-700 underline dark:text-green-400">
-                      Full-Time admin → Media → Code Snippets
-                    </a>{" "}
-                    → team fixtures:
-                    the number in <code className="mx-1">lrcode</code>, not the whole snippet. Fixtures then
-                    arrive in the Match Log by themselves.
-                  </span>
-                </label>
+                <div>
+                  <label>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">FA Full-Time code (optional)</span>
+                    <input
+                      value={t.faSnippet ?? ""}
+                      inputMode="numeric"
+                      maxLength={15}
+                      placeholder="e.g. 460765991"
+                      onFocus={() => onFaCodeEditing(true)}
+                      onBlur={() => onFaCodeEditing(false)}
+                      onChange={(e) => change(i, { faSnippet: e.target.value.replace(/\D/g, "") })}
+                      className={input}
+                    />
+                  </label>
+                  <FaCodeHelp />
+                </div>
                 <label>
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-200">League opponents (optional)</span>
                   <textarea
