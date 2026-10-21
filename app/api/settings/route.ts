@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isClubAdmin, isCoach } from "@/lib/adminAuth";
 import { DEFAULT_CLUB, cleanChanges, cleanTeams, withTrainingHistory } from "@/lib/clubSettings";
 import {
+  checkImage,
   getAllTeams,
   getClub,
   getClubChanges,
@@ -26,10 +27,6 @@ import { PLANS, billingState, planDetail, planSummary, teamLimit } from "@/lib/b
 
 export const dynamic = "force-dynamic";
 
-const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
-// the crest is small; the kit picture is a wide photo (both are shrunk in the browser first)
-const MAX_BYTES: Record<ImageSlot, number> = { crest: 400 * 1024, kit: 600 * 1024 };
-const MAX_SIDE: Record<ImageSlot, number> = { crest: 2000, kit: 2400 };
 const slotOf = (v: unknown): ImageSlot => (v === "kit" ? "kit" : "crest");
 
 const authorised = (req: NextRequest) => isCoach(req.nextUrl.searchParams.get("key") ?? "");
@@ -156,25 +153,10 @@ export async function POST(req: NextRequest) {
     | { image?: unknown; width?: unknown; height?: unknown; slot?: unknown }
     | null;
   const slot = slotOf(body?.slot);
-  const match = typeof body?.image === "string" ? /^data:([\w/+.-]+);base64,(.+)$/.exec(body.image) : null;
-  const width = Number(body?.width), height = Number(body?.height);
-  if (!match || !IMAGE_TYPES.includes(match[1])) {
-    return NextResponse.json({ error: "Use a PNG, JPEG or WebP image" }, { status: 400 });
-  }
-  if (!(width > 0 && height > 0 && width <= MAX_SIDE[slot] && height <= MAX_SIDE[slot])) {
-    return NextResponse.json({ error: "That image's size doesn't look right" }, { status: 400 });
-  }
-  if (Buffer.byteLength(match[2], "base64") > MAX_BYTES[slot]) {
-    return NextResponse.json({ error: "That image is too big — try a smaller one" }, { status: 400 });
-  }
+  const image = checkImage(slot, body);
+  if ("error" in image) return NextResponse.json({ error: image.error }, { status: 400 });
   try {
-    await saveImage(slot, {
-      type: match[1],
-      data: match[2],
-      width: Math.round(width),
-      height: Math.round(height),
-      updatedAt: new Date().toISOString(),
-    });
+    await saveImage(slot, image);
     return NextResponse.json(await snapshot());
   } catch (e) {
     return failed(e);
