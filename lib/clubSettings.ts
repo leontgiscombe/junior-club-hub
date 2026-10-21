@@ -128,7 +128,7 @@ export const FORMATIONS: Record<GameFormat, readonly string[]> = {
   "9v9": ["3-2-3", "3-3-2"],
   "11v11": ["4-3-3", "4-4-2"],
 };
-/** Each format's age group, as clubs say it: "Under 9s & 10s". */
+/** Each format's ages, as clubs say it: "Under 9s & 10s" (for teams saved before they had a year). */
 export const FORMAT_AGES: Record<GameFormat, string> = {
   "5v5": "Under 7s & 8s",
   "7v7": "Under 9s & 10s",
@@ -136,20 +136,42 @@ export const FORMAT_AGES: Record<GameFormat, string> = {
   "11v11": "Under 13s and up",
 };
 
-/**
- * A team's match format: the one set in Settings, else worked out from an age
- * in its name ("U8 Blues" → 5v5, "Under 12s" → 9v9), else 7v7. The FA's
- * formats: U7–U8 5v5, U9–U10 7v7, U11–U12 9v9, U13 and up 11v11.
- */
-export function teamFormat(team: Pick<Team, "name" | "format">): GameFormat {
-  if (team.format) return team.format;
-  const age = Number(/\b(?:u|under)[\s-]*(\d{1,2})/i.exec(team.name)?.[1] ?? NaN);
-  if (!Number.isFinite(age)) return "7v7";
+/** The age groups a team can be, one year each: Under 6s to Under 18s. */
+export const TEAM_AGES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] as const;
+export const isTeamAge = (v: unknown): v is number => TEAM_AGES.includes(v as (typeof TEAM_AGES)[number]);
+
+/** An age group as clubs say it: "Under 9s". */
+export const ageName = (age: number) => `Under ${age}s`;
+
+/** The match format an age group plays — the FA's: up to U8 5v5, U9–U10 7v7, U11–U12 9v9, U13 and up 11v11. */
+export function ageFormat(age: number): GameFormat {
   return age <= 8 ? "5v5" : age <= 10 ? "7v7" : age <= 12 ? "9v9" : "11v11";
 }
 
+/** An age in a team's name ("U8 Blues", "Under 12s"), if it has one. */
+function nameAge(name: string): number | undefined {
+  const age = Number(/\b(?:u|under)[\s-]*(\d{1,2})/i.exec(name)?.[1] ?? NaN);
+  return Number.isFinite(age) ? age : undefined;
+}
+
+/**
+ * A team's match format: its age group's, else the format set in Settings
+ * before teams had a year, else worked out from an age in its name, else 7v7.
+ */
+export function teamFormat(team: Pick<Team, "name" | "format" | "age">): GameFormat {
+  if (team.age) return ageFormat(team.age);
+  if (team.format) return team.format;
+  const age = nameAge(team.name);
+  return age === undefined ? "7v7" : ageFormat(age);
+}
+
+/** A team's age group as clubs say it: its year, else (saved before teams had one) its format's ages. */
+export function teamAgeName(team: Pick<Team, "name" | "format" | "age">): string {
+  return team.age ? ageName(team.age) : FORMAT_AGES[teamFormat(team)];
+}
+
 /** A team's shape: the one set in Settings if its format has it, else the format's usual one. */
-export function teamFormation(team: Pick<Team, "name" | "format" | "formation">): string {
+export function teamFormation(team: Pick<Team, "name" | "format" | "age" | "formation">): string {
   const shapes = FORMATIONS[teamFormat(team)];
   return team.formation && shapes.includes(team.formation) ? team.formation : shapes[0];
 }
@@ -158,7 +180,9 @@ export type Team = {
   slug: string;
   name: string;
   accent: string;
-  /** set in Settings for the Training Hub; unset means worked out (teamFormat) */
+  /** the age group, one year (Under 9s is 9), set at sign-up or in Settings; it sets the format */
+  age?: number;
+  /** the age group's format (ageFormat) — the Training Hub content its players see; unset means worked out (teamFormat) */
   format?: GameFormat;
   /** the team's shape, set in Settings: the Training Hub teaches its players this one (unset: its format's first, teamFormation) */
   formation?: string;
@@ -290,7 +314,10 @@ export function cleanTeams(input: unknown): Team[] | null {
     const team: Team = { slug, name, accent: text(r.accent, 8) || "⚽" };
     const squadName = text(r.squadName, 30);
     if (squadName) team.squadName = squadName;
-    if (isGameFormat(r.format)) team.format = r.format;
+    if (isTeamAge(r.age)) {
+      team.age = r.age;
+      team.format = ageFormat(r.age);
+    } else if (isGameFormat(r.format)) team.format = r.format;
     if (typeof r.formation === "string" && FORMATIONS[teamFormat(team)].includes(r.formation)) team.formation = r.formation;
     const faSnippet = text(r.faSnippet, 15);
     if (/^\d+$/.test(faSnippet)) team.faSnippet = faSnippet;
