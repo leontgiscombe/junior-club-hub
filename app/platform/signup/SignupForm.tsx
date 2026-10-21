@@ -71,13 +71,17 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
     return () => clearTimeout(t);
   }, [shownAddress]);
 
+  // each step is a page of the browser's history, so the arrow at the top and
+  // the phone's own back gesture go back a step rather than leaving sign-up
   const go = (to: Step) => {
     setError(null);
+    window.history.pushState({ signupStep: to }, "");
     setHistory((h) => [...h, step]);
     setStep(to);
     window.scrollTo(0, 0);
   };
-  const back = () => {
+  const back = () => window.history.back();
+  const stepBack = () => {
     setError(null);
     // a team just started and left empty goes when you step back from it
     if (step === "team" && team && !team.name.trim() && !team.format && teams.length > 1) {
@@ -86,7 +90,16 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
     }
     setStep(history[history.length - 1] ?? "club");
     setHistory((h) => h.slice(0, -1));
+    window.scrollTo(0, 0);
   };
+  // the browser going back a step (Back, the arrow, or the phone's gesture)
+  useEffect(() => {
+    const onPop = () => {
+      if (!done && history.length) stepBack();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  });
   const change = (patch: Partial<Draft>) => setTeams((all) => all.map((t, i) => (i === cur ? { ...t, ...patch } : t)));
   const startTeam = () => {
     setTeams((all) => [...all, newTeam()]);
