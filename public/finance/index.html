@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts), read again whenever the page is shown */(function(){try{var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set);addEventListener("pageshow",set);document.addEventListener("visibilitychange",function(){if(!document.hidden)set()})}catch(e){}})()</script>
+<script src="/loading-dots.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Monthly subs and finance tracker for the club's teams">
 <meta name="theme-color" content="#1f7a3d">
@@ -304,6 +305,8 @@
 </style>
 </head>
 <body class="locked">
+<!-- the loading dots until the unlock screen knows who's here, or a team is open (/loading-dots.js) -->
+<div id="loading-dots" aria-busy="true" aria-label="Loading"><span></span><span></span><span></span></div>
 <div class="gate" id="gate">
   <!-- like every main page: your photo (Your Account, or Sign In) and Search -->
   <div class="gate-head">
@@ -1796,6 +1799,7 @@
     currentMonth = thisMonth();
     if(currentMonth < (state.settings.startMonth||thisMonth())) currentMonth = state.settings.startMonth;
     document.body.classList.remove('locked');
+    ready();
     keepTeamKey();
     renderAll();
     if(openOnView){ switchView(openOnView); openOnView = null; }
@@ -2173,7 +2177,7 @@
 
   /** The "open with your account" part of the gate. */
   async function setupAccountGate(){
-    try { await setupAccountGateNow(); } finally { accountChecked = true; updateSetupAdmin(); renderTeamStatus(); }
+    try { await setupAccountGateNow(); } finally { accountChecked = true; updateSetupAdmin(); renderTeamStatus(); ready(); }
   }
   async function setupAccountGateNow(){
     const box = $("#account-box");
@@ -2412,10 +2416,13 @@
     }
   });
 
+  // the page is ready to show: the loading dots go (/loading-dots.js)
+  function ready(){ if(window.loadingDots) loadingDots.hide(); }
   function boot(){
     if(!(window.crypto && crypto.subtle)){
       $("#gate-sub").textContent = 'This browser does not support secure storage. Please use an up-to-date browser.';
       $("#gate-form").style.display = 'none';
+      ready();
       return;
     }
     if(!(window.fetch)){ /* very old browser */ }
@@ -2427,6 +2434,7 @@
         $("#gate-form").style.display = 'none';
         $("#setup-toggle").style.display = 'none';
         $("#gate-note").textContent = '';
+        ready();
         return;
       }
       setupGate(); registerSW();
@@ -2434,6 +2442,7 @@
     }).catch(e=>{
       console.error(e);
       $("#gate-sub").textContent = 'Could not reach the hub. Check your connection and reload.';
+      ready();
     });
   }
   boot();
