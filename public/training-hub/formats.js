@@ -698,9 +698,11 @@ function applyHubFormat(f){
   if(!f || (f !== "7v7" && !HUB_FORMATS[f])) f = "7v7";
   HUB_FMT = f;
   const data = fmtData();
-  const shape = data ? data.shape : HUB_7V7.shape;
+  // 7v7 has two shapes (Learning Positions, the Tactical Guide and the quiz switch between them)
+  const is321 = !data && saved7v7Shape() === "3-2-1";
+  const shape = data ? data.shape : is321 ? "3-2-1" : HUB_7V7.shape;
   // the quiz, challenges and tips
-  const quiz = data ? data.quiz : HUB_7V7.quiz;
+  const quiz = data ? data.quiz : is321 ? QUIZ_321 : HUB_7V7.quiz;
   ["beginner","intermediate","expert"].forEach(function(lv){ LEVELS[lv].questions = quiz[lv]; });
   SKILLS.splice(0, SKILLS.length, ...(data ? data.skills : HUB_7V7.skills));
   TIPS.splice(0, TIPS.length, ...(data ? data.tips : HUB_7V7.tips));
@@ -708,6 +710,8 @@ function applyHubFormat(f){
   // words that name the format
   document.querySelectorAll(".fmt-shape").forEach(function(e){ e.textContent = f + " · " + shape; });
   document.querySelectorAll(".fmt-name").forEach(function(e){ e.textContent = f; });
+  const qs = document.getElementById("quiz-shape-switch"); if(qs) qs.style.display = data ? "none" : "";
+  if(!data) markShapeSwitches(shape);
   document.querySelectorAll(".lev-count").forEach(function(e){ e.textContent = String(LEVELS[e.dataset.level].questions.length); });
   const tip = document.getElementById("tod-text");
   if(tip && TIPS.length) tip.textContent = TIPS[Math.floor(Date.now()/86400000) % TIPS.length];
@@ -726,7 +730,7 @@ function fq(list, f){ return list.map(function(q){ return q.diagram ? Object.ass
 
 /* ── The guide, for a format other than 7v7 ── */
 function genCard(card){
-  const d = fmtData();
+  const d = guideData();
   const wrap = document.createElement("div");
   wrap.className = "card"; wrap.dataset.pos = card.cat;
   const svg = document.createElementNS(NS, "svg");
@@ -745,7 +749,7 @@ function genCard(card){
   return wrap;
 }
 function genGuide(){
-  const d = fmtData();
+  const d = guideData();
   let gen = document.getElementById("guide-gen");
   if(!gen){
     gen = document.createElement("div");
@@ -772,13 +776,14 @@ function genGuide(){
     grid.appendChild(g);
     const list = gen.querySelector("#guide-gen-list");
     d.guide.forEach(function(c){ list.appendChild(genCard(c)); });
-    const topbar = document.querySelector("#app-guide .guide-topbar");
-    topbar.after(gen);
+    // under the top bar and the 7v7 shape switch
+    document.getElementById("guide-shape-switch").after(gen);
   }
   return gen;
 }
 function genGuideHome(){
   const gen = genGuide();
+  guideSwitch(true);
   document.getElementById("guide-cat-home").style.display = "none";
   document.getElementById("guide-content").style.display = "none";
   document.getElementById("guide-glossary").style.display = "none";
@@ -793,8 +798,9 @@ function genGuideHome(){
   window.scrollTo(0,0);
 }
 function genGuidePos(cat){
-  const d = fmtData();
+  const d = guideData();
   const gen = genGuide();
+  guideSwitch(false);
   gen.querySelector(".guide-hero").style.display = "none";
   gen.querySelector("#guide-gen-cats").style.display = "none";
   gen.querySelector("#guide-gen-cats").nextElementSibling.style.display = "none";
@@ -847,13 +853,364 @@ function genPositions(){
   return gen;
 }
 
+/* ── Learning Positions, 7v7's other shape: the 3-2-1 with wing backs ── */
+// its drawings, shared by Learning Positions and the Tactical Guide
+const B321 = [[18,100,"GK"],[82,26,"LWB"],[58,100,"CB"],[82,174,"RWB"],[135,72,"CM"],[135,128,"CM"],[228,100,"ST"]];
+const G321 = {
+  Attack(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[82,26,"LWB"],[80,100,"CB"],[82,174,"RWB"],[135,72,"CM"],[135,128,"CM"],[232,100,"ST"]]);
+    opp(s,[[262,62],[262,138],[302,100,"GK"]]);B(s,96,104);
+    run(s,82,26,205,18);run(s,82,174,205,182);pass(s,98,100,128,78);
+    Lbl(s,205,40,"WIDE & HIGH",undefined,undefined,64);Lbl(s,205,160,"WIDE & HIGH",undefined,undefined,64);},
+  Defend(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[70,42,"LWB"],[55,100,"CB"],[70,158,"RWB"],[108,78,"CM"],[108,122,"CM"],[168,100,"ST"]]);
+    opp(s,[[200,55],[196,120],[230,150],[302,100,"GK"]]);B(s,188,55);
+    run(s,190,22,72,40);run(s,190,178,72,156);
+    Lbl(s,62,190,"BACK THREE",undefined,undefined,64);},
+  Balance(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[200,22,"LWB"],[66,82,"CB"],[86,140,"RWB"],[150,62,"CM"],[120,118,"CM"],[232,100,"ST"]]);
+    opp(s,[[240,40],[262,130],[302,100,"GK"]]);B(s,212,28);
+    run(s,90,174,86,152);
+    Lbl(s,104,178,"TUCK IN",undefined,undefined,52);},
+  Shape(s){buildPitch(s);team(s,B321);},
+  Press(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[120,30,"LWB"],[90,100,"CB"],[120,170,"RWB"],[148,96,"CM"],[160,135,"CM"],[228,100,"ST"]]);
+    opp(s,[[200,58],[262,40],[262,150],[302,100,"GK"]]);B(s,190,66);
+    run(s,148,96,182,72);run(s,228,100,206,72);run(s,120,30,86,40);run(s,120,170,86,160);
+    Lbl(s,215,140,"WIN IT BACK",undefined,undefined,60);},
+  Switch(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[182,22,"LWB"],[75,100,"CB"],[175,175,"RWB"],[135,72,"CM"],[135,128,"CM"],[232,100,"ST"]]);
+    opp(s,[[208,42],[215,82],[190,112],[302,100,"GK"]]);B(s,170,32);
+    pass(s,170,32,143,62);pass(s,138,84,172,162);
+    Lbl(s,236,160,"SWITCH IT",undefined,undefined,56);},
+  GKOut(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[70,24,"LWB"],[55,100,"CB"],[70,176,"RWB"],[120,72,"CM"],[120,128,"CM"],[200,100,"ST"]]);
+    opp(s,[[105,100],[100,45],[302,100,"GK"]]);B(s,30,112);
+    pass(s,30,112,64,164);
+    Lbl(s,125,168,"ROLL IT WIDE",undefined,undefined,64);},
+  GKTalk(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[66,45,"LWB"],[55,100,"CB"],[66,155,"RWB"],[105,78,"CM"],[105,122,"CM"],[170,100,"ST"]]);
+    opp(s,[[152,58],[160,135],[200,95],[302,100,"GK"]]);B(s,141,63);
+    Lbl(s,70,190,"TALK & ORGANISE",undefined,undefined,84);},
+  Cover(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[190,22,"LWB"],[58,100,"CB"],[82,160,"RWB"],[150,85,"CM"],[135,130,"CM"],[235,100,"ST"]]);
+    opp(s,[[130,38],[200,110],[302,100,"GK"]]);B(s,118,42);
+    dribble(s,118,42,80,38);run(s,58,100,72,58);run(s,150,85,96,100);
+    Lbl(s,40,22,"SLIDE ACROSS",undefined,undefined,64);},
+  StepUp(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[150,25,"LWB"],[80,100,"CB"],[150,175,"RWB"],[175,75,"CM"],[175,125,"CM"],[240,100,"ST"]]);
+    opp(s,[[265,70],[265,130],[302,100,"GK"]]);B(s,212,104);
+    run(s,80,100,130,100);
+    Lbl(s,105,126,"STEP UP",undefined,undefined,48);},
+  WBHigh(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[90,30,"LWB"],[90,100,"CB"],[110,170,"RWB"],[150,80,"CM"],[145,125,"CM"],[240,100,"ST"]]);
+    opp(s,[[200,64],[262,90],[262,135],[302,100,"GK"]]);B(s,164,90);
+    run(s,90,30,220,18);pass(s,164,88,215,24);
+    Lbl(s,262,50,"STAY ON THE LINE",undefined,undefined,72);},
+  Cross(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[282,24,"LWB"],[120,100,"CB"],[200,175,"RWB"],[236,88,"CM"],[190,130,"CM"],[262,122,"ST"]]);
+    opp(s,[[250,38],[282,148],[302,100,"GK"]]);B(s,288,38);
+    pass(s,288,40,246,80);run(s,262,122,284,108);
+    Lbl(s,198,62,"CUT IT BACK",undefined,undefined,60);},
+  Mids(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[150,24,"LWB"],[70,100,"CB"],[110,174,"RWB"],[140,70,"CM"],[130,125,"CM"],[235,100,"ST"]]);
+    opp(s,[[265,70],[265,130],[302,100,"GK"]]);B(s,82,104);
+    run(s,140,70,205,70);Lbl(s,205,48,"ONE GOES",undefined,undefined,52);Lbl(s,130,150,"ONE STAYS",undefined,undefined,54);},
+  FeedWB(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[170,22,"LWB"],[60,100,"CB"],[82,174,"RWB"],[130,92,"CM"],[150,140,"CM"],[235,100,"ST"]]);
+    opp(s,[[160,95],[262,70],[302,100,"GK"]]);B(s,72,104);
+    pass(s,74,102,120,94);pass(s,134,84,164,32);
+    Lbl(s,215,160,"OPEN UP, PLAY WIDE",undefined,undefined,96);},
+  HoldUp(s){buildPitch(s);
+    team(s,[[18,100,"GK"],[150,25,"LWB"],[90,100,"CB"],[150,175,"RWB"],[170,80,"CM"],[165,125,"CM"],[225,100,"ST"]]);
+    opp(s,[[248,100],[270,60],[302,100,"GK"]]);B(s,213,104);
+    run(s,150,25,228,25);run(s,150,175,228,175);
+    Lbl(s,225,135,"HOLD IT UP",undefined,undefined,56);},
+  LeadPress(s){buildPitch(s);
+    team(s,[[170,80,"CM"],[170,120,"CM"],[200,30,"LWB"],[230,110,"ST"],[200,170,"RWB"]]);
+    opp(s,[[268,90],[262,40],[262,160],[302,100,"GK"]]);B(s,280,88);
+    run(s,234,108,262,96);A(s,276,92,264,48,"ar",true,1.5);
+    Lbl(s,236,140,"CURVE YOUR RUN",undefined,undefined,80);},
+};
+// the Tactical Guide for the 3-2-1, drawn like the other formats' guides
+const GUIDE_321 = {
+  label:"7v7", shape:"3-2-1",
+  diagrams:G321,
+  guideCats:[
+    {id:"team",name:"Team",icon:"👥",bg:"#37474f"},
+    {id:"gk",name:"Goalkeeper",icon:"🧤",bg:"#e65100"},
+    {id:"def",name:"Centre Back",icon:"🛡️",bg:"#1b5e20"},
+    {id:"wb",name:"Wing Backs",icon:"⚡",bg:"#6a1b9a"},
+    {id:"mid",name:"Centre Mids",icon:"🎯",bg:"#1565c0"},
+    {id:"st",name:"Striker",icon:"⚽",bg:"#b71c1c"},
+  ],
+  guide:[
+    {cat:"team",title:"Our Shape",d:"Shape",text:"Three at the back, two in the middle, one up front. The two wide defenders are <strong>wing backs</strong> — defenders without the ball, wingers with it."},
+    {cat:"team",title:"Wide With the Ball",d:"Attack",text:"We've got it: <strong>both wing backs push up the touchlines</strong> and the CB steps up. Now we're big and wide."},
+    {cat:"team",title:"Back Three Without It",d:"Defend",text:"We've lost it: <strong>wing backs sprint back level with the CB</strong>, and the CMs sit in front. No gaps through the middle."},
+    {cat:"team",title:"Win It Back",d:"Press",text:"Just lost it? The <strong>nearest two press straight away</strong> while the wing backs race back into the back three."},
+    {cat:"team",title:"Switch the Play",d:"Switch",text:"One side crowded? <strong>Wing back to CM to the other wing back</strong> — they'll have loads of space."},
+    {cat:"gk",title:"Roll It Wide",d:"GKOut",text:"Caught it? Our wing backs are <strong>the free players out wide</strong>. Roll it to one quickly, before they get back."},
+    {cat:"gk",title:"Organise the Back Three",d:"GKTalk",text:"You can see everything. <strong>Tell the wing backs to drop</strong> and tell the CB who to pick up."},
+    {cat:"def",title:"Cover the Gap",d:"Cover",text:"A wing back has gone forward and they break down that side? <strong>Slide across to cover</strong> — a CM drops into your spot."},
+    {cat:"def",title:"Step Up",d:"StepUp",text:"When the ball goes up the pitch, <strong>step up towards halfway</strong>. It keeps the team close together."},
+    {cat:"wb",title:"Get Wide and High",d:"WBHigh",text:"With the ball, you're our winger. <strong>Stay right on the touchline</strong> so a CM can find you."},
+    {cat:"wb",title:"Cut It Back",d:"Cross",text:"Got to the byline? <strong>Look for a cut-back</strong> to a CM arriving, or cross for the striker."},
+    {cat:"wb",title:"Race Back",d:"Defend",text:"We've lost it? <strong>Sprint back level with the CB</strong>. A back three is only a back three if you get there."},
+    {cat:"wb",title:"One Goes, One Stays",d:"Balance",text:"Ball on the other side? <strong>Tuck in next to the CB</strong> so we always keep two at the back. Talk to the other wing back!"},
+    {cat:"mid",title:"One Goes, One Stays",d:"Mids",text:"If one CM <strong>goes forward</strong>, the other <strong>stays</strong> in front of the back three."},
+    {cat:"mid",title:"Feed the Wing Backs",d:"FeedWB",text:"Take it from the CB with your <strong>body open</strong>, then play it out wide to a wing back."},
+    {cat:"st",title:"Hold It Up",d:"HoldUp",text:"You're on your own up front. <strong>Keep the ball</strong> until the wing backs arrive, then play it wide."},
+    {cat:"st",title:"Lead the Press",d:"LeadPress",text:"When their defender has it, <strong>curve your run</strong> to push them one way. The team follows your lead."},
+  ],
+};
+// the How We Play quiz for the 3-2-1 (its diagrams are the guide's, as D.f321_*)
+const QUIZ_321 = {
+  beginner:[
+    {section:"📍 Shape",q:"In our 3-2-1, how many defenders do we have when the other team has the ball?",diagram:"Shape",opts:[
+      {t:"Two",c:false,f:"That's the 2-3-1. In the 3-2-1 there are three."},
+      {t:"Three — the two wing backs and the CB",c:true,f:"Yes! LWB, CB and RWB make a back three."},
+      {t:"Just the goalkeeper",c:false,f:"The keeper is behind three defenders."},
+      {t:"Nobody — everyone attacks",c:false,f:"We always keep a back three when we don't have it."}],tip:"\"Three at the back, two in the middle, one up front.\""},
+    {section:"⚽ In Possession",q:"We've just won the ball. What do the wing backs do?",diagram:"Attack",opts:[
+      {t:"Stay next to the CB",c:false,f:"Then nobody gives us width. Get forward!"},
+      {t:"Run into the middle",c:false,f:"The middle is the CMs' job. Stay wide."},
+      {t:"Sprint up the touchlines to become wingers",c:true,f:"Exactly — wide and high, you're our wingers now."},
+      {t:"Go in goal",c:false,f:"That's the keeper's job!"}],tip:"\"Wing backs: wide and high with the ball.\""},
+    {section:"🔴 Out of Possession",q:"We've lost the ball. Where do the wing backs go?",diagram:"Defend",opts:[
+      {t:"Sprint back level with the CB",c:true,f:"Yes! That makes our back three."},
+      {t:"Stay up the pitch and wait",c:false,f:"Then the CB is on their own. Race back!"},
+      {t:"Chase the ball wherever it goes",c:false,f:"Get back into the back three first."},
+      {t:"Walk back slowly",c:false,f:"Sprint! A back three only works if you get there."}],tip:"\"Lose it? Wing backs race back.\""},
+    {section:"🥅 Goalkeeper",q:"The keeper has caught it. Who's usually the free player to roll it to?",diagram:"GKOut",opts:[
+      {t:"The striker, right up the other end",c:false,f:"Too far, and it's crowded. Look wide first."},
+      {t:"A wing back out wide",c:true,f:"Yes — the wing backs are usually the free players."},
+      {t:"Nobody — kick it out of play",c:false,f:"Keep it! Find a wing back or the CB."},
+      {t:"An opponent",c:false,f:"Find a teammate!"}],tip:"\"Keeper: roll it wide, quickly.\""},
+    {section:"⚽ Striker",q:"You're the striker, the ball comes to you and the wing backs aren't there yet. What do you do?",diagram:"HoldUp",opts:[
+      {t:"Shoot from the halfway line",c:false,f:"Too far out. Keep the ball until help arrives."},
+      {t:"Pass it back to the keeper",c:false,f:"Keep it up the pitch — hold it up."},
+      {t:"Run into three defenders",c:false,f:"You're on your own. Wait for support."},
+      {t:"Hold it up until they arrive, then play it wide",c:true,f:"Perfect — you're on your own up front, so keep it."}],tip:"\"Striker: hold it up for the wing backs.\""},
+    {section:"⚽ Midfield",q:"One of our two CMs runs forward. What does the other one do?",diagram:"Mids",opts:[
+      {t:"Runs forward too",c:false,f:"Then there's nobody in front of the defence."},
+      {t:"Stays in front of the back three",c:true,f:"Yes — one goes, one stays."},
+      {t:"Goes in goal",c:false,f:"Stay in midfield and protect the defence."},
+      {t:"Runs out wide",c:false,f:"The wing backs are wide. You stay central."}],tip:"\"CMs: one goes, one stays.\""},
+    {section:"⚡ Transition",q:"We've just lost the ball near their goal. What happens?",diagram:"Press",opts:[
+      {t:"Everyone stops and walks back",c:false,f:"Win it back! The nearest players press."},
+      {t:"Everyone chases the ball",c:false,f:"Only the nearest two — the wing backs recover."},
+      {t:"The nearest two press while the wing backs race back",c:true,f:"That's it — press and recover at the same time."},
+      {t:"The keeper runs up to help",c:false,f:"Keeper stays in goal!"}],tip:"\"Press near the ball, recover away from it.\""},
+    {section:"📖 Glossary",q:"What is a wing back?",diagram:null,opts:[
+      {t:"A defender who only stays in the box",c:false,f:"A wing back goes the whole length of the touchline."},
+      {t:"A striker who plays wide",c:false,f:"Close, but a wing back defends too."},
+      {t:"The keeper's helper",c:false,f:"Not quite!"},
+      {t:"A wide defender who becomes a winger when we have the ball",c:true,f:"Yes — defender without the ball, winger with it."}],tip:"\"Wing backs do both jobs.\""},
+  ],
+  intermediate:[
+    {section:"📍 Shape",q:"The ball is on the left and our left wing back has gone forward. What does the right wing back do?",diagram:"Balance",opts:[
+      {t:"Tucks in next to the CB",c:true,f:"Yes — so we always keep two at the back."},
+      {t:"Goes forward as well",c:false,f:"Then only the CB is left at the back."},
+      {t:"Stays right out on the touchline",c:false,f:"Tuck in — the ball is on the other side."},
+      {t:"Runs over to the left",c:false,f:"Stay on your side, but come narrower."}],tip:"\"One wing back goes, one stays.\""},
+    {section:"⚽ In Possession",q:"The left side is crowded with players. What's the best move?",diagram:"Switch",opts:[
+      {t:"Keep trying to dribble through",c:false,f:"Too crowded. Move it to the space."},
+      {t:"Kick it out for a throw",c:false,f:"Keep it! There's space on the other side."},
+      {t:"Switch it: wing back, to CM, to the other wing back",c:true,f:"Exactly — the far wing back will have loads of space."},
+      {t:"Pass back to the keeper every time",c:false,f:"Sometimes, but the switch is better here."}],tip:"\"Crowded? Switch it.\""},
+    {section:"🛡️ Defending",q:"Our left wing back is up the pitch and they break down that side. What does the CB do?",diagram:"Cover",opts:[
+      {t:"Stays in the middle and watches",c:false,f:"Then they've got a free run at goal. Slide across."},
+      {t:"Slides across to cover, and a CM drops into the middle",c:true,f:"Yes — that's how we cover the gap a wing back leaves."},
+      {t:"Shouts at the wing back",c:false,f:"Talk, yes — but cover first!"},
+      {t:"Goes forward to attack",c:false,f:"Defend first!"}],tip:"\"Cover the gap behind the wing back.\""},
+    {section:"🛡️ Defending",q:"The ball has gone up to the other end. What does the CB do?",diagram:"StepUp",opts:[
+      {t:"Stays on the edge of our box",c:false,f:"That leaves a big gap. Step up."},
+      {t:"Runs into their box",c:false,f:"Too far! Halfway is enough."},
+      {t:"Sits down for a rest",c:false,f:"Stay switched on!"},
+      {t:"Steps up towards halfway",c:true,f:"Yes — it keeps the team close together."}],tip:"\"Step up when the ball goes up.\""},
+    {section:"⚽ In Possession",q:"You're the left wing back and we have the ball. Where do you stand?",diagram:"WBHigh",opts:[
+      {t:"Wide and high, on the touchline",c:true,f:"Yes — so a CM can find you in space."},
+      {t:"Next to the CB",c:false,f:"That's where you go without the ball."},
+      {t:"In the middle, next to the striker",c:false,f:"Too narrow. Width is your job."},
+      {t:"Behind the keeper",c:false,f:"Get forward!"}],tip:"\"Wing backs: stay on the line.\""},
+    {section:"⚽ Midfield",q:"A CM gets the ball from the CB. What's a good next move?",diagram:"FeedWB",opts:[
+      {t:"Turn your back to the pitch",c:false,f:"Open your body so you can see forward."},
+      {t:"Open your body and play it out wide to a wing back",c:true,f:"Yes — the wing backs are your best friends."},
+      {t:"Pass straight back to the CB every time",c:false,f:"Sometimes, but look forward and wide first."},
+      {t:"Shoot from your own half",c:false,f:"Too far out!"}],tip:"\"CMs: feed the wing backs.\""},
+    {section:"🥅 Goalkeeper",q:"They're attacking. What's the keeper's big job in a 3-2-1?",diagram:"GKTalk",opts:[
+      {t:"Stay quiet and concentrate",c:false,f:"Talk! You can see everything."},
+      {t:"Run out to the halfway line",c:false,f:"Stay where you can save it."},
+      {t:"Tell the wing backs to drop and tell the CB who to pick up",c:true,f:"Exactly — organise the back three."},
+      {t:"Watch the crowd",c:false,f:"Eyes on the game!"}],tip:"\"Keeper: talk and organise.\""},
+    {section:"⚽ Striker",q:"Their defender has the ball. What does our striker do?",diagram:"LeadPress",opts:[
+      {t:"Stand still",c:false,f:"Lead the press!"},
+      {t:"Run straight at them as fast as you can",c:false,f:"Close — but curve your run."},
+      {t:"Run back to our box",c:false,f:"Stay up and press."},
+      {t:"Curve your run to push them one way",c:true,f:"Yes — the team follows your lead."}],tip:"\"Striker: curve your run.\""},
+  ],
+  expert:[
+    {section:"📍 Shape",q:"Where is the 3-2-1's weak spot?",diagram:"Cover",opts:[
+      {t:"The space behind a wing back who has gone forward",c:true,f:"Yes — that's why the CB and a CM slide across to cover it."},
+      {t:"In front of their goal",c:false,f:"That's where we want to be!"},
+      {t:"There isn't one",c:false,f:"Every shape has one. Know where it is!"},
+      {t:"Behind the striker",c:false,f:"Our CMs are there."}],tip:"\"Know the weak spot and cover it.\""},
+    {section:"⚽ In Possession",q:"Our left wing back is on the byline and their defenders are back in the box. What's the best ball?",diagram:"Cross",opts:[
+      {t:"A high cross into the crowd",c:false,f:"Their defenders are facing it. Look for a better option."},
+      {t:"A cut-back to a CM arriving",c:true,f:"Yes — they're running onto it, facing goal."},
+      {t:"Pass it back to the keeper",c:false,f:"We're nearly there — be brave!"},
+      {t:"Shoot from the byline",c:false,f:"There's no angle. Cut it back."}],tip:"\"At the byline? Cut it back.\""},
+    {section:"📍 Shape",q:"When both wing backs push on with the ball, what shape do we turn into?",diagram:"Attack",opts:[
+      {t:"A 3-2-1 still",c:false,f:"With the wing backs up, it's a different shape."},
+      {t:"All seven in a line",c:false,f:"Not quite!"},
+      {t:"A 1-4-1: CB, then wing backs and CMs across, then the striker",c:true,f:"Yes — four across the middle when we attack."},
+      {t:"A 5-0-1",c:false,f:"That's very defensive. We push on!"}],tip:"\"Three at the back without it, four across with it.\""},
+    {section:"📍 Shape",q:"Why shouldn't both wing backs go forward when we might lose the ball?",diagram:"Balance",opts:[
+      {t:"They'd get too tired",c:false,f:"Maybe, but there's a bigger problem."},
+      {t:"It's against the rules",c:false,f:"It's allowed — it's just risky."},
+      {t:"They'd block the striker",c:false,f:"Not really. Think about our defence."},
+      {t:"Only the CB would be left at the back if we lose it",c:true,f:"Exactly — always keep two at the back."}],tip:"\"Never both up when we could lose it.\""},
+    {section:"🔴 Out of Possession",q:"Without the ball, why do the two CMs sit just in front of the back three?",diagram:"Defend",opts:[
+      {t:"To stop passes through the middle",c:true,f:"Yes — no gaps between midfield and defence."},
+      {t:"To be nearer the striker",c:false,f:"The striker is the other way!"},
+      {t:"So they can rest",c:false,f:"They're working hard!"},
+      {t:"To take throw-ins",c:false,f:"Not their job here."}],tip:"\"Stay close — no gaps through the middle.\""},
+    {section:"📍 Shape",q:"Compared with our 2-3-1, what's the big change in the 3-2-1?",diagram:null,opts:[
+      {t:"No goalkeeper",c:false,f:"Always a keeper!"},
+      {t:"Two strikers",c:false,f:"Still one striker."},
+      {t:"One more defender, one fewer midfielder — and the width comes from the wing backs",c:true,f:"Yes — the wide players start as defenders."},
+      {t:"Nothing changes",c:false,f:"The shape is quite different."}],tip:"\"Wing backs do the width.\""},
+    {section:"⚡ Transition",q:"We've lost the ball. Why do only the nearest two press, not everyone?",diagram:"Press",opts:[
+      {t:"The others are lazy",c:false,f:"No — they have another job."},
+      {t:"The wing backs need to race back so we aren't caught out",c:true,f:"Yes — press near the ball, recover away from it."},
+      {t:"Pressing isn't allowed",c:false,f:"It is!"},
+      {t:"Everyone should press",c:false,f:"Then nobody's protecting our goal."}],tip:"\"Press and recover together.\""},
+  ],
+};
+["beginner","intermediate","expert"].forEach(function(lv){ QUIZ_321[lv] = fq(QUIZ_321[lv], "321"); });
+// the question shows just where everyone is; the answer shows the arrows and words too
+Object.keys(G321).forEach(function(k){
+  D["f321_"+k] = function(s){
+    const A0 = A, Lbl0 = Lbl;
+    A = Lbl = function(){};
+    try { G321[k](s); } finally { A = A0; Lbl = Lbl0; }
+  };
+  DG["f321_"+k] = G321[k];
+});
+
+const SHAPE_321 = {
+  intro:"Three at the back, two in the middle, one up front — but the two wide defenders are <strong>wing backs</strong>: defenders without the ball, wide midfielders with it.",
+  cards:[
+    {title:"The 3-2-1 — Know Your Zone",draw:function(s){
+      zone(s,2,104,"rgba(21,101,192,0.18)");zone(s,214,104,"rgba(198,40,40,0.14)");
+      team(s,[[18,100,"GK"],[82,26,"LWB"],[58,100,"CB"],[82,174,"RWB"],[135,72,"CM"],[135,128,"CM"],[228,100,"ST"]]);},
+     text:"<strong>1 Goalkeeper &middot; 3 Defenders (LWB, CB, RWB) &middot; 2 Centre Mids &middot; 1 Striker.</strong> The CB and the two CMs are the safe middle; the wing backs give us all our width, so they cover the whole touchline.",
+     rules:["<strong>Weak spot:</strong> the space behind a wing back who has gone forward. The CB and the nearest CM slide across to cover it."],
+     key:'<span class="legend-item"><span class="legend-dot us"></span>Defenders &amp; wing backs</span><span class="legend-item"><span class="legend-dot" style="background:#1565c0;border-color:#0d47a1"></span>CMs</span><span class="legend-item"><span class="legend-dot" style="background:#e65100;border-color:#bf360c"></span>ST</span>'},
+    {title:"With the Ball — Wing Backs Push On",draw:G321.Attack,
+     text:"When we win it, <strong>both wing backs sprint up the touchlines</strong> to become wingers. Now it's a 1-4-1 going forward: the CB steps up towards halfway and the two CMs link it all together.",
+     rules:["<strong>Striker:</strong> hold the ball up until the wing backs arrive, then play it wide.","<strong>Switch it:</strong> one side crowded? Wing back to CM to the other wing back."],
+     key:'<span class="legend-item"><span class="legend-dot us"></span>Us</span><span class="legend-item"><span class="legend-dot opp"></span>Them</span><span class="legend-item" style="color:#f9a825">&rarr; Pass</span><span class="legend-item" style="color:#4caf50">&#8674; Run</span>'},
+    {title:"Without the Ball — Back Three",draw:G321.Defend,
+     text:"When we lose it, <strong>the wing backs sprint back level with the CB</strong> to make a back three. The two CMs sit just in front of them, so there's no gap through the middle.",
+     rules:["<strong>Striker:</strong> stay near halfway and press their defender, ready for the counter."],
+     key:'<span class="legend-item"><span class="legend-dot us"></span>Us</span><span class="legend-item"><span class="legend-dot opp"></span>Them</span><span class="legend-item" style="color:#4caf50">&#8674; Recovery run</span>'},
+    {title:"One Goes, One Stays",draw:G321.Balance,
+     text:"Ball on the left? The <strong>left wing back goes</strong>, the <strong>right wing back tucks in</strong> next to the CB, so we always keep two at the back. Same with the CMs: if one goes forward, the other stays.",
+     rules:["<strong>Talk:</strong> wing backs, tell each other who's going. Never both up when we could lose it."],
+     key:'<span class="legend-item"><span class="legend-dot us"></span>Us</span><span class="legend-item"><span class="legend-dot opp"></span>Them</span><span class="legend-item" style="color:#4caf50">&#8674; Run</span>'},
+  ],
+  roles:[
+    {l:"GK",name:"Goalkeeper",zone:"The box, and behind the back three.",have:"Roll it out to a wing back in space, or to the CB.",not:"Talk to the back three — tell them when to drop and who to pick up."},
+    {l:"LWB",name:"Left Wing Back",zone:"The whole left touchline, box to box.",have:"Get wide and high — you're our winger now. Cross, or pass inside to a CM.",not:"Sprint back level with the CB. If the ball's on the right, tuck in."},
+    {l:"CB",name:"Centre Back",zone:"The middle of our half.",have:"Step up towards halfway; pass to a wing back or a CM. Carry it in if there's space.",not:"Pick up their striker and cover behind whichever wing back has gone."},
+    {l:"RWB",name:"Right Wing Back",zone:"The whole right touchline, box to box.",have:"Get wide and high — you're our winger now. Cross, or pass inside to a CM.",not:"Sprint back level with the CB. If the ball's on the left, tuck in."},
+    {l:"CM",name:"Centre Mids (two)",zone:"The middle of the pitch, both halves.",have:"One goes, one stays. Get on the half-turn and switch it from wing back to wing back.",not:"Sit in front of the back three, and slide across to fill the gap a wing back leaves."},
+    {l:"ST",name:"Striker",zone:"Their half, between their defenders.",have:"Hold it up until the wing backs arrive; run in behind.",not:"Press their defenders — curve your run to push them one way."},
+  ],
+};
+function gen321(){
+  let gen = document.getElementById("shape-321");
+  if(gen) return gen;
+  gen = document.createElement("div");
+  gen.id = "shape-321";
+  gen.innerHTML = '<div class="section-wrapper"><div class="section-header">&#x1F4D0; 7v7 Shape &mdash; 3-2-1 with Wing Backs</div><div class="section-cards" id="shape-321-cards"></div></div>'+
+    '<div class="section-wrapper"><div class="section-header">&#x1F4CD; Each Position</div><div class="section-cards" id="shape-321-roles"></div></div>'+
+    '<div class="guide-footer">7v7 positional zone guide &middot; 3-2-1 formation</div>';
+  const cards = gen.querySelector("#shape-321-cards");
+  SHAPE_321.cards.forEach(function(c, i){
+    const card = document.createElement("div");
+    card.className = "card";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "pitch");
+    card.appendChild(svg);
+    buildPitch(svg); c.draw(svg);
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.innerHTML = '<div class="card-title">'+c.title+'</div><div class="card-desc">'+(i === 0 ? SHAPE_321.intro+'<br><br>' : '')+c.text+'</div>'+
+      c.rules.map(function(r){ return '<div class="pos-zone-rule">'+r+'</div>'; }).join("");
+    card.appendChild(body);
+    const key = document.createElement("div");
+    key.className = "legend"; key.innerHTML = c.key;
+    card.appendChild(key);
+    cards.appendChild(card);
+  });
+  const roles = gen.querySelector("#shape-321-roles");
+  const colour = { gk: "#f9a825", us: "#1b5e20", hi_mid: "#1565c0", hi_wide: "#6a1b9a", hi_st: "#e65100" };
+  SHAPE_321.roles.forEach(function(r){
+    const c = document.createElement("div");
+    c.className = "card";
+    const t = roleType(r.l);
+    c.innerHTML = '<div class="card-body"><div class="card-title"><span class="pos-badge" style="background:'+colour[t]+';color:'+(t==="gk"?"#1a1a1a":"white")+';margin-left:0">'+r.l+'</span> '+r.name+'</div>'+
+      '<div class="card-desc"><strong>Your zone:</strong> '+r.zone+'<br><strong>With the ball:</strong> '+r.have+'<br><strong>Without it:</strong> '+r.not+'</div></div>';
+    roles.appendChild(c);
+  });
+  document.getElementById("app-positions").appendChild(gen);
+  return gen;
+}
+/** Learning Positions for the 7v7 shape: the page's own 2-3-1, or the 3-2-1. */
+function show7v7Shape(shape){
+  const is321 = shape === "3-2-1";
+  const own = gen321();
+  Array.from(document.getElementById("app-positions").children).forEach(function(c){
+    if(c.classList.contains("pos-learn-topbar") || c.classList.contains("pos-learn-hero") || c.id === "shape-switch" || c.id === "pos-gen") return;
+    c.style.display = (c === own) === is321 ? "" : "none";
+  });
+  document.querySelector("#app-positions > .pos-learn-hero .pos-learn-badge").textContent = "7v7 · " + shape + " Formation";
+  markShapeSwitches(shape);
+}
+function saved7v7Shape(){ try { return localStorage.getItem("hub_7v7_shape") === "3-2-1" ? "3-2-1" : "2-3-1"; } catch{ return "2-3-1"; } }
+function markShapeSwitches(shape){
+  document.querySelectorAll(".shape-switch button").forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.shape === shape)); });
+}
+/** The 7v7 shape picked with the switches (Learning Positions, the Tactical Guide and the quiz), remembered on this phone. */
+function set7v7Shape(shape){
+  if(shape !== "3-2-1") shape = "2-3-1";
+  try { localStorage.setItem("hub_7v7_shape", shape); } catch{}
+  applyHubFormat("7v7");   // the quiz, and the guide drawn afresh
+  markShapeSwitches(shape);
+  if(document.getElementById("app-guide").style.display === "block") showGuideCatHome();
+  else if(document.getElementById("app-quiz").style.display === "block") refreshPBDisplay();
+  else show7v7Shape(shape);
+}
+/** The guide to draw: another format's, the 3-2-1's, or none (the page's own 2-3-1). */
+function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_321 : null); }
+/** The Tactical Guide's shape switch: on its home screen, for 7v7 only. */
+function guideSwitch(on){
+  const sw = document.getElementById("guide-shape-switch");
+  sw.style.display = on && !fmtData() ? "" : "none";
+  markShapeSwitches(saved7v7Shape());
+}
+
 /* ── Hooks into the page's own screens ── */
 (function(){
-  const showGuide0 = showGuide, showGuideCatHome0 = showGuideCatHome, showGlossary0 = showGlossary, showPositions0 = showPositions;
+  const showGuide0 = showGuide, showGuideCatHome0 = showGuideCatHome, showGuidePos0 = showGuidePos, showGlossary0 = showGlossary, showPositions0 = showPositions;
   const hideGen = function(){ const g = document.getElementById("guide-gen"); if(g) g.style.display = "none"; };
-  showGuide = function(){ showGuide0(); if(fmtData()) genGuideHome(); else hideGen(); };
-  showGuideCatHome = function(){ if(fmtData()) genGuideHome(); else { hideGen(); showGuideCatHome0(); } };
-  showGlossary = function(){ hideGen(); showGlossary0(); if(fmtData()){ const b = document.querySelector("#app-guide .back-btn"); b.onclick = genGuideHome; } };
+  showGuide = function(){ showGuide0(); if(guideData()) genGuideHome(); else { hideGen(); guideSwitch(true); } };
+  showGuideCatHome = function(){ if(guideData()) genGuideHome(); else { hideGen(); showGuideCatHome0(); guideSwitch(true); } };
+  showGuidePos = function(pos){ hideGen(); guideSwitch(false); showGuidePos0(pos); };
+  showGlossary = function(){ hideGen(); guideSwitch(false); showGlossary0(); if(guideData()){ const b = document.querySelector("#app-guide .back-btn"); b.onclick = genGuideHome; } };
   showPositions = function(){
     showPositions0();
     const data = fmtData();
@@ -865,6 +1222,7 @@ function genPositions(){
       else c.style.display = data ? "none" : "";
     });
     if(gen) gen.style.display = "";
+    else show7v7Shape(saved7v7Shape());
   };
 })();
 
