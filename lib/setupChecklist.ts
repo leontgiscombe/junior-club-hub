@@ -102,8 +102,8 @@ export async function setupFor(tenant: string, user: User, person: Person | null
     {
       id: "teams",
       title: "Check your teams",
-      hint: "Names, age group and match format, and the days each team trains.",
-      href: "/admin/settings#teams",
+      hint: "Names, age group, formation and the days each team trains, and which team you coach.",
+      href: "/admin/teams-setup",
       done: ticked("teams") || (live.length > 0 && live.every((t) => t.format && t.training !== undefined)),
       manual: true,
     },
