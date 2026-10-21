@@ -386,9 +386,7 @@ html.dark .guide-footer{color:#9ca3af}
 .home-compact .home-title2{font-family:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;color:#6b7280;margin-top:2px}
 .home-compact .home-sub{display:block;border:0;border-radius:0;background:none;padding:0;font-size:12px;color:#6b7280;margin-top:3px;letter-spacing:0;text-transform:none}
 .home-body{max-width:576px;margin:0 auto;padding:0 20px 32px;gap:18px}
-.team-pick{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;font-weight:700;color:#6b7280}
-.team-pick select{font:inherit;font-size:13px;font-weight:800;color:#111827;background:#e5e5ea;border:0;border-radius:8px;padding:4px 8px}
-.team-pick[hidden],.no-team[hidden],.no-team-error[hidden]{display:none}
+.no-team[hidden],.no-team-error[hidden]{display:none}
 .no-team{background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 3px rgb(0 0 0 / 5%)}
 .no-team-title{font-weight:800;font-size:15px;color:#111827}
 .no-team-text{font-size:12px;color:#6b7280;margin-top:2px}
@@ -396,10 +394,9 @@ html.dark .guide-footer{color:#9ca3af}
 .no-team-row select{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#111827}
 .no-team-row button{border:0;border-radius:10px;padding:8px 16px;font:inherit;font-size:14px;font-weight:800;color:#fff;background:var(--color-green-700,#15803d);cursor:pointer}
 .no-team-error{font-size:12px;color:#dc2626;margin-top:6px}
-html.dark .team-pick select,html.dark .no-team-row select{background:#2c2c2e;border-color:#3a3a3c;color:#fff}
+html.dark .no-team-row select{background:#2c2c2e;border-color:#3a3a3c;color:#fff}
 html.dark .no-team{background:#1c1c1e;box-shadow:none}
 html.dark .no-team-title{color:#fff}
-html[data-wallpaper] .team-pick{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .hub-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #e5e7eb}
 .hub-views button{min-height:48px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:700;color:#6b7280;cursor:pointer}
 .hub-views button[aria-selected="true"]{border-bottom-color:var(--color-green-700,#15803d);color:var(--color-green-700,#15803d)}
@@ -467,7 +464,6 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <p class="home-title2">Training Hub</p>
     <p class="home-sub"><span class="team-age"></span><span class="fmt-shape" id="home-fmt">7v7 &middot; 2-3-1</span></p>
     <!-- coaches and club admins: which team's hub to look at (players and parents see their own) -->
-    <label class="team-pick" id="hub-team-pick" hidden>Viewing <select id="hub-team-select"></select></label>
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>
     </div>
@@ -3891,20 +3887,6 @@ function showTeam(teams){
   };
   var onThisPhone = function(){ try { return find(localStorage.getItem('club:my-team') || ''); } catch(e){ return null; } };
   var label = function(t){ return t.short || t.name; };
-  // coaches and club admins: any team's hub, starting from the one looked at last (or their own)
-  var picker = null;
-  var pick = function(own){
-    var sel = document.getElementById('hub-team-select');
-    sel.innerHTML = teams.map(function(t){ return '<option value="' + t.id.replace(/"/g, '') + '"></option>'; }).join('');
-    Array.prototype.forEach.call(sel.options, function(o, i){ o.textContent = label(teams[i]); });
-    var last = null; try { last = find(localStorage.getItem('hub_view_team') || ''); } catch(e){}
-    var t = last || own || teams[0];
-    sel.value = t.id;
-    sel.onchange = function(){ try { localStorage.setItem('hub_view_team', sel.value); } catch(e){} put(find(sel.value)); };
-    document.getElementById('hub-team-pick').hidden = false;
-    picker = sel;
-    put(t);
-  };
   // a signed-in member with no team of their own: ask, and save it to their account
   var ask = function(){
     var box = document.getElementById('hub-no-team');
@@ -3919,7 +3901,7 @@ function showTeam(teams){
         .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ if(!r.ok) throw new Error(d.error || 'That didn\u2019t save \u2014 try again'); }); })
         .then(function(){
           box.hidden = true;
-          if(picker){ picker.value = sel.value; picker.onchange(); } else put(find(sel.value));
+          put(find(sel.value));
         })
         .catch(function(e){ err.textContent = e.message; err.hidden = false; });
     };
@@ -3934,8 +3916,7 @@ function showTeam(teams){
     var roles = (approved && p.roles) || [];
     var mine = approved ? (p.team || ((p.children || []).find(function(k){ return k.team; }) || {}).team) : null;
     var own = (mine && find(mine.slug)) || onThisPhone();
-    if(roles.indexOf('admin') >= 0 || roles.indexOf('coach') >= 0){ if(teams.length) pick(own); }
-    else put(own);
+    put(own);
     // not a parent (theirs come from their children), nor a treasurer (a club admin sets theirs)
     var parent = approved && (p.relation === 'parent' || (p.children || []).length > 0);
     var treasurer = roles.indexOf('treasurer') >= 0 && roles.indexOf('admin') < 0;
