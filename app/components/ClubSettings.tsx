@@ -1013,7 +1013,11 @@ function TeamsEditor({
                     className={input}
                   />
                   <span className="mt-1 block text-xs text-gray-400">
-                    Enter only the digits from Full-Time admin → Media → Code Snippets → team fixtures:
+                    Enter only the digits from{" "}
+                    <a href="https://fulltime-admin.thefa.com/CreateCodeSnippet.html" target="_blank" rel="noopener noreferrer" className="font-semibold text-green-700 underline dark:text-green-400">
+                      Full-Time admin → Media → Code Snippets
+                    </a>{" "}
+                    → team fixtures:
                     the number in <code className="mx-1">lrcode</code>, not the whole snippet. Fixtures then
                     arrive in the Match Log by themselves.
                   </span>

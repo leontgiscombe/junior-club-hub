@@ -297,7 +297,11 @@ export default function SignupForm({ rootDomain, appView = false }: { rootDomain
             className={input}
           />
           <span className={hint}>
-            From Full-Time admin → Media → Code Snippets → team fixtures: just the number in <code>lrcode</code>. Fixtures then arrive in the Match
+            From{" "}
+            <a href="https://fulltime-admin.thefa.com/CreateCodeSnippet.html" target="_blank" rel="noopener noreferrer" className="font-semibold text-green-700 underline">
+              Full-Time admin → Media → Code Snippets
+            </a>{" "}
+            → team fixtures: just the number in <code>lrcode</code>. Fixtures then arrive in the Match
             Log by themselves. You can add it later in Settings.
           </span>
         </label>
