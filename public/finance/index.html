@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
-<script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts) */(function(){try{var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set)}catch(e){}})()</script>
+<script>/* light or dark, as chosen in the hub (Your Account → Appearance; lib/theme.ts), read again whenever the page is shown */(function(){try{var q=matchMedia("(prefers-color-scheme: dark)");var set=function(){var m=document.cookie.match(/(?:^|; )hub_theme=(\w+)/);var t=m?m[1]:"system";document.documentElement.classList.toggle("dark",t==="dark"||(t==="system"&&q.matches))};set();q.addEventListener("change",set);addEventListener("pageshow",set);document.addEventListener("visibilitychange",function(){if(!document.hidden)set()})}catch(e){}})()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Monthly subs and finance tracker for the club's teams">
 <meta name="theme-color" content="#1f7a3d">
