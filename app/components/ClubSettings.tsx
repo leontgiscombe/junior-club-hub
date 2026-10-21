@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
 import { removeBackground } from "@/lib/crestBackground";
-import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
+import { DEFAULT_TRAINING, EDITABLE, FEATURES, FORMAT_AGES, FORMATIONS_7V7, GAME_FORMATS, KIT_EXTRAS, MAX_TRAINING_DAYS, WEEKDAYS, isFormation7v7, isGameFormat, kitAspect, slugFor, teamFormat, type Feature, type KitExtra, type TrainingSlot } from "@/lib/clubSettings";
 import { DEFAULT_COLOUR_VARS, PRESET_COLOURS, clubColourVars } from "@/lib/palette";
 import FinancePasswords from "./FinancePasswords";
 import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
@@ -58,6 +58,8 @@ function fromDrafts(drafts: TeamDraft[]): Team[] {
     if (!team.squadName) delete team.squadName;
     if (!team.faSnippet) delete team.faSnippet;
     if (!team.format) delete team.format;
+    // only a 7v7 team has a shape to choose
+    if (!team.formation || teamFormat(team) !== "7v7") delete team.formation;
     if (!team.archived) delete team.archived;
     if (!team.slug) team.slug = slugFor(team.name, [...drafts.filter((x) => x.slug) as Team[], ...out]);
     out.push(team);
@@ -1061,6 +1063,25 @@ function TeamsEditor({
                     The Training Hub shows this team&apos;s players the guide, quiz and challenges for their age group — change it here and it changes there.
                   </span>
                 </label>
+                {teamFormat(t) === "7v7" && (
+                  <label>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Formation</span>
+                    <select
+                      value={t.formation ?? "2-3-1"}
+                      onChange={(e) => change(i, { formation: isFormation7v7(e.target.value) ? e.target.value : undefined })}
+                      className={input}
+                    >
+                      {FORMATIONS_7V7.map((f) => (
+                        <option key={f} value={f}>
+                          {f}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-1 block text-xs text-gray-400">
+                      The shape this team&apos;s players learn in the Training Hub: its positions, tactical guide and quiz. Players can&apos;t change it.
+                    </span>
+                  </label>
+                )}
                 <TrainingDays training={t.training ?? DEFAULT_TRAINING} onChange={(training) => change(i, { training })} input={input} />
                 <label>
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-200">FA Full-Time code (optional)</span>
