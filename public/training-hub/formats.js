@@ -36,6 +36,20 @@ function dribble(s,x1,y1,x2,y2){const c=trim(x1,y1,x2,y2);A(s,c[0],c[1],c[2],c[3
 /* ── The formats ── */
 const HUB_FORMATS = {};
 
+/* A format's other shapes: HUB_FORMATS[f].shapes["3-3-2"] holds what that
+   shape changes — its own positions, guide, quiz, tips and the diagrams they
+   draw (the format's own drawings stay underneath, so a shape only redraws
+   what differs). A team plays its format's own shape unless the club picks
+   another in Settings (FORMATIONS in lib/clubSettings.ts lists them). */
+// questions from the format's own quiz, by how they start: the ones that don't depend on the shape (rules, respect, keepers)
+function pickQs(list, starts){
+  return starts.map(function(s){
+    const q = list.find(function(x){ return x.q.indexOf(s) === 0; });
+    if(!q) console.error("Training Hub: no question starting " + s);
+    return q;
+  }).filter(Boolean);
+}
+
 /* ════════════ 5v5 · under-7s and under-8s ════════════ */
 (function(){
   const base=[[18,100,"GK"],[80,100,"D"],[145,38,"L"],[145,162,"R"],[215,100,"S"]];
@@ -450,6 +464,155 @@ const HUB_FORMATS = {};
       "Win well, lose well.",
     ],
   };
+
+  /* ── 9v9's other shape: the 3-3-2, with two up front ── */
+  const Q9 = HUB_FORMATS["9v9"].quiz;
+  const b332=[[18,100,"GK"],[70,40,"LB"],[58,100,"CB"],[70,160,"RB"],[140,30,"LM"],[125,100,"CM"],[140,170,"RM"],[225,75,"ST"],[225,125,"ST"]];
+  HUB_FORMATS["9v9"].shapes={"3-3-2":{
+    shape:"3-3-2",
+    diagrams:{
+      Shape(s){buildPitch(s);team(s,b332);Lbl(s,225,100,"TWO UP TOP",undefined,undefined,60);},
+      Width(s){buildPitch(s);team(s,[[18,100,"GK"],[75,22,"LB"],[60,100,"CB"],[75,178,"RB"],[160,16,"LM"],[130,100,"CM"],[160,184,"RM"],[230,80,"ST"],[230,120,"ST"]]);B(s,72,100);pass(s,74,100,122,100);Lbl(s,160,40,"WIDE",undefined,undefined,40);Lbl(s,160,160,"WIDE",undefined,undefined,40);},
+      Compact(s){buildPitch(s);team(s,[[18,100,"GK"],[60,70,"LB"],[55,105,"CB"],[65,140,"RB"],[105,50,"LM"],[105,95,"CM"],[110,135,"RM"],[160,80,"ST"],[165,120,"ST"]]);opp(s,[[200,40],[250,90],[245,150],[302,100,"GK"]]);B(s,192,44);run(s,140,170,112,140);Lbl(s,62,182,"SQUEEZE IN",undefined,undefined,60);},
+      Press(s){buildPitch(s);team(s,[[18,100,"GK"],[90,45,"LB"],[80,100,"CB"],[90,155,"RB"],[170,45,"LM"],[145,100,"CM"],[170,155,"RM"],[228,66,"ST"],[230,134,"ST"]]);opp(s,[[196,98],[260,60],[262,140],[302,100,"GK"]]);B(s,186,102);run(s,228,66,206,86);run(s,145,100,176,100);run(s,230,134,208,112);Lbl(s,150,22,"WIN IT BACK!");},
+      Switch(s){buildPitch(s);team(s,[[18,100,"GK"],[80,25,"LB"],[60,90,"CB"],[85,170,"RB"],[160,20,"LM"],[125,95,"CM"],[200,178,"RM"],[220,80,"ST"],[225,120,"ST"]]);opp(s,[[138,48],[178,44],[168,74],[208,30],[302,100,"GK"]]);B(s,137,95);pass(s,138,98,194,172);Lbl(s,190,140,"SWITCH IT!");},
+      SplitBuild(s){buildPitch(s);team(s,[[18,100,"GK"],[45,22,"LB"],[56,100,"CB"],[45,178,"RB"],[150,20,"LM"],[105,100,"CM"],[150,180,"RM"],[225,80,"ST"],[225,120,"ST"]]);opp(s,[[80,58],[80,142],[140,100]]);B(s,30,110);pass(s,28,104,42,34);},
+      Overlap(s){buildPitch(s);team(s,[[18,100,"GK"],[60,100,"CB"],[130,110,"CM"],[200,165,"RM"],[120,175,"RB"]]);opp(s,[[234,150],[262,110]]);B(s,212,166);run(s,124,180,250,188);pass(s,212,170,244,184);Lbl(s,175,135,"OVERLAP",undefined,undefined,60);},
+      Holder(s){buildPitch(s);team(s,[[18,100,"GK"],[70,40,"LB"],[58,100,"CB"],[70,160,"RB"],[115,100,"CM"],[180,30,"LM"],[185,170,"RM"],[235,80,"ST"],[235,120,"ST"]]);opp(s,[[200,105],[178,140]]);B(s,190,172);Lbl(s,115,140,"I'LL HOLD",undefined,undefined,56);},
+      Tuck(s){buildPitch(s);team(s,[[18,100,"GK"],[70,40,"LB"],[58,100,"CB"],[70,160,"RB"],[150,30,"LM"],[120,95,"CM"],[125,145,"RM"],[220,70,"ST"],[220,120,"ST"]]);B(s,160,36);run(s,150,175,125,148);Lbl(s,150,190,"TUCK IN",undefined,undefined,50);},
+      TrackBack(s){buildPitch(s);team(s,[[18,100,"GK"],[70,40,"LB"],[58,100,"CB"],[120,95,"CM"],[165,28,"LM"]]);opp(s,[[118,30],[175,105]]);B(s,106,34);run(s,165,28,136,28);Lbl(s,172,52,"TRACK BACK",undefined,undefined,66);},
+      WideMid(s){buildPitch(s);team(s,[[150,100,"CM"],[262,20,"LM"],[230,90,"ST"],[240,135,"ST"]]);opp(s,[[262,48],[275,100],[270,150],[306,100,"GK"]]);B(s,268,24);pass(s,268,28,288,82);run(s,230,90,284,90);run(s,240,135,290,120);Lbl(s,200,180,"NEAR POST & FAR POST",undefined,undefined,104);},
+      StrikerPair(s){buildPitch(s);team(s,[[125,100,"CM"],[215,88,"ST"],[245,118,"ST"]]);opp(s,[[268,74],[272,142],[302,100,"GK"]]);B(s,137,100);run(s,215,88,186,92);pass(s,138,100,178,94);run(s,245,118,288,114);Lbl(s,186,62,"ONE SHORT",undefined,undefined,56);Lbl(s,262,182,"ONE LONG",undefined,undefined,54);},
+      InBehind(s){buildPitch(s);team(s,[[18,100,"GK"],[150,95,"CM"],[205,112,"ST"],[234,88,"ST"]]);opp(s,[[254,60],[254,126],[302,100,"GK"]]);B(s,162,95);line(s,254,"");pass(s,164,95,286,84);run(s,238,88,284,82);run(s,205,108,226,110);},
+      LeadPress(s){buildPitch(s);team(s,[[160,50,"LM"],[150,100,"CM"],[160,150,"RM"],[228,80,"ST"],[232,125,"ST"]]);opp(s,[[268,90],[262,40],[262,160],[302,100,"GK"]]);B(s,280,88);run(s,228,80,260,84);run(s,232,125,262,118);A(s,276,92,264,48,"ar",true,1.5);Lbl(s,205,182,"PRESS AS A PAIR",undefined,undefined,84);},
+      Offside(s){buildPitch(s);team(s,[[18,100,"GK"],[150,100,"CM"],[242,96,"ST"],[215,150,"ST"]]);opp(s,[[258,58],[258,136],[302,100,"GK"]]);B(s,162,100);line(s,258,"LAST DEFENDER");pass(s,164,100,284,110);run(s,242,96,284,96);},
+    },
+    guideCats:[
+      {id:"team",name:"Team",icon:"👥",bg:"#37474f"},
+      {id:"gk",name:"Goalkeeper",icon:"🧤",bg:"#e65100"},
+      {id:"def",name:"Back Three",icon:"🛡️",bg:"#1b5e20"},
+      {id:"mid",name:"Midfield Three",icon:"🎯",bg:"#1565c0"},
+      {id:"st",name:"Strikers",icon:"⚽",bg:"#b71c1c"},
+    ],
+    guide:[
+      {cat:"team",title:"Our Shape",d:"Shape",text:"Three at the back, <strong>three across the middle</strong>, two up front. Our width comes from the <strong>wide midfielders</strong>, and two strikers means there's always someone in the box."},
+      {cat:"team",title:"Big When We Have It",d:"Width",text:"With the ball, the <strong>wide mids go to the touchlines</strong> and the full backs split wide. Space makes passing easy."},
+      {cat:"team",title:"Small When They Have It",d:"Compact",text:"Without it, <strong>squeeze together</strong> and shift towards the ball. The far wide mid tucks in — leave the far side, it's the furthest from our goal."},
+      {cat:"team",title:"Win It Back Quickly",d:"Press",text:"Just lost it? The <strong>nearest two or three press straight away</strong> — often the two strikers and a midfielder. The rest get back into shape."},
+      {cat:"team",title:"Switch the Play",d:"Switch",text:"One side crowded? The centre mid <strong>moves it to the other wide mid</strong> — they'll have space."},
+      {cat:"team",title:"Offside",d:"Offside",text:"In 9v9 there's <strong>offside</strong>. When the pass is played, you need to be level with or behind the last defender (the keeper usually counts as one of the last two). <strong>Time your run</strong> — go as the ball is played. Your league decides exactly where offside applies."},
+      {cat:"gk",title:"Sweeper Keeper",d:"Sweeper",text:"When our defence is pushed up, <strong>stand further off your line</strong> so you can sweep up balls played over the top."},
+      {cat:"gk",title:"Start the Attack",d:"SplitBuild",text:"From a goal kick, our full backs go <strong>wide</strong>, the centre back drops and the wide mids push high. Find the free player — and stay calm if it's pressed."},
+      {cat:"def",title:"Step Up Together",d:"StepUp",text:"When the ball goes forward, the back three <strong>step up as one line</strong>. It keeps us compact — and anyone left behind is offside."},
+      {cat:"def",title:"Overlap the Wide Mid",d:"Overlap",text:"When the wide mid has it and comes inside, the full back <strong>runs around the outside</strong>. Now they have two players to worry about."},
+      {cat:"mid",title:"The Holder",d:"Holder",text:"The centre mid is our anchor. When the wide mids push on, <strong>stay in front of the back three</strong> so a lost ball can't run straight through us."},
+      {cat:"mid",title:"Tuck In",d:"Tuck",text:"Ball on the far side? The <strong>far wide mid tucks in</strong> next to the centre mid, so the middle three stay close together."},
+      {cat:"mid",title:"Track Back",d:"TrackBack",text:"Wide mids: if their full back runs forward, <strong>run back with them</strong> so our full back isn't left 2v1."},
+      {cat:"mid",title:"Get It In the Box",d:"WideMid",text:"Wide mid at the byline? Two strikers means <strong>one near post, one far post</strong>. Cross it in between them, or cut it back."},
+      {cat:"st",title:"One Short, One Long",d:"StrikerPair",text:"Two strikers work as a pair: <strong>one comes short</strong> to link the play, <strong>the other runs in behind</strong>. Never stand in a line."},
+      {cat:"st",title:"Run In Behind",d:"InBehind",text:"Stand on the defender's shoulder, then <strong>spin in behind</strong> as the pass is played. Your partner follows in to support."},
+      {cat:"st",title:"Press as a Pair",d:"LeadPress",text:"When their defender has it, one striker <strong>presses with a curved run</strong> while the other blocks the pass across. The team follows your lead."},
+    ],
+    positions:{
+      intro:"Our 9v9 shape is a 3-3-2: three at the back, three across the middle, two up front. Your zone is where you live — leave it to help, then get back.",
+      shape:b332,
+      roles:[
+        {l:"GK",name:"Goalkeeper",zone:"The box, and behind the defence when we push up.",have:"Start attacks — find a free defender or the centre mid.",not:"Organise the defence and sweep up balls over the top."},
+        {l:"LB",name:"Left Back",zone:"The left channel of our half.",have:"Split wide when we build; overlap the wide mid when they come inside.",not:"Tuck in towards the centre back; stop crosses."},
+        {l:"CB",name:"Centre Back",zone:"The middle of our half.",have:"Drop between the full backs and pass forward calmly.",not:"Lead the line — tell the others when to step up."},
+        {l:"RB",name:"Right Back",zone:"The right channel of our half.",have:"Split wide when we build; overlap the wide mid when they come inside.",not:"Tuck in towards the centre back; stop crosses."},
+        {l:"LM",name:"Left Midfield",zone:"The left touchline, both halves.",have:"Give us width, go 1v1, cross for the two strikers.",not:"Track their full back; tuck in when the ball is on the other side."},
+        {l:"CM",name:"Centre Mid",zone:"The middle of the pitch, in front of the back three.",have:"Get on the half-turn, keep it moving, switch the play.",not:"Hold your position — protect the space in front of our defence."},
+        {l:"RM",name:"Right Midfield",zone:"The right touchline, both halves.",have:"Give us width, go 1v1, cross for the two strikers.",not:"Track their full back; tuck in when the ball is on the other side."},
+        {l:"ST",name:"Strikers",zone:"Their half, between and around their defenders.",have:"One short, one long — link the play and run in behind. Near post and far post for crosses.",not:"Press as a pair: one presses, one blocks the pass across."},
+      ],
+      rule:"Three, three, two — stay close enough to pass to each other, and always talk.",
+    },
+    quiz:{
+      beginner:[
+        {section:"⚽ In Possession",q:"We have the ball. Where should our wide midfielders be?",diagram:"Width",opts:[
+          {t:"Wide, near the touchlines",c:true,f:"Yes! In a 3-3-2 they're our width."},
+          {t:"In the middle next to the centre mid",c:false,f:"Too narrow — stay wide to make space."},
+          {t:"Up front with the strikers",c:false,f:"Wide, not up front."},
+          {t:"Back in our own box",c:false,f:"Get forward and wide!"}],tip:"\"Big when we have it!\""},
+        {section:"🔴 Out of Possession",q:"They have the ball on our left. What does our team do?",diagram:"Compact",opts:[
+          {t:"Squeeze together and shift towards the ball",c:true,f:"Exactly — and the far wide mid tucks in."},
+          {t:"Stay spread out wide",c:false,f:"That leaves gaps. Squeeze together."},
+          {t:"Everyone runs at the ball",c:false,f:"Only the nearest presses — the rest shift over."},
+          {t:"Stand still",c:false,f:"Shift as a team towards the ball."}],tip:"\"Small when they have it!\""},
+        {section:"🔄 Transition",q:"We've just lost the ball. What's the first thing to do?",diagram:"Press",opts:[
+          {t:"The nearest players press straight away",c:true,f:"Yes! Win it back before they look up."},
+          {t:"Everyone stops to argue",c:false,f:"No time! Press quickly."},
+          {t:"Walk back to position",c:false,f:"Press first — the rest recover."},
+          {t:"Wait for the ref",c:false,f:"Play on — win it back!"}],tip:"\"Lose it, win it back!\""},
+        {section:"⚽ In Possession",q:"We have two strikers. What's the best way for them to work together?",diagram:"StrikerPair",opts:[
+          {t:"One comes short, the other runs in behind",c:true,f:"Yes — one short, one long."},
+          {t:"Both stand next to each other",c:false,f:"Then one defender can mark you both."},
+          {t:"Both run in behind every time",c:false,f:"Someone has to link the play — one short, one long."},
+          {t:"Both drop into midfield",c:false,f:"Then nobody's in the box."}],tip:"\"One short, one long.\""},
+        {section:"⚽ In Possession",q:"Both wide mids have pushed forward. What should the centre mid do?",diagram:"Holder",opts:[
+          {t:"Stay in front of the back three",c:true,f:"Yes — you're the anchor."},
+          {t:"Run forward too",c:false,f:"Then nobody protects the middle."},
+          {t:"Go out to the wing",c:false,f:"Stay central and hold."},
+          {t:"Go in goal",c:false,f:"Hold in front of the defence."}],tip:"\"The holder holds.\""},
+        ...pickQs(Q9.beginner, ["Can you be offside from a throw-in?","Our defence has pushed up to halfway.","The referee makes a decision"]),
+      ],
+      intermediate:[
+        ...pickQs(Q9.intermediate, ["When is a player in an offside position?","Goal kick, and they're pressing.","We've cleared the ball upfield."]),
+        {section:"⚽ In Possession",q:"Our right midfielder has the ball and is going inside. What can the right back do?",diagram:"Overlap",opts:[
+          {t:"Overlap around the outside",c:true,f:"Yes! Now it's 2v1 on the wing."},
+          {t:"Stand still and watch",c:false,f:"Get forward — overlap!"},
+          {t:"Run into the midfielder",c:false,f:"Go around the outside."},
+          {t:"Go in goal",c:false,f:"Overlap on the outside."}],tip:"\"Overlap to make 2v1!\""},
+        {section:"⚽ In Possession",q:"The ball is with our left midfielder. You're the right midfielder. Where should you be?",diagram:"Tuck",opts:[
+          {t:"Tucked in nearer the centre mid",c:true,f:"Yes — keep the middle three close."},
+          {t:"Right on the touchline, as far as possible",c:false,f:"Tuck in a little while the ball is far away."},
+          {t:"Up front with the strikers",c:false,f:"Tuck in, ready for a switch."},
+          {t:"Next to the ball on the left",c:false,f:"Don't crowd it — tuck in on your side."}],tip:"\"Far side? Tuck in.\""},
+        {section:"🔴 Out of Possession",q:"Their full back runs past you on the wing. You're the wide midfielder. What now?",diagram:"TrackBack",opts:[
+          {t:"Track back with them",c:true,f:"Yes — don't leave our full back 2v1."},
+          {t:"Wait up front for the ball",c:false,f:"Help your full back!"},
+          {t:"Shout at the full back",c:false,f:"Run back and help."},
+          {t:"Go to the other wing",c:false,f:"Track your runner."}],tip:"\"Track your runner!\""},
+        {section:"⚽ In Possession",q:"Our wide mid is about to cross. Where should our two strikers go?",diagram:"WideMid",opts:[
+          {t:"One near post, one far post",c:true,f:"Yes — cover both posts."},
+          {t:"Both to the near post",c:false,f:"Then the far post is empty."},
+          {t:"Both wait on the edge of the box",c:false,f:"Get in the box — near post and far post."},
+          {t:"Both go and ask for it short",c:false,f:"Attack the box!"}],tip:"\"Near post, far post.\""},
+        {section:"🔴 Out of Possession",q:"Their centre back has the ball. How do our two strikers press?",diagram:"LeadPress",opts:[
+          {t:"One presses with a curved run, the other blocks the pass across",c:true,f:"Yes — press as a pair."},
+          {t:"Both sprint at the ball",c:false,f:"Then the pass across is wide open."},
+          {t:"Both stand still",c:false,f:"Lead the press!"},
+          {t:"Both run back to our box",c:false,f:"Press from the front, together."}],tip:"\"Press as a pair.\""},
+      ],
+      expert:[
+        ...pickQs(Q9.expert, ["You're in an offside position but not involved","How should a striker time a run in behind?"]),
+        {section:"🔄 Transition",q:"Why do only the nearest players press when we lose the ball?",diagram:"Press",opts:[
+          {t:"So the rest can protect the space behind",c:true,f:"Yes — pressure on the ball, cover behind."},
+          {t:"Because the others are tired",c:false,f:"It's about balance — cover behind."},
+          {t:"There's a rule about it",c:false,f:"No rule — it's about balance."},
+          {t:"So the keeper can join in",c:false,f:"The rest protect the space behind."}],tip:"\"Pressure and cover.\""},
+        ...pickQs(Q9.expert, ["Switching play: one long pass","As a keeper, what's your biggest job","The ball is on our left. Where should our right back be?","What does 'scanning' mean?","You score. How do you celebrate?"]),
+      ],
+    },
+    tips:[
+      "Scan over your shoulder before the ball arrives.",
+      "Receive side-on so you can play forward.",
+      "Big with the ball, small without it.",
+      "Lost it? The nearest players press straight away.",
+      "Time your run — go as the pass is played.",
+      "Level with the last defender is onside.",
+      "If one side is crowded, switch the play.",
+      "Strikers: one short, one long.",
+      "Centre mid: you're the holder — protect the back three.",
+      "Wide mids: far side? Tuck in.",
+      "Full backs: when the wide mid comes inside, overlap.",
+      "Keepers: talk to your defence all game.",
+      "Practise with your weaker foot every week.",
+      "Respect the referee — always.",
+      "Win well, lose well.",
+    ],
+  }};
 })();
 
 /* ════════════ 11v11 · under-13s and up ════════════ */
@@ -680,6 +843,149 @@ const HUB_FORMATS = {};
       "Win well, lose well.",
     ],
   };
+
+  /* ── 11v11's other shape: the 4-4-2, two banks of four and two up front ── */
+  const Q11 = HUB_FORMATS["11v11"].quiz;
+  const b442=[[18,100,"GK"],[80,28,"LB"],[62,78,"CB"],[62,122,"CB"],[80,172,"RB"],[150,30,"LM"],[135,82,"CM"],[135,118,"CM"],[150,170,"RM"],[230,82,"ST"],[230,118,"ST"]];
+  HUB_FORMATS["11v11"].shapes={"4-4-2":{
+    shape:"4-4-2",
+    diagrams:{
+      Shape(s){buildPitch(s);team(s,b442);Lbl(s,230,100,"TWO UP TOP",undefined,undefined,60);},
+      WidthDepth(s){buildPitch(s);team(s,[[18,100,"GK"],[80,28,"LB"],[62,78,"CB"],[62,122,"CB"],[80,172,"RB"],[175,18,"LM"],[130,82,"CM"],[130,118,"CM"],[175,182,"RM"],[240,85,"ST"],[262,118,"ST"]]);B(s,74,78);pass(s,74,80,122,82);Lbl(s,175,40,"WIDTH",undefined,undefined,44);Lbl(s,175,160,"WIDTH",undefined,undefined,44);Lbl(s,272,142,"DEPTH",undefined,undefined,44);},
+      TwoBanks(s){buildPitch(s);team(s,[[18,100,"GK"],[70,40,"LB"],[60,82,"CB"],[60,118,"CB"],[70,160,"RB"],[115,38,"LM"],[110,82,"CM"],[110,118,"CM"],[115,162,"RM"],[170,85,"ST"],[175,120,"ST"]]);opp(s,[[200,40],[222,100],[200,160],[302,100,"GK"]]);B(s,212,104);Lbl(s,112,12,"MIDFIELD FOUR",undefined,undefined,72);Lbl(s,62,190,"BACK FOUR",undefined,undefined,56);},
+      Trigger(s){buildPitch(s);team(s,[[130,82,"CM"],[130,118,"CM"],[200,30,"LM"],[225,85,"ST"],[230,118,"ST"],[200,170,"RM"]]);opp(s,[[262,70],[262,130],[302,100,"GK"],[250,30]]);B(s,272,72);Lbl(s,288,52,"BAD TOUCH",undefined,undefined,60);run(s,228,85,256,76);run(s,232,118,256,126);run(s,202,36,240,34);},
+      Counter(s){buildPitch(s);team(s,[[18,100,"GK"],[62,78,"CB"],[62,122,"CB"],[130,82,"CM"],[150,110,"CM"],[200,30,"LM"],[205,85,"ST"],[205,120,"ST"],[200,170,"RM"]]);opp(s,[[150,148],[262,80],[262,120],[302,100,"GK"]]);B(s,160,110);pass(s,162,108,197,90);run(s,204,34,262,40);run(s,204,166,262,160);run(s,208,120,258,130);Lbl(s,105,140,"GO!",undefined,undefined,30);},
+      Rest(s){buildPitch(s);team(s,[[18,100,"GK"],[100,80,"CB"],[100,120,"CB"],[140,100,"CM"],[220,60,"CM"],[265,25,"LM"],[270,90,"ST"],[262,130,"ST"],[265,178,"RM"],[200,185,"RB"]]);opp(s,[[165,100],[150,55]]);B(s,251,168);Lbl(s,105,160,"REST DEFENCE",undefined,undefined,76);},
+      Offside(s){buildPitch(s);team(s,[[150,100,"CM"],[240,152,"RM"],[276,94,"ST"]]);opp(s,[[256,62],[258,122],[302,100,"GK"]]);B(s,162,100);line(s,258,"2ND-LAST");Lbl(s,284,40,"OFFSIDE","#e53935","white",52);Lbl(s,214,176,"ONSIDE","#2e7d32","white",50);},
+      BackFour(s){buildPitch(s);team(s,[[18,100,"GK"],[110,38,"LB"],[80,66,"CB"],[72,102,"CB"],[78,136,"RB"],[125,70,"CM"],[125,110,"CM"]]);opp(s,[[142,22],[175,62],[205,104]]);B(s,130,26);run(s,80,36,96,38);run(s,62,80,72,72);run(s,62,122,68,108);run(s,80,172,78,150);Lbl(s,90,182,"SHIFT AS FOUR",undefined,undefined,76);},
+      Overlap(s){buildPitch(s);team(s,[[62,122,"CB"],[135,118,"CM"],[210,170,"RM"],[130,175,"RB"]]);opp(s,[[245,160],[268,118]]);B(s,222,166);run(s,134,180,262,188);pass(s,222,170,256,184);Lbl(s,190,135,"OVERLAP",undefined,undefined,56);},
+      MidPair(s){buildPitch(s);team(s,[[18,100,"GK"],[62,78,"CB"],[62,122,"CB"],[130,82,"CM"],[125,125,"CM"],[230,82,"ST"],[230,118,"ST"]]);opp(s,[[175,118],[262,100]]);B(s,142,82);dribble(s,145,80,195,78);Lbl(s,125,152,"I'LL STAY",undefined,undefined,56);},
+      WideTrack(s){buildPitch(s);team(s,[[18,100,"GK"],[80,28,"LB"],[62,78,"CB"],[130,82,"CM"],[165,28,"LM"]]);opp(s,[[120,22],[170,100]]);B(s,108,26);run(s,165,28,134,24);Lbl(s,170,55,"TRACK BACK",undefined,undefined,66);},
+      Cross(s){buildPitch(s);team(s,[[150,100,"CM"],[286,176,"RM"],[245,90,"ST"],[232,128,"ST"]]);opp(s,[[272,80],[264,146],[306,100,"GK"]]);B(s,276,170);pass(s,276,166,276,108);run(s,232,128,288,116);run(s,245,90,284,82);Lbl(s,200,40,"NEAR POST & FAR POST",undefined,undefined,104);},
+      Cutback(s){buildPitch(s);team(s,[[296,36,"LM"],[256,72,"ST"],[234,116,"CM"]]);opp(s,[[284,80],[272,136],[308,100,"GK"]]);B(s,292,50);pass(s,290,54,244,112);run(s,256,72,282,52);Lbl(s,222,150,"PENALTY SPOT",undefined,undefined,70);},
+      StrikerPair(s){buildPitch(s);team(s,[[135,100,"CM"],[215,88,"ST"],[250,118,"ST"]]);opp(s,[[272,74],[276,142],[306,100,"GK"]]);B(s,147,100);run(s,215,88,186,92);pass(s,148,100,178,94);run(s,250,118,292,114);Lbl(s,186,62,"ONE SHORT",undefined,undefined,56);Lbl(s,262,182,"ONE LONG",undefined,undefined,54);},
+      LeadPress(s){buildPitch(s);team(s,[[200,30,"LM"],[135,82,"CM"],[135,118,"CM"],[200,170,"RM"],[235,82,"ST"],[235,120,"ST"]]);opp(s,[[268,80],[268,125],[262,30],[262,170],[302,100,"GK"]]);B(s,278,80);run(s,237,82,262,80);run(s,237,120,260,110);A(s,274,86,270,118,"ar",true,1.5);Lbl(s,215,190,"PRESS AS A PAIR",undefined,undefined,84);},
+    },
+    guideCats:[
+      {id:"team",name:"Team",icon:"👥",bg:"#37474f"},
+      {id:"gk",name:"Goalkeeper",icon:"🧤",bg:"#e65100"},
+      {id:"def",name:"Defenders",icon:"🛡️",bg:"#1b5e20"},
+      {id:"mid",name:"Centre Mids",icon:"🎯",bg:"#1565c0"},
+      {id:"wide",name:"Wide Mids",icon:"⚡",bg:"#6a1b9a"},
+      {id:"st",name:"Strikers",icon:"⚽",bg:"#b71c1c"},
+    ],
+    guide:[
+      {cat:"team",title:"Our Shape",d:"Shape",text:"A back four, <strong>four across the middle</strong> and <strong>two up front</strong>. Two strikers means there's always someone to aim for, and someone in the box."},
+      {cat:"team",title:"Width and Depth",d:"WidthDepth",text:"With the ball, the <strong>wide mids hold the width</strong> and a striker <strong>stretches them back</strong>. A long, wide team opens gaps between their lines."},
+      {cat:"team",title:"Two Banks of Four",d:"TwoBanks",text:"Without the ball, the back four and the midfield four sit <strong>close together</strong>, with the strikers in front. No space between our lines means nowhere for them to play."},
+      {cat:"team",title:"Pressing Triggers",d:"Trigger",text:"Press together on a <strong>trigger</strong>: a bad touch, a back pass, a player facing their own goal, or a pass to the touchline. Go as one — not one at a time."},
+      {cat:"team",title:"Counter-Attack",d:"Counter",text:"Win it in midfield? <strong>Play forward fast</strong> before they recover. Wide mids sprint wide, both strikers attack the space."},
+      {cat:"team",title:"Rest Defence",d:"Rest",text:"Even when we attack, keep <strong>the two centre backs and one centre mid</strong> ready, so a lost ball doesn't become a counter-attack against us."},
+      {cat:"team",title:"Offside",d:"Offside",text:"You're offside if, when the ball is played to you, you're in their half and <strong>nearer their goal line than both the ball and the second-last opponent</strong> — and you then get involved. Level is onside."},
+      {cat:"gk",title:"Command Your Box",d:"GKCommand",text:"On crosses, <strong>call early and loud</strong> — “keeper's!” or “away!”. Come for what you can win; stay for what you can't."},
+      {cat:"def",title:"Shift as a Four",d:"BackFour",text:"The back four <strong>slide across together</strong>: the full back nearest the ball presses, the centre backs move over, the far full back tucks in. No gaps between you."},
+      {cat:"def",title:"Press and Cover",d:"Cover",text:"When one centre back <strong>steps out to press</strong>, the other <strong>drops in behind</strong> to cover. Talk: “I've got him!” “I'm behind you!”"},
+      {cat:"def",title:"Overlap the Wide Mid",d:"Overlap",text:"Full backs: when the wide mid has it and comes inside, <strong>go around the outside</strong>. Now it's 2v1 on the wing."},
+      {cat:"mid",title:"One Goes, One Stays",d:"MidPair",text:"Two centre mids: if one <strong>goes forward</strong>, the other <strong>stays</strong> in front of the back four. Talk to each other!"},
+      {cat:"mid",title:"The Third-Man Run",d:"ThirdMan",text:"<strong>Pass, lay-off, run</strong>: the centre back plays into a striker, who sets it for a midfielder already running beyond. Defenders watching the ball miss the third man."},
+      {cat:"wide",title:"Track Back",d:"WideTrack",text:"Wide mids work both ways. If their full back runs forward, <strong>run back with them</strong> so our full back isn't left 2v1."},
+      {cat:"wide",title:"Get It In the Box",d:"Cross",text:"With two strikers in the box, <strong>a cross is a real chance</strong>. Get your head up and aim between the near post and the far post."},
+      {cat:"wide",title:"The Cut-Back",d:"Cutback",text:"Got to the byline? <strong>Pull it back</strong> towards the penalty spot — the defenders are running towards their own goal."},
+      {cat:"st",title:"One Short, One Long",d:"StrikerPair",text:"Work as a pair: <strong>one comes short</strong> to link the play, <strong>the other runs in behind</strong>. Never stand in a line."},
+      {cat:"st",title:"Press as a Pair",d:"LeadPress",text:"When their centre back has it, one striker <strong>presses with a curved run</strong> while the other <strong>blocks the pass across</strong> to their partner."},
+    ],
+    positions:{
+      intro:"Our 11v11 shape is a 4-4-2: a back four, four across the middle and two strikers. Know your job with the ball, without it, and when it changes.",
+      shape:b442,
+      roles:[
+        {l:"GK",name:"Goalkeeper",zone:"The box and the space behind the back four.",have:"Start attacks short when it's on; be an extra passer.",not:"Command the box, organise the defence, sweep behind."},
+        {l:"LB",name:"Full Backs (LB, RB)",zone:"The wide channels, our half and into theirs.",have:"Overlap the wide mid when they come inside.",not:"Shift with the back four; stop crosses; far side tucks in."},
+        {l:"CB",name:"Centre Backs",zone:"The middle of our half.",have:"Split wide when building; pass into the strikers or the centre mids.",not:"Press and cover; hold the line together; win headers and second balls."},
+        {l:"LM",name:"Wide Mids (LM, RM)",zone:"The touchlines, both halves.",have:"Hold the width, go 1v1, cross for the two strikers or cut it back.",not:"Track their full back; tuck in to make the second bank of four."},
+        {l:"CM",name:"Centre Mids",zone:"The middle third, in front of the back four.",have:"Link the defence to the strikers; one goes, one stays.",not:"Protect the space between the lines; press on the trigger."},
+        {l:"ST",name:"Strikers",zone:"Between and around their centre backs.",have:"One short, one long; near post and far post for crosses.",not:"Press as a pair — one presses, one blocks the pass across."},
+      ],
+      rule:"Two banks of four without the ball, a wide and long team with it — and always talk.",
+    },
+    quiz:{
+      beginner:[
+        {section:"⚽ In Possession",q:"What should our wide midfielders do to help us keep the ball?",diagram:"WidthDepth",opts:[
+          {t:"Hold the width near the touchlines",c:true,f:"Yes — width stretches their back four."},
+          {t:"Come into the middle",c:false,f:"That makes the pitch small. Stay wide."},
+          {t:"Drop next to the centre backs",c:false,f:"Stay high and wide."},
+          {t:"Stand next to the strikers",c:false,f:"Hold the width."}],tip:"\"Width and depth.\""},
+        ...pickQs(Q11.beginner, ["When the ball is played to you, you're level","The ball is with their right winger.","We win the ball in midfield","A cross is coming into the box and you can get it."]),
+        {section:"⚽ In Possession",q:"Your centre mid partner has run forward. What should you do?",diagram:"MidPair",opts:[
+          {t:"Stay in front of the back four",c:true,f:"Yes — one goes, one stays."},
+          {t:"Run forward too",c:false,f:"Then nobody protects the middle."},
+          {t:"Go out wide",c:false,f:"Stay central to protect."},
+          {t:"Drop into the back four",c:false,f:"Stay just in front of them."}],tip:"\"One goes, one stays.\""},
+        {section:"⚽ In Possession",q:"You're a wide midfielder at the byline. Their defenders are running back towards goal. Best option?",diagram:"Cutback",opts:[
+          {t:"Cut it back towards the penalty spot",c:true,f:"Yes — the hardest ball to defend."},
+          {t:"Shoot from the byline",c:false,f:"Almost no angle — cut it back."},
+          {t:"Dribble out of play",c:false,f:"Cut it back!"},
+          {t:"Pass back to the centre back",c:false,f:"Not now — cut it back."}],tip:"\"Byline? Cut it back.\""},
+        ...pickQs(Q11.beginner, ["An opponent fouls you hard."]),
+      ],
+      intermediate:[
+        ...pickQs(Q11.intermediate, ["Which of these is a good pressing trigger?","Your centre back partner steps out to press."]),
+        {section:"⚽ In Possession",q:"Our right midfielder has the ball and is coming inside. How can the right back help?",diagram:"Overlap",opts:[
+          {t:"Overlap around the outside",c:true,f:"Yes — now it's 2v1 on the wing."},
+          {t:"Stand behind the midfielder",c:false,f:"Get forward — overlap!"},
+          {t:"Run into the midfielder",c:false,f:"Go around the outside."},
+          {t:"Stay on our goal line",c:false,f:"Overlap!"}],tip:"\"Inside? Overlap.\""},
+        ...pickQs(Q11.intermediate, ["What's a third-man run?"]),
+        {section:"⚽ In Possession",q:"We're attacking. Why do the centre backs and one centre mid stay back?",diagram:"Rest",opts:[
+          {t:"Rest defence — to stop a counter if we lose it",c:true,f:"Yes — attack with balance."},
+          {t:"They're not allowed forward",c:false,f:"They can be — just not all at once."},
+          {t:"To rest their legs",c:false,f:"It's about protecting against the counter."},
+          {t:"To be nearer the keeper",c:false,f:"To stop the counter-attack."}],tip:"\"Attack with balance.\""},
+        {section:"⚽ In Possession",q:"How should our two strikers work together?",diagram:"StrikerPair",opts:[
+          {t:"One comes short, the other runs in behind",c:true,f:"Yes — one short, one long."},
+          {t:"Both stand next to each other",c:false,f:"Then one defender can mark you both."},
+          {t:"Both drop into midfield",c:false,f:"Then nobody's in the box."},
+          {t:"Both run in behind every time",c:false,f:"Someone has to link the play."}],tip:"\"One short, one long.\""},
+        ...pickQs(Q11.intermediate, ["Can you be offside from a goal kick?"]),
+        {section:"⚽ In Possession",q:"Our right midfielder is about to cross. Where should our two strikers go?",diagram:"Cross",opts:[
+          {t:"One to the near post, one to the far post",c:true,f:"Yes — cover both posts."},
+          {t:"Both to the near post",c:false,f:"Then the far post is empty."},
+          {t:"Both stay on the edge of the box",c:false,f:"Get in the box!"},
+          {t:"Both come short for a pass",c:false,f:"Attack the box — near post and far post."}],tip:"\"Near post, far post.\""},
+      ],
+      expert:[
+        ...pickQs(Q11.expert, ["You were in an offside position when the shot was taken"]),
+        {section:"🔴 Out of Possession",q:"Their centre back has the ball. How do our two strikers press?",diagram:"LeadPress",opts:[
+          {t:"One presses with a curved run, the other blocks the pass across",c:true,f:"Yes — press as a pair."},
+          {t:"Both sprint at the ball",c:false,f:"Then the pass across is wide open."},
+          {t:"Both stay still",c:false,f:"Lead the press, together."},
+          {t:"Both run back to halfway",c:false,f:"Press from the front."}],tip:"\"Press as a pair.\""},
+        ...pickQs(Q11.expert, ["Their back four is deep and organised.","We've just lost the ball and our press is beaten."]),
+        {section:"🔴 Out of Possession",q:"Without the ball, why do we keep our two banks of four close together?",diagram:"TwoBanks",opts:[
+          {t:"So there's no space between our lines for them to play into",c:true,f:"Yes — compact banks leave them nowhere to go."},
+          {t:"So we can all talk more easily",c:false,f:"Talking helps, but it's about closing the space."},
+          {t:"Because the pitch is smaller without the ball",c:false,f:"The pitch is the same — we make the space small."},
+          {t:"So the strikers can rest",c:false,f:"It's about closing the space between our lines."}],tip:"\"Two banks, close together.\""},
+        ...pickQs(Q11.expert, ["We're building from the back and they press.","Defending a corner,","We're 4–0 up."]),
+      ],
+    },
+    tips:[
+      "Scan before you receive — know your next pass.",
+      "Your first touch should set up your second.",
+      "Play forward when it's on; keep it when it isn't.",
+      "Press together, on a trigger.",
+      "Lost it? Recover behind the ball.",
+      "Without the ball: two banks of four, close together.",
+      "Attack with balance — keep a rest defence.",
+      "Level with the second-last defender is onside.",
+      "Strikers: one short, one long.",
+      "Wide mids: work both ways — track your runner.",
+      "Byline? Cut it back.",
+      "Centre mids: one goes, one stays.",
+      "Keepers: call early and loud.",
+      "Talk on the pitch — it wins games.",
+      "Win well, lose well.",
+    ],
+  }};
 })();
 
 /* ── Applying a format ── */
@@ -692,7 +998,24 @@ const HUB_7V7 = {
 };
 var HUB_FMT = "7v7";
 
-function fmtData(){ return HUB_FORMATS[HUB_FMT] || null; }
+// the team's shape, as the club set it ("" for the format's own)
+var HUB_SHAPE = "";
+
+/** The format's content, with the team's other shape laid over it if it has one. */
+function fmtData(){
+  const base = HUB_FORMATS[HUB_FMT];
+  if(!base) return null;
+  const alt = base.shapes && base.shapes[HUB_SHAPE];
+  if(!alt) return base;
+  if(!alt.merged) alt.merged = Object.assign({}, base, alt, { diagrams: Object.assign({}, base.diagrams, alt.diagrams || {}) });
+  return alt.merged;
+}
+/** Where this format and shape keep their quiz bests on the phone: each shape its own. */
+function hubBestPrefix(){
+  if(HUB_FMT === "7v7") return saved7v7Shape() === "3-2-1" ? "7v7-321_" : "";
+  const base = HUB_FORMATS[HUB_FMT];
+  return HUB_FMT + (base && base.shapes && base.shapes[HUB_SHAPE] ? "-" + HUB_SHAPE.replace(/-/g, "") : "") + "_";
+}
 
 function applyHubFormat(f){
   if(!f || (f !== "7v7" && !HUB_FORMATS[f])) f = "7v7";
@@ -722,8 +1045,10 @@ function applyHubFormat(f){
 /* the quiz's diagram names, per format, so 7v7's own names still work */
 function fq(list, f){ return list.map(function(q){ return q.diagram ? Object.assign({}, q, { diagram: "f"+f+"_"+q.diagram }) : q; }); }
 ["5v5","9v9","11v11"].forEach(function(f){
-  const q = HUB_FORMATS[f].quiz;
-  ["beginner","intermediate","expert"].forEach(function(lv){ q[lv] = fq(q[lv], f); });
+  [HUB_FORMATS[f]].concat(Object.values(HUB_FORMATS[f].shapes || {})).forEach(function(pack){
+    const q = pack.quiz;
+    ["beginner","intermediate","expert"].forEach(function(lv){ q[lv] = fq(q[lv], f); });
+  });
 });
 
 /* ── The guide, for a format other than 7v7 ── */
@@ -1162,8 +1487,7 @@ function show7v7Shape(shape){
   document.querySelector("#app-positions > .pos-learn-hero .pos-learn-badge").textContent = "7v7 · " + shape + " Formation";
 }
 /** A 7v7 team's shape, as the club set it (Coach Admin → Settings → the team's formation). */
-let HUB_7V7_SHAPE = "2-3-1";
-function saved7v7Shape(){ return HUB_7V7_SHAPE; }
+function saved7v7Shape(){ return HUB_SHAPE === "3-2-1" ? "3-2-1" : "2-3-1"; }
 /** The guide to draw: another format's, the 3-2-1's, or none (the page's own 2-3-1). */
 function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_321 : null); }
 
@@ -1191,10 +1515,10 @@ function guideData(){ return fmtData() || (saved7v7Shape() === "3-2-1" ? GUIDE_3
 })();
 
 /* ── The format: always the club's ── */
-/** The player's team's format and 7v7 shape, as the club set them (Coach Admin → Settings → the team). Players can't change them. */
+/** The player's team's format and shape, as the club set them (Coach Admin → Settings → the team). Players can't change them. */
 function chooseHubFormat(teamFormat, teamShape){
   // an age group or shape once picked on a phone (earlier versions let players choose) no longer counts
   try { localStorage.removeItem("hub_format"); localStorage.removeItem("hub_format_team"); localStorage.removeItem("hub_7v7_shape"); } catch(e){}
-  HUB_7V7_SHAPE = teamShape === "3-2-1" ? "3-2-1" : "2-3-1";
+  HUB_SHAPE = typeof teamShape === "string" ? teamShape : "";
   applyHubFormat(teamFormat || "7v7");
 }

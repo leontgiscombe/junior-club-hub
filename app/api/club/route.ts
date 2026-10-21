@@ -2,7 +2,7 @@
 // Training Hub): name, crest, slogan, teams and the public key for reminders.
 import { NextResponse } from "next/server";
 import { getClub, getTeams } from "@/lib/settings";
-import { teamFormat } from "@/lib/clubSettings";
+import { teamFormat, teamFormation } from "@/lib/clubSettings";
 import { clubColourVars } from "@/lib/palette";
 import { getTenant } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
@@ -30,9 +30,9 @@ export async function GET() {
       name: `${CLUB.name} ${t.squadName ?? t.name}`,
       // just the team, e.g. "U10 Greens" (the Training Hub's header)
       short: t.name,
-      // which Training Hub content its players see, and a 7v7 team's shape
+      // which Training Hub content its players see, and in which shape
       format: teamFormat(t),
-      ...(teamFormat(t) === "7v7" ? { shape: t.formation ?? "2-3-1" } : {}),
+      shape: teamFormation(t),
     })),
     vapidPublicKey: (await vapidKeys())?.publicKey ?? null,
     // whether a shared coach password works here (Finances' set-up offers it only then)
