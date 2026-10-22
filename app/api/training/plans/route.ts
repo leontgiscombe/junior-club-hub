@@ -15,6 +15,8 @@
 //        action "remove-file"  { drillId, fileId }
 //        action "tick-drill"   { team, weekId, drillId, done } — tick a drill off
 //                                               as done in a week (saved at once)
+//        action "hide-from-players" { team, hidden } — hide the next session from
+//                                               the team's players and families (saved at once)
 //        action "save-plan"    { team, plan }  — replaces that team's plan; its
 //                                               startDate must be a training Monday
 import { NextResponse } from "next/server";
@@ -28,6 +30,7 @@ import {
   listPlans,
   saveDrill,
   savePlan,
+  setHiddenFromPlayers,
   tickDrill,
 } from "@/lib/trainingPlans";
 import { checkPlansOwnerKey, drillsNeedOwnerKey, isCoach } from "@/lib/adminAuth";
@@ -150,6 +153,16 @@ export async function POST(request: Request) {
     if (!plan) {
       return NextResponse.json({ error: "Save the plan first, then tick it off" }, { status: 400 });
     }
+    return NextResponse.json({ success: true, plan });
+  }
+
+  if (body.action === "hide-from-players") {
+    const team = String(body.team ?? "");
+    if (!(await isTeam(team))) {
+      return NextResponse.json({ error: "Unknown team" }, { status: 400 });
+    }
+    const plan = await setHiddenFromPlayers(team, Boolean(body.hidden));
+    if (!plan) return NextResponse.json({ error: "Unknown team" }, { status: 400 });
     return NextResponse.json({ success: true, plan });
   }
 

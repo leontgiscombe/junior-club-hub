@@ -395,6 +395,27 @@ html.dark .guide-footer{color:#9ca3af}
 .no-team-row select{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#111827}
 .no-team-row button{border:0;border-radius:10px;padding:8px 16px;font:inherit;font-size:14px;font-weight:800;color:#fff;background:var(--color-green-700,#15803d);cursor:pointer}
 .no-team-error{font-size:12px;color:#dc2626;margin-top:6px}
+.up-next[hidden]{display:none}
+.up-next{background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 3px rgb(0 0 0 / 5%);margin-bottom:12px}
+.up-next-when{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--color-green-700,#15803d)}
+.up-next-topic{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;line-height:1.2;color:#111827;margin-top:2px}
+.up-next-intro{font-size:12px;color:#6b7280;margin-top:2px}
+.up-next-drill{border-top:1px solid #f3f4f6;margin-top:10px;padding-top:10px}
+.up-next-drill summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+.up-next-drill summary::-webkit-details-marker{display:none}
+.up-next-kind{flex-shrink:0;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#15803d;background:#dcfce7;border-radius:999px;padding:3px 8px}
+.up-next-name{flex:1;min-width:0;font-weight:800;font-size:15px;color:#111827}
+.up-next-min{flex-shrink:0;font-size:12px;font-weight:700;color:#6b7280}
+.up-next-chev{flex-shrink:0;width:16px;height:16px;color:#9ca3af;transition:transform .2s}
+.up-next-drill[open] .up-next-chev{transform:rotate(90deg)}
+.up-next-what{font-size:13px;color:#374151;margin-top:6px;line-height:1.45}
+.up-next-pic{display:block;width:100%;height:auto;margin-top:8px;border-radius:10px}
+html.dark .up-next{background:#1c1c1e;box-shadow:none}
+html.dark .up-next-topic,html.dark .up-next-name{color:#fff}
+html.dark .up-next-what{color:#d1d5db}
+html.dark .up-next-drill{border-color:#2c2c2e}
+html.dark .up-next-when{color:#86efac}
+html.dark .up-next-kind{background:rgba(74,222,128,.15);color:#86efac}
 html.dark .no-team-row select{background:#2c2c2e;border-color:#3a3a3c;color:#fff}
 html.dark .no-team{background:#1c1c1e;box-shadow:none}
 html.dark .no-team-title{color:#fff}
@@ -479,6 +500,8 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
       <div class="no-team-row"><select id="hub-no-team-select" aria-label="Your team"></select><button type="button" id="hub-no-team-save">Save</button></div>
       <p class="no-team-error" id="hub-no-team-error" hidden></p>
     </div>
+    <!-- the team's next session on its training plan, in brief (/api/training/next) -->
+    <section class="up-next" id="hub-up-next" hidden aria-label="Up next at training"></section>
     <div class="hub-views" role="tablist" aria-label="Training views">
       <button id="hub-tab-learn" type="button" role="tab" data-hub-view="learn" aria-controls="hub-learn" aria-selected="true">Learn</button>
       <button id="hub-tab-practice" type="button" role="tab" data-hub-view="practice" aria-controls="hub-practice" aria-selected="false" tabindex="-1">Practice</button>
@@ -3877,6 +3900,50 @@ fetch('/api/auth/me', { cache:'no-store' }).then(function(r){ return r.ok ? r.js
   if(u.photo){ a.innerHTML = '<img alt="" src="' + u.photo.replace(/"/g, '') + '">'; return; }
   a.textContent = u.initials || '?';
 }).catch(function(){});
+/* What's on at their team's next training session, from the coaches' plan:
+   the topic and each drill in brief (tap one for its diagram). Only for the
+   team's own players and families, and not if the coaches have hidden it. */
+function showUpNext(t){
+  var box = document.getElementById('hub-up-next');
+  box.hidden = true;
+  if(!t) return;
+  fetch('/api/training/next?team=' + encodeURIComponent(t.id), { cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      var s = d && d.session;
+      if(!s) return;
+      var el = function(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+      var date = new Date(s.date + 'T12:00:00Z');
+      var today = new Date().toLocaleDateString('en-CA', { timeZone:'Europe/London' });
+      var tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+      var day = s.date === today ? 'Today' : s.date === tomorrow ? 'Tomorrow'
+        : date.toLocaleDateString('en-GB', { timeZone:'UTC', weekday:'short', day:'numeric', month:'short' });
+      box.innerHTML = '';
+      box.appendChild(el('p', 'up-next-when', 'Up next \u00b7 ' + day + (s.start ? ' \u00b7 ' + s.start : '')));
+      box.appendChild(el('h2', 'up-next-topic', s.topic || 'Training'));
+      if(s.drills.length) box.appendChild(el('p', 'up-next-intro', 'What we\u2019ll be doing \u2014 tap one to see it'));
+      var kinds = { 'warm-up':'Warm-up', technical:'Technical', game:'Game' };
+      s.drills.forEach(function(dr){
+        var det = el('details', 'up-next-drill');
+        var sum = el('summary');
+        sum.appendChild(el('span', 'up-next-kind', kinds[dr.kind] || 'Drill'));
+        sum.appendChild(el('span', 'up-next-name', dr.title));
+        if(dr.minutes) sum.appendChild(el('span', 'up-next-min', dr.minutes + ' min'));
+        sum.insertAdjacentHTML('beforeend', '<svg class="up-next-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>');
+        det.appendChild(sum);
+        if(dr.summary) det.appendChild(el('p', 'up-next-what', dr.summary));
+        if(dr.diagram){
+          var img = el('img', 'up-next-pic');
+          img.alt = 'Diagram: ' + dr.title;
+          img.loading = 'lazy';
+          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(dr.diagram);
+          det.appendChild(img);
+        }
+        box.appendChild(det);
+      });
+      box.hidden = false;
+    }).catch(function(){});
+}
 function showTeam(teams){
   var find = function(slug){ return teams.find(function(x){ return x.id === slug; }) || null; };
   // their team's name in the headers, and its format (and a 7v7 team's shape) decides the guide, quiz and challenges (formats.js)
@@ -3887,6 +3954,7 @@ function showTeam(teams){
       document.querySelectorAll('.team-age-after').forEach(function(el){ el.textContent = ' \u00b7 ' + name; });
     }
     chooseHubFormat(t && t.format, t && t.shape);
+    showUpNext(t);
   };
   var onThisPhone = function(){ try { return find(localStorage.getItem('club:my-team') || ''); } catch(e){ return null; } };
   var label = function(t){ return t.short || t.name; };
