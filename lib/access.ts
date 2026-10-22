@@ -10,6 +10,8 @@ import { kvCredentials } from "./kvCreds";
 import { DEFAULT_TENANT } from "./tenantHost";
 
 export const MEMBER_COOKIE = "gch_member";
+/** The club code someone typed (or followed a link with) on this club's join page, so it isn't asked for again. */
+export const JOIN_CODE_COOKIE = "gch_join_code";
 /** The request's path, as the proxy passes it on to the pages. */
 export const PATH_HEADER = "x-hub-path";
 export const MEMBER_COOKIE_MAX_AGE = 400 * 24 * 3600;

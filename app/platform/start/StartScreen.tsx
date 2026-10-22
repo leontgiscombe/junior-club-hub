@@ -48,7 +48,7 @@ export default function StartScreen({
 }) {
   const remembered = parseClub(useSyncExternalStore(noop, readStored, () => null));
   const [step, setStep] = useState<"choose" | "player" | "grownup">("choose");
-  const [found, setFound] = useState<(Club & { join: string }) | null>(null);
+  const [found, setFound] = useState<(Club & { join: string; code: string }) | null>(null);
   const [code, setCode] = useState("");
   const [clubCode, setClubCode] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -112,7 +112,7 @@ export default function StartScreen({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That code isn't right");
       remember({ name: data.name, home: data.home });
-      setFound({ name: data.name, home: data.home, join: data.url });
+      setFound({ name: data.name, home: data.home, join: data.url, code: clean });
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't work");
     } finally {
@@ -253,7 +253,7 @@ export default function StartScreen({
               <p className="text-center text-sm text-gray-600 dark:text-gray-300">
                 Found <strong>{found.name || "your club"}</strong>.
               </p>
-              <a href={`${found.home}signin?next=/`} className="rounded-xl bg-green-600 py-3.5 text-center font-bold text-white hover:bg-green-700">
+              <a href={`${found.home}signin?next=${encodeURIComponent(`/join?code=${found.code}`)}`} className="rounded-xl bg-green-600 py-3.5 text-center font-bold text-white hover:bg-green-700">
                 Sign In
               </a>
               <a href={found.join} className="rounded-xl border border-green-600 py-3 text-center font-bold text-green-700 dark:text-green-400">
