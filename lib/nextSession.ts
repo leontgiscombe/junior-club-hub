@@ -42,7 +42,11 @@ function diagramOf(drill: Drill): string | null {
   return null;
 }
 
-/** The plan week a team's next session (today's, until it's over) is on — null if it isn't on the plan. */
+/**
+ * The plan week a team's next session (today's, until it's over) is on — null
+ * if it isn't on the plan. With the plan on the calendar, the week that lands
+ * on that session; without, the first week not yet ticked off, as coaches see.
+ */
 export function nextPlanned(plan: TrainingPlan, sessions: TrainingSession[]): { session: TrainingSession; index: number } | null {
   const now = today();
   const clock = clockNow();
@@ -51,8 +55,10 @@ export function nextPlanned(plan: TrainingPlan, sessions: TrainingSession[]): { 
     .filter((s) => !s.cancelled && s.date >= now && !(s.date === now && (s.end ?? s.start ?? "24:00") <= clock))
     .sort((a, b) => a.date.localeCompare(b.date))[0];
   if (!next) return null;
-  const index = scheduleWeeks(plan, mine).get(next.date);
-  return index === undefined ? null : { session: next, index };
+  const index = plan.startDate
+    ? scheduleWeeks(plan, mine).get(next.date)
+    : plan.weeks.findIndex((w) => w.drillIds.length === 0 || w.doneIds.length < w.drillIds.length);
+  return index === undefined || index < 0 ? null : { session: next, index };
 }
 
 /** What a team's players can see of their next session, or null (no plan for it, or hidden by the coaches). */

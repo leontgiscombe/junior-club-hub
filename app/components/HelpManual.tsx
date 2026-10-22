@@ -301,7 +301,7 @@ export default function HelpManual() {
             <B>Training</B> on the tab bar opens the players&apos; own app: a tactical guide with pitch
             diagrams, a three-level quiz, weekly skill challenges and position guides. You can also set
             up your child&apos;s own phone or tablet for it, which then opens only the Training Hub. If
-            the coaches use a training plan, <B>Up next</B> at the top shows what the next session is on.
+            the coaches use a training plan, the <B>Up Next</B> tab shows what the next session is on.
           </p>
           <H3>Results</H3>
           <p>
@@ -481,8 +481,8 @@ export default function HelpManual() {
           </p>
           <H3>What Players See</H3>
           <p>
-            Once the plan is on the calendar, the team&apos;s players see the next session in the{" "}
-            <B>Training Hub</B> under <B>Up next</B>: its topic, and each drill&apos;s name, a line on what
+            Once the plan is saved, the team&apos;s players see the next session in the{" "}
+            <B>Training Hub</B> on the <B>Up Next</B> tab: its topic, and each drill&apos;s name, a line on what
             they&apos;ll do and its diagram (not your coaching points). Families see the topic on Home&apos;s
             <B> Next training</B>. To keep it a surprise, turn off <B>Players can see this</B> on the next
             session.

@@ -1,9 +1,12 @@
 (function () {
-  const views = ["learn", "practice", "progress"];
+  // "next" (Up Next) only shows for a team's own players and families (index.html showUpNext)
+  const views = ["learn", "practice", "progress", "next"];
+  const tabOf = (name) => document.querySelector(`[data-hub-view="${name}"]`);
+  const shown = () => views.filter((name) => tabOf(name) && !tabOf(name).hidden);
   function selectView(view) {
-    if (!views.includes(view)) return;
+    if (!shown().includes(view)) return;
     views.forEach((name) => {
-      const tab = document.querySelector(`[data-hub-view="${name}"]`);
+      const tab = tabOf(name);
       const panel = document.getElementById(`hub-${name}`);
       if (tab) {
         tab.setAttribute("aria-selected", String(name === view));
@@ -20,10 +23,11 @@
     tab.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
-      const index = views.indexOf(tab.dataset.hubView);
-      const next = event.key === "Home" ? 0 : event.key === "End" ? views.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + views.length) % views.length;
-      selectView(views[next]);
-      document.querySelector(`[data-hub-view="${views[next]}"]`)?.focus();
+      const order = shown();
+      const index = order.indexOf(tab.dataset.hubView);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? order.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + order.length) % order.length;
+      selectView(order[next]);
+      tabOf(order[next])?.focus();
     });
   });
   selectView("learn");
