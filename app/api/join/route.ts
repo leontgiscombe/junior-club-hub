@@ -9,7 +9,7 @@
 // The teams are only shown once the code is right, and a parent types their
 // own children's names: nobody who isn't approved sees the club's players.
 import { NextRequest, NextResponse } from "next/server";
-import { MEMBER_COOKIE, RELATIONS, normaliseCode, readMember, type Relation } from "@/lib/access";
+import { JOIN_CODE_COOKIE, MEMBER_COOKIE, RELATIONS, normaliseCode, readMember, type Relation } from "@/lib/access";
 import { currentUser, setUserName, setUserPhone } from "@/lib/auth";
 import { clientIp } from "@/lib/clientIp";
 import { rawKv } from "@/lib/kv";
@@ -64,8 +64,19 @@ export async function POST(req: NextRequest) {
   }
   const teams = (await getTeams()).map((t) => ({ slug: t.slug, name: t.name }));
 
-  // just the code: the rest of the form
-  if (body?.name === undefined) return NextResponse.json({ status: "ok", teams });
+  // just the code: the rest of the form — and the code kept on this phone, so
+  // signing in (or coming back later) doesn't ask for it again
+  if (body?.name === undefined) {
+    const res = NextResponse.json({ status: "ok", teams });
+    res.cookies.set(JOIN_CODE_COOKIE, code, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https",
+      maxAge: 30 * 24 * 3600,
+      path: "/",
+    });
+    return res;
+  }
 
   const name = text(body.name, 60);
   const relation = (Object.keys(RELATIONS) as Relation[]).find((r) => r === body.relation);

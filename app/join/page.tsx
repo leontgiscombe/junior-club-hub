@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { MEMBER_COOKIE, normaliseCode, readMember, showCode } from "@/lib/access";
+import { JOIN_CODE_COOKIE, MEMBER_COOKIE, normaliseCode, readMember, showCode } from "@/lib/access";
 import { getAccess } from "@/lib/members";
 import { currentPerson } from "@/lib/people";
 import { getClub } from "@/lib/settings";
@@ -22,13 +22,16 @@ export async function generateMetadata() {
 
 export default async function JoinPage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
   const tenant = await requireTenant();
-  const [club, access, member, me, { code }] = await Promise.all([
+  const [club, access, member, me, { code: linkCode }, jar] = await Promise.all([
     getClub(),
     getAccess(tenant),
     (async () => readMember(tenant, (await cookies()).get(MEMBER_COOKIE)?.value ?? ""))(),
     currentPerson(tenant),
     searchParams,
+    cookies(),
   ]);
+  // the code from the join link, else one already typed here (checked again either way)
+  const code = linkCode ?? jar.get(JOIN_CODE_COOKIE)?.value;
   // already in (an approved account, or a phone approved before accounts)
   if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 

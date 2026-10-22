@@ -42,12 +42,7 @@ export default function JoinForm({
   const [busy, setBusy] = useState(false);
   const [askAgain, setAskAgain] = useState(false);
   const [step, setStep] = useState<Step>("name");
-
-  // a code from the join link (or an open hub's own): checked straight away
-  useEffect(() => {
-    if (initialCode && initialStatus === "none") document.getElementById("join-code-next")?.click();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
-  }, []);
+  const [checking, setChecking] = useState(!!initialCode && initialStatus === "none");
 
   // while waiting, look every 15 seconds for the coach's answer
   useEffect(() => {
@@ -63,8 +58,12 @@ export default function JoinForm({
 
   const withKids = relation === "parent" || (alsoParent && relation !== "" && relation !== "player");
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
+    void send();
+  }
+
+  async function send() {
     setBusy(true);
     setError(null);
     try {
@@ -95,6 +94,13 @@ export default function JoinForm({
       setBusy(false);
     }
   }
+
+  // a code from the join link, the club search, or typed here before (or an open
+  // hub's own): checked straight away, with no code box unless it's wrong
+  useEffect(() => {
+    if (checking) void send().finally(() => setChecking(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
 
   if (status === "pending") {
     return (
@@ -132,6 +138,9 @@ export default function JoinForm({
 
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
+  if (!teams && checking) {
+    return <p className="mt-6 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">Checking your club code…</p>;
+  }
   if (!teams) {
     return (
       <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
@@ -150,7 +159,7 @@ export default function JoinForm({
           <span className="mt-1 block text-xs text-gray-400">Your coach can give you this.</span>
         </label>
         {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
-        <button id="join-code-next" disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
+        <button disabled={busy || !code.trim()} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
           {busy ? "Checking…" : "Next"}
         </button>
         {account ? (
