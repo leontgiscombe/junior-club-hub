@@ -20,6 +20,8 @@ import { outcome } from "@/lib/record";
 import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
+import { listPlans } from "@/lib/trainingPlans";
+import { scheduleWeeks } from "@/lib/trainingPlanTypes";
 import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import AppHeader from "../components/AppHeader";
@@ -152,17 +154,19 @@ export default async function Home() {
   let waiting = 0;
   let firstWaiting = "";
   let nextTraining: TrainingSession | null = null;
+  let nextTopic = "";
   let nextMatch: Match | null = null;
   let lastResult: Match | null = null;
   if (showNext && tenant) {
     const myTeams = !viewer.canCoach ? familyTeams : person?.team ? [person.team.slug] : TEAMS.map((t) => t.slug);
     const now = today();
     const clock = clockNow();
-    const [people, members, matches, training] = await Promise.all([
+    const [people, members, matches, training, plans] = await Promise.all([
       viewer.canCoach ? listPeople(tenant).catch(() => []) : [],
       viewer.canCoach ? listMembers(tenant).catch(() => []) : [],
       listMatches().catch(() => []),
       listTraining().catch(() => []),
+      CLUB.features.trainingPlans ? listPlans().catch(() => []) : [],
     ]);
     // people asking to join, and children approved parents have added since
     const names = awaitingApproval(people);
@@ -173,6 +177,12 @@ export default async function Home() {
         // today's is done with once it's finished (or started, with no finish time)
         .filter((s) => myTeams.includes(s.team) && !s.cancelled && s.date >= now && !(s.date === now && (s.end ?? s.start ?? "24:00") <= clock))
         .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? "").localeCompare(b.start ?? ""))[0] ?? null;
+    // its topic, from the team's training plan (unless the coaches hide it from families)
+    const plan = nextTraining && plans.find((p) => p.team === nextTraining!.team);
+    if (nextTraining && plan && (viewer.canCoach || !plan.hiddenFromPlayers)) {
+      const week = scheduleWeeks(plan, training.filter((s) => s.team === plan.team)).get(nextTraining.date);
+      nextTopic = week === undefined ? "" : plan.weeks[week]?.theme ?? "";
+    }
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
     lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
@@ -323,6 +333,9 @@ export default async function Home() {
                       {upcoming(nextTraining.date)}
                       {timesLabel(nextTraining) ? ` · ${timesLabel(nextTraining)}` : ""}
                     </span>
+                    {nextTopic && (
+                      <span className="block truncate text-sm font-semibold text-green-700 dark:text-green-400">{nextTopic}</span>
+                    )}
                   </span>
                 </NextRow>
                 ) }]

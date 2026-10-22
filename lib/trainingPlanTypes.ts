@@ -123,6 +123,10 @@ export interface TrainingPlan {
   // The training session week 1 lands on, YYYY-MM-DD — "" until the plan is scheduled.
   startDate: string;
   weeks: PlanWeek[];
+  // Players and families don't see the next session's topic and drills (in the
+  // Training Hub and on Home). Changed only by setHiddenFromPlayers, never by
+  // saving the plan.
+  hiddenFromPlayers: boolean;
   updatedAt: string;
 }
 
