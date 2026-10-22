@@ -486,7 +486,7 @@ export default function HelpManual() {
             <li>Tap <B>Save Plan</B>. Nothing is kept until you do.</li>
           </Steps>
           <p>
-            If your hub comes with a season plan, <B>Edit Plan</B> has a button to use it.
+            If there&apos;s a season plan for the team&apos;s age group, <B>Edit Plan</B> has a button to use it.
           </p>
           <H3>Ticking Drills Off</H3>
           <p>
@@ -496,8 +496,9 @@ export default function HelpManual() {
           </p>
           <H3>The Drill Library</H3>
           <p>
-            <B>📚 Drill Library</B> lists every drill, with type and topic filters along the top and a
-            search. Tap a drill to read it, or to edit it. A drill can have up to three{" "}
+            <B>📚 Drill Library</B> lists every drill, with age, type and topic filters along the top and a
+            search. The ages start on the team you&apos;re planning for (U8, U9–11, U12–14, U15–17, U18), or
+            tap <B>All Ages</B>. Tap a drill to read it, or to edit it. A drill can have up to three{" "}
             <B>photos or PDFs</B> (Edit → <B>+ Add Photo or PDF</B>), like a photo of the whiteboard
             or a drawn-up session; the first photo shows at the top of the drill.
             Any coach can read it, but only the club owner can add or change drills (with{" "}

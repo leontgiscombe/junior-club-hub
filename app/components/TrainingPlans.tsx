@@ -7,11 +7,15 @@ import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { useMyTeam } from "@/lib/myTeam";
 import {
+  AGE_BANDS,
   DRILL_KINDS,
   DRILL_TOPICS,
   MAX_DRILL_UPLOADS,
+  bandName,
+  teamBand,
   topicName,
   scheduleWeeks,
+  type AgeBand,
   type Drill,
   type DrillKind,
   type DrillTopic,
@@ -44,7 +48,7 @@ interface DrillDraft {
   title: string;
   kind: DrillKind;
   topic: DrillTopic | "";
-  ageGroup: string;
+  ageGroup: AgeBand | "";
   minutes: string;
   players: string;
   equipment: string;
@@ -244,6 +248,8 @@ export default function TrainingPlans() {
   const [uploading, setUploading] = useState(false);
   const [kindFilter, setKindFilter] = useState<DrillKind | "">("");
   const [topicFilter, setTopicFilter] = useState<DrillTopic | "">("");
+  // the ages shown: the chosen team's band until one is picked ("" for all of them)
+  const [bandFilter, setBandFilter] = useState<AgeBand | "" | null>(null);
   const [search, setSearch] = useState("");
   // Weeks opened or closed by hand; the rest stay folded.
   const [weekToggles, setWeekToggles] = useState<Record<string, boolean>>({});
@@ -253,13 +259,19 @@ export default function TrainingPlans() {
   const [ownerKeySet, setOwnerKeySet] = useState(true);
   // no owner password in play: the club's coaches edit the drills themselves
   const [coachesEditDrills, setCoachesEditDrills] = useState(false);
-  // the drill pack's season plan (if any), to fill a team's plan from in one go
-  const [seasonPlan, setSeasonPlan] = useState<{ topic: DrillTopic; drillIds: string[] }[]>([]);
-  const [seasonPlanTitle, setSeasonPlanTitle] = useState("");
+  // the drill pack's season plan for each age band that has one, to fill a team's plan from in one go
+  const [seasonPlans, setSeasonPlans] = useState<
+    Partial<Record<AgeBand, { title: string; weeks: { topic: DrillTopic; drillIds: string[] }[] }>>
+  >({});
   const [unlocking, setUnlocking] = useState(false);
   const [ownerInput, setOwnerInput] = useState("");
   // Every team's training sessions from the training log, to pin a plan's weeks to dates.
   const [sessions, setSessions] = useState<Session[]>([]);
+  // the chosen team's age band (from its age group), and the season plan for it
+  const teamInfo = TEAMS.find((t) => t.slug === team);
+  const band = teamInfo ? teamBand(teamInfo) : undefined;
+  const seasonPlan = (band && seasonPlans[band]?.weeks) || [];
+  const seasonPlanTitle = (band && seasonPlans[band]?.title) || "";
 
   const load = useCallback(async (adminKey: string) => {
     setLoading(true);
@@ -280,8 +292,7 @@ export default function TrainingPlans() {
       setPlans(data.plans ?? []);
       setOwnerKeySet(data.ownerKeySet ?? false);
       setCoachesEditDrills(data.coachesEditDrills ?? false);
-      setSeasonPlan(data.seasonPlan ?? []);
-      setSeasonPlanTitle(data.seasonPlanTitle ?? "");
+      setSeasonPlans(data.seasonPlans ?? {});
       setSessions((await trainingRes.json()).sessions ?? []);
       setAuthed(true);
     } catch {
@@ -612,8 +623,12 @@ export default function TrainingPlans() {
   const drillById = new Map(drills.map((d) => [d.id, d]));
   const matchesSearch = (d: Drill) =>
     !search.trim() || d.title.toLowerCase().includes(search.trim().toLowerCase());
+  // a drill for any age shows under every band
+  const shownBand = bandFilter ?? band ?? "";
+  const forBand = (d: Drill, b: AgeBand | "") => !b || !d.ageGroup || d.ageGroup === b;
   const shownDrills = drills.filter(
     (d) =>
+      forBand(d, shownBand) &&
       (!kindFilter || d.kind === kindFilter) &&
       (!topicFilter || d.topic === topicFilter) &&
       matchesSearch(d)
@@ -621,12 +636,17 @@ export default function TrainingPlans() {
   // How many drills each chip would show, given the other filters and the search.
   const kindCount = (kind: string) =>
     drills.filter(
-      (d) => (!kind || d.kind === kind) && (!topicFilter || d.topic === topicFilter) && matchesSearch(d)
+      (d) => forBand(d, shownBand) && (!kind || d.kind === kind) && (!topicFilter || d.topic === topicFilter) && matchesSearch(d)
     ).length;
   const topicCount = (topic: string) =>
     drills.filter(
-      (d) => (!topic || d.topic === topic) && (!kindFilter || d.kind === kindFilter) && matchesSearch(d)
+      (d) => forBand(d, shownBand) && (!topic || d.topic === topic) && (!kindFilter || d.kind === kindFilter) && matchesSearch(d)
     ).length;
+  const bandCount = (b: AgeBand) =>
+    drills.filter(
+      (d) => forBand(d, b) && (!kindFilter || d.kind === kindFilter) && (!topicFilter || d.topic === topicFilter) && matchesSearch(d)
+    ).length;
+  const bandDrills = drills.filter((d) => forBand(d, shownBand));
 
   // A week's drills, its drill in each slot, and changes to one week of the draft.
   const weekDrillsOf = (w: PlanWeek) =>
@@ -1012,13 +1032,14 @@ export default function TrainingPlans() {
             )}
             {field(
               "Age group",
-              <input
-                value={form.ageGroup}
-                onChange={set("ageGroup")}
-                placeholder="U9–U11"
-                maxLength={40}
-                className={inputClass}
-              />
+              <select value={form.ageGroup} onChange={set("ageGroup")} className={inputClass}>
+                <option value="">Any age</option>
+                {AGE_BANDS.map((b) => (
+                  <option key={b.slug} value={b.slug}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           {field(
@@ -1186,11 +1207,18 @@ export default function TrainingPlans() {
           />
           {canEdit && (
             <button
-              onClick={() => setDrillForm({ ...BLANK_DRILL })}
+              onClick={() => setDrillForm({ ...BLANK_DRILL, ageGroup: shownBand })}
               className="shrink-0 cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700"
             >
               + New Drill
             </button>
+          )}
+        </div>
+        {/* the ages, starting on the chosen team's */}
+        <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {chip(!shownBand, "All Ages", () => setBandFilter(""), "all-ages")}
+          {AGE_BANDS.map((b) =>
+            chip(shownBand === b.slug, <>{b.name} <span className="opacity-70">{bandCount(b.slug)}</span></>, () => setBandFilter(b.slug), b.slug)
           )}
         </div>
         {/* one row of filters, scrolled sideways: the type, then the topic */}
@@ -1210,9 +1238,10 @@ export default function TrainingPlans() {
 
         {drills.length > 0 && (
           <p className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {shownDrills.length === drills.length
-              ? `${drills.length} drill${drills.length === 1 ? "" : "s"}`
-              : `${shownDrills.length} of ${drills.length} drills`}
+            {shownDrills.length === bandDrills.length
+              ? `${bandDrills.length} drill${bandDrills.length === 1 ? "" : "s"}`
+              : `${shownDrills.length} of ${bandDrills.length} drills`}
+            {shownBand && ` · ${bandName(shownBand)}`}
           </p>
         )}
 
@@ -1225,7 +1254,9 @@ export default function TrainingPlans() {
             </p>
           </div>
         ) : shownDrills.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No drills match.</p>
+          <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            {shownBand && bandDrills.length === 0 ? `No ${bandName(shownBand)} drills yet.` : "No drills match."}
+          </p>
         ) : (
           <div className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
             {shownDrills.map((drill) => (
@@ -1241,6 +1272,7 @@ export default function TrainingPlans() {
                     {[
                       DRILL_KINDS.find((k) => k.slug === drill.kind)?.name,
                       drill.topic ? topicName(drill.topic) : "",
+                      shownBand ? "" : bandName(drill.ageGroup),
                       drill.minutes ? `${drill.minutes} min` : "",
                       drill.players ? `${drill.players} players` : "",
                     ]
@@ -1349,8 +1381,11 @@ export default function TrainingPlans() {
       const current = inSlot(week, sheet.slot);
       const topic = DRILL_TOPICS.find((t) => t.name === week.theme);
       const ofKind = drills.filter((d) => d.kind === sheet.slot);
-      const onTopic = topic ? ofKind.filter((d) => d.topic === topic.slug) : [];
-      const others = topic ? ofKind.filter((d) => d.topic !== topic.slug) : ofKind;
+      // the team's own ages first; the rest at the end
+      const forTeam = ofKind.filter((d) => forBand(d, band ?? ""));
+      const otherAges = ofKind.filter((d) => !forBand(d, band ?? ""));
+      const onTopic = topic ? forTeam.filter((d) => d.topic === topic.slug) : [];
+      const others = topic ? forTeam.filter((d) => d.topic !== topic.slug) : forTeam;
       const group = (label: string, list: Drill[]) =>
         list.length > 0 && (
           <>
@@ -1369,7 +1404,7 @@ export default function TrainingPlans() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-gray-900 dark:text-gray-50">{d.title}</span>
                     <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
-                      {[d.topic ? topicName(d.topic) : "No topic", d.minutes ? `${d.minutes} min` : ""].filter(Boolean).join(" · ")}
+                      {[d.topic ? topicName(d.topic) : "No topic", bandName(d.ageGroup), d.minutes ? `${d.minutes} min` : ""].filter(Boolean).join(" · ")}
                     </span>
                   </span>
                   {current?.id === d.id && <span className="shrink-0 font-bold text-green-600">✓</span>}
@@ -1402,6 +1437,7 @@ export default function TrainingPlans() {
               )}
               {group(topic ? topic.name : many, topic ? onTopic : others)}
               {topic && group(`Other ${many}`, others)}
+              {group("Other ages", otherAges)}
             </>
           )}
           {current && (
