@@ -9,8 +9,9 @@ import { bandName } from "@/lib/trainingPlanTypes";
 import { diagramSvg } from "./diagram";
 import type { BandPack } from "./types";
 import { U9_11 } from "./u9-11";
+import { U12_14 } from "./u12-14";
 
-const PACKS: BandPack[] = [U9_11];
+const PACKS: BandPack[] = [U9_11, U12_14];
 
 const diagramName = (id: string) => `${id}.svg`;
 

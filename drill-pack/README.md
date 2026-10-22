@@ -13,7 +13,7 @@ add content you don't have the rights to: every club using the hub gets the pack
 - `index.ts`: puts the pack together from each band's folder (`PACKS`),
   exporting the drills (`DRILLS`), each band's season plan (`SEASON_PLANS`) and
   `drawnFile`, which draws a drill's diagram.
-- `u9-11/` (and one folder per band as they're written): the drills, one file
+- `u9-11/`, `u12-14/` (and one folder per band as they're written): the drills, one file
   per topic, and the band's `index.ts` listing the topics in season-plan order.
   Within a topic, each kind's drills run easiest first; the season plan takes
   the first four of each kind for its first block on that topic and the last
