@@ -395,7 +395,9 @@ html.dark .guide-footer{color:#9ca3af}
 .no-team-row select{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#111827}
 .no-team-row button{border:0;border-radius:10px;padding:8px 16px;font:inherit;font-size:14px;font-weight:800;color:#fff;background:var(--color-green-700,#15803d);cursor:pointer}
 .no-team-error{font-size:12px;color:#dc2626;margin-top:6px}
-.up-next[hidden]{display:none}
+.hub-views button[hidden]{display:none}
+.up-next-empty{font-size:14px;color:#6b7280}
+html.dark .up-next-empty{color:#9ca3af}
 .up-next{background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 3px rgb(0 0 0 / 5%);margin-bottom:12px}
 .up-next-when{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--color-green-700,#15803d)}
 .up-next-topic{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;line-height:1.2;color:#111827;margin-top:2px}
@@ -419,7 +421,7 @@ html.dark .up-next-kind{background:rgba(74,222,128,.15);color:#86efac}
 html.dark .no-team-row select{background:#2c2c2e;border-color:#3a3a3c;color:#fff}
 html.dark .no-team{background:#1c1c1e;box-shadow:none}
 html.dark .no-team-title{color:#fff}
-.hub-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #e5e7eb}
+.hub-views{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border-bottom:1px solid #e5e7eb}
 .hub-views button{min-height:48px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:700;color:#6b7280;cursor:pointer}
 .hub-views button[aria-selected="true"]{border-bottom-color:var(--color-green-700,#15803d);color:var(--color-green-700,#15803d)}
 .hub-view-title{font-size:18px;font-weight:800;color:#111827;margin:0 0 12px;letter-spacing:0}
@@ -500,12 +502,16 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
       <div class="no-team-row"><select id="hub-no-team-select" aria-label="Your team"></select><button type="button" id="hub-no-team-save">Save</button></div>
       <p class="no-team-error" id="hub-no-team-error" hidden></p>
     </div>
-    <!-- the team's next session on its training plan, in brief (/api/training/next) -->
-    <section class="up-next" id="hub-up-next" hidden aria-label="Up next at training"></section>
     <div class="hub-views" role="tablist" aria-label="Training views">
       <button id="hub-tab-learn" type="button" role="tab" data-hub-view="learn" aria-controls="hub-learn" aria-selected="true">Learn</button>
       <button id="hub-tab-practice" type="button" role="tab" data-hub-view="practice" aria-controls="hub-practice" aria-selected="false" tabindex="-1">Practice</button>
       <button id="hub-tab-progress" type="button" role="tab" data-hub-view="progress" aria-controls="hub-progress" aria-selected="false" tabindex="-1">Progress</button>
+      <button id="hub-tab-next" type="button" role="tab" data-hub-view="next" aria-controls="hub-next" aria-selected="false" tabindex="-1" hidden>Up Next</button>
+    </div>
+    <!-- the team's next session on its training plan, in brief (/api/training/next) -->
+    <div id="hub-next" role="tabpanel" aria-labelledby="hub-tab-next" hidden>
+    <h2 class="hub-view-title">Next session</h2>
+    <section class="up-next" id="hub-up-next"></section>
     </div>
     <div id="hub-progress" role="tabpanel" aria-labelledby="hub-tab-progress" hidden>
     <div class="progress-card">
@@ -3900,28 +3906,39 @@ fetch('/api/auth/me', { cache:'no-store' }).then(function(r){ return r.ok ? r.js
   if(u.photo){ a.innerHTML = '<img alt="" src="' + u.photo.replace(/"/g, '') + '">'; return; }
   a.textContent = u.initials || '?';
 }).catch(function(){});
-/* What's on at their team's next training session, from the coaches' plan:
-   the topic and each drill in brief (tap one for its diagram). Only for the
-   team's own players and families, and not if the coaches have hidden it. */
+/* The Up Next tab: what's on at their team's next training session, from the
+   coaches' plan — the topic and each drill in brief (tap one for its diagram).
+   Only for the team's own players and families; empty if the coaches have
+   hidden it or there's no plan for it. */
 function showUpNext(t){
+  var tab = document.getElementById('hub-tab-next');
   var box = document.getElementById('hub-up-next');
-  box.hidden = true;
-  if(!t) return;
+  // no tab for anyone who isn't in the team (or isn't signed in)
+  var off = function(){
+    if(tab.getAttribute('aria-selected') === 'true') setHubHomeView('learn');
+    tab.hidden = true;
+  };
+  if(!t){ off(); return; }
   fetch('/api/training/next?team=' + encodeURIComponent(t.id), { cache:'no-store' })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      var s = d && d.session;
-      if(!s) return;
+      if(!d){ off(); return; }
+      var s = d.session;
       var el = function(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+      box.innerHTML = '';
+      tab.hidden = false;
+      if(!s){
+        box.appendChild(el('p', 'up-next-empty', 'Nothing planned for the next session yet — check back once your coach has added it.'));
+        return;
+      }
       var date = new Date(s.date + 'T12:00:00Z');
       var today = new Date().toLocaleDateString('en-CA', { timeZone:'Europe/London' });
       var tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
       var day = s.date === today ? 'Today' : s.date === tomorrow ? 'Tomorrow'
         : date.toLocaleDateString('en-GB', { timeZone:'UTC', weekday:'short', day:'numeric', month:'short' });
-      box.innerHTML = '';
-      box.appendChild(el('p', 'up-next-when', 'Up next \u00b7 ' + day + (s.start ? ' \u00b7 ' + s.start : '')));
-      box.appendChild(el('h2', 'up-next-topic', s.topic || 'Training'));
-      if(s.drills.length) box.appendChild(el('p', 'up-next-intro', 'What we\u2019ll be doing \u2014 tap one to see it'));
+      box.appendChild(el('p', 'up-next-when', day + (s.start ? ' · ' + s.start : '')));
+      box.appendChild(el('h3', 'up-next-topic', s.topic || 'Training'));
+      if(s.drills.length) box.appendChild(el('p', 'up-next-intro', 'What we’ll be doing — tap one to see it'));
       var kinds = { 'warm-up':'Warm-up', technical:'Technical', game:'Game' };
       s.drills.forEach(function(dr){
         var det = el('details', 'up-next-drill');
@@ -3941,8 +3958,7 @@ function showUpNext(t){
         }
         box.appendChild(det);
       });
-      box.hidden = false;
-    }).catch(function(){});
+    }).catch(off);
 }
 function showTeam(teams){
   var find = function(slug){ return teams.find(function(x){ return x.id === slug; }) || null; };
