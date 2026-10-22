@@ -4,12 +4,12 @@
 // alongside the ones coaches add; editing one saves a copy over it in KV, but
 // its files always come from the pack.
 import type { Drill, DrillFile } from "./trainingPlanTypes";
-import { DRILLS, SEASON_PLAN, drawnFile } from "@/drill-pack";
+import { DRILLS, SEASON_PLANS, drawnFile } from "@/drill-pack";
 
 export const BUILT_IN_DRILLS: Drill[] = DRILLS;
 
-/** The pack's season plan: the title it gives a plan, and its weeks in order. */
-export { SEASON_PLAN };
+/** The pack's season plan for each age band that has one: the title it gives a plan, and its weeks in order. */
+export { SEASON_PLANS };
 
 /** A built-in drill's diagram, drawn by the pack as SVG — undefined for files kept in drill-pack/files/. */
 export function builtInDiagram(name: string): string | undefined {

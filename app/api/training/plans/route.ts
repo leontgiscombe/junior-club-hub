@@ -1,6 +1,6 @@
-// GET  /api/training/plans?key=...  -> { drills, plans, ownerKeySet, coachesEditDrills, seasonPlan, seasonPlanTitle }
-//        seasonPlan: the drill pack's season plan — [{ topic, drillIds }] in week order
-//        seasonPlanTitle: the title it gives a plan
+// GET  /api/training/plans?key=...  -> { drills, plans, ownerKeySet, coachesEditDrills, seasonPlans }
+//        seasonPlans: the drill pack's season plan for each age band that has
+//        one — { [band]: { title, weeks: [{ topic, drillIds }] in week order } }
 // POST /api/training/plans?key=...  -> { action, ownerKey, ... }
 //
 // Any coach can read and change their team's plan with the coach password.
@@ -34,7 +34,7 @@ import { checkPlansOwnerKey, drillsNeedOwnerKey, isCoach } from "@/lib/adminAuth
 import { isTeam } from "@/lib/settings";
 import { atLimit, overLimit } from "@/lib/rateLimit";
 import { isTrainingDate } from "@/lib/trainingStorage";
-import { SEASON_PLAN } from "@/lib/builtInDrills";
+import { SEASON_PLANS } from "@/lib/builtInDrills";
 
 export const runtime = "nodejs";
 
@@ -55,8 +55,7 @@ export async function GET(request: Request) {
     ownerKeySet: needOwner,
     // with no owner password in play, the club's coaches edit the drills
     coachesEditDrills: !needOwner,
-    seasonPlan: SEASON_PLAN.weeks,
-    seasonPlanTitle: SEASON_PLAN.title,
+    seasonPlans: SEASON_PLANS,
   });
 }
 

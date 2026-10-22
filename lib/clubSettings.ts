@@ -154,6 +154,11 @@ function nameAge(name: string): number | undefined {
   return Number.isFinite(age) ? age : undefined;
 }
 
+/** A team's age group as a year (Under 13s is 13): the one set for it, else one in its name. */
+export function teamAge(team: Pick<Team, "name" | "age">): number | undefined {
+  return team.age ?? nameAge(team.name);
+}
+
 /**
  * A team's match format: its age group's, else the format set in Settings
  * before teams had a year, else worked out from an age in its name, else 7v7.

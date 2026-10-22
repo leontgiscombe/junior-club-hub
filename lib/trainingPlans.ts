@@ -19,6 +19,7 @@ import {
   type DrillUpload,
   type TrainingPlan,
   MAX_DRILL_UPLOADS,
+  bandOf,
 } from "./trainingPlanTypes";
 import { getKv } from "./kv";
 
@@ -79,7 +80,7 @@ export function cleanDrill(raw: Partial<Drill> & Record<string, unknown>): Drill
     title: text(raw.title, 120),
     kind: isDrillKind(kind) ? kind : "technical",
     topic: isDrillTopic(topic) ? topic : "",
-    ageGroup: text(raw.ageGroup, 40),
+    ageGroup: bandOf(text(raw.ageGroup, 40)),
     minutes: Math.min(Math.max(minutes, 0), 180),
     players: text(raw.players, 40),
     equipment: text(raw.equipment, 500),
