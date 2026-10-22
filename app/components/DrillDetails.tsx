@@ -2,7 +2,7 @@
 
 // A drill as coaches read it — on the training plans page and against each
 // session in the training log.
-import { DRILL_KINDS, topicName, type Drill, type DrillKind } from "@/lib/trainingPlanTypes";
+import { DRILL_KINDS, bandName, topicName, type Drill, type DrillKind } from "@/lib/trainingPlanTypes";
 
 const KIND_STYLES: Record<DrillKind, string> = {
   "warm-up": "bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300",
@@ -41,7 +41,7 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
     drill.topic ? `⚽ ${topicName(drill.topic)}` : "",
     drill.minutes ? `⏱ ${drill.minutes} min` : "",
     drill.players ? `👥 ${drill.players} players` : "",
-    drill.ageGroup ? `🎂 ${drill.ageGroup}` : "",
+    drill.ageGroup ? `🎂 ${bandName(drill.ageGroup)}` : "",
   ].filter(Boolean);
   return (
     <div className="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-200">

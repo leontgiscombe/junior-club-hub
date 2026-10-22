@@ -12,6 +12,7 @@ import { getClub, getTeams } from "@/lib/settings";
 import { listPlayers } from "@/lib/statsStorage";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { listDrills } from "@/lib/trainingPlans";
+import { bandName } from "@/lib/trainingPlanTypes";
 import { listKitRequests } from "@/lib/kitRequests";
 import { KIT_ITEMS } from "@/lib/kitItems";
 import { score } from "@/lib/searchIndex";
@@ -86,7 +87,7 @@ export async function GET(request: Request) {
       drills.map((d) => ({
         kind: "Drills",
         title: d.title,
-        sub: [d.kind, d.topic, d.ageGroup].filter(Boolean).join(" · "),
+        sub: [d.kind, d.topic, bandName(d.ageGroup)].filter(Boolean).join(" · "),
         href: `/admin/training/plans?view=library&q=${encodeURIComponent(d.title)}`,
         score: score(q, d.title, `${d.topic} ${d.kind} ${d.equipment}`),
       })),
