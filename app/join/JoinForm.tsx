@@ -1,8 +1,9 @@
 "use client";
 
 // Ask to join: first the club's code; once it's right, sign in (or make an
-// account) with your email; then your name, who you are, your team and (for a
-// parent, or a coach who has a child at the club too) your child's name. Then
+// account) with your email; then a step at a time, your name, who you are, your
+// team and (for a parent, or a coach who has a child at the club too) your
+// child's name, your mobile and anything else. Then
 // you wait for a coach to approve you — this page checks every so often by itself. The team list only shows once the code
 // is right, and nobody sees the club's players here.
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import SignInForm from "../components/SignInForm";
 
 type Status = "none" | "pending" | "approved" | "declined";
 type TeamOption = { slug: string; name: string };
+type Step = "name" | "who" | "team" | "kids" | "phone" | "note";
 
 export default function JoinForm({
   initialStatus,
@@ -39,6 +41,7 @@ export default function JoinForm({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [askAgain, setAskAgain] = useState(false);
+  const [step, setStep] = useState<Step>("name");
 
   // a code from the join link (or an open hub's own): checked straight away
   useEffect(() => {
@@ -188,91 +191,171 @@ export default function JoinForm({
     );
   }
 
-  return (
-    <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
-      {account && <p className="text-center text-xs text-gray-400">Signed in as {account.email}</p>}
-      <label>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your name</span>
-        <NameFields value={name} onChange={setName} label="Your" required autoComplete className={input} />
-      </label>
-      <label>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">You are a…</span>
-        <select value={relation} onChange={(e) => setRelation(e.target.value as Relation)} required className={input}>
-          <option value="">Choose…</option>
-          {(Object.keys(RELATIONS) as Relation[]).map((r) => (
-            <option key={r} value={r}>
-              {RELATIONS[r]}
-            </option>
-          ))}
-        </select>
-      </label>
-      {relation === "parent" ? (
+  // the rest a step at a time, each its own form: Next (or Enter) once it's filled in
+  // (until they say who they are, counted as a parent's: the most who join)
+  const who = relation || "parent";
+  const order: Step[] = ["name", "who", ...(who === "parent" ? (["kids"] as const) : (["team"] as const)), ...(who !== "parent" && withKids ? (["kids"] as const) : []), "phone", "note"];
+  const at = Math.max(order.indexOf(step), 0);
+  const last = at === order.length - 1;
+  const label = "text-sm font-bold text-gray-800 dark:text-gray-100";
+  const heading = "text-xl font-extrabold text-gray-900 dark:text-gray-50";
+  const hint = "mt-1 block text-xs text-gray-400";
+  const kidsHint = "Their full name and team, for the club's squad. Only the club's coaches and members see them.";
+  let body: React.ReactNode;
+  if (step === "name") {
+    body = (
+      <>
+        <h2 className={heading}>What&apos;s your name?</h2>
         <div>
-          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your child (or children)</span>
-          <span className="mb-2 block text-xs text-gray-400">
-            Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
-          </span>
-          <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
+          <NameFields value={name} onChange={setName} label="Your" required autoComplete className={input} />
         </div>
-      ) : (
-        <>
-          {teams.length > 0 && (
-            <label>
-              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Team</span>
-              <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
-                <option value="">Not sure / more than one</option>
-                {teams.map((t) => (
-                  <option key={t.slug} value={t.slug}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {relation && relation !== "player" && (
-            <label className="flex items-center gap-3 text-sm font-bold text-gray-800 dark:text-gray-100">
-              <input type="checkbox" checked={alsoParent} onChange={(e) => setAlsoParent(e.target.checked)} className="h-5 w-5 accent-green-600" />
-              I have a child who plays at the club
-            </label>
-          )}
-          {withKids && (
-            <div>
-              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Your child (or children)</span>
-              <span className="mb-2 block text-xs text-gray-400">
-                Their full name and team, for the club&apos;s squad. Only the club&apos;s coaches and members see them.
-              </span>
-              <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
-            </div>
-          )}
-        </>
-      )}
-      <label>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Mobile number</span>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          autoComplete="tel"
-          inputMode="tel"
-          maxLength={24}
-          placeholder="e.g. 07700 900123"
-          className={input}
-        />
-        <span className="mt-1 block text-xs text-gray-400">
-          {withKids
-            ? "So the club can reach you, and the team's treasurer can send a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
-            : "So the club can reach you. Only the club's coaches and treasurer see it."}
-        </span>
-      </label>
-      <label>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Anything else? (optional)</span>
-        <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="e.g. new this season" className={input} />
-      </label>
+      </>
+    );
+  } else if (step === "who") {
+    body = (
+      <>
+        <h2 className={heading}>You are a…</h2>
+        <div className="flex flex-col gap-2" role="radiogroup" aria-label="You are a">
+          {(Object.keys(RELATIONS) as Relation[]).map((r) => (
+            <button
+              key={r}
+              type="button"
+              role="radio"
+              aria-checked={relation === r}
+              onClick={() => {
+                setRelation(r);
+                // straight on to the next step: a tap is the answer
+                setStep(r === "parent" ? "kids" : "team");
+              }}
+              className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left font-bold ${
+                relation === r
+                  ? "border-green-600 bg-green-50 text-green-800 dark:bg-green-400/10 dark:text-green-300"
+                  : "border-gray-200 text-gray-900 hover:bg-gray-50 dark:border-white/15 dark:text-gray-50 dark:hover:bg-white/5"
+              }`}
+            >
+              {RELATIONS[r]}
+              <span aria-hidden className="text-gray-400">›</span>
+            </button>
+          ))}
+        </div>
+      </>
+    );
+  } else if (step === "team") {
+    body = (
+      <>
+        <h2 className={heading}>Your team</h2>
+        {teams.length > 0 && (
+          <label>
+            <span className={label}>Team</span>
+            <select value={team} onChange={(e) => setTeam(e.target.value)} className={input}>
+              <option value="">Not sure / more than one</option>
+              {teams.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {relation !== "player" && (
+          <label className="flex items-center gap-3 text-sm font-bold text-gray-800 dark:text-gray-100">
+            <input type="checkbox" checked={alsoParent} onChange={(e) => setAlsoParent(e.target.checked)} className="h-5 w-5 accent-green-600" />
+            I have a child who plays at the club
+          </label>
+        )}
+      </>
+    );
+  } else if (step === "kids") {
+    body = (
+      <>
+        <div>
+          <h2 className={heading}>Your child (or children)</h2>
+          <span className={hint}>{kidsHint}</span>
+        </div>
+        <ChildrenEditor value={children} teams={teams} onChange={setChildren} required />
+      </>
+    );
+  } else if (step === "phone") {
+    body = (
+      <>
+        <h2 className={heading}>Your mobile number</h2>
+        <label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            autoFocus
+            autoComplete="tel"
+            inputMode="tel"
+            maxLength={24}
+            placeholder="e.g. 07700 900123"
+            aria-label="Mobile number"
+            className={input}
+          />
+          <span className={hint}>
+            {withKids
+              ? "So the club can reach you, and the team's treasurer can send a WhatsApp reminder about subs. Only the club's coaches and treasurer see it."
+              : "So the club can reach you. Only the club's coaches and treasurer see it."}
+          </span>
+        </label>
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <h2 className={heading}>Anything else?</h2>
+        <label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} autoFocus maxLength={120} placeholder="e.g. new this season" aria-label="Anything else" className={input} />
+          <span className={hint}>Optional — anything the coaches should know.</span>
+        </label>
+      </>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        if (last) return submit(e);
+        e.preventDefault();
+        setError(null);
+        setStep(order[at + 1]);
+      }}
+      className="mt-6 flex flex-col gap-4"
+    >
+      {/* where they are: a bar for each step, the done ones green */}
+      <div>
+        <div className="flex gap-1.5" aria-hidden>
+          {order.map((o, i) => (
+            <span key={o} className={`h-1.5 flex-1 rounded-full ${i <= at ? "bg-green-600" : "bg-gray-200 dark:bg-white/15"}`} />
+          ))}
+        </div>
+        <p className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          Step {at + 1} of {order.length}
+          {account ? ` · ${account.email}` : ""}
+        </p>
+      </div>
+      {body}
       {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
-      <button disabled={busy} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
-        {busy ? "Sending…" : "Ask to Join"}
-      </button>
+      {/* "You are a…" moves on when one is tapped */}
+      {step !== "who" && (
+        <button disabled={busy} className="rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 disabled:opacity-50">
+          {last ? (busy ? "Sending…" : "Ask to Join") : "Next"}
+        </button>
+      )}
+      {at > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setStep(order[at - 1]);
+          }}
+          disabled={busy}
+          className="-mt-1 cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400"
+        >
+          ← Back
+        </button>
+      )}
     </form>
   );
 }
