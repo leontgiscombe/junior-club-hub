@@ -236,6 +236,7 @@ export default function TrainingPlans() {
   const [view, setView] = useState<View>("plan");
   // The plan being edited for the chosen team, saved with one button.
   const [draft, setDraft] = useState<TrainingPlan | null>(null);
+  const [hiding, setHiding] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   // the sheet up over the page: a drill, a drill picker, a week's topic, or the plan's details
@@ -428,6 +429,28 @@ export default function TrainingPlans() {
       setError(err instanceof Error ? err.message : "That didn't save");
     } finally {
       setTicking(null);
+    }
+  }
+
+  // Show or hide the next session from the team's players and families: saved at once.
+  async function hideFromPlayers(hidden: boolean) {
+    setHiding(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/training/plans?key=${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "hide-from-players", team, hidden }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "That didn't save");
+      const saved: TrainingPlan = data.plan;
+      setPlans((prev) => prev.map((p) => (p.team === team ? { ...p, hiddenFromPlayers: saved.hiddenFromPlayers } : p)));
+      setDraft((prev) => (prev ? { ...prev, hiddenFromPlayers: saved.hiddenFromPlayers } : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That didn't save");
+    } finally {
+      setHiding(false);
     }
   }
 
@@ -826,6 +849,28 @@ export default function TrainingPlans() {
               <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">Week {currentIdx + 1}</span>
             </div>
             {weekDrills(current)}
+            {/* players see it in the Training Hub, and families on Home — once it's on the calendar */}
+            {currentDate && (
+              <label className="mt-3 flex cursor-pointer items-start gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-gray-900 dark:text-gray-50">Players can see this</span>
+                  <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                    The topic and drills, in brief, in the Training Hub and on Home
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={!draft.hiddenFromPlayers}
+                  disabled={hiding}
+                  onChange={(e) => void hideFromPlayers(!e.target.checked)}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden
+                  className="relative mt-1 h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400 peer-disabled:opacity-60 dark:bg-white/20"
+                />
+              </label>
+            )}
           </section>
         )}
 

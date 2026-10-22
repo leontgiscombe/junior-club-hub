@@ -131,6 +131,7 @@ function cleanPlan(team: string, raw: Partial<TrainingPlan>): TrainingPlan {
           .filter((id) => drillIds.includes(id)),
       };
     }),
+    hiddenFromPlayers: raw.hiddenFromPlayers === true,
     updatedAt: text(raw.updatedAt, 40),
   };
 }
@@ -140,7 +141,7 @@ function parse<T>(value: unknown): T {
 }
 
 function emptyPlan(team: string): TrainingPlan {
-  return { team, title: "", startDate: "", weeks: [], updatedAt: "" };
+  return { team, title: "", startDate: "", weeks: [], hiddenFromPlayers: false, updatedAt: "" };
 }
 
 export function isBuiltInDrill(id: string): boolean {
@@ -287,6 +288,7 @@ export async function savePlan(
   const plan = cleanPlan(team, {
     ...raw,
     weeks: (raw.weeks ?? []).map((w) => ({ ...w, doneIds: ticks.get(w?.id) ?? [] })),
+    hiddenFromPlayers: stored?.hiddenFromPlayers ?? false,
     updatedAt: new Date().toISOString(),
   });
   const kv = await getKv();
@@ -310,6 +312,16 @@ export async function tickDrill(
   week.doneIds = done
     ? [...new Set([...week.doneIds, drillId])]
     : week.doneIds.filter((id) => id !== drillId);
+  const kv = await getKv();
+  if (kv) await kv.hset(PLANS_KEY, { [team]: JSON.stringify(plan) });
+  return plan;
+}
+
+/** Show or hide the next session's topic and drills from a team's players and families. Saved straight away, like a tick. */
+export async function setHiddenFromPlayers(team: string, hidden: boolean): Promise<TrainingPlan | null> {
+  const plan = (await listPlans()).find((p) => p.team === team);
+  if (!plan) return null;
+  plan.hiddenFromPlayers = hidden;
   const kv = await getKv();
   if (kv) await kv.hset(PLANS_KEY, { [team]: JSON.stringify(plan) });
   return plan;
