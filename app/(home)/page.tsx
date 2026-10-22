@@ -21,7 +21,7 @@ import { getClub, getTeams } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
 import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
 import { listPlans } from "@/lib/trainingPlans";
-import { scheduleWeeks } from "@/lib/trainingPlanTypes";
+import { nextPlanned } from "@/lib/nextSession";
 import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import AppHeader from "../components/AppHeader";
@@ -179,10 +179,8 @@ export default async function Home() {
         .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? "").localeCompare(b.start ?? ""))[0] ?? null;
     // its topic, from the team's training plan (unless the coaches hide it from families)
     const plan = nextTraining && plans.find((p) => p.team === nextTraining!.team);
-    if (nextTraining && plan && (viewer.canCoach || !plan.hiddenFromPlayers)) {
-      const week = scheduleWeeks(plan, training.filter((s) => s.team === plan.team)).get(nextTraining.date);
-      nextTopic = week === undefined ? "" : plan.weeks[week]?.theme ?? "";
-    }
+    const planned = plan && (viewer.canCoach || !plan.hiddenFromPlayers) ? nextPlanned(plan, training) : null;
+    if (planned?.session.date === nextTraining?.date) nextTopic = plan!.weeks[planned!.index]?.theme ?? "";
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
     lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;

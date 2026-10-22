@@ -849,8 +849,8 @@ export default function TrainingPlans() {
               <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">Week {currentIdx + 1}</span>
             </div>
             {weekDrills(current)}
-            {/* players see it in the Training Hub, and families on Home — once it's on the calendar */}
-            {currentDate && (
+            {/* players see it in the Training Hub, and families on Home */}
+            {draft.updatedAt && (
               <label className="mt-3 flex cursor-pointer items-start gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-gray-900 dark:text-gray-50">Players can see this</span>
