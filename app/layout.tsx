@@ -106,6 +106,8 @@ export default async function RootLayout({
         {/* the status bar matches the page, light or dark (THEME_SCRIPT and the Appearance picker keep it to the chosen one) */}
         <meta name="theme-color" content={(await cookies()).get(THEME_COOKIE)?.value === "dark" ? DARK_BAR : LIGHT_BAR} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* pull to refresh, haptics, swiping back, which way pages slide (public/app-feel.js) */}
+        <script src="/app-feel.js" defer />
       </head>
       <body className="relative isolate min-h-full bg-gray-50 font-sans antialiased">
         <HomeWallpaper />

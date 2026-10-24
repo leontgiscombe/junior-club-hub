@@ -1,6 +1,6 @@
-import { LoadingDots } from "../components/Skeleton";
+import { PageSkeleton } from "../components/Skeleton";
 
-// shown straight away on the way to this page, while it loads (Skeleton.tsx)
+// shown straight away on the way here, in the page's own shape (components/Skeleton.tsx)
 export default function Loading() {
-  return <LoadingDots />;
+  return <PageSkeleton grid />;
 }

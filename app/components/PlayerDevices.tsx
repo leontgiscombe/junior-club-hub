@@ -8,6 +8,7 @@ import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { playerSetupUrl } from "@/lib/playerCode";
+import { RowsSkeleton } from "./Skeleton";
 
 type Device = { id: string; label: string; createdAt: string; by: string };
 
@@ -157,7 +158,7 @@ function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first
         <p className="mt-5 px-1 pb-2 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Set up</p>
         <ul className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white dark:divide-white/10 dark:bg-black/40">
           {devices === null ? (
-            <li className="px-4 py-3 text-sm text-gray-500">Loading…</li>
+            <li className="px-4"><RowsSkeleton rows={1} /></li>
           ) : devices.length === 0 ? (
             <li className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No devices yet.</li>
           ) : (

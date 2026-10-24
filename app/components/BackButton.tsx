@@ -24,6 +24,8 @@ export default function BackButton({
     <Link
       href={href}
       onClick={backOr}
+      // a swipe in from the left edge presses it, in the app (public/app-feel.js)
+      data-swipe-back
       aria-label={`Back to ${label}`}
       title={label}
       className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
