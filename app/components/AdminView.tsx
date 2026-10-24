@@ -10,6 +10,7 @@ import { ToolSkeleton } from "./Skeleton";
 import { GateScreen, Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
+import { haptic } from "@/lib/haptics";
 
 interface Submission {
   id: string;
@@ -207,6 +208,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     if (!res.ok) return alert("That didn't save — please try again.");
     const data = await res.json();
     setRequests((all) => ("remove" in change ? all.filter((r) => r.id !== id) : all.map((r) => (r.id === id ? data.request : r))));
+    haptic();
   }
 
   async function handleDelete(id: string) {

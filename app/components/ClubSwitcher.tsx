@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import NoTabBar from "./NoTabBar";
 import type { Club } from "@/lib/clubSettings";
+import { RowsSkeleton } from "./Skeleton";
 
 type MyClub = { name: string; crest: string; home: string; current: boolean; waiting: boolean };
 
@@ -127,7 +128,7 @@ export default function ClubSwitcher({ crest }: { crest: Club["crest"] }) {
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300 dark:bg-white/20" aria-hidden />
             <h2 className="text-lg font-extrabold">Your Clubs</h2>
             <div className="mt-3 divide-y divide-gray-100 dark:divide-white/10">
-              {!data && !failed && <p className="py-4 text-sm text-gray-500 dark:text-gray-400">Loading your clubs…</p>}
+              {!data && !failed && <RowsSkeleton rows={2} />}
               {failed && <p className="py-4 text-sm text-red-600">Couldn&apos;t load your clubs — try again.</p>}
               {data?.clubs.map((c) => {
                 const row = (

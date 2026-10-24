@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { AWARD_VOTERS, STARTER_AWARDS, VOTERS_LABEL, guessVoters, nomineesFor, votersOf, type AwardSlot, type AwardVoters, type SeasonAward, type SeasonAwardsData, type SeasonAwardView } from "@/lib/seasonAwards";
 import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { haptic } from "@/lib/haptics";
+import { RowsSkeleton } from "./Skeleton";
 
 const panel = "rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
 const field = "mt-1 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50";
@@ -90,6 +92,7 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "That could not be saved.");
       setMessage(success);
+      haptic();
       setData(await requestData(admin, key));
       return true;
     } catch (failure) {
@@ -104,7 +107,7 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
     <div className={`themed ${admin ? "" : "wp-page"} relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50`}>
       {admin && (selectedId || editing) ? <TopBar title={editing ? editing === "new" ? "New Award" : "Edit Award" : awards.find((award) => award.id === selectedId)?.title || "Award Details"} onBack={() => { setEditing(null); close(); }} /> : <TopBar title="End of Season Awards" href={admin ? "/admin" : "/"} />}
       <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-5">
-        {loading && <p className="wp-text" role="status">Loading awards...</p>}
+        {loading && <RowsSkeleton rows={3} className="rounded-3xl bg-white px-4 shadow-sm dark:bg-[#1c1c1e]" />}
         {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
         {message && <p role="status" className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{message}</p>}
         {login && <form onSubmit={signIn} className={`${panel} space-y-3`}>

@@ -21,7 +21,7 @@
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
   };
   var css =
-    "#hub-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;padding:0 12px max(12px,env(safe-area-inset-bottom));pointer-events:none;font-family:-apple-system,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}" +
+    "#hub-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;view-transition-name:tab-bar;padding:0 12px max(12px,env(safe-area-inset-bottom));pointer-events:none;font-family:-apple-system,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}" +
     "#hub-tabbar ul{pointer-events:auto;list-style:none;margin:0 auto;padding:6px;max-width:576px;display:flex;gap:2px;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 8px 30px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5)}" +
     "#hub-tabbar li{flex:1}" +
     "#hub-tabbar a{position:relative;height:57px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:999px;font-size:11px;font-weight:600;color:#4b5563;text-decoration:none;transition:transform .12s ease,opacity .12s ease}" +

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Pages slide in and out as a phone app's do, through the browser's View
+  // Transitions (app/template.tsx, globals.css). Without them a page just appears.
+  experimental: { viewTransition: true },
   // Error reporting in the browser (instrumentation-client.ts) needs Sentry's
   // address at build time; it's the same SENTRY_DSN the server uses, and isn't
   // a secret.

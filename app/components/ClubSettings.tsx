@@ -17,6 +17,7 @@ import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { Group, ICONS, Row, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { haptic } from "@/lib/haptics";
 
 type Snapshot = {
   club: Club;
@@ -171,7 +172,10 @@ export default function ClubSettings() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error ?? "That didn't save");
     take(data, opts.keepEdits);
-    if (done) setNotice(done);
+    if (done) {
+      setNotice(done);
+      haptic();
+    }
     // every page picks the new settings up
     router.refresh();
   }

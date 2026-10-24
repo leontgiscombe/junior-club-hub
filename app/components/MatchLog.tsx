@@ -10,6 +10,7 @@ import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { haptic } from "@/lib/haptics";
 
 interface Player {
   id: string;
@@ -234,6 +235,7 @@ export default function MatchLog() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not add the match");
+      haptic();
       setMatches((prev) => [...prev, data.match]);
       setOpponent("");
       setDate("");
@@ -258,6 +260,7 @@ export default function MatchLog() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "That didn't save");
       setMatches((prev) => prev.map((m) => (m.id === matchId ? data.match : m)));
+      haptic();
       if (data.players) setPlayers(data.players);
       return true;
     } catch (err) {

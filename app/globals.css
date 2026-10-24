@@ -41,6 +41,94 @@ body {
     animation: none;
   }
 }
+/* Moving between pages (app/template.tsx): the new page slides in over the
+   old, which slides a little the other way and dims, as on an iPhone. Back
+   reverses it; between the tab bar's tabs it cross-fades. Which it is comes
+   from html[data-nav] (public/app-feel.js). Where these run, they take over
+   from .page-in. A whole new document (the Training Hub, Finances) fades. */
+@view-transition {
+  navigation: auto;
+}
+@supports (view-transition-name: none) {
+  .page-in {
+    animation: none;
+  }
+}
+@keyframes page-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes page-to-left {
+  to {
+    transform: translateX(-30%);
+    filter: brightness(0.92);
+  }
+}
+@keyframes page-from-left {
+  from {
+    transform: translateX(-30%);
+    filter: brightness(0.92);
+  }
+}
+@keyframes page-to-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+::view-transition-old(.page-exit),
+::view-transition-new(.page-enter) {
+  animation-duration: 180ms;
+}
+html[data-nav="forward"]::view-transition-old(.page-exit) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-to-left;
+}
+html[data-nav="forward"]::view-transition-new(.page-enter) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-from-right;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.08);
+}
+html[data-nav="back"]::view-transition-old(.page-exit) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-to-right;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.08);
+}
+html[data-nav="back"]::view-transition-new(.page-enter) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-from-left;
+}
+/* a back button stepping back through history: the whole page slides (the
+   transition public/app-feel.js starts) */
+html[data-nav="back"]::view-transition-old(root) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-to-right;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.08);
+}
+html[data-nav="back"]::view-transition-new(root) {
+  animation: 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-from-left;
+}
+html[data-nav="back"]::view-transition-old(root) {
+  z-index: 1;
+}
+/* going back, the page leaving stays on top as it slides away */
+html[data-nav="back"]::view-transition-group(.page-exit) {
+  z-index: 1;
+}
+/* the tab bar doesn't move */
+::view-transition-group(tab-bar) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(tab-bar) {
+  display: none;
+}
+::view-transition-new(tab-bar) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
 /* the loading dots (components/Skeleton.tsx: LoadingDots) swell in turn */
 @keyframes loading-dot {
   0%, 80%, 100% {

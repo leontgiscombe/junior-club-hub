@@ -9,6 +9,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS, PLAN_IDS, teamsLabel, type PlanId } from "@/lib/billing";
 import { buy, currentProduct, nativePurchases, restore, storeOptions, type StoreOption } from "@/lib/nativePurchases";
+import { RowsSkeleton } from "../components/Skeleton";
 
 type Period = "monthly" | "yearly";
 const noChange = () => () => {};
@@ -92,7 +93,7 @@ export default function AppPlans({ tenant, apiKey, suggested }: { tenant: string
     );
   }
   if (problem) return <p className={box}>{problem}</p>;
-  if (!options) return <p className={box}>Loading the plans…</p>;
+  if (!options) return <div className={box}><RowsSkeleton rows={2} /></div>;
 
   const priceOf = (p: PlanId, per: Period) => options.find((o) => o.plan === p && o.period === per)?.price;
   const chosen = priceOf(plan, period);
