@@ -264,8 +264,9 @@ export default function HelpManual() {
           </Steps>
           <H3>More Than One Club</H3>
           <p>
-            The app opens on the club you used last. To go to another, sign out (or, on a club&apos;s join page, tap{" "}
-            <B>Not … ? Switch Club</B>) and pick it from <B>Your Clubs</B>.
+            One account can be in several clubs, say one you coach at and another your child plays for. Tap the club&apos;s
+            crest at the top of <B>Home</B> to see <B>Your Clubs</B> and switch; the app then opens on that club. To join
+            another, tap <B>Join another club</B> there and type its code.
           </p>
           <H3>Face ID</H3>
           <p>
