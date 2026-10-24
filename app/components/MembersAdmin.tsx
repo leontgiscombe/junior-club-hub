@@ -16,6 +16,7 @@ import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { haptic } from "@/lib/haptics";
 
 type TeamOption = { slug: string; name: string };
 
@@ -164,6 +165,7 @@ export default function MembersAdmin() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That didn't work");
       setSnap(data);
+      haptic();
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't work");
     } finally {
@@ -279,6 +281,7 @@ export default function MembersAdmin() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That didn't work");
       await load(key);
+      haptic();
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't work");
       setBusy(false);

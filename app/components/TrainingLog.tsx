@@ -16,6 +16,7 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { timesLabel } from "@/lib/clubSettings";
+import { haptic } from "@/lib/haptics";
 
 interface Player {
   id: string;
@@ -99,6 +100,7 @@ function PlanWeekCard({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "That didn't save");
       onPlan(data.plan);
+      haptic();
     } catch (err) {
       setTickError(err instanceof Error ? err.message : "That didn't save");
     } finally {
@@ -268,6 +270,7 @@ export default function TrainingLog() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "That didn't save");
+      haptic();
       setSessions((prev) =>
         prev.map((s) =>
           s.team === session.team && s.date === session.date ? data.session : s

@@ -79,6 +79,8 @@ export default function TabBar({ viewer }: { viewer: Viewer }) {
       <nav
         aria-label="Main"
         className="hub-tabbar themed fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        // stays still while the page slides (globals.css)
+        style={{ viewTransitionName: "tab-bar" }}
       >
         <ul className="mx-auto flex max-w-xl gap-0.5 rounded-full bg-white/85 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.16)] ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150 dark:bg-[#1c1c1e]/85 dark:ring-white/10">
           {tabs.map((t) => {

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
+import { haptic } from "@/lib/haptics";
 
 export type ShortcutId =
   | "matches"
@@ -90,9 +91,7 @@ export default function HomeShortcuts({ available, defaults }: { available: Shor
         press.current = null;
         swallowClick.current = true;
         setArranging(true);
-        try {
-          navigator.vibrate?.(10);
-        } catch {}
+        haptic();
       }, 500),
     };
   }

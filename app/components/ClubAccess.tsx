@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { ROLES, type Member, type Role } from "@/lib/access";
 import { ADMIN_ROLES, RoleChips } from "./MembersAdmin";
+import { RowsSkeleton } from "./Skeleton";
 
 type TeamOption = { slug: string; name: string };
 export type AccessSnap = {
@@ -110,7 +111,7 @@ export function JoiningScreen({ adminKey, clubName }: { adminKey: string; clubNa
     };
   }, [snap]);
 
-  if (!snap) return <p className={`${card} text-sm text-gray-500`}>Loading…</p>;
+  if (!snap) return <div className={card}><RowsSkeleton rows={2} /></div>;
   return (
     <>
       <Problem error={error} />

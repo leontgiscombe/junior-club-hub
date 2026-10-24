@@ -11,6 +11,7 @@ import { RELATIONS, type Relation } from "@/lib/access";
 import ChildrenEditor, { type ChildDraft } from "../components/ChildrenEditor";
 import NameFields from "../components/NameFields";
 import SignInForm from "../components/SignInForm";
+import { haptic } from "@/lib/haptics";
 
 type Status = "none" | "pending" | "approved" | "declined";
 type TeamOption = { slug: string; name: string };
@@ -85,6 +86,7 @@ export default function JoinForm({
           setChildren([{ name: "", team: data.teams[0].slug }]);
         }
       } else {
+        haptic();
         setStatus("pending");
         setAskAgain(false);
       }

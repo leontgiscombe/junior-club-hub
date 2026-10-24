@@ -12,6 +12,7 @@ import AppHeader, { type HeaderViewer } from "./AppHeader";
 import KitForm, { SizeGuide } from "./KitForm";
 import KitRequestForm from "./KitRequestForm";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { RowsSkeleton } from "./Skeleton";
 
 const surface = "rounded-lg bg-white shadow-sm dark:bg-[#1c1c1e]";
 const muted = "text-gray-500 dark:text-gray-400";
@@ -117,7 +118,7 @@ export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
     <main className="mx-auto max-w-2xl px-4 pb-12 pt-4">
       {notice && <p role="status" className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-200">{notice}</p>}
       {error && <div role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}<button onClick={() => void refresh()} className="ml-3 min-h-11 font-semibold underline">Retry</button></div>}
-      {loading && !data && <p role="status" className={`wp-text py-8 text-center text-sm ${muted}`}>Loading your kit...</p>}
+      {loading && !data && <RowsSkeleton rows={2} className="rounded-3xl bg-white px-4 shadow-sm dark:bg-[#1c1c1e]" />}
       {data && (child && screen.startsWith("edit-") ? <section>
         <p className={`wp-text mb-4 text-sm ${muted}`}>{child.teamName}</p>
         <KitForm key={`${child.id}:${latest?.id ?? "new"}`} team={child.team} squad={child.playerId ? [{ id: child.playerId, label: child.name }] : []} fixedChild={{ id: child.playerId, name: child.name }} extras={CLUB.kitExtras} initial={latest} onSaved={({ alreadySent }) => saved(`sizes-${child.id}`, alreadySent ? "Updated sizes saved. Your previous submission is kept, and coaches can see both." : latest ? "Kit sizes updated." : "Kit sizes saved.")} />

@@ -25,6 +25,7 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, GateScreen } from "./SettingsUI";
 import { useScrollLock } from "./useScrollLock";
+import { haptic } from "@/lib/haptics";
 
 type View = "plan" | "library";
 
@@ -413,6 +414,7 @@ export default function TrainingPlans() {
       if (!res.ok) throw new Error(data.error ?? "That didn't save");
       const saved: TrainingPlan = data.plan;
       setPlans((prev) => prev.map((p) => (p.team === team ? saved : p)));
+      haptic();
       // keep unsaved edits, just bring the ticks across
       const ticks = new Map(saved.weeks.map((w) => [w.id, w.doneIds]));
       setDraft((prev) =>
@@ -464,6 +466,7 @@ export default function TrainingPlans() {
     try {
       const data = await post({ action: "save-plan", team, plan: draft });
       setPlans((prev) => prev.map((p) => (p.team === team ? data.plan : p)));
+      haptic();
       setDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't save");
@@ -1561,6 +1564,8 @@ export default function TrainingPlans() {
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] dark:bg-black dark:text-gray-50 pb-24">
       <TopBar title="Training Plans" href={`/admin${keyQuery(key)}`} />
+      {/* unsaved changes: no pulling down to refresh (public/app-feel.js) */}
+      {dirty && <span hidden data-unsaved />}
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Plan / library switch */}

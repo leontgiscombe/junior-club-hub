@@ -7,6 +7,7 @@
 // cookie, so Home is drawn without them from the start.
 import { useRef, useState } from "react";
 import { HIDDEN_COOKIE, type WidgetId } from "@/lib/homeWidgets";
+import { haptic } from "@/lib/haptics";
 
 type Widget = { id: WidgetId; label: string; node: React.ReactNode };
 
@@ -40,9 +41,7 @@ export default function HomeWidgets({ widgets, hidden: initial, upNextClass }: {
         press.current = null;
         swallowClick.current = true;
         setArranging(true);
-        try {
-          navigator.vibrate?.(10);
-        } catch {}
+        haptic();
       }, 500),
     };
   }
