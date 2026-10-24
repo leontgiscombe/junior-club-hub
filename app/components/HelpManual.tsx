@@ -3,12 +3,10 @@
 // The hub's user manual, for coaches using it for the first time. Behind the
 // coaches' password like the rest of Coach Admin. Keep this in step when a
 // page changes.
-import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { TopBar, useScreens } from "./SettingsUI";
+import { TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -137,8 +135,8 @@ export default function HelpManual() {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Help">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">❓</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Help</h1>
@@ -158,16 +156,10 @@ export default function HelpManual() {
             disabled={loading || !key}
             className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-40 cursor-pointer"
           >
-            {loading ? "Checking…" : "Open help"}
+            {loading ? "Checking…" : "Open Help"}
           </button>
-          <Link
-            href="/admin" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Coach Admin
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

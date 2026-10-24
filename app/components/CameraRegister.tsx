@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
 import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 // Home games come from the match log now, so a fixture is only entered once.
 // This page is the filming view of those same games.
@@ -141,8 +140,8 @@ export default function CameraRegister() {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Camera Register">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🎥</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Camera Register</h1>
@@ -164,14 +163,8 @@ export default function CameraRegister() {
           >
             {loading ? "Loading…" : "Open register"}
           </button>
-          <Link
-            href="/" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Back to Team Hub
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

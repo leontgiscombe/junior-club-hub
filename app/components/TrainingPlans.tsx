@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
@@ -25,7 +23,7 @@ import {
 import { DrillDetails, KindBadge } from "./DrillDetails";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar } from "./SettingsUI";
+import { ToolTabs, TopBar, GateScreen } from "./SettingsUI";
 import { useScrollLock } from "./useScrollLock";
 
 type View = "plan" | "library";
@@ -607,8 +605,8 @@ export default function TrainingPlans() {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Training Plans">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">📝</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Training Plans</h1>
@@ -630,14 +628,8 @@ export default function TrainingPlans() {
           >
             {loading ? "Loading…" : "Open training plans"}
           </button>
-          <Link
-            href="/admin" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Back to Coach Admin
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

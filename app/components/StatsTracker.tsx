@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import { nameOf, type Team } from "@/lib/teams";
@@ -18,7 +17,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ICONS, TopBar, useScreens } from "./SettingsUI";
+import { ICONS, TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 type StatField =
   | "appearances"
@@ -641,8 +640,8 @@ export default function StatsTracker() {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Stats Tracker">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">📊</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Stats Tracker</h1>
@@ -664,14 +663,8 @@ export default function StatsTracker() {
           >
             {loading ? "Loading…" : "Open stats"}
           </button>
-          <Link
-            href="/" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Back to Team Hub
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

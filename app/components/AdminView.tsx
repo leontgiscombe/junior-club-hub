@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { useEffect, useState, useCallback } from "react";
 import { useTeams } from "./ClubProvider";
 import type { TeamSlug } from "@/lib/teams";
@@ -9,7 +7,7 @@ import { getMyTeam, setMyTeam } from "@/lib/myTeam";
 import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { GateScreen, Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
 
@@ -264,6 +262,15 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
     if (authed) rememberCoachKey(key);
   }, [authed, key]);
   /* eslint-enable react-hooks/set-state-in-effect */
+  // fresh responses whenever the page is come back to (instead of a Refresh button)
+  useEffect(() => {
+    if (!authed) return;
+    const again = () => {
+      if (document.visibilityState === "visible") load(key, team);
+    };
+    document.addEventListener("visibilitychange", again);
+    return () => document.removeEventListener("visibilitychange", again);
+  }, [authed, key, team, load]);
 
   // kit requests by player: those with something still to sort first, newest first
   const requestGroups = Object.values(
@@ -280,8 +287,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Admin Access">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🔒</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Admin Access</h1>
@@ -307,14 +314,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
           >
             {loading ? "Loading…" : "View responses"}
           </button>
-          <Link
-            href="/" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Back to Team Hub
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 
@@ -501,29 +502,15 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         {view === "requests" && !requests.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No kit requests yet.</p>}
         {view === "waiting" && !waiting.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">Everyone in this squad has sent their sizes.</p>}
         <div hidden={view !== "sizes"}>
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 mb-5">
-          <button
-            onClick={() => load(key, team)}
-            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
-          >
-            Refresh
-          </button>
-          <button
-            onClick={() => downloadCSV(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
-            disabled={submissions.length === 0}
-            className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 shadow-sm disabled:opacity-40 cursor-pointer"
-          >
-            Export CSV
-          </button>
-          <button
-            onClick={() => downloadSizeTotals(sorted, team, extrasIn(sorted, CLUB.kitExtras))}
-            disabled={submissions.length === 0}
-            className="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm disabled:opacity-40 cursor-pointer dark:hover:bg-white/5 dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15"
-          >
-            Size Totals CSV
-          </button>
-        </div>
+        {/* the sizes as spreadsheets (refreshed by themselves whenever the page is come back to) */}
+        {submissions.length > 0 && (
+          <div className="mb-5">
+            <Group>
+              <Row icon={ICONS.doc} label="Download Sizes" detail="CSV" onClick={() => downloadCSV(sorted, team, extrasIn(sorted, CLUB.kitExtras))} />
+              <Row icon={ICONS.doc} label="Download Size Totals" detail="CSV" onClick={() => downloadSizeTotals(sorted, team, extrasIn(sorted, CLUB.kitExtras))} />
+            </Group>
+          </div>
+        )}
 
         {submissions.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -534,7 +521,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             {sorted.map((s) => (
               <div
                 key={s.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 dark:bg-[#1c1c1e] dark:border-white/10"
+                className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
