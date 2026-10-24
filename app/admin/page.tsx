@@ -26,7 +26,7 @@ export default async function CoachAdminPage() {
       // clubs on the platform can reset a forgotten password by email
       canResetPassword={tenant !== DEFAULT_TENANT}
       // the header's photo or initials, as on Home
-      viewer={{ signedIn: viewer.signedIn, initials: viewer.initials, photo: viewer.photo }}
+      viewer={{ signedIn: viewer.signedIn, initials: viewer.initials, photo: viewer.photo, switcher: viewer.switcher }}
       setup={setup}
     />
   );

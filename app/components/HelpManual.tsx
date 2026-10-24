@@ -265,7 +265,7 @@ export default function HelpManual() {
           <H3>More Than One Club</H3>
           <p>
             One account can be in several clubs, say one you coach at and another your child plays for. Tap the club&apos;s
-            crest at the top of <B>Home</B> to see <B>Your Clubs</B> and switch; the app then opens on that club. To join
+            crest at the top of <B>Home</B> (or Coach, Kit, Finances or the Training Hub) to see <B>Your Clubs</B> and switch; the app then opens on that club. To join
             another, tap <B>Join another club</B> there and type its code.
           </p>
           <H3>Face ID</H3>
