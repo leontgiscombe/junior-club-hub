@@ -4,9 +4,12 @@
 // club the account belongs to (a tick on this one), to switch to another, join
 // one more with its code, or add and manage children here. Switching goes by
 // the platform's opening screen, so the App Store app opens on the club picked
-// next time too (app/platform/start/StartScreen.tsx, ?go).
-import { useEffect, useState } from "react";
+// next time too (app/platform/start/StartScreen.tsx, ?go). The sheet slides up
+// over the tab bar (hidden while it's open) and is swiped down to close.
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
+import NoTabBar from "./NoTabBar";
 import type { Club } from "@/lib/clubSettings";
 
 type MyClub = { name: string; crest: string; home: string; current: boolean; waiting: boolean };
@@ -24,10 +27,66 @@ export default function ClubSwitcher({ crest }: { crest: Club["crest"] }) {
       .catch(() => setFailed(true));
   }, [open, data]);
 
+  // swiping the sheet down: how far it's been pulled, and where the finger started
+  const [pull, setPull] = useState(0);
+  const [shown, setShown] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{ y: number; t: number; moved: boolean } | null>(null);
+  // the last touch was a drag, so the click it ends with is ignored
+  const dragged = useRef(false);
+  const close = () => {
+    setShown(false);
+    setPull(0);
+    setTimeout(() => setOpen(false), 200);
+  };
+  // slide up once it's on the page
+  useEffect(() => {
+    if (!open) return;
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = { y: e.clientY, t: Date.now(), moved: false };
+    dragged.current = false;
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dy = e.clientY - d.y;
+    // a tap stays a tap until the finger has really moved
+    if (!d.moved && Math.abs(dy) < 8) return;
+    if (!d.moved) {
+      d.moved = true;
+      dragged.current = true;
+      setDragging(true);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    // down follows the finger; up only gives a little
+    setPull(dy > 0 ? dy : dy / 4);
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.moved) return;
+    setDragging(false);
+    const dy = e.clientY - d.y;
+    const fast = dy / Math.max(Date.now() - d.t, 1) > 0.5;
+    if (dy > 100 || (dy > 30 && fast)) close();
+    else setPull(0);
+  };
+  // a drag isn't a tap on whatever it started on
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (dragged.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragged.current = false;
+    }
+  };
+
   // Escape closes it
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
@@ -45,14 +104,25 @@ export default function ClubSwitcher({ crest }: { crest: Club["crest"] }) {
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
         </span>
       </button>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setOpen(false)}>
+      {/* on the page's body, so it sits above everything; the tab bar hides meanwhile */}
+      {open && createPortal(
+        <div
+          className={`themed fixed inset-0 z-50 flex items-end justify-center overscroll-contain bg-black/40 transition-opacity duration-200 ${shown ? "opacity-100" : "opacity-0"}`}
+          onClick={close}
+        >
+          <NoTabBar />
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Your clubs"
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl rounded-t-3xl bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-gray-900 shadow-xl dark:bg-[#1c1c1e] dark:text-gray-50"
+            onClickCapture={onClickCapture}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            style={{ transform: `translateY(${shown ? pull : 600}px)`, transition: dragging ? "none" : "transform 200ms ease-out" }}
+            className="w-full max-w-xl touch-none select-none rounded-t-3xl bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-gray-900 shadow-xl dark:bg-[#1c1c1e] dark:text-gray-50"
           >
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300 dark:bg-white/20" aria-hidden />
             <h2 className="text-lg font-extrabold">Your Clubs</h2>
@@ -78,7 +148,7 @@ export default function ClubSwitcher({ crest }: { crest: Club["crest"] }) {
                   </>
                 );
                 return c.current ? (
-                  <button key={c.home} type="button" onClick={() => setOpen(false)} className="flex w-full items-center gap-4 py-3 text-left">{row}</button>
+                  <button key={c.home} type="button" onClick={close} className="flex w-full items-center gap-4 py-3 text-left">{row}</button>
                 ) : (
                   <a key={c.home} href={go(c) ?? c.home} className="press flex items-center gap-4 py-3">{row}</a>
                 );
@@ -94,7 +164,8 @@ export default function ClubSwitcher({ crest }: { crest: Club["crest"] }) {
               </a>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
