@@ -482,7 +482,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
         <a class="hub-search" href="#" onclick="openHubSearch();return false" aria-label="Search the Training Hub">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         </a>
-        <img class="hub-crest" src="/club-crest.png" alt="">
+        <img class="hub-crest" src="/club-crest.png" alt="" data-club-switcher>
       </span>
     </div>
     <img class="main-badge" src="/club-crest.png" alt="">
@@ -4013,6 +4013,7 @@ function showTeam(teams){
 }
 </script>
 <script src="/tabbar.js" defer></script>
+<script src="/club-switcher.js" defer></script>
 <div class="hs-sheet" id="hub-search" role="dialog" aria-label="Search the Training Hub">
   <div class="hs-bar">
     <input class="hs-input" id="hs-input" type="search" placeholder="Search the Training Hub" autocomplete="off" oninput="renderHubSearch(this.value)">
