@@ -4,8 +4,6 @@
 // kit picture, whether results are public, and its teams. Saved to the database and shown on
 // every page straight away; an empty box goes back to the default in
 // club.config.ts.
-import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Club, ClubChanges, EditableText, Team } from "@/lib/clubSettings";
@@ -18,7 +16,7 @@ import FaCodeHelp from "./FaCodeHelp";
 import { JoiningScreen, SignInScreen, useClubAccess } from "./ClubAccess";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { Group, ICONS, Row, TopBar, useScreens } from "./SettingsUI";
+import { Group, ICONS, Row, TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 type Snapshot = {
   club: Club;
@@ -262,8 +260,8 @@ export default function ClubSettings() {
   if (!authed || !snap) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
+      <GateScreen title="Settings">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
             <div className="mb-2 text-3xl">⚙️</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Settings</h1>
@@ -285,11 +283,8 @@ export default function ClubSettings() {
           >
             {loading ? "Loading…" : "Open Settings"}
           </button>
-          <Link href="/" onClick={backOr} className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
-            ← Back to Team Hub
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

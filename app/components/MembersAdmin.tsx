@@ -5,7 +5,6 @@
 // (the club code, invites, passwords) is in Settings (ClubAccess.tsx).
 import Link from "next/link";
 import { likelyPlayer } from "@/lib/nameMatch";
-import { backOr } from "@/lib/back";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
@@ -16,7 +15,7 @@ import { PlayerCareForm } from "./PlayerCare";
 import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 type TeamOption = { slug: string; name: string };
 
@@ -175,8 +174,8 @@ export default function MembersAdmin() {
   if (!authed || !snap) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed flex min-h-screen items-center justify-center bg-gradient-to-b from-green-700 to-green-900 px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl dark:bg-[#1c1c1e]">
+      <GateScreen title="Members">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
             <div className="mb-2 text-3xl">👪</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Members</h1>
@@ -198,11 +197,8 @@ export default function MembersAdmin() {
           >
             {busy ? "Loading…" : "Open Members"}
           </button>
-          <Link href="/admin" onClick={backOr} className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400">
-            ← Coach Admin
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 
