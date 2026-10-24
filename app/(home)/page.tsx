@@ -18,7 +18,7 @@ import { listMembers } from "@/lib/members";
 import { currentPerson, listPeople } from "@/lib/people";
 import { outcome } from "@/lib/record";
 import { getClub, getTeams } from "@/lib/settings";
-import { getTenant, rootDomain } from "@/lib/tenant";
+import { getTenant } from "@/lib/tenant";
 import { listTraining, type TrainingSession } from "@/lib/trainingStorage";
 import { listPlans } from "@/lib/trainingPlans";
 import { nextPlanned } from "@/lib/nextSession";
@@ -215,7 +215,7 @@ export default async function Home() {
       <RefreshOnReturn />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         {/* header: your photo (Your Account), Search, the club's crest */}
-        <AppHeader viewer={viewer} crest={CLUB.crest} switcher={viewer.signedIn && !!rootDomain()} />
+        <AppHeader viewer={viewer} crest={CLUB.crest} />
 
         <div>
           <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>

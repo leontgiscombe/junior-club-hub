@@ -1,16 +1,17 @@
 // The row at the top of the tab bar's main pages (Home, Coach Admin): your
 // photo or initials (Your Account, or Sign In), Search, and the club's crest
-// (on Home, the club switcher).
+// (the club switcher).
 // No hooks: server and client pages both use it.
 import Link from "next/link";
 import Image from "next/image";
 import type { Club } from "@/lib/clubSettings";
 import ClubSwitcher from "./ClubSwitcher";
 
-export type HeaderViewer = { signedIn: boolean; initials: string; photo: string | null };
+export type HeaderViewer = { signedIn: boolean; initials: string; photo: string | null; switcher?: boolean };
 
-/** `switcher`: the crest opens the club switcher (signed in, on the platform) */
-export default function AppHeader({ viewer, crest, switcher = false }: { viewer: HeaderViewer; crest: Club["crest"]; switcher?: boolean }) {
+// the crest opens the club switcher for someone signed in on the platform (lib/viewer.ts)
+export default function AppHeader({ viewer, crest }: { viewer: HeaderViewer; crest: Club["crest"] }) {
+  const switcher = !!viewer.switcher;
   return (
     <div className="flex items-center justify-between pt-2">
       <Link
