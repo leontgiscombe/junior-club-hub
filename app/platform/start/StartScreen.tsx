@@ -58,14 +58,30 @@ export default function StartScreen({
   // the app opens straight onto the club picked last time (?pick shows this screen instead)
   const rememberedHome = remembered?.home;
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
     if (forgetting()) {
       try {
         localStorage.removeItem(REMEMBER);
       } catch {}
     }
-  }, []);
+    // ?go: a club picked in the club switcher (app/components/ClubSwitcher.tsx) —
+    // kept as the one to open next time, then opened. Only a club on this platform.
+    const go = params.get("go") ?? "";
+    try {
+      const url = new URL(go);
+      if (/^https?:$/.test(url.protocol) && root && (url.host === root || url.host.endsWith(`.${root}`))) {
+        remember({ name: params.get("name") ?? "", home: url.origin + "/" });
+        window.location.replace(url.origin + "/");
+        return;
+      }
+    } catch {}
+    // ?join: straight to typing a club's code (the switcher's Join Another Club)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- only known in the browser
+    if (params.has("join")) setStep("grownup");
+  }, [root]);
   useEffect(() => {
-    if (appView && rememberedHome && !new URLSearchParams(window.location.search).has("pick")) {
+    const params = new URLSearchParams(window.location.search);
+    if (appView && rememberedHome && !params.has("pick") && !params.has("go")) {
       window.location.replace(rememberedHome);
     }
   }, [appView, rememberedHome]);
