@@ -34,10 +34,14 @@ function formatWhen(date: string, time: string) {
   });
 }
 
+/** Part of a "YYYY-MM-DD" date — its short month, or its day — for the date badge. */
+const dayPart = (date: string, opts: Intl.DateTimeFormatOptions) =>
+  new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", ...opts });
+
 export default function CameraRegister() {
   const { screen, open, switchTo, close } = useScreens("/admin/camera");
   const view = screen === "pending" || screen === "uploaded" ? screen : "upcoming";
-  const { TEAMS, teamName, teamAccent } = useTeams();
+  const { TEAMS, teamName } = useTeams();
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   // working out who this is (an account, or a password given earlier) before showing the password box
@@ -229,73 +233,52 @@ export default function CameraRegister() {
         ) : (
           <div className="flex flex-col gap-3">
             {shown.map((m) => (
-              <div
-                key={m.id}
-                className={`rounded-2xl shadow-sm border p-4 ${
-                  m.footageUploaded
-                    ? "bg-green-50 border-green-200 dark:bg-green-400/10 dark:border-green-400/30"
-                    : "bg-white border-gray-100 dark:bg-[#1c1c1e] dark:border-white/10"
-                }`}
-              >
-                <div className="flex flex-wrap items-center gap-3">
-                  <label
-                    className="flex items-center cursor-pointer shrink-0"
-                    title="Uploaded to Cloud"
-                  >
+              <div key={m.id} className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+                {/* the game: its date, who it's against, which team and when */}
+                <div className="flex items-center gap-3">
+                  <span className="w-12 shrink-0 rounded-xl bg-green-50 py-1.5 text-center dark:bg-green-400/10">
+                    <span className="block text-[11px] font-bold uppercase text-green-700 dark:text-green-400">{dayPart(m.date, { month: "short" })}</span>
+                    <span className="block text-xl font-extrabold leading-tight text-gray-900 dark:text-gray-50">{dayPart(m.date, { day: "numeric" })}</span>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="line-clamp-2 block break-words font-bold leading-snug text-gray-900 dark:text-gray-50">vs {m.opponent}</span>
+                    <span className="mt-0.5 block text-sm text-gray-500 dark:text-gray-400">{teamName(m.team)} · <span className="whitespace-nowrap">{formatWhen(m.date, m.time)}</span></span>
+                  </span>
+                </div>
+                {/* who's filming, and whether the footage reached the cloud */}
+                <div className="mt-3 divide-y divide-gray-200/70 overflow-hidden rounded-2xl bg-gray-50 dark:divide-white/10 dark:bg-white/5">
+                  <label className="flex min-h-12 items-center gap-3 px-3">
+                    <span className="shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-200">Camera</span>
+                    <select
+                      value={m.cameraHolder}
+                      onChange={(e) => patch(m.id, { action: "set-camera-holder", holder: e.target.value })}
+                      disabled={busyId === m.id}
+                      className="min-w-0 flex-1 bg-transparent py-2 text-right text-sm text-gray-900 focus:outline-none dark:text-gray-50"
+                      aria-label={`Who has the camera for ${m.opponent}`}
+                    >
+                      <option value="">Not set</option>
+                      {CAMERA_HOLDERS.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-h-12 cursor-pointer items-center gap-3 px-3">
+                    <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200">Footage uploaded</span>
                     <input
                       type="checkbox"
                       checked={m.footageUploaded}
                       disabled={busyId === m.id}
-                      onChange={() =>
-                        patch(m.id, {
-                          action: "set-uploaded",
-                          uploaded: !m.footageUploaded,
-                        })
-                      }
+                      onChange={() => patch(m.id, { action: "set-uploaded", uploaded: !m.footageUploaded })}
                       aria-label={`Footage uploaded for ${m.opponent}`}
-                      className="h-6 w-6 accent-green-600 cursor-pointer"
+                      className="peer sr-only"
+                    />
+                    <span
+                      aria-hidden
+                      className="relative h-7 w-12 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-green-600 peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-green-400 peer-disabled:opacity-60 dark:bg-white/20"
                     />
                   </label>
-                  <div className="flex-1 min-w-0">
-                    <p className="break-words font-bold text-gray-900 dark:text-gray-50">
-                      {teamAccent(m.team)} {teamName(m.team)}{" "}
-                      <span className="text-gray-400 font-normal">vs</span> {m.opponent}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
-                      {formatWhen(m.date, m.time)}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold shrink-0 ${
-                      m.footageUploaded ? "text-green-700 dark:text-green-400" : "text-gray-400"
-                    }`}
-                  >
-                    {m.footageUploaded ? "Uploaded ✓" : "Not uploaded"}
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center gap-2 pl-9">
-                  <span className="text-xs font-medium text-gray-500 shrink-0 dark:text-gray-400">
-                    📸 Camera:
-                  </span>
-                  <select
-                    value={m.cameraHolder}
-                    onChange={(e) =>
-                      patch(m.id, {
-                        action: "set-camera-holder",
-                        holder: e.target.value,
-                      })
-                    }
-                    disabled={busyId === m.id}
-                    className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
-                    aria-label={`Who has the camera for ${m.opponent}`}
-                  >
-                    <option value="">— Not set —</option>
-                    {CAMERA_HOLDERS.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
             ))}
