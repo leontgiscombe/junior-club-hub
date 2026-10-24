@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { backOr } from "@/lib/back";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { useTeams } from "./ClubProvider";
 import { useMyTeam } from "@/lib/myTeam";
@@ -10,7 +9,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 
 interface Player {
   id: string;
@@ -338,8 +337,8 @@ export default function MatchLog() {
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
+      <GateScreen title="Match Log">
+        <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">⚽</div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Match Log</h1>
@@ -361,14 +360,8 @@ export default function MatchLog() {
           >
             {loading ? "Loading…" : "Open match log"}
           </button>
-          <Link
-            href="/admin/stats" onClick={backOr}
-            className="mt-4 block text-center text-sm font-medium text-gray-500 hover:text-green-700 dark:text-gray-400"
-          >
-            ← Back to Stats
-          </Link>
         </div>
-      </main>
+      </GateScreen>
     );
   }
 

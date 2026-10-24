@@ -124,6 +124,19 @@ export function TopBar({ title, onBack, href }: { title: React.ReactNode; onBack
   );
 }
 
+/**
+ * A coach tool's password screen: the page's own top bar (back to Coach Admin)
+ * and the sign-in card on the grey background, like the tool once it's open.
+ */
+export function GateScreen({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <main className="themed min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
+      <TopBar title={title} href="/admin" />
+      <div className="flex justify-center px-4 pb-10 pt-6">{children}</div>
+    </main>
+  );
+}
+
 /** A rounded group of rows. */
 export function Group({ children }: { children: React.ReactNode }) {
   return <div className="mt-4 divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e] dark:divide-white/10">{children}</div>;

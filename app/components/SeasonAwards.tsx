@@ -5,10 +5,10 @@ import { AWARD_VOTERS, STARTER_AWARDS, VOTERS_LABEL, guessVoters, nomineesFor, v
 import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
-const panel = "rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
-const field = "mt-1 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base dark:border-white/20 dark:bg-[#1c1c1e]";
-const command = "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white disabled:opacity-50";
-const secondary = "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-white/20";
+const panel = "rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
+const field = "mt-1 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50";
+const command = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 font-bold text-white hover:bg-green-700 disabled:opacity-50";
+const secondary = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-white/15";
 
 async function requestData(admin: boolean, key: string): Promise<SeasonAwardsData> {
   const response = await fetch(admin ? "/api/awards/admin" : "/api/awards", {
@@ -105,8 +105,8 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
       {admin && (selectedId || editing) ? <TopBar title={editing ? editing === "new" ? "New Award" : "Edit Award" : awards.find((award) => award.id === selectedId)?.title || "Award Details"} onBack={() => { setEditing(null); close(); }} /> : <TopBar title="End of Season Awards" href={admin ? "/admin" : "/"} />}
       <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-5">
         {loading && <p className="wp-text" role="status">Loading awards...</p>}
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
-        {message && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">{message}</p>}
+        {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
+        {message && <p role="status" className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-300">{message}</p>}
         {login && <form onSubmit={signIn} className={`${panel} space-y-3`}>
           <label className="block text-sm font-semibold">Coach password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className={field} /></label>
           <button className={command} disabled={saving}>Open Awards</button>
@@ -244,7 +244,7 @@ function AwardVote({ award, slot, saving, onSave }: { award: SeasonAwardView; sl
   const labels = ["1st choice", "2nd choice (optional)", "3rd choice (optional)"];
   return <form className={`${panel} space-y-4`} onSubmit={async (event) => { event.preventDefault(); if (await onSave(choices)) setDraft(null); }}>
     <div><h2 className="break-words text-lg font-bold">{award.title}{child && <span className="font-semibold text-gray-500 dark:text-gray-400"> · {child}&apos;s vote</span>}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{award.open ? (saved || "Voting open") : "Voting closed"}</p></div>
-    {child && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">Vote for {child}: who would {child} pick? Ask them, and fill it in for them. {child} gets one vote, so if another parent has voted for {child} already, saving replaces it.</p>}
+    {child && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">Vote for {child}: who would {child} pick? Ask them, and fill it in for them. {child} gets one vote, so if another parent has voted for {child} already, saving replaces it.</p>}
     {award.description && <p className="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">{award.description}</p>}
     {labels.slice(0, Math.min(3, nominees.length)).map((label, index) => <label key={label} className="block text-sm font-semibold">{label}
       <select className={field} value={choices[index] ?? ""} disabled={saving || !award.open || (index > 0 && !choices[index - 1])} required={index === 0} onChange={(event) => { const next = choices.slice(0, index); if (event.target.value) next.push(event.target.value); setDraft(next); }}>
