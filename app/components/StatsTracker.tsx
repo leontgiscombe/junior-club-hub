@@ -17,7 +17,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ICONS, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { GateScreen, ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 
 type StatField =
   | "appearances"
@@ -194,9 +194,12 @@ function formatDate(iso: string) {
 // The stat cards on one player's card: the ones their position is judged on,
 // plus any other they have actually recorded (a keeper's goal, say).
 /** A player's photo (Members → profile; only coaches and their family can load it), or their initial. */
+// the search box and sort menu: one height and shape
+const control = "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50";
+
 function PlayerAvatar({ player, version, adminKey }: { player: Player; version?: string; adminKey: string }) {
   return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">
+    <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300">
       {version ? (
         // eslint-disable-next-line @next/next/no-img-element -- a child's photo, private to the club's coaches and their family
         <img src={`/api/players/photo?id=${encodeURIComponent(player.id)}&key=${encodeURIComponent(adminKey)}&v=${version}`} alt="" className="h-full w-full object-cover" />
@@ -722,28 +725,19 @@ export default function StatsTracker() {
       {detail ? <TopBar title={selectedPlayer?.name ?? (playerId ? "Player Details" : screen === "add" ? "Add Players" : screen === "totals" ? "Squad Totals" : "Season Management")} onBack={() => { setEditing(false); setEditingId(null); setError(null); close(); }} /> : <TopBar title="Stats Tracker" href={`/admin${keyQuery(key)}`} />}
 
       <div className="mx-auto max-w-2xl px-4 py-4">
-        {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}</p>}
-        {!detail && <div className="mb-4 flex items-center gap-3">
-          <label className="min-w-0 flex-1"><span className="sr-only">Team</span><select disabled={!!busyId || adding || archiving} value={team} onChange={(event) => { setTeam(event.target.value); setEditing(false); setEditingId(null); setQuery(""); setError(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
-          <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">{season}</span>
+        {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
+        {!detail && <div className="mb-4">
+          <label className="block"><span className="sr-only">Team</span><select disabled={!!busyId || adding || archiving} value={team} onChange={(event) => { setTeam(event.target.value); setEditing(false); setEditingId(null); setQuery(""); setError(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
         </div>}
-        {!detail && <div role="tablist" aria-label="Stats views" className="mb-6 grid grid-cols-3 border-b border-gray-200 dark:border-white/15">
-          {(["team", "players", "awards"] as const).map((tab) => <button key={tab} role="tab" id={`stats-tab-${tab}`} aria-controls="stats-panel" tabIndex={view === tab ? 0 : -1} aria-selected={view === tab} onClick={() => { setEditing(false); setEditingId(null); setError(null); switchTo(tab); }} onKeyDown={(event) => {
-            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-            event.preventDefault();
-            const tabs = ["team", "players", "awards"];
-            const index = event.key === "Home" ? 0 : event.key === "End" ? 2 : (tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : -1) + 3) % 3;
-            switchTo(tabs[index]); document.getElementById(`stats-tab-${tabs[index]}`)?.focus();
-          }} className={`min-h-12 border-b-2 text-sm font-semibold capitalize ${view === tab ? "border-green-700 text-green-700 dark:border-green-400 dark:text-green-400" : "border-transparent text-gray-500 dark:text-gray-400"}`}>{tab}</button>)}
-        </div>}
+        {!detail && <ToolTabs label="Stats views" tabs={[{ id: "team", label: "Team" }, { id: "players", label: "Players" }, { id: "awards", label: "Awards" }]} value={view} onChange={(tab) => { setEditing(false); setEditingId(null); setError(null); switchTo(tab); }} panelId="stats-panel" />}
 
-        <div id="stats-panel" role={detail ? undefined : "tabpanel"} aria-labelledby={detail ? undefined : `stats-tab-${view}`}>
+        <div id="stats-panel" role={detail ? undefined : "tabpanel"} aria-label={detail ? undefined : view === "team" ? "Team" : view === "players" ? "Players" : "Awards"}>
         <section hidden={view !== "team"} className="mb-5">
-          <div className="mb-5 flex items-end justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Season overview</p><h2 className="mt-1 break-words text-2xl font-bold text-gray-900 dark:text-gray-50">{teamName(team)}</h2></div><span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">{shown.length} player{shown.length === 1 ? "" : "s"}</span></div>
-          {nextGame && <Link href={`/admin/stats/matches${keyQuery(key)}`} className="mb-4 flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"><span className="text-green-700 dark:text-green-400">{ICONS.doc}</span><span className="min-w-0 flex-1"><span className="block text-xs text-gray-500 dark:text-gray-400">Next match</span><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{nextGame.home ? "v" : "Away at"} {nextGame.opponent}</span><span className="block text-xs text-gray-500 dark:text-gray-400">{formatFixture(nextGame.date)}</span></span><span aria-hidden="true" className="text-gray-400">›</span></Link>}
-          <div className="grid grid-cols-2 gap-3"><Link href={`/admin/stats/matches${keyQuery(key)}`} className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-700 px-3 text-sm font-semibold text-white">{ICONS.doc}Match Log</Link><Link href={`/admin/stats/training${keyQuery(key)}`} className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-3 text-sm font-semibold text-green-700 shadow-sm dark:bg-[#1c1c1e] dark:text-green-400">{ICONS.team}Training Log</Link></div>
+          <div className="mb-5 flex items-end justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">{season} season</p><h2 className="mt-1 break-words text-2xl font-bold text-gray-900 dark:text-gray-50">{teamName(team)}</h2></div><span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">{shown.length} player{shown.length === 1 ? "" : "s"}</span></div>
+          {nextGame && <Link href={`/admin/stats/matches${keyQuery(key)}`} className="mb-4 flex items-center gap-3 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"><span className="text-green-700 dark:text-green-400">{ICONS.doc}</span><span className="min-w-0 flex-1"><span className="block text-xs text-gray-500 dark:text-gray-400">Next match</span><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{nextGame.home ? "v" : "Away at"} {nextGame.opponent}</span><span className="block text-xs text-gray-500 dark:text-gray-400">{formatFixture(nextGame.date)}</span></span><span aria-hidden="true" className="text-gray-400">›</span></Link>}
+          <div className="grid grid-cols-2 gap-3"><Link href={`/admin/stats/matches${keyQuery(key)}`} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-green-700 px-3 text-sm font-semibold text-white">{ICONS.doc}Match Log</Link><Link href={`/admin/stats/training${keyQuery(key)}`} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-green-700 shadow-sm dark:bg-[#1c1c1e] dark:text-green-400">{ICONS.team}Training Log</Link></div>
           <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{loggedGames} result{loggedGames === 1 ? "" : "s"} logged</p>
-          {needScore > 0 && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">{needScore} result{needScore === 1 ? "" : "s"} awaiting a score</p>}
+          {needScore > 0 && <p className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">{needScore} result{needScore === 1 ? "" : "s"} awaiting a score</p>}
         </section>
 
         {/* Add player — only while editing */}
@@ -902,13 +896,13 @@ export default function StatsTracker() {
 
         {/* ── Player stats ────────────────────────────────────────────────
             Everything from here down belongs to individual players. */}
-        {view === "awards" && <Link href={`/admin/awards${keyQuery(key)}`} className="mb-5 flex min-h-16 items-center gap-3 rounded-lg bg-white p-4 text-sm font-semibold text-gray-900 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-50"><span className="text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1">Parents&apos; Season Awards</span><span aria-hidden="true" className="text-gray-400">›</span></Link>}
+        {view === "awards" && <Link href={`/admin/awards${keyQuery(key)}`} className="mb-5 flex min-h-16 items-center gap-3 rounded-3xl bg-white p-4 text-sm font-semibold text-gray-900 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-50"><span className="text-amber-700 dark:text-amber-400">{ICONS.crest}</span><span className="min-w-0 flex-1">Parents&apos; Season Awards</span><span aria-hidden="true" className="text-gray-400">›</span></Link>}
         {view === "awards" && !shown.length && <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No player awards yet.</p>}
 
         {shown.length > 0 && (
           <>
             {/* Squad totals — the sum of the players' own tallies */}
-            <div hidden={view !== "totals"} className="mb-4 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            <div hidden={view !== "totals"} className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <FoldHeader
                 title="Squad Totals"
                 open={cardIsOpen("totals")}
@@ -1011,13 +1005,62 @@ export default function StatsTracker() {
 
         <section hidden={view !== "players" || screen === "add"}>
         {!playerId && <>
-          <div className="mb-4 flex gap-2"><label className="min-w-0 flex-1"><span className="sr-only">Search players</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search players" className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50" /></label><label className="w-36 shrink-0"><span className="sr-only">Sort players</span><select value={sortBy} onChange={(event) => setSortBy(event.target.value as "name" | StatField)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="name">Name (A-Z)</option>{STATS.filter((stat) => squadFields.has(stat.field)).map((stat) => <option key={stat.field} value={stat.field}>{stat.short}</option>)}</select></label></div>
-          <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-gray-500 dark:text-gray-400">{filtered.length} player{filtered.length === 1 ? "" : "s"}</p><button onClick={() => { setBulk(false); setBulkResult(null); setError(null); open("add"); }} className="min-h-11 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white">Add Players</button></div>
+          <div className="mb-3 flex gap-2">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Search players</span>
+              <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search players" className={`${control} pl-9`} />
+            </label>
+            <label className="w-36 shrink-0">
+              <span className="sr-only">Sort players</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value as "name" | StatField)} className={control}>
+                <option value="name">Name (A–Z)</option>
+                {STATS.filter((stat) => squadFields.has(stat.field)).map((stat) => <option key={stat.field} value={stat.field}>{stat.short}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="mb-2 flex items-center justify-between gap-3 px-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{filtered.length} player{filtered.length === 1 ? "" : "s"} · {season}</p>
+            <button onClick={() => { setBulk(false); setBulkResult(null); setError(null); open("add"); }} className="flex h-9 items-center gap-1 rounded-full bg-green-700 px-4 text-sm font-bold text-white">
+              <span aria-hidden="true" className="text-base leading-none">+</span> Add Players
+            </button>
+          </div>
         </>}
-        {selectedPlayer && <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm text-gray-500 dark:text-gray-400">{positionLabel(selectedPlayer.position)}</p><button disabled={!!busyId} onClick={() => { setEditing((current) => !current); setEditingId(null); }} className="flex min-h-11 items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{ICONS.doc}{editing ? "Done" : "Correct Stats"}</button></div>}
+        {selectedPlayer && <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm text-gray-500 dark:text-gray-400">{positionLabel(selectedPlayer.position)}</p><button disabled={!!busyId} onClick={() => { setEditing((current) => !current); setEditingId(null); }} className="flex h-9 items-center gap-1.5 rounded-full bg-green-700 px-4 text-sm font-bold text-white disabled:opacity-40">{editing ? "Done" : "Correct Stats"}</button></div>}
 
         {!playerId ? (
-          filtered.length ? <div className="divide-y divide-gray-100 overflow-hidden rounded-lg bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">{filtered.map((player) => <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex min-h-19 w-full items-center gap-3 px-4 py-3 text-left"><PlayerAvatar player={player} version={photos[player.id]} adminKey={key} /><span className="min-w-0 flex-1"><span className="block break-words text-sm font-semibold text-gray-900 dark:text-gray-50">{player.name}</span><span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span><span className="mt-1 block text-xs tabular-nums text-gray-500 dark:text-gray-400">{statsFor(player).filter((stat) => player[stat.field] > 0).map((stat) => `${stat.icon} ${stat.short} ${player[stat.field]}`).join(" · ") || "No stats yet"}</span></span><span aria-hidden="true" className="shrink-0 text-gray-400">›</span></button>)}</div> : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
+          filtered.length ? (
+            <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
+              {filtered.map((player) => {
+                const counted = statsFor(player).filter((stat) => player[stat.field] > 0);
+                return (
+                  <button key={player.id} onClick={() => { setEditing(false); setEditingId(null); setError(null); open(`player-${player.id}`); }} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-white/5 dark:active:bg-white/10">
+                    <PlayerAvatar player={player} version={photos[player.id]} adminKey={key} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline gap-2">
+                        <span className="min-w-0 truncate text-[15px] font-semibold text-gray-900 dark:text-gray-50">{player.name}</span>
+                        <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{positionLabel(player.position)}</span>
+                      </span>
+                      {counted.length ? (
+                        <span className="mt-1.5 flex flex-wrap gap-1.5">
+                          {counted.map((stat) => (
+                            <span key={stat.field} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-white/10 dark:text-gray-200">
+                              <span aria-hidden="true">{stat.icon}</span>
+                              <span className="font-bold tabular-nums">{player[stat.field]}</span>
+                              <span className="text-gray-500 dark:text-gray-400">{stat.short}</span>
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">No stats yet</span>
+                      )}
+                    </span>
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                );
+              })}
+            </div>
+          ) : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
         ) : !selectedPlayer ? (
           <p role="status" className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">This player is not in the selected team.</p>
         ) : (
@@ -1026,7 +1069,7 @@ export default function StatsTracker() {
               return (
                 <div
                   key={p.id}
-                  className="rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
+                  className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]"
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     {editingId === p.id ? (
@@ -1165,7 +1208,7 @@ export default function StatsTracker() {
 
         {/* Season management */}
         <div hidden={view !== "season"} className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
-          <div className="mb-5 flex flex-wrap items-center gap-3"><button disabled={!shown.length} onClick={() => downloadTeamCSV(shown, team)} className="flex min-h-11 items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{ICONS.share}Export CSV</button><Link href={`/admin/stats/presentation${keyQuery(key, `team=${encodeURIComponent(team)}`)}`} className="flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:text-gray-50">{ICONS.doc}Presentation</Link></div>
+          <div className="mb-5 flex flex-wrap items-center gap-3"><button disabled={!shown.length} onClick={() => downloadTeamCSV(shown, team)} className="flex min-h-11 items-center gap-2 rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{ICONS.share}Export CSV</button><Link href={`/admin/stats/presentation${keyQuery(key, `team=${encodeURIComponent(team)}`)}`} className="flex min-h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{ICONS.doc}Presentation</Link></div>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[17px] font-bold text-gray-900 dark:text-gray-50">End of Season</p>
