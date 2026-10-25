@@ -49,7 +49,25 @@ export interface Match {
   // The game's id on FA Full-Time when it came from (or was matched to) the
   // FA fixtures sync — "" for a game only ever entered by hand.
   faId: string;
+  // A game that didn't go ahead: "postponed" (to be played another day, once
+  // it has a new date) or "cancelled" (not played at all). Either way it isn't
+  // a result, so it stays out of the record; "" for a game that's on.
+  calledOff: CalledOff;
   createdAt: string;
+}
+
+export type CalledOff = "" | "postponed" | "cancelled";
+export const CALLED_OFF: CalledOff[] = ["", "postponed", "cancelled"];
+
+/** Whether anything has been logged against a game: a score, an award or who played. */
+export function anythingLogged(m: Pick<Match, "goals" | "opponentGoals" | "resultLogged" | "appearanceIds" | AwardField>): boolean {
+  return (
+    m.resultLogged ||
+    m.goals.length > 0 ||
+    m.opponentGoals > 0 ||
+    m.appearanceIds.length > 0 ||
+    (Object.keys(AWARD_STAT) as AwardField[]).some((f) => !!m[f])
+  );
 }
 
 // The per-game awards, and the season tally each one feeds.
@@ -81,6 +99,7 @@ function parse(value: unknown): Match {
     friendly: m.friendly ?? false,
     cup: (m.friendly ?? false) && (m.cup ?? false),
     faId: m.faId ?? "",
+    calledOff: m.calledOff ?? "",
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -146,6 +165,7 @@ export async function addMatch(
     potmId: "",
     mostImprovedId: "",
     resultLogged: false,
+    calledOff: "",
     createdAt: new Date().toISOString(),
   };
   const kv = await getKv();
@@ -181,7 +201,11 @@ export async function updateMatch(
   if (typeof details.opponent === "string" && details.opponent.trim()) {
     match.opponent = details.opponent.trim();
   }
-  if (typeof details.date === "string" && details.date) match.date = details.date;
+  if (typeof details.date === "string" && details.date) {
+    // a postponed game given its new date is back on
+    if (details.date !== match.date && match.calledOff === "postponed") match.calledOff = "";
+    match.date = details.date;
+  }
   if (typeof details.time === "string") match.time = details.time;
   if (typeof details.home === "boolean") match.home = details.home;
   if (typeof details.friendly === "boolean") match.friendly = details.friendly;
@@ -358,6 +382,20 @@ export async function confirmResult(matchId: string): Promise<Match | null> {
   return match;
 }
 
+/**
+ * Mark a game as postponed or cancelled, or ("") back on. Only a game with
+ * nothing logged against it can be called off: one that went ahead has a
+ * result. Null if there's no such game; "logged" if it has one.
+ */
+export async function setCalledOff(matchId: string, calledOff: CalledOff): Promise<Match | null | "logged"> {
+  const match = await read(matchId);
+  if (!match) return null;
+  if (calledOff && anythingLogged(match)) return "logged";
+  match.calledOff = calledOff;
+  await write(match);
+  return match;
+}
+
 // Deleting a match takes back everything it credited — goals, assists, the
 // per-game awards and appearances.
 export async function deleteMatch(id: string): Promise<boolean> {
@@ -416,6 +454,8 @@ export async function syncFaFixtures(
           (k) => existing[k] !== details[k]
         );
       if (!changed) continue;
+      // a postponed game Full-Time has given a new date is back on
+      if (existing.calledOff === "postponed" && existing.date !== f.date) existing.calledOff = "";
       Object.assign(existing, details, { faId: f.faId });
       await write(existing);
       updated++;

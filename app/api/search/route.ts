@@ -42,7 +42,9 @@ export async function GET(request: Request) {
   const add = (list: Hit[]) => hits.push(...list.filter((h) => h.score > 0).sort((a, b) => b.score - a.score).slice(0, MAX_PER_KIND));
 
   const matchHit = (m: Match, link: boolean): Hit => {
-    const result = m.resultLogged ? `${m.goals.length}–${m.opponentGoals}` : m.time ? m.time : "";
+    const result = m.calledOff
+      ? m.calledOff === "postponed" ? "Postponed" : "Cancelled"
+      : m.resultLogged ? `${m.goals.length}–${m.opponentGoals}` : m.time ? m.time : "";
     return {
       kind: "Matches",
       title: `${many ? `${teamName(m.team)} ` : ""}vs ${m.opponent || "TBC"}`,

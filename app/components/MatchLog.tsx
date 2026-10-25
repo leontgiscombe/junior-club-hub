@@ -45,8 +45,16 @@ interface Match {
   potmId: string;
   mostImprovedId: string;
   resultLogged: boolean;
+  // postponed or cancelled: the game didn't go ahead ("" when it's on)
+  calledOff: "" | "postponed" | "cancelled";
   createdAt: string;
 }
+
+const CALLED_OFF_LABEL = { postponed: "Postponed", cancelled: "Cancelled" } as const;
+
+/** Whether anything is logged against a game yet; only a game with nothing logged can be called off. */
+const anythingLogged = (m: Match) =>
+  m.resultLogged || m.goals.length > 0 || m.opponentGoals > 0 || m.appearanceIds.length > 0 || !!m.potmId || !!m.mostImprovedId;
 
 // A fixture's details, as opposed to what happened in it — what the add form
 // collects and what Edit can change afterwards.
@@ -106,9 +114,10 @@ const AWARDS: {
 function GameBadge({ match, played }: { match: Match; played: boolean }) {
   if (!played) {
     const d = new Date(`${match.date}T00:00`);
+    // a game called off greys out
     return (
-      <span className="w-12 shrink-0 rounded-xl bg-green-50 py-1.5 text-center dark:bg-green-400/10">
-        <span className="block text-[11px] font-bold uppercase text-green-700 dark:text-green-400">
+      <span className={`w-12 shrink-0 rounded-xl py-1.5 text-center ${match.calledOff ? "bg-gray-100 opacity-60 dark:bg-white/10" : "bg-green-50 dark:bg-green-400/10"}`}>
+        <span className={`block text-[11px] font-bold uppercase ${match.calledOff ? "text-gray-500 dark:text-gray-400" : "text-green-700 dark:text-green-400"}`}>
           {isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { month: "short" })}
         </span>
         <span className="block text-xl font-extrabold leading-tight text-gray-900 dark:text-gray-50">{isNaN(d.getTime()) ? "?" : d.getDate()}</span>
@@ -284,6 +293,28 @@ export default function MatchLog() {
     }
   }
 
+  // A game that isn't going ahead: postponed (a new date to come) or cancelled.
+  async function callOff(match: Match, calledOff: "postponed" | "cancelled") {
+    const what = calledOff === "postponed" ? "postponed — it stays in the fixtures until you give it a new date" : "cancelled — it won't be played";
+    if (!await ask(`Mark ${teamName(match.team)} v ${match.opponent} as ${what}?\n\nFamilies see it on Home.`)) return;
+    await patch(match.id, { action: "call-off", calledOff });
+  }
+
+  function callOffRow(match: Match, label: string) {
+    const button = "cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-800 disabled:opacity-40 dark:text-gray-200 dark:border-white/15";
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+        <button onClick={() => callOff(match, "postponed")} disabled={busyId === match.id} className={button}>
+          Postponed
+        </button>
+        <button onClick={() => callOff(match, "cancelled")} disabled={busyId === match.id} className={button}>
+          Cancelled
+        </button>
+      </div>
+    );
+  }
+
   // Fixtures change through the season — a cup tie displaces a league game, a
   // kick-off moves, a home game is switched. Editing one leaves everything
   // already logged against it (goals, awards, who played) exactly as it is.
@@ -406,21 +437,25 @@ export default function MatchLog() {
     2,
     "0"
   )}-${String(now.getDate()).padStart(2, "0")}`;
+  // A game called off was never played.
   const isPlayed = (m: Match) =>
-    m.goals.length > 0 || m.opponentGoals > 0 || m.date < todayStr;
+    !m.calledOff && (m.goals.length > 0 || m.opponentGoals > 0 || m.date < todayStr);
+  // A postponed game stays with the fixtures until it has its new date; a
+  // cancelled one moves to the results once its day has gone.
+  const isDone = (m: Match) => isPlayed(m) || (m.calledOff === "cancelled" && m.date < todayStr);
 
   // Next game first for what's coming; most recent first for what's done.
   const upcoming = shown
-    .filter((m) => !isPlayed(m))
+    .filter((m) => !isDone(m))
     .sort((a, b) => a.date.localeCompare(b.date));
   const results = shown
-    .filter(isPlayed)
+    .filter(isDone)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   // Friendlies and cup games are logged, but kept out of the league record.
   const logged = results.filter(countsTowardsRecord);
   const record = seasonRecord(logged);
-  const awaiting = results.length - logged.length;
+  const awaiting = results.filter(isPlayed).length - logged.length;
   // Most recent five results, oldest of those first so form reads left to right.
   const form = logged.slice(0, 5).reverse().map(outcome);
 
@@ -786,6 +821,11 @@ export default function MatchLog() {
                           {gameType(m) === "cup" ? "Cup" : "Friendly"}
                         </span>
                       )}
+                      {m.calledOff && (
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${m.calledOff === "cancelled" ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300" : "bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300"}`}>
+                          {CALLED_OFF_LABEL[m.calledOff]}
+                        </span>
+                      )}
                       {isPlayed(m) && !m.resultLogged && <span className="text-amber-700 dark:text-amber-300">No score logged</span>}
                     </p>
                   </button>
@@ -794,8 +834,24 @@ export default function MatchLog() {
                 )}
 
                 {gameOpen(m) && editingId !== m.id && (<>
-                {/* A fixture still to come stays compact until you open it */}
-                {!isPlayed(m) && !expanded.includes(m.id) ? (
+                {/* A game called off: nothing to log, until it's back on */}
+                {m.calledOff ? (
+                  <div className={`mt-4 rounded-2xl px-4 py-3 text-sm ${m.calledOff === "cancelled" ? "bg-red-50 text-red-800 dark:bg-red-400/10 dark:text-red-200" : "bg-amber-50 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200"}`}>
+                    <p className="font-bold">This game was {m.calledOff}.</p>
+                    <p className="mt-0.5 text-xs">
+                      {m.calledOff === "postponed"
+                        ? "Once it has a new date, tap Edit Game and change the date: it's back on."
+                        : "It's kept out of the results and the league record."}
+                    </p>
+                    <button
+                      onClick={() => patch(m.id, { action: "call-off", calledOff: "" })}
+                      disabled={busyId === m.id}
+                      className="mt-2 cursor-pointer text-xs font-bold underline disabled:opacity-40"
+                    >
+                      It&apos;s back on — undo
+                    </button>
+                  </div>
+                ) : !isPlayed(m) && !expanded.includes(m.id) ? (
                   <button
                     onClick={() => { setExpanded((prev) => [...prev, m.id]); setLogStep(0); }}
                     className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
@@ -806,6 +862,8 @@ export default function MatchLog() {
                   <>
                 {/* Logging the game a step at a time: each change saves as it's made */}
                 <StepBar steps={LOG_STEPS} step={logStep} onChange={setLogStep} className="mt-4 mb-4" />
+                {/* a past game with nothing logged may not have gone ahead */}
+                {logStep === 0 && !anythingLogged(m) && callOffRow(m, "Didn't go ahead?")}
 
                 {/* Step 1: the score and who scored */}
                 <div hidden={logStep !== 0}>
@@ -1157,7 +1215,8 @@ export default function MatchLog() {
                   </>
                 )}
                 {/* change or remove the game: inside it, not crowding the card */}
-                {((!isPlayed(m) && !expanded.includes(m.id)) || logStep === 3) && (
+                {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && !anythingLogged(m) && callOffRow(m, "Called off?")}
+                {(m.calledOff || (!isPlayed(m) && !expanded.includes(m.id)) || logStep === 3) && (
                 <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
                   <button
                     onClick={() => startEdit(m)}

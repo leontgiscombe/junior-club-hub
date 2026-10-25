@@ -426,6 +426,13 @@ export default function HelpManual() {
             Everything saves as you tap. A game where the opponent didn&apos;t score is marked as a
             clean sheet by itself.
           </p>
+          <H3>When a Game Is Called Off</H3>
+          <Steps>
+            <li>Open the game and tap <B>Postponed</B> or <B>Cancelled</B> next to <B>Called off?</B> (on a past game, <B>Didn&apos;t go ahead?</B>). This only shows while nothing is logged against the game.</li>
+            <li>The game greys out with its label, and Home shows families it&apos;s off. It stays out of the results and the league record, and the Camera Register drops it.</li>
+            <li><B>Postponed:</B> once it has a new date, tap <B>Edit Game</B> and change the date. It&apos;s back on. A game synced from FA Full-Time comes back on by itself when Full-Time gives it a new date.</li>
+            <li>Called off by mistake? Open it and tap <B>It&apos;s back on — undo</B>.</li>
+          </Steps>
           <H3>Changing or Removing a Game</H3>
           <p>
             Tap ✏️ to change the opponent, date, kick-off, venue or game type, then{" "}

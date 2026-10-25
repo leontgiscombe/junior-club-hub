@@ -347,8 +347,14 @@ export default async function Home() {
                       {many ? `${teamName(nextMatch.team)} ` : ""}vs {nextMatch.opponent || "TBC"}
                     </span>
                     <span className={`block text-sm ${sub}`}>
+                      {/* a game called off still shows, so families know it's off */}
+                      {nextMatch.calledOff && (
+                        <span className="font-bold text-red-600 dark:text-red-400">
+                          {nextMatch.calledOff === "postponed" ? "Postponed" : "Cancelled"} ·{" "}
+                        </span>
+                      )}
                       {upcoming(nextMatch.date)}
-                      {nextMatch.time ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
+                      {nextMatch.time && !nextMatch.calledOff ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>
                   </span>
                 </NextRow>

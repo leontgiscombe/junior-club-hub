@@ -20,6 +20,8 @@
 //          action "set-camera-holder" { holder } — who is filming (home games)
 //          action "set-uploaded" { uploaded } — footage in the cloud yet
 //          action "confirm-result" — mark the score final (a genuine 0-0)
+//          action "call-off" { calledOff } — "postponed", "cancelled", or ""
+//                                 for back on; only with nothing logged yet
 // DELETE /api/stats/matches?key=...&id=...    -> remove a match
 //
 // Goal changes also adjust the season tallies, so the response returns the
@@ -28,12 +30,14 @@ import { NextResponse } from "next/server";
 import {
   addGoal,
   addMatch,
+  CALLED_OFF,
   confirmResult,
   deleteMatch,
   listMatches,
   removeGoal,
   setAppearances,
   setAward,
+  setCalledOff,
   setCameraHolder,
   setFootageUploaded,
   setOpponentGoals,
@@ -41,6 +45,7 @@ import {
   syncFaFixtures,
   updateMatch,
   type AwardField,
+  type CalledOff,
   type MatchDetails,
 } from "@/lib/matchStorage";
 import { listPlayers } from "@/lib/statsStorage";
@@ -187,6 +192,19 @@ export async function PATCH(request: Request) {
     match = await setCameraHolder(matchId, holder);
   } else if (action === "set-uploaded") {
     match = await setFootageUploaded(matchId, Boolean(body.uploaded));
+  } else if (action === "call-off") {
+    const calledOff = String(body.calledOff ?? "") as CalledOff;
+    if (!CALLED_OFF.includes(calledOff)) {
+      return NextResponse.json({ error: "Unknown option" }, { status: 400 });
+    }
+    const result = await setCalledOff(matchId, calledOff);
+    if (result === "logged") {
+      return NextResponse.json(
+        { error: "This game already has a score, awards or appearances logged — take those off first." },
+        { status: 400 }
+      );
+    }
+    match = result;
   } else if (action === "confirm-result") {
     match = await confirmResult(matchId);
   } else if (action in AWARD_ACTIONS) {
