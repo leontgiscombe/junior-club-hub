@@ -187,6 +187,8 @@ export default function MatchLog() {
   const [expanded, setExpanded] = useState<string[]>([]);
   // which step of logging the open game is on; a game opens on the first
   const [logStepFor, setLogStepFor] = useState({ id: "", step: 0 });
+  // the game whose Edit / Remove menu is open
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   const load = useCallback(async (adminKey: string) => {
     setLoading(true);
@@ -479,6 +481,17 @@ export default function MatchLog() {
   // a game folded to its one line unless tapped open; one still to score, and the next game, start open
   const gameOpen = (match: Match) => match.id === selectedId;
   const logStep = logStepFor.id === selectedId ? logStepFor.step : 0;
+  // a game being logged, step by step (rather than a fixture not started, or one called off)
+  const inSteps = (m: Match) => !m.calledOff && (isPlayed(m) || expanded.includes(m.id));
+  // "Alfie Smith ×2, Scorer not recorded ×3"
+  const goalLine = (m: Match) => {
+    const counts = new Map<string, number>();
+    for (const g of m.goals) {
+      const who = g.scorerId ? playerName(g.scorerId) : "Scorer not recorded";
+      counts.set(who, (counts.get(who) ?? 0) + 1);
+    }
+    return [...counts].map(([who, n]) => (n > 1 ? `${who} ×${n}` : who)).join(", ");
+  };
   const setLogStep = (step: number) => {
     setLogStepFor({ id: selectedId, step });
     window.scrollTo(0, 0);
@@ -802,7 +815,7 @@ export default function MatchLog() {
                     )}
                   </div>
                 ) : (
-                <div className="flex items-center gap-3">
+                <div className="relative flex items-center gap-3">
                   <GameBadge match={m} played={isPlayed(m)} />
                   <button
                     type="button"
@@ -829,7 +842,40 @@ export default function MatchLog() {
                       {isPlayed(m) && !m.resultLogged && <span className="text-amber-700 dark:text-amber-300">No score logged</span>}
                     </p>
                   </button>
-                  <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-gray-300 transition-transform dark:text-gray-600 ${gameOpen(m) ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                  {gameOpen(m) && inSteps(m) ? (
+                    // while it's being logged, changing or removing the game is tucked in here
+                    <>
+                      <button
+                        onClick={() => setMenuFor(menuFor === m.id ? null : m.id)}
+                        aria-label="More for this game"
+                        aria-expanded={menuFor === m.id}
+                        className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+                      </button>
+                      {menuFor === m.id && (
+                        <>
+                          <button aria-label="Close" onClick={() => setMenuFor(null)} className="fixed inset-0 z-20 cursor-default" />
+                          <div className="absolute right-0 top-11 z-30 w-48 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 dark:bg-[#2c2c2e] dark:ring-white/10">
+                            <button
+                              onClick={() => { setMenuFor(null); startEdit(m); }}
+                              className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 dark:text-gray-50 dark:hover:bg-white/5"
+                            >
+                              Edit Game
+                            </button>
+                            <button
+                              onClick={() => { setMenuFor(null); removeMatch(m); }}
+                              className="flex w-full cursor-pointer items-center gap-2 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-white/10 dark:text-red-400 dark:hover:bg-red-400/10"
+                            >
+                              Remove Game
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-gray-300 transition-transform dark:text-gray-600 ${gameOpen(m) ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                  )}
                 </div>
                 )}
 
@@ -1170,7 +1216,7 @@ export default function MatchLog() {
                       {
                         label: "Goals",
                         value: m.goals.length
-                          ? m.goals.map((g) => (g.scorerId ? playerName(g.scorerId) : "Scorer not recorded")).join(", ")
+                          ? goalLine(m)
                           : "None",
                         step: 0,
                       },
@@ -1212,7 +1258,7 @@ export default function MatchLog() {
                 )}
                 {/* change or remove the game: inside it, not crowding the card */}
                 {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && !anythingLogged(m) && callOffRow(m, "Called off?")}
-                {(m.calledOff || (!isPlayed(m) && !expanded.includes(m.id)) || logStep === 3) && (
+                {!inSteps(m) && (
                 <div className="mt-4 border-t border-gray-100 pt-3 dark:border-white/10">
                   {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && (
                     <button
