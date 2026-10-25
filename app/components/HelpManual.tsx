@@ -435,9 +435,9 @@ export default function HelpManual() {
           </Steps>
           <H3>Changing or Removing a Game</H3>
           <p>
-            Tap ✏️ to change the opponent, date, kick-off, venue or game type, then{" "}
-            <B>Save Changes</B>; goals and awards stay as they were. ✕ removes the game after you
-            confirm.
+            Open the game and tap <B>Edit Game</B> to change the opponent, date, kick-off, venue or game
+            type, then <B>Save Changes</B>; goals and awards stay as they were. <B>Remove Game</B> removes
+            it after you confirm. Once you&apos;re logging a game, both are under <B>⋯</B> at the top of it.
           </p>
         </Section>
 
