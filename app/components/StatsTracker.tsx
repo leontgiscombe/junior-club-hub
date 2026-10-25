@@ -60,6 +60,7 @@ interface Match {
   appearanceIds: string[];
   friendly: boolean;
   resultLogged: boolean;
+  calledOff?: "" | "postponed" | "cancelled";
 }
 
 interface SeasonSummary {
@@ -689,10 +690,10 @@ export default function StatsTracker() {
   const todayStr = today();
   const teamGames = matches.filter((m) => m.team === team);
   const nextGame = teamGames
-    .filter((m) => !m.resultLogged && m.date >= todayStr)
+    .filter((m) => !m.resultLogged && !m.calledOff && m.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))[0];
   const loggedGames = teamGames.filter((m) => m.resultLogged).length;
-  const needScore = teamGames.filter((m) => !m.resultLogged && m.date < todayStr).length;
+  const needScore = teamGames.filter((m) => !m.resultLogged && !m.calledOff && m.date < todayStr).length;
   // A clean sheet belongs to the team, not to each player, so it is counted
   // in games here rather than on anybody's card.
   const teamCleanSheets = cleanSheetCount(teamGames);
