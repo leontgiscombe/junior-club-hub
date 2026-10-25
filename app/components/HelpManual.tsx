@@ -556,10 +556,10 @@ export default function HelpManual() {
           <H3>Making the Poster</H3>
           <Steps>
             <li>Pick your team. It opens on last month; change it with <B>Month</B>.</li>
-            <li>Check the standings; the winner has a ★. Tap another player to choose them instead.</li>
-            <li>Optional: <B>+ Add a Photo</B> and slide it to frame their face — only with their parents&apos; permission. The photo stays on your phone.</li>
-            <li>Check the <B>Poster Words</B> and change anything you like.</li>
-            <li>Tap <B>🖼️ Make the Image</B>, then press and hold it to save, or tap <B>📤 Share</B>.</li>
+            <li><B>Step 1 – Player:</B> check the standings; the top player is the winner. Tap another player to choose them instead.</li>
+            <li><B>Step 2 – Photo (optional):</B> <B>+ Add a Photo</B> and slide it to frame their face — only with their parents&apos; permission. The photo stays on your phone. No photo? Tap <B>Skip</B>.</li>
+            <li><B>Step 3 – Words:</B> check the <B>Poster Words</B> and change anything you like.</li>
+            <li><B>Step 4 – Poster:</B> tap <B>Make the Image</B>, then press and hold it to save, or tap <B>Share</B>.</li>
           </Steps>
           <p>The poster uses first names only, so it&apos;s safe to share.</p>
         </Section>
