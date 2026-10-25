@@ -16,6 +16,7 @@ import PlayerDevices from "./PlayerDevices";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { StepBar, StepButtons } from "./Steps";
 import { haptic } from "@/lib/haptics";
 import { ask } from "@/lib/dialog";
 import { GateIcon } from "./Icons";
@@ -650,63 +651,109 @@ function PendingPerson({
   // Coach Admin) is only given when a coach ticks it on purpose
   const first: Role = person.relation === "player" ? "player" : "parent";
   const [roles, setRoles] = useState<Role[]>([first]);
+  // checked a step at a time once opened: who they are, their children, then their roles
+  const [step, setStep] = useState<number | null>(null);
+  const steps = [
+    { id: "who", label: "Who" },
+    ...(kids.length > 0 ? [{ id: "children", label: "Children" }] : []),
+    { id: "roles", label: "Roles" },
+  ];
+  const at = steps[step ?? 0].id;
+  const decline = (
+    <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="mt-3 w-full text-center text-sm font-semibold text-red-600 hover:text-red-700 disabled:opacity-40 dark:text-red-400">
+      Decline {person.name}
+    </button>
+  );
   return (
     <li className="py-3">
-      <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
-      <span className="block text-sm text-gray-500 dark:text-gray-400">{[person.email, person.phone, describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
-      {person.relation === "coach" && (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-          Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
-        </p>
-      )}
-      {kids.length > 0 && (
-        <div className="mt-2 rounded-lg bg-gray-50 p-2 dark:bg-white/5">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-            Their children: already in your squad? Pick them, so they aren&apos;t added twice.
-          </p>
-          {kids.map((c) => (
-            // the child's name on its own line, the choice full width under it
-            <label key={c.id} className="mt-2 block text-sm text-gray-800 dark:text-gray-100">
-              <span className="block font-semibold">
-                {c.name}
-                {c.team && <span className="font-normal text-gray-500 dark:text-gray-400"> · {c.team.name}</span>}
-              </span>
-              <select
-                value={links[c.id] ?? "new"}
-                onChange={(e) => setLinks({ ...links, [c.id]: e.target.value })}
-                aria-label={`Squad player for ${c.name}`}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
-              >
-                <option value="new">New to the squad — add them</option>
-                {players
-                  .filter((pl) => !c.team || pl.team === c.team.slug)
-                  .map((pl) => (
-                    <option key={pl.id} value={pl.id}>
-                      Already in the squad: {pl.name}
-                    </option>
-                  ))}
-              </select>
-              {links[c.id] && links[c.id] !== "new" && (
-                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">The closest name in the squad is picked — check it&apos;s the same child.</span>
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-gray-900 dark:text-gray-50">{person.name}</span>
+          <span className="block text-sm text-gray-500 dark:text-gray-400">{[describe(person), `asked ${when(person.createdAt)}`].filter(Boolean).join(" · ")}</span>
+        </span>
+        {step === null ? (
+          <button onClick={() => setStep(0)} className="shrink-0 rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700">
+            Review
+          </button>
+        ) : (
+          <button onClick={() => setStep(null)} className="shrink-0 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400">
+            Close
+          </button>
+        )}
+      </div>
+      {step !== null && (
+        <div className="mt-3">
+          <StepBar steps={steps} step={step} onChange={setStep} />
+          {at === "who" && (
+            <div className="rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/5">
+              <p className="mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Check you know them</p>
+              <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1.5">
+                <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+                <dd className="font-semibold text-gray-900 dark:text-gray-50">{person.name}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Email</dt>
+                <dd className="break-all text-gray-900 dark:text-gray-50">{person.email || "—"}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Phone</dt>
+                <dd className="text-gray-900 dark:text-gray-50">{person.phone || "—"}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Says</dt>
+                <dd className="text-gray-900 dark:text-gray-50">{describe(person) || "—"}</dd>
+              </dl>
+              {person.relation === "coach" && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+                  Says they&apos;re a coach. Only give the <strong>Coach</strong> role if you know them — it opens Coach Admin.
+                </p>
               )}
-            </label>
-          ))}
+            </div>
+          )}
+          {at === "children" && (
+            <div className="rounded-lg bg-gray-50 p-3 dark:bg-white/5">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Their children: already in your squad? Pick them, so they aren&apos;t added twice.
+              </p>
+              {kids.map((c) => (
+                // the child's name on its own line, the choice full width under it
+                <label key={c.id} className="mt-2 block text-sm text-gray-800 dark:text-gray-100">
+                  <span className="block font-semibold">
+                    {c.name}
+                    {c.team && <span className="font-normal text-gray-500 dark:text-gray-400"> · {c.team.name}</span>}
+                  </span>
+                  <select
+                    value={links[c.id] ?? "new"}
+                    onChange={(e) => setLinks({ ...links, [c.id]: e.target.value })}
+                    aria-label={`Squad player for ${c.name}`}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:bg-[#1c1c1e] dark:border-white/15"
+                  >
+                    <option value="new">New to the squad — add them</option>
+                    {players
+                      .filter((pl) => !c.team || pl.team === c.team.slug)
+                      .map((pl) => (
+                        <option key={pl.id} value={pl.id}>
+                          Already in the squad: {pl.name}
+                        </option>
+                      ))}
+                  </select>
+                  {links[c.id] && links[c.id] !== "new" && (
+                    <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">The closest name in the squad is picked — check it&apos;s the same child.</span>
+                  )}
+                </label>
+              ))}
+            </div>
+          )}
+          {at === "roles" && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Approve {person.name} as:</p>
+              <RoleChips roles={roles} disabled={busy} onChange={setRoles} canAdmin={canAdmin} />
+            </div>
+          )}
+          <StepButtons
+            step={step}
+            count={steps.length}
+            nextLabel={`Next: ${steps[step + 1]?.label}`}
+            onChange={setStep}
+            finish={{ label: "Approve", onClick: () => onDecide({ action: "approvePerson", userId: person.userId, roles, links }), disabled: busy || !roles.length }}
+          />
+          {decline}
         </div>
       )}
-      <p className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Approve as:</p>
-      <RoleChips roles={roles} disabled={busy} onChange={setRoles} canAdmin={canAdmin} />
-      <div className="mt-2 flex gap-2">
-        <button
-          onClick={() => onDecide({ action: "approvePerson", userId: person.userId, roles, links })}
-          disabled={busy || !roles.length}
-          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
-        >
-          Approve
-        </button>
-        <button onClick={() => onDecide({ action: "declinePerson", userId: person.userId })} disabled={busy} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15">
-          Decline
-        </button>
-      </div>
     </li>
   );
 }
