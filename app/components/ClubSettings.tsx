@@ -184,7 +184,7 @@ export default function ClubSettings() {
 
   // Changes save by themselves, a moment after the last one (no Save button):
   // what's typed meanwhile is kept, and the same changes aren't sent twice.
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "unnamed">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "savedFading" | "unnamed">("idle");
   const lastSent = useRef("");
   async function autoSave(body: string) {
     lastSent.current = body;
@@ -222,6 +222,12 @@ export default function ClubSettings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, teams, snap, canAdmin, faCodeEditing]);
   /* eslint-enable react-hooks/set-state-in-effect */
+  // "Saved ✓" shows for a moment, then fades away
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = setTimeout(() => setSaveState("savedFading"), 1500);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
   // a crest or kit picture with a plain background: both versions, for the coach to pick from
   const [bgPick, setBgPick] = useState<{ slot: PictureSlot; original: Picture; cleaned: Picture } | null>(null);
@@ -637,10 +643,10 @@ export default function ClubSettings() {
               <p
                 aria-live="polite"
                 className={`pointer-events-none fixed left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-40 w-max max-w-[90vw] -translate-x-1/2 rounded-full px-4 py-1.5 text-sm font-semibold shadow-md transition-opacity ${
-                  saveState === "idle" ? "opacity-0" : "opacity-100"
+                  saveState === "idle" || saveState === "savedFading" ? "opacity-0" : "opacity-100"
                 } ${saveState === "unnamed" ? "bg-amber-50 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" : "bg-white text-gray-600 dark:bg-[#1c1c1e] dark:text-gray-300"}`}
               >
-                {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : saveState === "unnamed" ? "Give the new team a name to save it" : "\u00a0"}
+                {saveState === "saving" ? "Saving…" : saveState === "saved" || saveState === "savedFading" ? "Saved ✓" : saveState === "unnamed" ? "Give the new team a name to save it" : "\u00a0"}
               </p>
             )}
           </div>
