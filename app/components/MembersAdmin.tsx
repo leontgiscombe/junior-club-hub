@@ -17,6 +17,9 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { haptic } from "@/lib/haptics";
+import { ask } from "@/lib/dialog";
+import { GateIcon } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 type TeamOption = { slug: string; name: string };
 
@@ -183,7 +186,7 @@ export default function MembersAdmin() {
       <GateScreen title="Members">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
-            <div className="mb-2 text-3xl">👪</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Members</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
@@ -326,7 +329,7 @@ export default function MembersAdmin() {
 
         {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
         <section hidden={view !== "members"}>
-          <label className="block"><span className="sr-only">Team</span><select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{snap.teams.map((team) => <option key={team.slug} value={team.slug}>{team.name}</option>)}</select></label>
+          <TeamPicker className="block" value={teamFilter} onChange={(value) => setTeamFilter(value)} options={[{ value: "all", label: "All teams" }, ...snap.teams.map((team) => ({ value: team.slug, label: team.name }))]} />
           <label className="relative mt-3 block">
             <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             <input
@@ -769,7 +772,7 @@ function PendingChild({
           Add to Squad
         </button>
         <button
-          onClick={() => confirm(`Decline ${child.name}? They'll come off ${person.name}'s list of children.`) && onDecide({ action: "declineChild", userId: person.userId, childId: child.id })}
+          onClick={async () => await ask(`Decline ${child.name}? They'll come off ${person.name}'s list of children.`) && onDecide({ action: "declineChild", userId: person.userId, childId: child.id })}
           disabled={busy}
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
         >
@@ -1051,9 +1054,9 @@ function PlayerProfile({
 
           {snap.canAdmin && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  confirm(
+                  await ask(
                     `Delete ${player.name} from the squad? Their season stats go too${guardians.length ? `, and they come off ${guardians.map((g) => g.name).join(" and ")}'s list of children` : ""}. This can't be undone (except from a backup).`,
                   )
                 ) {
@@ -1120,9 +1123,9 @@ function MemberRow({
           </button>
           {(canAdmin || !person.roles.some((r) => ADMIN_ROLES.includes(r))) && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  confirm(
+                  await ask(
                     `Remove ${person.name} from the club? This isn't taking a role away (tap the role for that) — they'll lose access to the hub completely until they ask to join again.`,
                   )
                 )

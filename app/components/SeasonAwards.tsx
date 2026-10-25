@@ -6,6 +6,7 @@ import { accountKey, rememberCoachKey } from "./coachKey";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { haptic } from "@/lib/haptics";
 import { RowsSkeleton } from "./Skeleton";
+import { toast } from "@/lib/dialog";
 
 const panel = "rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
 const field = "mt-1 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50";
@@ -91,7 +92,7 @@ export default function SeasonAwards({ admin = false }: { admin?: boolean }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "That could not be saved.");
-      setMessage(success);
+      toast(success);
       haptic();
       setData(await requestData(admin, key));
       return true;

@@ -10,6 +10,7 @@ import QRCode from "qrcode";
 import { ROLES, type Member, type Role } from "@/lib/access";
 import { ADMIN_ROLES, RoleChips } from "./MembersAdmin";
 import { RowsSkeleton } from "./Skeleton";
+import { ask } from "@/lib/dialog";
 
 type TeamOption = { slug: string; name: string };
 export type AccessSnap = {
@@ -155,8 +156,8 @@ export function JoiningScreen({ adminKey, clubName }: { adminKey: string; clubNa
           </button>
           {snap.canAdmin && (
             <button
-              onClick={() => {
-                if (confirm("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
+              onClick={async () => {
+                if (await ask("Make a new code? The old code and join link stop working; members already approved stay approved.")) act({ action: "newCode" });
               }}
               disabled={busy}
               className="cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-red-600 disabled:opacity-40 dark:text-gray-400"
@@ -181,9 +182,9 @@ export function JoiningScreen({ adminKey, clubName }: { adminKey: string; clubNa
             type="checkbox"
             checked={snap.private}
             disabled={busy || !snap.canAdmin}
-            onChange={(e) => {
+            onChange={async (e) => {
               const on = e.target.checked;
-              if (on && !confirm("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them in Members.")) return;
+              if (on && !await ask("Turn on? Everyone apart from coaches will need to ask to join with the club code, and you'll approve them in Members.")) return;
               act({ action: "private", value: on });
             }}
             className="mt-1 h-6 w-6 shrink-0 accent-green-600"
@@ -287,8 +288,8 @@ export function SignInScreen({ adminKey, children }: { adminKey: string; childre
           </p>
           {snap.accountAdmin ? (
             <button
-              onClick={() => {
-                if (snap.passwordOff || confirm("Switch the shared coach password off? Only people with their own account and the Club admin or Coach role will be able to use Coach Admin.")) {
+              onClick={async () => {
+                if (snap.passwordOff || await ask("Switch the shared coach password off? Only people with their own account and the Club admin or Coach role will be able to use Coach Admin.")) {
                   act({ action: "password", off: !snap.passwordOff });
                 }
               }}

@@ -8,6 +8,8 @@ import { CAMERA_HOLDERS } from "@/lib/cameraHolders";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { EmptyState, GateIcon, emptyAction } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 // Home games come from the match log now, so a fixture is only entered once.
 // This page is the filming view of those same games.
@@ -147,7 +149,7 @@ export default function CameraRegister() {
       <GateScreen title="Camera Register">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🎥</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Camera Register</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -211,7 +213,7 @@ export default function CameraRegister() {
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div hidden={screen === "import"}>
-        <label className="mb-4 block"><span className="sr-only">Team</span><select value={filter} onChange={(event) => setFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <TeamPicker className="mb-4 block" value={filter} onChange={(value) => setFilter(value)} options={[{ value: "all", label: "All teams" }, ...TEAMS.map((option) => ({ value: option.slug, label: option.name }))]} />
         <ToolTabs label="Camera views" tabs={[{ id: "upcoming", label: "Upcoming", count: upcoming.length }, { id: "pending", label: "To Upload", count: pending.length }, { id: "uploaded", label: "Uploaded", count: uploaded.length }]} value={view} onChange={switchTo} panelId="camera-panel" />
         <div id="camera-panel" role="tabpanel" aria-label={view}>
 
@@ -220,16 +222,12 @@ export default function CameraRegister() {
         </p>
 
         {shown.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🎬</p>
-            <p>{view === "pending" ? "No uploads waiting." : view === "uploaded" ? "No uploaded footage yet." : "No upcoming home games."}</p>
-            <Link
-              href={`/admin/stats/matches${keyQuery(key)}`}
-              className="mt-2 inline-block text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
-            >
-              Add Fixtures in the Match Log →
-            </Link>
-          </div>
+          <EmptyState
+            icon="camera"
+            title={view === "pending" ? "No uploads waiting" : view === "uploaded" ? "No uploaded footage yet" : "No upcoming home games"}
+            body={view === "upcoming" ? "Home games from the Match Log show here, to pick who's filming." : undefined}
+            action={view === "upcoming" ? <Link href={`/admin/stats/matches${keyQuery(key)}`} className={emptyAction}>Open the Match Log</Link> : undefined}
+          />
         ) : (
           <div className="flex flex-col gap-3">
             {shown.map((m) => (

@@ -18,6 +18,8 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { Group, ICONS, Row, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { haptic } from "@/lib/haptics";
+import { ask, toast } from "@/lib/dialog";
+import { GateIcon } from "./Icons";
 
 type Snapshot = {
   club: Club;
@@ -173,7 +175,7 @@ export default function ClubSettings() {
     if (!res.ok) throw new Error(data.error ?? "That didn't save");
     take(data, opts.keepEdits);
     if (done) {
-      setNotice(done);
+      toast(done);
       haptic();
     }
     // every page picks the new settings up
@@ -250,7 +252,7 @@ export default function ClubSettings() {
 
   async function resetPicture(slot: PictureSlot) {
     const { name } = PICTURES[slot];
-    if (!confirm(`Go back to the default ${name}?`)) return;
+    if (!await ask(`Go back to the default ${name}?`)) return;
     setUploading(slot);
     try {
       await send("DELETE", undefined, `Back to the default ${name}.`, { slot, keepEdits: true });
@@ -267,7 +269,7 @@ export default function ClubSettings() {
       <GateScreen title="Settings">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
-            <div className="mb-2 text-3xl">⚙️</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Settings</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
@@ -904,9 +906,9 @@ function TeamsEditor({
                 <div className="flex justify-end">
                   {t.slug ? (
                     <button
-                      onClick={() => {
-                        if (active.length === 1) return alert("Keep at least one team.");
-                        if (confirm(`Archive ${t.name}? It disappears from every page, but its data is kept and you can bring it back.`)) {
+                      onClick={async () => {
+                        if (active.length === 1) return toast("Keep at least one team.", "error");
+                        if (await ask(`Archive ${t.name}? It disappears from every page, but its data is kept and you can bring it back.`)) {
                           change(i, { archived: true });
                           setOpen(null);
                         }
@@ -1045,9 +1047,11 @@ function AccountSection({
         onPasswordChanged(password);
         setPassword("");
         setPassword2("");
-        setMessage({ ok: true, text: "Password changed. Share the new one with your coaches." });
+        setMessage(null);
+        toast("Password changed. Share the new one with your coaches.");
       } else {
-        setMessage({ ok: true, text: "Email saved." });
+        setMessage(null);
+        toast("Email saved.");
       }
     } catch (e) {
       setMessage({ ok: false, text: e instanceof Error ? e.message : "That didn't save" });

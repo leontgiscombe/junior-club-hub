@@ -14,6 +14,7 @@ import { useScrollLock } from "../../components/useScrollLock";
 import { cancelled, signInWithPasskey, supportsPasskeys } from "../../components/passkey";
 import { FEATURES, type Feature } from "@/lib/clubSettings";
 import { PLANS, PLAN_IDS, billingState, planForTeams, price, type Billing, type PlanId } from "@/lib/billing";
+import { ask, askText, toast } from "@/lib/dialog";
 
 type AdminClub = {
   billing?: Billing;
@@ -244,7 +245,7 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
     setNotice(null);
     try {
       const data = await call(key, body);
-      setNotice(data.message);
+      toast(data.message);
       after?.();
       await load(key);
       return true;
@@ -897,7 +898,7 @@ function ClubPanel({
                 tone="bg-teal-600"
                 label="Fill With Demo Data"
                 detail="Made-up teams, players and games"
-                onClick={() => confirm(`Fill ${c.name} with made-up teams, players and games?`) && act({ action: "demo", id: c.id })}
+                onClick={async () => await ask(`Fill ${c.name} with made-up teams, players and games?`) && act({ action: "demo", id: c.id })}
                 disabled={busy}
               />
             )}
@@ -1035,13 +1036,13 @@ function BillingPanel({ c, busy, act }: { c: AdminClub; busy: boolean; act: (bod
           </button>
         )}
         {state.kind === "free" ? (
-          <button onClick={() => confirm(`Make ${c.name} pay (after a trial)?`) && act({ action: "billing", id: c.id, op: "unfree" })} disabled={busy} className={pill}>
+          <button onClick={async () => await ask(`Make ${c.name} pay (after a trial)?`) && act({ action: "billing", id: c.id, op: "unfree" })} disabled={busy} className={pill}>
             Stop Being Free
           </button>
         ) : (
           <button
-            onClick={() => {
-              const reason = prompt("Why is it free? (e.g. Founding club, Friend)", "Free");
+            onClick={async () => {
+              const reason = await askText("Why is it free? (e.g. Founding club, Friend)", "Free");
               if (reason !== null) act({ action: "billing", id: c.id, op: "free", reason });
             }}
             disabled={busy}
@@ -1051,7 +1052,7 @@ function BillingPanel({ c, busy, act }: { c: AdminClub; busy: boolean; act: (bod
           </button>
         )}
         {state.kind === "paid" && (
-          <button onClick={() => confirm(`Remove ${c.name}'s plan?`) && act({ action: "billing", id: c.id, op: "unpaid" })} disabled={busy} className={pill}>
+          <button onClick={async () => await ask(`Remove ${c.name}'s plan?`) && act({ action: "billing", id: c.id, op: "unpaid" })} disabled={busy} className={pill}>
             Remove Plan
           </button>
         )}

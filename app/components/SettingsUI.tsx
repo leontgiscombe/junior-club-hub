@@ -56,15 +56,16 @@ export function ToolTabs({ label, tabs, value, onChange, panelId }: {
   panelId?: string;
 }) {
   const id = useId();
-  return <div role="tablist" aria-label={label} className="wp-tabs mb-5 flex border-b border-gray-200 dark:border-white/15">
+  // a segmented control, as an iPhone's: the chosen tab raised in white on a grey track
+  return <div role="tablist" aria-label={label} className="wp-tabs mb-5 flex gap-1 rounded-xl bg-gray-200/80 p-1 dark:bg-white/10">
     {tabs.map((tab, index) => <button key={tab.id} id={`${id}-${tab.id}`} type="button" role="tab" aria-label={tab.count ? `${tab.label} (${tab.count})` : tab.label} aria-selected={value === tab.id} aria-controls={panelId} tabIndex={value === tab.id ? 0 : -1} onClick={() => onChange(tab.id)} onKeyDown={(event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
       onChange(tabs[next].id);
       document.getElementById(`${id}-${tabs[next].id}`)?.focus();
-    }} className={`min-h-12 min-w-0 flex-1 border-b-2 px-2 py-3 text-sm font-semibold ${value === tab.id ? "border-green-700 text-green-700 dark:border-green-400 dark:text-green-400" : "border-transparent text-gray-500 dark:text-gray-400"}`}>
-      {tab.label}{!!tab.count && <span className="ml-1.5 text-xs tabular-nums">{tab.count}</span>}
+    }} className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-[13px] font-semibold transition-colors ${value === tab.id ? "bg-white text-gray-900 shadow-sm dark:bg-[#636366] dark:text-white" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}`}>
+      <span className="truncate">{tab.label}</span>{!!tab.count && <span className={`shrink-0 rounded-full px-1.5 text-[11px] tabular-nums ${value === tab.id ? "bg-green-700 text-white" : "bg-gray-300/80 text-gray-700 dark:bg-white/15 dark:text-gray-200"}`}>{tab.count}</span>}
     </button>)}
   </div>;
 }

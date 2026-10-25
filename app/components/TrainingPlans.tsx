@@ -26,6 +26,9 @@ import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, GateScreen } from "./SettingsUI";
 import { useScrollLock } from "./useScrollLock";
 import { haptic } from "@/lib/haptics";
+import { ask } from "@/lib/dialog";
+import { EmptyState, GateIcon, Icon, emptyAction } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 type View = "plan" | "library";
 
@@ -377,11 +380,11 @@ export default function TrainingPlans() {
   }
 
   // Replace the team's weeks with the season plan's — unsaved until Save plan.
-  function applySeasonPlan() {
+  async function applySeasonPlan() {
     if (!draft) return;
     if (
       draft.weeks.length > 0 &&
-      !confirm(
+      !await ask(
         `Replace ${possessive(teamName(team))} ${draft.weeks.length} week${draft.weeks.length === 1 ? "" : "s"} with the ${seasonPlan.length}-week season plan?`
       )
     ) {
@@ -475,14 +478,14 @@ export default function TrainingPlans() {
     }
   }
 
-  function discardPlan() {
-    if (!confirm("Throw away the changes to this plan?")) return;
+  async function discardPlan() {
+    if (!await ask("Throw away the changes to this plan?")) return;
     setDirty(false);
   }
 
-  function switchTeam(slug: TeamSlug) {
+  async function switchTeam(slug: TeamSlug) {
     if (slug === team) return;
-    if (dirty && !confirm(`${teamName(team)}'s plan has unsaved changes. Throw them away?`)) {
+    if (dirty && !await ask(`${teamName(team)}'s plan has unsaved changes. Throw them away?`)) {
       return;
     }
     setDirty(false);
@@ -548,7 +551,7 @@ export default function TrainingPlans() {
   }
 
   async function removeFile(drillId: string, fileId: string, label: string) {
-    if (!confirm(`Remove ${label} from this drill?`)) return;
+    if (!await ask(`Remove ${label} from this drill?`)) return;
     setUploading(true);
     try {
       putDrill((await post({ action: "remove-file", drillId, fileId })).drill);
@@ -566,7 +569,7 @@ export default function TrainingPlans() {
       uses.length > 0
         ? `\n\nIt will also come out of: ${uses.join(", ")}.`
         : "";
-    if (!confirm(`Delete "${drill.title}" from the drill library?${warning}`)) return false;
+    if (!await ask(`Delete "${drill.title}" from the drill library?${warning}`)) return false;
     setSaving(true);
     setError(null);
     try {
@@ -611,7 +614,7 @@ export default function TrainingPlans() {
       <GateScreen title="Training Plans">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">📝</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Training Plans</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -870,20 +873,13 @@ export default function TrainingPlans() {
         )}
 
         {draft.weeks.length === 0 ? (
-          <div className="mb-4 rounded-3xl bg-white px-4 py-8 text-center shadow-sm dark:bg-[#1c1c1e]">
-            <div className="text-3xl">📋</div>
-            <p className="mt-2 text-[17px] font-bold text-gray-900 dark:text-gray-50">Plan the season</p>
-            <p className="mx-auto mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
-              Add a week, give it a topic, then pick its warm-up, technical and game.
-            </p>
-            {seasonPlan.length > 0 && (
-              <button
-                onClick={applySeasonPlan}
-                className="mt-4 cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
-              >
-                Use the {seasonPlan.length}-Week Season Plan
-              </button>
-            )}
+          <div className="mb-4 rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+            <EmptyState
+              icon="clipboard"
+              title="Plan the season"
+              body="Add a week, give it a topic, then pick its warm-up, technical and game."
+              action={seasonPlan.length > 0 ? <button onClick={applySeasonPlan} className={emptyAction}>Use the {seasonPlan.length}-Week Season Plan</button> : undefined}
+            />
           </div>
         ) : (
           <>
@@ -976,8 +972,8 @@ export default function TrainingPlans() {
                           <span className="flex-1" />
                           {smallButton(
                             "Remove Week",
-                            () => {
-                              if (week.drillIds.length > 0 && !confirm(`Remove week ${wi + 1}${week.theme ? ` (${week.theme})` : ""}?`)) return;
+                            async () => {
+                              if (week.drillIds.length > 0 && !await ask(`Remove week ${wi + 1}${week.theme ? ` (${week.theme})` : ""}?`)) return;
                               editPlan((p) => ({ ...p, weeks: p.weeks.filter((w) => w.id !== week.id) }));
                             },
                             false,
@@ -1140,9 +1136,9 @@ export default function TrainingPlans() {
           {(() => {
             const uploads = (form.id && drillById.get(form.id)?.uploads) || [];
             const count = uploads.length + pendingFiles.length;
-            const row = (key: string, icon: string, label: string, note: string, onRemove: () => void) => (
+            const row = (key: string, icon: React.ReactNode, label: string, note: string, onRemove: () => void) => (
               <li key={key} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5">
-                <span aria-hidden="true">{icon}</span>
+                <span className="shrink-0 text-gray-500 dark:text-gray-400">{icon}</span>
                 <span className="min-w-0 flex-1 truncate text-sm text-gray-800 dark:text-gray-100">
                   {label}
                   {note && <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">{note}</span>}
@@ -1163,10 +1159,10 @@ export default function TrainingPlans() {
                 {count > 0 && (
                   <ul className="mt-1 flex flex-col gap-1.5">
                     {uploads.map((u) =>
-                      row(u.id, u.type === "pdf" ? "📄" : "🖼️", u.label, "", () => removeFile(form.id, u.id, u.label))
+                      row(u.id, <Icon name={u.type === "pdf" ? "file" : "image"} />, u.label, "", () => removeFile(form.id, u.id, u.label))
                     )}
                     {pendingFiles.map((f, i) =>
-                      row(`p${i}`, /pdf$/i.test(f.type || f.name) ? "📄" : "🖼️", f.name, "· adds when you save", () =>
+                      row(`p${i}`, <Icon name={/pdf$/i.test(f.type || f.name) ? "file" : "image"} />, f.name, "· adds when you save", () =>
                         setPendingFiles((prev) => prev.filter((_, j) => j !== i))
                       )
                     )}
@@ -1286,17 +1282,11 @@ export default function TrainingPlans() {
         )}
 
         {drills.length === 0 ? (
-          <div className="rounded-3xl bg-white px-4 py-8 text-center shadow-sm dark:bg-[#1c1c1e]">
-            <div className="text-3xl">⚽</div>
-            <p className="mt-2 text-[17px] font-bold text-gray-900 dark:text-gray-50">No drills yet</p>
-            <p className="mx-auto mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
-              Every team&apos;s plan picks from this one library, so a drill only has to be written once.
-            </p>
+          <div className="rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+            <EmptyState icon="ball" title="No drills yet" body="Every team's plan picks from this one library, so a drill only has to be written once." />
           </div>
         ) : shownDrills.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            {shownBand && bandDrills.length === 0 ? `No ${bandName(shownBand)} drills yet.` : "No drills match."}
-          </p>
+          <EmptyState icon="search" title={shownBand && bandDrills.length === 0 ? `No ${bandName(shownBand)} drills yet` : "No drills match"} body={shownBand && bandDrills.length === 0 ? undefined : "Try another topic or type, or clear the search."} />
         ) : (
           <div className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]">
             {shownDrills.map((drill) => (
@@ -1573,7 +1563,7 @@ export default function TrainingPlans() {
 
         {/* Team tabs — plans only; the library is shared */}
         {view === "plan" && (
-          <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => switchTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+          <TeamPicker className="mb-4 block" value={team} onChange={(value) => switchTeam(value)} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
         )}
 
         {error && (

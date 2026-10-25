@@ -15,6 +15,7 @@ import AppHeader, { type HeaderViewer } from "./AppHeader";
 import { useClub } from "./ClubProvider";
 import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
+import { Icon } from "./Icons";
 
 // the same heavy lettering as the home page and the player of the month poster
 const display = Anton({ weight: "400", subsets: ["latin"] });
@@ -250,7 +251,7 @@ export default function AdminHome({
           </div>
           <div className="rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
             <NoTabBar />
-            <p className="mb-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">🔒 Coaches only</p>
+            <p className="mb-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-gray-500 dark:text-gray-400"><Icon name="lock" /> Coaches only</p>
             {account && !account.canCoach && (
               <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
                 You&apos;re signed in as {account.email}, but you&apos;re not a coach at this club. A club admin can
@@ -321,7 +322,7 @@ export default function AdminHome({
         {/* header: your photo (Your Account), Search, the club's crest — as on Home */}
         <AppHeader viewer={viewer} crest={CLUB.crest} />
         <div>
-          <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
+          <h1 data-large-title className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
           <p className="wp-text mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
         </div>
 

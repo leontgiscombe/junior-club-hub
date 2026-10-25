@@ -13,6 +13,7 @@ import KitForm, { SizeGuide } from "./KitForm";
 import KitRequestForm from "./KitRequestForm";
 import { ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { RowsSkeleton } from "./Skeleton";
+import { ask, toast } from "@/lib/dialog";
 
 const surface = "rounded-lg bg-white shadow-sm dark:bg-[#1c1c1e]";
 const muted = "text-gray-500 dark:text-gray-400";
@@ -87,21 +88,21 @@ export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
     window.scrollTo(0, 0);
   }
   function saved(next: string, message: string) {
-    setNotice(message);
+    toast(message);
     if (window.location.hash.slice(1) === screen) replaceScreen(next);
     void refresh();
   }
   function updateSizes(entry: ParentKitChild) { setError(""); setNotice(""); replaceScreen(`edit-${entry.id}`); }
   function editChild(entry: ParentKitChild) { navigate(`${entry.submissions.length ? "sizes" : "edit"}-${entry.id}`); }
   async function takeBack() {
-    if (!request || request.doneAt || busy || !confirm("Take this request back?")) return;
+    if (!request || request.doneAt || busy || !await ask("Take this request back?")) return;
     setBusy(true); setError("");
     try {
       const response = await fetch(`/api/kit/requests?id=${encodeURIComponent(request.id)}`, { method: "DELETE" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "That request could not be taken back.");
       setData((current) => current ? { ...current, requests: current.requests.filter((entry) => entry.id !== request.id) } : current);
-      setNotice("Request taken back.");
+      toast("Request taken back");
       if (window.location.hash.slice(1) === screen) replaceScreen("requests");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Couldn't connect. Please try again."); }
     finally { setBusy(false); }
@@ -113,7 +114,7 @@ export default function ParentKit({ viewer }: { viewer: HeaderViewer }) {
     {detail ? <TopBar title={title} onBack={() => { if (!busy) { setError(""); setNotice(""); close(); } }} /> : <header className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
       {/* the Kit tab itself: like Home — your photo, Search and the crest, then a large title */}
       <AppHeader viewer={viewer} crest={CLUB.crest} />
-      <div className="min-w-0"><h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Your Kit</h1><p className={`wp-text mt-0.5 truncate text-[15px] ${muted}`}>{CLUB.fullName} · {CLUB.kitSeason} season</p></div>
+      <div className="min-w-0"><h1 data-large-title className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Your Kit</h1><p className={`wp-text mt-0.5 truncate text-[15px] ${muted}`}>{CLUB.fullName} · {CLUB.kitSeason} season</p></div>
     </header>}
     <main className="mx-auto max-w-2xl px-4 pb-12 pt-4">
       {notice && <p role="status" className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 dark:bg-green-400/10 dark:text-green-200">{notice}</p>}
