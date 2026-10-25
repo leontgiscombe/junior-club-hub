@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { playerSetupUrl } from "@/lib/playerCode";
 import { RowsSkeleton } from "./Skeleton";
+import { ask } from "@/lib/dialog";
 
 type Device = { id: string; label: string; createdAt: string; by: string };
 
@@ -90,7 +91,7 @@ function Sheet({ playerId, first, adminKey, onClose }: { playerId: string; first
   }
 
   async function remove(d: Device) {
-    if (!confirm(`Remove ${first}'s ${d.label}? It's signed out straight away.`)) return;
+    if (!await ask(`Remove ${first}'s ${d.label}? It's signed out straight away.`)) return;
     setBusy(true);
     const res = await fetch(`/api/players/devices${q(`id=${encodeURIComponent(playerId)}&device=${encodeURIComponent(d.id)}`)}`, { method: "DELETE" });
     if (!res.ok) setError((await res.json().catch(() => ({}))).error ?? "Couldn't remove it");

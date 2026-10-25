@@ -16,6 +16,7 @@ import {
 } from "@/lib/record";
 import { useClub } from "./ClubProvider";
 import { accountKey, keyQuery } from "./coachKey";
+import { GateIcon } from "./Icons";
 
 type StatField =
   | "appearances"
@@ -290,7 +291,7 @@ export default function StatsPresentation() {
       <main className="min-h-screen bg-gradient-to-b from-green-700 to-green-900 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🎬</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900">Presentation Mode</h1>
             <p className="text-sm text-gray-500 mt-1">Coaches only</p>
           </div>

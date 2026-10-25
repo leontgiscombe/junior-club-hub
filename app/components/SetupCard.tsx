@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SetupStep } from "@/lib/setupChecklist";
+import { ask } from "@/lib/dialog";
 
 export default function SetupCard({ steps }: { steps: SetupStep[] }) {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function SetupCard({ steps }: { steps: SetupStep[] }) {
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">Set Up Your Club</h2>
         <button
-          onClick={() => {
-            if (confirm("Hide the set-up steps? You can find everything in Coach Admin → Settings.")) send({ action: "hide" });
+          onClick={async () => {
+            if (await ask("Hide the set-up steps? You can find everything in Coach Admin → Settings.")) send({ action: "hide" });
           }}
           disabled={busy}
           className="text-sm font-semibold text-gray-400 hover:text-gray-600 disabled:opacity-40 dark:hover:text-gray-200"

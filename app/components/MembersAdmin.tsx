@@ -17,6 +17,9 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { haptic } from "@/lib/haptics";
+import { ask } from "@/lib/dialog";
+import { GateIcon } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 type TeamOption = { slug: string; name: string };
 
@@ -38,6 +41,10 @@ type Snapshot = {
   /** a club admin signed in with their own account (who alone can switch the password off) */
   accountAdmin: boolean;
 };
+
+// a team's (or the club's) section of members: a rounded card that folds, with its count and an arrow
+const FOLD = "group mt-4 overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]";
+const FOLD_HEAD = "flex cursor-pointer select-none list-none items-center gap-2 px-4 py-3.5 font-bold text-gray-900 dark:text-gray-50 [&::-webkit-details-marker]:hidden";
 
 /** The roles only a club admin can give or take away. */
 export const ADMIN_ROLES: Role[] = ["admin", "coach", "treasurer"];
@@ -179,7 +186,7 @@ export default function MembersAdmin() {
       <GateScreen title="Members">
         <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm dark:bg-[#1c1c1e]">
           <div className="mb-6 text-center">
-            <div className="mb-2 text-3xl">👪</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Members</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coaches only</p>
           </div>
@@ -322,15 +329,18 @@ export default function MembersAdmin() {
 
         {/* Approved: like Spond — each team's coaches and staff, then its players with their guardians */}
         <section hidden={view !== "members"}>
-          <label className="block"><span className="sr-only">Team</span><select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"><option value="all">All teams</option>{snap.teams.map((team) => <option key={team.slug} value={team.slug}>{team.name}</option>)}</select></label>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search players, parents or coaches"
-            aria-label="Search members"
-            className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
-          />
+          <TeamPicker className="block" value={teamFilter} onChange={(value) => setTeamFilter(value)} options={[{ value: "all", label: "All teams" }, ...snap.teams.map((team) => ({ value: team.slug, label: team.name }))]} />
+          <label className="relative mt-3 block">
+            <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search players, parents or coaches"
+              aria-label="Search members"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50"
+            />
+          </label>
           {approved.length === 0 && snap.players.length === 0 && <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No members yet.</p>}
 
           {/* children not yet in the squad */}
@@ -360,11 +370,13 @@ export default function MembersAdmin() {
 
           {/* club-wide: admins and coaches with no one team */}
           {clubWide.length > 0 && teamFilter === "all" && (
-            <details open className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
-              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
-                Club-Wide Staff <span className="font-semibold text-gray-500 dark:text-gray-400">({clubWide.length})</span>
+            <details open className={FOLD}>
+              <summary className={FOLD_HEAD}>
+                <span className="min-w-0 flex-1 truncate">Club-Wide Staff</span>
+                <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">{clubWide.length}</span>
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 transition-transform group-open:rotate-90 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
               </summary>
-              <ul className="divide-y divide-gray-100 px-4 dark:divide-white/10">
+              <ul className="divide-y divide-gray-100 border-t border-gray-100 px-4 dark:divide-white/10 dark:border-white/10">
                 {clubWide.map((p) => (
                   <MemberRow key={p.userId} person={p} note={staffLine(p)} teams={snap.teams} canAdmin={snap.canAdmin} busy={busy} onAct={act} />
                 ))}
@@ -373,15 +385,16 @@ export default function MembersAdmin() {
           )}
 
           {teamGroups.filter((group) => teamFilter === "all" || group.slug === teamFilter).map((g) => (
-            <details key={g.slug || "none"} open={!!q || teamFilter !== "all"} className="mt-4 rounded-lg border border-gray-100 bg-white dark:border-white/10 dark:bg-[#1c1c1e]">
-              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
-                {g.name}{" "}
-                <span className="font-semibold text-gray-500 dark:text-gray-400">
-                  ({g.squad.length} player{g.squad.length === 1 ? "" : "s"}
-                  {g.staff.length ? `, ${g.staff.length} staff` : ""})
+            <details key={g.slug || "none"} open={!!q || teamFilter !== "all"} className={FOLD}>
+              <summary className={FOLD_HEAD}>
+                <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                  {g.squad.length} player{g.squad.length === 1 ? "" : "s"}
+                  {g.staff.length ? ` · ${g.staff.length} staff` : ""}
                 </span>
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 transition-transform group-open:rotate-90 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
               </summary>
-              <div className="px-4 pb-2">
+              <div className="border-t border-gray-100 px-4 pb-2 dark:border-white/10">
                 {g.staff.length > 0 && (
                   <>
                     <p className="mt-3 text-[13px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Coaches & Staff</p>
@@ -416,11 +429,13 @@ export default function MembersAdmin() {
             </details>
           ))}
           {carers.length > 0 && teamFilter === "all" && (
-            <details open={!!q} className="mt-4 rounded-xl border border-gray-100 dark:border-white/10">
-              <summary className="cursor-pointer select-none rounded-xl bg-gray-50 px-4 py-2.5 font-bold text-gray-800 dark:bg-white/5 dark:text-gray-100">
-                Parents & Carers <span className="font-semibold text-gray-500 dark:text-gray-400">({carers.length})</span>
+            <details open={!!q} className={FOLD}>
+              <summary className={FOLD_HEAD}>
+                <span className="min-w-0 flex-1 truncate">Parents &amp; Carers</span>
+                <span className="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400">{carers.length}</span>
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gray-300 transition-transform group-open:rotate-90 dark:text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
               </summary>
-              <ul className="divide-y divide-gray-100 px-4 dark:divide-white/10">
+              <ul className="divide-y divide-gray-100 border-t border-gray-100 px-4 dark:divide-white/10 dark:border-white/10">
                 {carers.map((p) => {
                   const kids = childrenOf(p);
                   return (
@@ -757,7 +772,7 @@ function PendingChild({
           Add to Squad
         </button>
         <button
-          onClick={() => confirm(`Decline ${child.name}? They'll come off ${person.name}'s list of children.`) && onDecide({ action: "declineChild", userId: person.userId, childId: child.id })}
+          onClick={async () => await ask(`Decline ${child.name}? They'll come off ${person.name}'s list of children.`) && onDecide({ action: "declineChild", userId: person.userId, childId: child.id })}
           disabled={busy}
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:hover:bg-white/5 dark:text-gray-200 dark:border-white/15"
         >
@@ -1039,9 +1054,9 @@ function PlayerProfile({
 
           {snap.canAdmin && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  confirm(
+                  await ask(
                     `Delete ${player.name} from the squad? Their season stats go too${guardians.length ? `, and they come off ${guardians.map((g) => g.name).join(" and ")}'s list of children` : ""}. This can't be undone (except from a backup).`,
                   )
                 ) {
@@ -1108,9 +1123,9 @@ function MemberRow({
           </button>
           {(canAdmin || !person.roles.some((r) => ADMIN_ROLES.includes(r))) && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  confirm(
+                  await ask(
                     `Remove ${person.name} from the club? This isn't taking a role away (tap the role for that) — they'll lose access to the hub completely until they ask to join again.`,
                   )
                 )

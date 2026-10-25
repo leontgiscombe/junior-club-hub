@@ -14,6 +14,7 @@ import { useScrollLock } from "../../components/useScrollLock";
 import { cancelled, signInWithPasskey, supportsPasskeys } from "../../components/passkey";
 import { FEATURES, type Feature } from "@/lib/clubSettings";
 import { PLANS, PLAN_IDS, billingState, planForTeams, price, type Billing, type PlanId } from "@/lib/billing";
+import { ask, askText, toast } from "@/lib/dialog";
 
 type AdminClub = {
   billing?: Billing;
@@ -72,6 +73,9 @@ const field =
   "min-h-11 rounded-xl border border-gray-200 bg-white px-3 text-[15px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-white/10 dark:bg-[#1c1c1e] dark:text-gray-50";
 const pill =
   "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-gray-100 px-3.5 text-sm font-semibold text-gray-800 hover:bg-gray-200 disabled:opacity-40 dark:bg-white/10 dark:text-gray-100 dark:hover:bg-white/15";
+// the top bar's round buttons, like the hub's back button (app/components/SettingsUI.tsx TopBar)
+const roundBtn =
+  "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-black/5 hover:bg-gray-50 disabled:opacity-40 dark:bg-[#1c1c1e] dark:text-gray-50 dark:ring-white/10 dark:hover:bg-white/5";
 const primary = "inline-flex min-h-11 items-center justify-center rounded-xl bg-green-700 px-4 font-bold text-white hover:bg-green-800 disabled:opacity-40";
 
 /** A club's standing at a glance: its plan, trial or pause. */
@@ -119,7 +123,12 @@ const I = {
   play: icon(<path d="M7 5v14l11-7z" />),
   bin: icon(<><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></>),
   close: icon(<path d="M6 6l12 12M18 6 6 18" />),
-  back: icon(<path d="M15 5l-7 7 7 7" />),
+  // bolder, as the hub's own back buttons are
+  back: (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  ),
   chevron: icon(<path d="m9 6 6 6-6 6" />),
   check: icon(<path d="m5 12 5 5 9-10" />),
 };
@@ -236,7 +245,7 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
     setNotice(null);
     try {
       const data = await call(key, body);
-      setNotice(data.message);
+      toast(data.message);
       after?.();
       await load(key);
       return true;
@@ -305,9 +314,8 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
   if (!clubs) {
     return (
       <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-5 py-10">
-        <Link href="/" className={`mb-6 inline-flex items-center gap-1 text-sm font-semibold ${muted} hover:text-green-700`}>
+        <Link href="/" aria-label={`Back to ${platformName}`} title={platformName} className={`${roundBtn} mb-6`}>
           {I.back}
-          {platformName}
         </Link>
         <form
           onSubmit={(e) => {
@@ -372,23 +380,21 @@ export default function PlatformAdmin({ rootDomain, platformName }: { rootDomain
 
   return (
     <>
-      {/* the bar along the top: back to the platform, refresh, sign out */}
-      <div className="wp-bar sticky top-0 z-30 border-b border-black/5 bg-[#f2f2f7]/85 backdrop-blur-xl dark:border-white/10 dark:bg-black/80">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4 pt-[env(safe-area-inset-top)]">
-          <Link href="/" className={`inline-flex min-h-11 items-center gap-1 text-sm font-semibold ${muted} hover:text-green-700`}>
+      {/* the bar along the top, as on the hub's other pages: a round back button to
+          the platform, then refresh and sign out — no rule under it */}
+      <div className="wp-bar sticky top-0 z-30 bg-[#f2f2f7]/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md dark:bg-black/80">
+        <div className="mx-auto flex h-12 max-w-5xl items-center gap-2">
+          <Link href="/" aria-label={`Back to ${platformName}`} title={platformName} className={roundBtn}>
             {I.back}
-            <span className="hidden sm:inline">{platformName}</span>
           </Link>
           <span className="flex-1" />
-          <button onClick={() => load(key)} disabled={busy} aria-label="Refresh" title="Refresh" className={`${pill} ${busy ? "animate-pulse" : ""}`}>
+          <button onClick={() => load(key)} disabled={busy} aria-label="Refresh" title="Refresh" className={`${roundBtn} ${busy ? "animate-pulse" : ""}`}>
             {I.refresh}
-            <span className="hidden sm:inline">Refresh</span>
           </button>
           {/* with a passkey you're in as yourself: Back is the way out */}
           {key && (
-            <button onClick={signOut} aria-label="Sign out" title="Sign out" className={pill}>
+            <button onClick={signOut} aria-label="Sign out" title="Sign out" className={roundBtn}>
               {I.out}
-              <span className="hidden sm:inline">Sign Out</span>
             </button>
           )}
         </div>
@@ -892,7 +898,7 @@ function ClubPanel({
                 tone="bg-teal-600"
                 label="Fill With Demo Data"
                 detail="Made-up teams, players and games"
-                onClick={() => confirm(`Fill ${c.name} with made-up teams, players and games?`) && act({ action: "demo", id: c.id })}
+                onClick={async () => await ask(`Fill ${c.name} with made-up teams, players and games?`) && act({ action: "demo", id: c.id })}
                 disabled={busy}
               />
             )}
@@ -1030,13 +1036,13 @@ function BillingPanel({ c, busy, act }: { c: AdminClub; busy: boolean; act: (bod
           </button>
         )}
         {state.kind === "free" ? (
-          <button onClick={() => confirm(`Make ${c.name} pay (after a trial)?`) && act({ action: "billing", id: c.id, op: "unfree" })} disabled={busy} className={pill}>
+          <button onClick={async () => await ask(`Make ${c.name} pay (after a trial)?`) && act({ action: "billing", id: c.id, op: "unfree" })} disabled={busy} className={pill}>
             Stop Being Free
           </button>
         ) : (
           <button
-            onClick={() => {
-              const reason = prompt("Why is it free? (e.g. Founding club, Friend)", "Free");
+            onClick={async () => {
+              const reason = await askText("Why is it free? (e.g. Founding club, Friend)", "Free");
               if (reason !== null) act({ action: "billing", id: c.id, op: "free", reason });
             }}
             disabled={busy}
@@ -1046,7 +1052,7 @@ function BillingPanel({ c, busy, act }: { c: AdminClub; busy: boolean; act: (bod
           </button>
         )}
         {state.kind === "paid" && (
-          <button onClick={() => confirm(`Remove ${c.name}'s plan?`) && act({ action: "billing", id: c.id, op: "unpaid" })} disabled={busy} className={pill}>
+          <button onClick={async () => await ask(`Remove ${c.name}'s plan?`) && act({ action: "billing", id: c.id, op: "unpaid" })} disabled={busy} className={pill}>
             Remove Plan
           </button>
         )}

@@ -171,15 +171,17 @@ html[data-nav="back"]::view-transition-group(.page-exit) {
   }
   /* tabs sitting on the wallpaper (SettingsUI ToolTabs) */
   html[data-wallpaper] .wp-page .wp-tabs {
-    border-color: rgb(255 255 255 / 30%) !important;
+    background: rgb(255 255 255 / 18%) !important;
+    backdrop-filter: blur(12px);
   }
   html[data-wallpaper] .wp-page .wp-tabs > [role="tab"] {
-    color: rgb(255 255 255 / 80%) !important;
+    color: rgb(255 255 255 / 90%) !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   }
   html[data-wallpaper] .wp-page .wp-tabs > [aria-selected="true"] {
-    color: #fff !important;
-    border-color: #fff !important;
+    background: #fff !important;
+    color: #111827 !important;
+    text-shadow: none;
   }
   html[data-wallpaper] .wp-decoration {
     display: none;

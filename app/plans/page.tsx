@@ -49,7 +49,7 @@ export default async function PlansPage() {
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <Link href="/" className="text-sm font-semibold text-gray-500 hover:text-green-700 dark:text-gray-400">← Home</Link>
         <div>
-          <h1 className="text-[34px] font-extrabold leading-tight tracking-tight">Plans</h1>
+          <h1 data-large-title className="text-[34px] font-extrabold leading-tight tracking-tight">Plans</h1>
           <p className="mt-1 text-[15px] text-gray-500 dark:text-gray-400">
             {!state
               ? `Every club starts with ${TRIAL_DAYS} days free, with everything included.`

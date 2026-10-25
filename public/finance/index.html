@@ -373,7 +373,7 @@
       <img class="hub-crest" id="club-badge" src="/club-crest.png" alt="" data-club-switcher>
     </span>
   </div>
-  <h1 class="fin-title">Finances</h1>
+  <h1 class="fin-title" data-large-title>Finances</h1>
   <p class="fin-sub"><span><span id="app-title">Team</span><span id="season-lbl"></span></span><span id="sync-status" title="Sync status"></span></p>
 </header>
 
@@ -1034,6 +1034,9 @@
   }
   function fmtDay(iso){ return new Date(iso+"T00:00:00").toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
 
+  // the hub's own pop-ups and toast (public/app-ui.js), the browser's if it's missing
+  const askSure = (m) => window.hubConfirm ? window.hubConfirm(m) : Promise.resolve(confirm(m));
+  const warn = (m) => window.hubToast ? window.hubToast(m, 'error') : alert(m);
   const METHODS = ['Cash','Bank transfer','Card','Standing order','Other'];
   // Unpaid: one tap marks them paid (the way the last one paid). Paid or
   // exempt: a sheet to change how they paid, exempt them, or undo it.
@@ -1109,12 +1112,12 @@
     openModal(p.name, playerCard(p), [
       // one added here by hand can be deleted; a Members player is taken out in Members
       // one added by hand, or one who's left; a Members player still here is taken out in Members
-      p.squadId && !p.archived ? null : {label:'Delete', cls:'btn-danger', act:()=>{ if(confirmDelete(p)){ deletePlayer(p.id); closeModal(); }}},
+      p.squadId && !p.archived ? null : {label:'Delete', cls:'btn-danger', act:async ()=>{ if(await confirmDelete(p)){ deletePlayer(p.id); closeModal(); }}},
       {label:'Cancel', act:closeModal},
       {label:'Save', cls:'btn-primary', act:()=>{
         const nameIn = $("#pf-name");
         const name = nameIn ? nameIn.value.trim() : p.name;
-        if(!name){ alert('Please enter a name'); return; }
+        if(!name){ warn('Please enter a name'); return; }
         const archived = $("#pf-archived").checked;
         Object.assign(p, {
           name, joined: $("#pf-joined").value||'', parentName:$("#pf-parent").value.trim(),
@@ -1133,8 +1136,8 @@
       (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(()=>flash('Copied'), ()=>prompt('Copy this:', text));
     };
     const clear = $("#pf-clear-old");
-    if(clear) clear.onclick = ()=>{
-      if(!confirm('Clear the medical, emergency and notes kept here for '+p.name+'? Make sure they’re in Members first.')) return;
+    if(clear) clear.onclick = async ()=>{
+      if(!await askSure('Clear the medical, emergency and notes kept here for '+p.name+'? Make sure they’re in Members first.')) return;
       p.medical = ''; p.emergency = ''; p.notes = '';
       save(); openPlayerModal(p.id);
     };
@@ -1142,7 +1145,7 @@
   // deleting takes their payments with it: say what comes off the totals
   function confirmDelete(p){
     const paid = playerBalance(p.id).paid;
-    return confirm('Delete ' + p.name + ' from Finances?\n\nTheir payment history goes too'
+    return askSure('Delete ' + p.name + ' from Finances?\n\nTheir payment history goes too'
       + (paid > 0 ? ', and the ' + money(paid) + ' they paid this season comes off your totals' : '')
       + '. This can\u2019t be undone (except from a backup).');
   }
@@ -1290,7 +1293,7 @@
         + '</div><div style="display:flex;gap:8px;margin-top:8px"><input data-cat-new="'+side+'" placeholder="New category" maxlength="40" style="flex:1"><button class="btn btn-sm btn-primary" data-cat-add="'+side+'">Add</button></div>';
     }).join('');
   }
-  document.addEventListener('click', e=>{
+  document.addEventListener('click', async e=>{
     const add = e.target.closest('[data-cat-add]');
     if(add){
       const side = add.dataset.catAdd, input = document.querySelector('[data-cat-new="'+side+'"]');
@@ -1314,7 +1317,7 @@
     const rem = e.target.closest('[data-cat-remove]');
     if(rem){
       const [side, name] = rem.dataset.catRemove.split('|');
-      if(!confirm('Remove \u201c' + name + '\u201d? Past entries keep it; it just won\u2019t be offered for new ones.')) return;
+      if(!await askSure('Remove \u201c' + name + '\u201d? Past entries keep it; it just won\u2019t be offered for new ones.')) return;
       setCategories(side, categoriesFor(side === 'in' ? 'income' : 'expense').filter(c=>c !== name));
     }
   });
@@ -1339,7 +1342,7 @@
       {label:'Cancel', act:closeModal},
       {label:'Save', cls:'btn-primary', act:()=>{
         const amount = parseFloat($("#ef-amount").value);
-        if(isNaN(amount)||amount<0){ alert('Enter a valid amount'); return; }
+        if(isNaN(amount)||amount<0){ warn('Enter a valid amount'); return; }
         const data = { type:$("#ef-type").value, date:$("#ef-date").value||todayISO(), category:$("#ef-cat").value, amount, desc:$("#ef-desc").value.trim() };
         if(id){ Object.assign(state.expenses.find(x=>x.id===id), data); }
         else { state.expenses.push(Object.assign({id:uid()}, data)); }
@@ -1486,7 +1489,7 @@
     syncSquad(false); // anyone new in Members, or gone from it
     window.scrollTo({top:0, behavior:'smooth'});
   }
-  document.addEventListener('click', e=>{
+  document.addEventListener('click', async e=>{
     const tab = e.target.closest('.tab'); if(tab){ switchView(tab.dataset.view); return; }
     const goto = e.target.closest('[data-goto]'); if(goto){ switchView(goto.dataset.goto); return; }
     const sb = e.target.closest('.status-btn'); if(sb){ tapStatus(sb.dataset.pid); return; }
@@ -1498,7 +1501,7 @@
     const ep = e.target.closest('[data-edit-player]'); if(ep){ openPlayerModal(ep.dataset.editPlayer); return; }
     const ee = e.target.closest('[data-edit-expense]'); if(ee){ openExpenseModal(ee.dataset.editExpense); return; }
     const dl = e.target.closest('[data-delete-left]');
-    if(dl){ const p = state.players.find(x=>x.id===dl.dataset.deleteLeft); if(p && confirmDelete(p)){ deletePlayer(p.id); flash(p.name + ' deleted'); } return; }
+    if(dl){ const p = state.players.find(x=>x.id===dl.dataset.deleteLeft); if(p && await confirmDelete(p)){ deletePlayer(p.id); flash(p.name + ' deleted'); } return; }
   });
   $("#modal-x").onclick = closeModal;
   $("#modal-backdrop").addEventListener('click', e=>{ if(e.target===$("#modal-backdrop")) closeModal(); });
@@ -1532,16 +1535,17 @@
   $("#import-file").onchange = e=>{
     const file = e.target.files[0]; if(!file) return;
     const r = new FileReader();
-    r.onload = ()=>{ try {
+    r.onload = async ()=>{ try {
       const data = JSON.parse(r.result);
       if(!data.settings||!Array.isArray(data.players)) throw new Error('Not a valid backup');
+      if(!await askSure('Replace all current data with this backup?')) return;
       state = Object.assign(defaultState(), data);
       state.settings = Object.assign(defaultState().settings, data.settings||{});
-      if(confirm('Replace all current data with this backup?')){ save(); currentMonth=state.settings.startMonth||thisMonth(); renderAll(); flash('Backup restored'); }
-    } catch(err){ alert('Could not read backup: '+err.message); } };
+      save(); currentMonth=state.settings.startMonth||thisMonth(); renderAll(); flash('Backup restored');
+    } catch(err){ warn('Could not read backup: '+err.message); } };
     r.readAsText(file); e.target.value='';
   };
-  $("#reset-data").onclick = ()=>{ if(confirm('Delete ALL data permanently? Export a backup first if unsure.')){ if(confirm('Really delete everything?')){ state=defaultState(); save(); currentMonth=thisMonth(); renderAll(); flash('All data cleared'); } } };
+  $("#reset-data").onclick = async ()=>{ if(await askSure('Delete ALL data permanently? Export a backup first if unsure.')){ if(await askSure('Really delete everything?')){ state=defaultState(); save(); currentMonth=thisMonth(); renderAll(); flash('All data cleared'); } } };
 
   $("#copy-chase").onclick = ()=>{
     const rows = activePlayers().map(p=>({p,b:playerBalance(p.id)})).filter(x=>x.b.owed>0).sort((a,b)=>b.b.owed-a.b.owed);
@@ -1557,6 +1561,8 @@
   // small toast
   let toastEl;
   function flash(msg){
+    // the hub's own toast (public/app-ui.js), the same as every other page's
+    if(window.hubToast){ window.hubToast(msg); return; }
     if(!toastEl){ toastEl=document.createElement('div'); toastEl.style.cssText='position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:rgba(28,28,30,.94);color:#fff;padding:10px 18px;border-radius:999px;white-space:nowrap;font-size:14px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(toastEl); }
     toastEl.textContent = msg; toastEl.style.opacity='1';
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.opacity='0', 2200);
@@ -1892,7 +1898,8 @@
       // kept back (the password changed, so the write token no longer works) or changed
       if(rec && rec.auth && currentAuth && (rec.auth.locked || rec.auth.verifyHash !== currentAuth.verifyHash)){
         stopPolling();
-        alert('This team\u2019s login was changed on another device. Please unlock it again (with the new password, if it was changed).');
+        if(window.hubAlert) await window.hubAlert('This team\u2019s login was changed on another device.\n\nPlease unlock it again (with the new password, if it was changed).');
+        else alert('This team\u2019s login was changed on another device. Please unlock it again (with the new password, if it was changed).');
         lock();
         return;
       }
@@ -1946,12 +1953,12 @@
       {label:'Cancel', act:closeModal},
       {label:'Change Password', cls:'btn-primary', act: async ()=>{
         const cur=$("#cp-cur").value, nw=$("#cp-new").value, nw2=$("#cp-new2").value;
-        let v; try { v = await deriveVerify(cur, ub64(currentAuth.verifySalt)); } catch(e){ alert('Something went wrong.'); return; }
-        if(v !== currentAuth.verifyHash){ alert('Current password is incorrect.'); return; }
-        if(nw.length < 8){ alert('New password must be at least 8 characters.'); return; }
-        if(nw !== nw2){ alert('New passwords do not match.'); return; }
+        let v; try { v = await deriveVerify(cur, ub64(currentAuth.verifySalt)); } catch(e){ warn('Something went wrong.'); return; }
+        if(v !== currentAuth.verifyHash){ warn('Current password is incorrect.'); return; }
+        if(nw.length < 8){ warn('New password must be at least 8 characters.'); return; }
+        if(nw !== nw2){ warn('New passwords do not match.'); return; }
         try { await doChangePassword(nw); closeModal(); flash('Password changed for this team'); }
-        catch(e){ alert('Could not change the password. You need to be online to change it. (' + (e && e.message || e) + ')'); }
+        catch(e){ warn('Could not change the password. You need to be online to change it. (' + (e && e.message || e) + ')'); }
       }}
     ]);
   }
@@ -1963,7 +1970,7 @@
       {label:'Cancel', act:closeModal},
       {label:'Make New Code', cls:'btn-primary', act: async ()=>{
         try {
-          if(!dataKeyRaw){ alert('Lock and unlock the app once first, then try again.'); return; }
+          if(!dataKeyRaw){ warn('Lock and unlock the app once first, then try again.'); return; }
           const rec = await newRecoveryLock(dataKeyRaw);
           const auth = Object.assign({}, currentAuth, { recSalt: rec.recSalt, wrapRec: rec.wrapRec });
           const blob = await encryptState();
@@ -1971,7 +1978,7 @@
           currentAuth = auth; localRev = res.rev;
           writeCache(currentTeam, { blob, rev: localRev });
           showRecoveryCode(rec.code, 'Here is the team\u2019s new recovery code. The old one no longer works.');
-        } catch(e){ alert('Could not make a new code. You need to be online. (' + (e && e.message || e) + ')'); }
+        } catch(e){ warn('Could not make a new code. You need to be online. (' + (e && e.message || e) + ')'); }
       }}
     ]);
   }
@@ -2408,7 +2415,7 @@
         renderDevices();
       }
       else if(remove){
-        if(!confirm('Remove this? It won\u2019t be able to open the team with an account any more.')) return;
+        if(!await askSure('Remove this? It won\u2019t be able to open the team with an account any more.')) return;
         await postDevices({ action:'remove', team: currentTeam, id: remove.dataset.removeDevice });
         renderDevices();
       }
@@ -2416,7 +2423,7 @@
       if(passkeyCancelled(err)) return;
       if(pkOpen){ $("#account-err").textContent = err.message || String(err); return; }
       if(open){ open.disabled = false; open.textContent = 'Open ' + teamName(open.dataset.openTeam); $("#account-err").textContent = err.message || String(err); }
-      else alert(err.message || String(err));
+      else warn(err.message || String(err));
     }
   });
 
@@ -2455,5 +2462,6 @@
 <script src="/tabbar.js" defer></script>
 <script src="/club-switcher.js" defer></script>
 <script src="/app-feel.js" defer></script>
+<script src="/app-ui.js" defer></script>
 </body>
 </html>

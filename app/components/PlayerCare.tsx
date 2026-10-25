@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
+import { toast } from "@/lib/dialog";
 
 type Care = { medical: string; emergency: string; updatedAt?: string; by?: string };
 
@@ -46,7 +47,8 @@ export function PlayerCareForm({ playerId, first, adminKey }: { playerId: string
       setSaved(data.care);
       setMedical(data.care.medical);
       setEmergency(data.care.emergency);
-      setMessage({ ok: true, text: "Saved." });
+      setMessage(null);
+      toast("Saved");
     } else setMessage({ ok: false, text: data.error ?? "That didn't save" });
     setBusy(false);
   }
