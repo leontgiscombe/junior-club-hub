@@ -5,6 +5,7 @@
 // on production first, then the sandbox. Server only.
 import { createPrivateKey, sign } from "crypto";
 import { connect } from "http2";
+import { rawKv } from "./kv";
 
 const HOSTS = ["https://api.push.apple.com", "https://api.sandbox.push.apple.com"];
 
@@ -73,13 +74,36 @@ function post(host: string, token: string, payload: string): Promise<{ status: n
   });
 }
 
+// The red number on the app's icon: alerts since the app was last opened on
+// that phone. Kept for the phone itself, not per club, as it has one icon.
+const badgeKey = (token: string) => `platform:apns-badge:${token}`;
+
+async function nextBadge(token: string): Promise<number | undefined> {
+  try {
+    const kv = await rawKv();
+    if (!kv) return undefined;
+    const n = await kv.incr(badgeKey(token));
+    await kv.expire(badgeKey(token), 60 * 24 * 3600);
+    return n;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The app's been opened on this phone: start counting again from nothing. */
+export async function clearBadge(token: string) {
+  const kv = await rawKv();
+  await kv?.del(badgeKey(token));
+}
+
 /**
  * Send one alert. "sent"; "gone" when the phone has turned alerts off or
  * removed the app (drop its token); otherwise why it failed.
  */
 export async function sendApns(token: string, message: { title: string; body: string; url: string }): Promise<string> {
   if (!apnsConfigured()) return "not set up";
-  const payload = JSON.stringify({ aps: { alert: { title: message.title, body: message.body }, sound: "default" }, url: message.url });
+  const badge = await nextBadge(token);
+  const payload = JSON.stringify({ aps: { alert: { title: message.title, body: message.body }, sound: "default", badge }, url: message.url });
   let last = "";
   for (const host of HOSTS) {
     const r = await post(host, token, payload);

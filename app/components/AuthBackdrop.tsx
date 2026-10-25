@@ -11,7 +11,7 @@ export default async function AuthBackdrop({ src: given }: { src?: string } = {}
   const tenant = given ? null : await getTenant();
   const src = given ?? (tenant ? (await getClub().catch(() => null))?.crest.src ?? APP_LOGO : APP_LOGO);
   return (
-    <div aria-hidden="true" className="no-dark pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-[var(--club-night,#04130a)]">
+    <div aria-hidden="true" data-dark-top className="no-dark pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-[var(--club-night,#04130a)]">
       <div className="absolute inset-0 bg-gradient-to-b from-green-700 via-green-900 to-[var(--club-night,#04130a)]" />
       {/* a big soft glow of it across the screen… */}
       {/* eslint-disable-next-line @next/next/no-img-element -- the club's own picture, any size */}
