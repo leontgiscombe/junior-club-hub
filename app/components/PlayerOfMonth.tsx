@@ -22,7 +22,7 @@ import {
 } from "@/lib/playerOfMonth";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { GateIcon } from "./Icons";
 import TeamPicker from "./TeamPicker";
 
@@ -55,6 +55,13 @@ interface PosterEdits {
   slogan?: string;
   photoY?: number; // where the photo sits in its frame, 0 (top) to 100 (bottom)
 }
+
+const STEPS = [
+  { id: "player", label: "Player" },
+  { id: "photo", label: "Photo" },
+  { id: "words", label: "Words" },
+  { id: "poster", label: "Poster" },
+];
 
 const POSTER_W = 1080;
 const POSTER_H = 1600;
@@ -133,7 +140,9 @@ function defaultMonth(months: string[]): string {
 
 export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
   const { screen, switchTo } = useScreens("/admin/stats/player-of-the-month");
-  const view = screen === "poster" ? "poster" : "standings";
+  // the poster is made in steps, each with its own # so a link can open on one
+  const step = Math.max(0, STEPS.findIndex((s) => s.id === screen));
+  const goTo = (index: number) => switchTo(STEPS[index].id);
   const { TEAMS, teamName, findTeam } = useTeams();
   const CLUB = useClub();
   const [key, setKey] = useState("");
@@ -231,7 +240,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
     const observer = new ResizeObserver(fit);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [authed, month]);
+  }, [authed, month, step]);
 
   function edit(change: PosterEdits) {
     const next = { ...edits, ...change };
@@ -356,8 +365,6 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         <TeamPicker className="mb-4 block" value={team} onChange={(value) => setTeam(value)} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
-        <ToolTabs label="Monthly award views" tabs={[{ id: "standings", label: "Standings" }, { id: "poster", label: "Poster" }]} value={view} onChange={switchTo} />
-
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         {months.length === 0 ? (
@@ -383,13 +390,15 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               </select>
             </label>
 
-            {/* The standings */}
-            <div hidden={view !== "standings"} className="mb-4 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            <StepBar step={step} canMove={!!winner} onChange={goTo} />
+
+            {/* Step 1: the standings, to pick the winner */}
+            <div hidden={step !== 0} className="mb-4 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <p className="mb-1 text-[17px] font-bold text-gray-900 dark:text-gray-50">
-                {mName} Standings
+                Pick the Player
               </p>
               <p className="mb-3 text-xs text-gray-400">
-                One point per award. Level on points goes to more kinds of award, then more player
+                {mName} standings: one point per award. Level on points goes to more kinds of award, then more player
                 of the match, then the latest award. Tap a player to make them the winner instead.
               </p>
               <div className="flex flex-col gap-1.5">
@@ -446,11 +455,10 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               )}
             </div>
 
-            <div hidden={view !== "poster"}>
-            {/* The winner's photo */}
-            <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            {/* Step 2: the winner's photo */}
+            <div hidden={step !== 1} className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <p className="mb-1 text-[17px] font-bold text-gray-900 dark:text-gray-50">
-                Winner&apos;s Photo <span className="text-sm font-semibold text-gray-400">Optional</span>
+                Add a Photo <span className="text-sm font-semibold text-gray-400">Optional</span>
               </p>
               <p className="mb-3 text-xs text-gray-400">
                 Only add a photo if the child&apos;s parents are happy for it to be shared. It stays on
@@ -458,6 +466,16 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               </p>
               {photo ? (
                 <>
+                  {/* the photo as it sits in the poster's frame */}
+                  <div className="mx-auto mb-3 aspect-[38/45] w-40 overflow-hidden rounded-xl border-4 border-[#f8cc2c] bg-green-950">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo}
+                      alt={`Photo of ${winnerName}`}
+                      className="h-full w-full object-cover"
+                      style={{ objectPosition: `50% ${edits.photoY ?? 25}%` }}
+                    />
+                  </div>
                   <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                     Move the photo up or down
                     <input
@@ -506,8 +524,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               )}
             </div>
 
-            {/* The poster's words */}
-            <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            {/* Step 3: the poster's words */}
+            <div hidden={step !== 2} className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <p className="mb-3 text-[17px] font-bold text-gray-900 dark:text-gray-50">Poster Words</p>
               <label className="mb-2 block text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Headline
@@ -547,7 +565,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               </p>
             </div>
 
-            {/* The poster */}
+            {/* Step 4: the poster, to make and share */}
+            <div hidden={step !== 3}>
             <div ref={frameRef} className="no-dark w-full overflow-hidden rounded-xl shadow-lg" style={{ height: POSTER_H * scale }}>
               <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: POSTER_W }}>
                 <Poster
@@ -605,10 +624,101 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               )}
             </div>
             </div>
+
+            <StepButtons
+              step={step}
+              canMove={!!winner}
+              nextLabel={step === 1 && !photo ? "Skip – No Photo" : `Next: ${STEPS[step + 1]?.label}`}
+              onChange={goTo}
+            />
           </>
         )}
       </div>
     </main>
+  );
+}
+
+// ── The steps ──────────────────────────────────────────────────────────────
+
+/** The numbered steps along the top; tap one to go straight to it. */
+function StepBar({ step, canMove, onChange }: { step: number; canMove: boolean; onChange: (index: number) => void }) {
+  return (
+    <ol aria-label="Steps" className="mb-4 flex items-start">
+      {STEPS.map((s, i) => {
+        const done = i < step;
+        const current = i === step;
+        return (
+          <li key={s.id} className="relative flex flex-1 flex-col items-center">
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className={`absolute right-1/2 top-4 h-0.5 w-full -translate-y-1/2 ${i <= step ? "bg-green-600" : "bg-gray-200 dark:bg-white/15"}`}
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => onChange(i)}
+              disabled={!canMove && i > 0}
+              aria-current={current ? "step" : undefined}
+              aria-label={`Step ${i + 1}: ${s.label}`}
+              className={`relative z-10 grid h-8 w-8 place-items-center rounded-full text-sm font-bold cursor-pointer disabled:cursor-default ${
+                current || done
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-500 ring-1 ring-gray-200 dark:bg-[#1c1c1e] dark:text-gray-400 dark:ring-white/15"
+              } ${current ? "ring-4 ring-green-600/25" : ""}`}
+            >
+              {done ? (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              ) : (
+                i + 1
+              )}
+            </button>
+            <span
+              className={`mt-1 text-xs font-semibold ${current ? "text-gray-900 dark:text-gray-50" : "text-gray-500 dark:text-gray-400"}`}
+            >
+              {s.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Back and Next along the bottom of each step. */
+function StepButtons({
+  step,
+  canMove,
+  nextLabel,
+  onChange,
+}: {
+  step: number;
+  canMove: boolean;
+  nextLabel: string;
+  onChange: (index: number) => void;
+}) {
+  return (
+    <div className="mt-4 flex gap-2">
+      {step > 0 && (
+        <button
+          onClick={() => onChange(step - 1)}
+          className="flex-1 rounded-xl border border-gray-300 bg-white py-3 font-bold text-gray-700 hover:bg-gray-50 cursor-pointer dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15 dark:hover:bg-white/5"
+        >
+          Back
+        </button>
+      )}
+      {step < STEPS.length - 1 && (
+        <button
+          onClick={() => onChange(step + 1)}
+          disabled={!canMove}
+          className="flex-[2] rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-40 cursor-pointer"
+        >
+          {nextLabel}
+        </button>
+      )}
+    </div>
   );
 }
 
