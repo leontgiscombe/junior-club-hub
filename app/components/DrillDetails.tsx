@@ -3,6 +3,7 @@
 // A drill as coaches read it — on the training plans page and against each
 // session in the training log.
 import { DRILL_KINDS, bandName, topicName, type Drill, type DrillKind } from "@/lib/trainingPlanTypes";
+import { Icon, type IconName } from "./Icons";
 
 const KIND_STYLES: Record<DrillKind, string> = {
   "warm-up": "bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300",
@@ -37,12 +38,14 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
   ];
   const images = all.filter((f) => f.type === "image");
   const pdfs = all.filter((f) => f.type === "pdf");
-  const facts = [
-    drill.topic ? `⚽ ${topicName(drill.topic)}` : "",
-    drill.minutes ? `⏱ ${drill.minutes} min` : "",
-    drill.players ? `👥 ${drill.players} players` : "",
-    drill.ageGroup ? `🎂 ${bandName(drill.ageGroup)}` : "",
-  ].filter(Boolean);
+  const facts = (
+    [
+      drill.topic ? ["ball", topicName(drill.topic)] : null,
+      drill.minutes ? ["clock", `${drill.minutes} min`] : null,
+      drill.players ? ["people", `${drill.players} players`] : null,
+      drill.ageGroup ? ["cake", bandName(drill.ageGroup)] : null,
+    ] as ([IconName, string] | null)[]
+  ).filter((f): f is [IconName, string] => !!f);
   return (
     <div className="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-200">
       {/* the session-plan pages first: the diagram is what's wanted at the pitch */}
@@ -61,9 +64,10 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
       ))}
       {facts.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {facts.map((f) => (
-            <span key={f} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">
-              {f}
+          {facts.map(([icon, text]) => (
+            <span key={text} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">
+              <Icon name={icon} className="h-3.5 w-3.5" />
+              {text}
             </span>
           ))}
         </div>
@@ -131,9 +135,10 @@ export function DrillDetails({ drill, adminKey }: { drill: Drill; adminKey: stri
           href={f.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="self-start rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 dark:text-gray-200 dark:border-white/15"
+          className="inline-flex items-center gap-1.5 self-start rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-green-400 hover:text-green-700 dark:text-gray-200 dark:border-white/15"
         >
-          📄 {f.label}
+          <Icon name="file" className="h-3.5 w-3.5" />
+          {f.label}
         </a>
       ))}
     </div>

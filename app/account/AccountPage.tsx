@@ -18,6 +18,7 @@ import TabBarPicker from "./TabBarPicker";
 import { Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "../components/SettingsUI";
 import { canGoBack } from "@/lib/back";
 import { addPasskey, cancelled, supportsPasskeys } from "../components/passkey";
+import { ask, toast } from "@/lib/dialog";
 
 type PasskeyRow = { id: string; label: string; prf: boolean | null; createdAt: string; lastUsedAt: string | null };
 
@@ -171,7 +172,8 @@ export default function AccountPage() {
     const res = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone }) });
     const data = await res.json().catch(() => ({}));
     if (res.ok) setAccount((a) => (a ? { ...a, user: { ...a.user, name, phone: phone.trim() } } : a));
-    setMessage(res.ok ? { ok: true, text: "Saved." } : { ok: false, text: data.error ?? "That didn't save" });
+    if (res.ok) toast("Saved");
+    setMessage(res.ok ? null : { ok: false, text: data.error ?? "That didn't save" });
     setBusy(false);
   }
 
@@ -196,7 +198,7 @@ export default function AccountPage() {
   }
 
   async function deletePasskey(id: string) {
-    if (!confirm("Remove this passkey? You won't be able to sign in with it any more (your email still works).")) return;
+    if (!await ask("Remove this passkey? You won't be able to sign in with it any more (your email still works).")) return;
     const res = await fetch(`/api/auth/passkey?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (res.ok) setPasskeys((await res.json()).passkeys);
   }
@@ -426,7 +428,7 @@ export default function AccountPage() {
                 </button>
                 </fieldset>
                 {selectedChild.id && <button disabled={busy} onClick={async () => {
-                  if (!confirm(`Remove ${selectedChild.name} from your account? They stay in the club's squad and the club's coaches are told.`)) return;
+                  if (!await ask(`Remove ${selectedChild.name} from your account? They stay in the club's squad and the club's coaches are told.`)) return;
                   if (await saveHere("kids", kids.filter((_, index) => index !== childIndex)) && window.location.hash.slice(1) === screen) closeScreen();
                 }} className="mt-4 flex min-h-11 items-center gap-2 text-sm font-semibold text-red-700 disabled:opacity-40 dark:text-red-400">{ICONS.bin}Remove Child</button>}
                 {hereMessage && <p role="status" className="mt-2 text-sm text-gray-600 dark:text-gray-300">{hereMessage}</p>}

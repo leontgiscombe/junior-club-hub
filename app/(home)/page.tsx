@@ -218,7 +218,7 @@ export default async function Home() {
         <AppHeader viewer={viewer} crest={CLUB.crest} />
 
         <div>
-          <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>
+          <h1 data-large-title className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Home</h1>
           <p className={`wp-text mt-0.5 text-[15px] ${sub}`}>{context}</p>
         </div>
 

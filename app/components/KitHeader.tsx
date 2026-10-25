@@ -25,7 +25,7 @@ export default async function KitHeader({
     <header className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <AppHeader viewer={viewer} crest={CLUB.crest} />
       <div className="min-w-0">
-        <h1 className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">{title}</h1>
+        <h1 data-large-title className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">{title}</h1>
         <p className="wp-text mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">
           {subtitle} · {CLUB.kitSeason} season
         </p>

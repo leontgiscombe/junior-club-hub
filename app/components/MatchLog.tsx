@@ -11,6 +11,9 @@ import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { haptic } from "@/lib/haptics";
+import { ask } from "@/lib/dialog";
+import { EmptyState, GateIcon } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 interface Player {
   id: string;
@@ -312,7 +315,7 @@ export default function MatchLog() {
 
   async function removeMatch(match: Match) {
     if (
-      !confirm(
+      !await ask(
         `Remove ${teamName(match.team)} v ${match.opponent}?\n\n` +
           `Its ${match.goals.length} goal${match.goals.length === 1 ? "" : "s"} will be ` +
           `taken back off the players' season totals.`
@@ -343,7 +346,7 @@ export default function MatchLog() {
       <GateScreen title="Match Log">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">⚽</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Match Log</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -438,7 +441,7 @@ export default function MatchLog() {
 
       <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Team tabs */}
-        {!selectedId && screen !== "add" && <><label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => { setTeam(event.target.value); setOpponent(""); setEditingId(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label><ToolTabs label="Match views" tabs={[{ id: "fixtures", label: "Fixtures", count: upcoming.length }, { id: "results", label: "Results", count: results.length }, { id: "record", label: "Record" }]} value={view} onChange={switchTo} panelId="matches-panel" /></>}
+        {!selectedId && screen !== "add" && <><TeamPicker className="mb-4 block" value={team} onChange={(value) => { setTeam(value); setOpponent(""); setEditingId(null); }} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} /><ToolTabs label="Match views" tabs={[{ id: "fixtures", label: "Fixtures", count: upcoming.length }, { id: "results", label: "Results", count: results.length }, { id: "record", label: "Record" }]} value={view} onChange={switchTo} panelId="matches-panel" /></>}
         {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-400/10 dark:text-red-200">{error}</p>}
         <div id="matches-panel" role={selectedId || screen === "add" ? undefined : "tabpanel"} aria-label={view}>
 
@@ -631,9 +634,17 @@ export default function MatchLog() {
         )}
 
         {visibleGames.length === 0 ? (
-          <p className="rounded-3xl bg-white p-6 text-center text-gray-500 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-400">
-            {selectedId ? "This match is no longer available." : view === "results" ? "No results yet." : "No upcoming fixtures."}
-          </p>
+          selectedId ? (
+            <EmptyState icon="calendar" title="This match is no longer available" />
+          ) : view === "results" ? (
+            <EmptyState icon="trophy" title="No results yet" body="Scores show here once a game's been played and logged." />
+          ) : (
+            <EmptyState
+              icon="calendar"
+              title="No upcoming fixtures"
+              body="Add the next game above, or bring the fixtures in from FA Full-Time in Settings."
+            />
+          )
         ) : (
           <div className="flex flex-col gap-3">
             {visibleGames.map((m) => (

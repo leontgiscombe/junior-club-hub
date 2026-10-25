@@ -17,6 +17,9 @@ import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { timesLabel } from "@/lib/clubSettings";
 import { haptic } from "@/lib/haptics";
+import { ask } from "@/lib/dialog";
+import { GateIcon } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 interface Player {
   id: string;
@@ -290,7 +293,7 @@ export default function TrainingLog() {
       <GateScreen title="Training Log">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🏃</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Training Log</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -370,11 +373,11 @@ export default function TrainingLog() {
     const id = `${s.team}:${s.date}`;
     return (
       <button
-        onClick={() => {
+        onClick={async () => {
           if (
             !s.cancelled &&
             s.bestTrainerId &&
-            !confirm(
+            !await ask(
               `Mark ${formatDate(s.date)} as no training?\n\n` +
                 `${playerName(s.bestTrainerId)}'s best trainer award will be taken back.`
             )
@@ -446,9 +449,9 @@ export default function TrainingLog() {
               ))}
             </select>
             <button
-              onClick={() => {
+              onClick={async () => {
                 const msg = `No training on ${formatDate(s.date)}?` + (s.bestTrainerId ? `\n\n${playerName(s.bestTrainerId)}'s best trainer award will be taken back.` : "");
-                if (confirm(msg)) patch(s, { action: "set-cancelled", cancelled: true });
+                if (await ask(msg)) patch(s, { action: "set-cancelled", cancelled: true });
               }}
               disabled={busy === id}
               aria-label={`No training on ${formatDate(s.date)}`}
@@ -488,7 +491,7 @@ export default function TrainingLog() {
       <TopBar title="Training Log" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto max-w-2xl px-4 py-4">
-        <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <TeamPicker className="mb-4 block" value={team} onChange={(value) => setTeam(value)} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
         <ToolTabs label="Training views" tabs={[{ id: "upcoming", label: "Upcoming" }, { id: "history", label: "History", count: toAward.length }, { id: "leaders", label: "Best Trainers" }]} value={view} onChange={switchTo} panelId="training-panel" />
         <div id="training-panel" role="tabpanel" aria-label={view === "leaders" ? "Best Trainers" : view === "history" ? "History" : "Upcoming"}>
 

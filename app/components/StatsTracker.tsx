@@ -18,6 +18,9 @@ import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { GateScreen, ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { ask } from "@/lib/dialog";
+import { EmptyState, GateIcon, Icon, emptyAction, type IconName } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 type StatField =
   | "appearances"
@@ -70,28 +73,28 @@ interface SeasonSummary {
 // Every stat, in the order they appear on a card, in the totals and in the CSV.
 // Which of them a given player shows depends on their position — see
 // lib/positions.ts.
-const STATS: { field: StatField; label: string; short: string; icon: string }[] = [
-  { field: "appearances", label: "Appearances", short: "Apps", icon: "👟" },
-  { field: "goals", label: "Goals", short: "Goals", icon: "⚽" },
-  { field: "assists", label: "Assists", short: "Assists", icon: "🅰️" },
-  { field: "saves", label: "Saves", short: "Saves", icon: "🧤" },
-  { field: "penaltiesSaved", label: "Penalties Saved", short: "Pens Saved", icon: "⛔" },
-  { field: "potm", label: "Player of the Match", short: "POTM", icon: "🏆" },
-  { field: "mostImproved", label: "Most Improved", short: "Most Improved", icon: "📈" },
-  { field: "bestTrainer", label: "Best Trainer", short: "Best Trainer", icon: "💪" },
+const STATS: { field: StatField; label: string; short: string; icon: IconName }[] = [
+  { field: "appearances", label: "Appearances", short: "Apps", icon: "boot" },
+  { field: "goals", label: "Goals", short: "Goals", icon: "ball" },
+  { field: "assists", label: "Assists", short: "Assists", icon: "assist" },
+  { field: "saves", label: "Saves", short: "Saves", icon: "glove" },
+  { field: "penaltiesSaved", label: "Penalties Saved", short: "Pens Saved", icon: "stop" },
+  { field: "potm", label: "Player of the Match", short: "POTM", icon: "trophy" },
+  { field: "mostImproved", label: "Most Improved", short: "Most Improved", icon: "trend" },
+  { field: "bestTrainer", label: "Best Trainer", short: "Best Trainer", icon: "bolt" },
 ];
 
 const STAT_ORDER = STATS.map((s) => s.field);
 
-const AWARDS: { field: StatField; label: string; icon: string }[] = [
-  { field: "goals", label: "Top Scorer", icon: "🥇" },
-  { field: "assists", label: "Most Assists", icon: "🅰️" },
-  { field: "appearances", label: "Most Appearances", icon: "👟" },
-  { field: "saves", label: "Most Saves", icon: "🧤" },
-  { field: "penaltiesSaved", label: "Most Penalties Saved", icon: "⛔" },
-  { field: "potm", label: "Most Player of the Match", icon: "🏆" },
-  { field: "mostImproved", label: "Most Improved", icon: "📈" },
-  { field: "bestTrainer", label: "Best Trainer", icon: "💪" },
+const AWARDS: { field: StatField; label: string; icon: IconName }[] = [
+  { field: "goals", label: "Top Scorer", icon: "medal" },
+  { field: "assists", label: "Most Assists", icon: "assist" },
+  { field: "appearances", label: "Most Appearances", icon: "boot" },
+  { field: "saves", label: "Most Saves", icon: "glove" },
+  { field: "penaltiesSaved", label: "Most Penalties Saved", icon: "stop" },
+  { field: "potm", label: "Most Player of the Match", icon: "trophy" },
+  { field: "mostImproved", label: "Most Improved", icon: "trend" },
+  { field: "bestTrainer", label: "Best Trainer", icon: "bolt" },
 ];
 
 const ZERO: Record<StatField, number> = {
@@ -529,7 +532,7 @@ export default function StatsTracker() {
 
   async function removePlayer(p: Player) {
     if (busyId) return;
-    if (!confirm(`Remove ${p.name} and their stats?`)) return;
+    if (!await ask(`Remove ${p.name} and their stats?`)) return;
     setBusyId(p.id);
     setError(null);
     try {
@@ -552,7 +555,7 @@ export default function StatsTracker() {
     const target = newSeason.trim();
     if (!target || archiving) return;
     if (
-      !confirm(
+      !await ask(
         `Archive ${season} and start ${target}?\n\n` +
           `Every player's tallies go back to zero and the match log is emptied, ` +
           `ready for the new season. The squads are kept, and all of ${season} — ` +
@@ -588,7 +591,7 @@ export default function StatsTracker() {
   async function restoreArchive(archive: SeasonSummary) {
     const liveTallies = players.some((p) => STATS.some((s) => p[s.field] > 0));
     if (
-      !confirm(
+      !await ask(
         `Restore ${archive.name}?\n\n` +
           `Every player's tallies go back to how they finished ${archive.name}, ` +
           `and the season label returns to ${archive.name}.` +
@@ -646,7 +649,7 @@ export default function StatsTracker() {
       <GateScreen title="Stats Tracker">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">📊</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Stats Tracker</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -727,7 +730,7 @@ export default function StatsTracker() {
       <div className="mx-auto max-w-2xl px-4 py-4">
         {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</p>}
         {!detail && <div className="mb-4">
-          <label className="block"><span className="sr-only">Team</span><select disabled={!!busyId || adding || archiving} value={team} onChange={(event) => { setTeam(event.target.value); setEditing(false); setEditingId(null); setQuery(""); setError(null); }} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+          <TeamPicker className="block" disabled={!!busyId || adding || archiving} value={team} onChange={(value) => { setTeam(value); setEditing(false); setEditingId(null); setQuery(""); setError(null); }} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
         </div>}
         {!detail && <ToolTabs label="Stats views" tabs={[{ id: "team", label: "Team" }, { id: "players", label: "Players" }, { id: "awards", label: "Awards" }]} value={view} onChange={(tab) => { setEditing(false); setEditingId(null); setError(null); switchTo(tab); }} panelId="stats-panel" />}
 
@@ -915,8 +918,8 @@ export default function StatsTracker() {
                       <p className="text-lg font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
                         {t.total}
                       </p>
-                      <p className="text-[11px] text-gray-500 truncate dark:text-gray-400">
-                        <span aria-hidden="true">{t.icon}</span> {t.short}
+                      <p className="flex items-center justify-center gap-1 truncate text-[11px] text-gray-500 dark:text-gray-400">
+                        <Icon name={t.icon} className="h-3.5 w-3.5 shrink-0" /> {t.short}
                       </p>
                     </div>
                   ))}
@@ -983,7 +986,7 @@ export default function StatsTracker() {
                         key={a.field}
                         className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/5"
                       >
-                        <span className="min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400"><span aria-hidden="true">{a.icon}</span> {a.label}</span>
+                        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"><Icon name={a.icon} className="h-3.5 w-3.5 shrink-0" /> {a.label}</span>
                         <span className="min-w-0 flex-1 break-words text-right text-sm font-bold text-gray-900 dark:text-gray-50">
                           {a.result.names.join(", ")}
                         </span>
@@ -1045,7 +1048,7 @@ export default function StatsTracker() {
                         <span className="mt-1.5 flex flex-wrap gap-1.5">
                           {counted.map((stat) => (
                             <span key={stat.field} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-white/10 dark:text-gray-200">
-                              <span aria-hidden="true">{stat.icon}</span>
+                              <Icon name={stat.icon} className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
                               <span className="font-bold tabular-nums">{player[stat.field]}</span>
                               <span className="text-gray-500 dark:text-gray-400">{stat.short}</span>
                             </span>
@@ -1060,7 +1063,7 @@ export default function StatsTracker() {
                 );
               })}
             </div>
-          ) : <p role="status" className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{query ? "No players match your search." : "No players in this team yet."}</p>
+          ) : query ? <EmptyState icon="search" title="No players match" body="Try another name." /> : <EmptyState icon="people" title="No players in this team yet" action={<button onClick={() => { setBulk(false); setBulkResult(null); setError(null); open("add"); }} className={emptyAction}>+ Add Players</button>} />
         ) : !selectedPlayer ? (
           <p role="status" className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">This player is not in the selected team.</p>
         ) : (
@@ -1162,8 +1165,8 @@ export default function StatsTracker() {
                           key={s.field}
                           className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:bg-white/5 dark:border-white/10"
                         >
-                          <p className="text-xs font-medium text-gray-500 mb-1.5 truncate dark:text-gray-400">
-                            <span aria-hidden="true">{s.icon}</span> {s.label}
+                          <p className="mb-1.5 flex items-center gap-1.5 truncate text-xs font-medium text-gray-500 dark:text-gray-400">
+                            <Icon name={s.icon} className="h-4 w-4 shrink-0" /> {s.label}
                           </p>
                           {editing ? (
                             <div className="flex items-center justify-between gap-2">

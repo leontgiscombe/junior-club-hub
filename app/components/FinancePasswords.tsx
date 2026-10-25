@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import type { Team } from "@/lib/clubSettings";
 import { newFinanceAuth, openWithRecoveryCode, type FinanceAuth } from "@/lib/financeCrypto";
+import { ask } from "@/lib/dialog";
 
 export default function FinancePasswords({ adminKey, teams }: { adminKey: string; teams: Team[] }) {
   const [team, setTeam] = useState("");
@@ -44,7 +45,7 @@ export default function FinancePasswords({ adminKey, teams }: { adminKey: string
     if (!fresh && !noCode && !code.trim()) {
       return setMessage({ ok: false, text: "Enter the team's recovery code, or tick the box if you don't have it." });
     }
-    if (!fresh && noCode && !confirm(`This permanently deletes ${teamName}'s Finances records (players, payments and spending) and starts the team again. Carry on?`)) {
+    if (!fresh && noCode && !await ask(`This permanently deletes ${teamName}'s Finances records (players, payments and spending) and starts the team again. Carry on?`)) {
       return;
     }
     setBusy(true);

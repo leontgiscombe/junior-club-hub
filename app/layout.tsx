@@ -108,6 +108,8 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         {/* pull to refresh, haptics, swiping back, which way pages slide (public/app-feel.js) */}
         <script src="/app-feel.js" defer />
+        {/* the hub's own pop-ups, toast and shrinking large titles (public/app-ui.js) */}
+        <script src="/app-ui.js" defer />
       </head>
       <body className="relative isolate min-h-full bg-gray-50 font-sans antialiased">
         <HomeWallpaper />

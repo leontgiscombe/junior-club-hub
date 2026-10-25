@@ -11,6 +11,10 @@ import { GateScreen, Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "./S
 import { KIT_EXTRAS, NOT_NEEDED, type KitExtra } from "@/lib/clubSettings";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
 import { haptic } from "@/lib/haptics";
+import { ask, toast } from "@/lib/dialog";
+import { EmptyState, GateIcon, Icon } from "./Icons";
+import TeamPicker from "./TeamPicker";
+import SwipeRow from "./SwipeRow";
 
 interface Submission {
   id: string;
@@ -199,20 +203,20 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
   }
 
   async function changeRequest(id: string, change: { done: boolean } | { remove: true }) {
-    if ("remove" in change && !confirm("Remove this request?")) return;
+    if ("remove" in change && !await ask("Remove this request?")) return;
     const res = await fetch(`/api/responses?key=${encodeURIComponent(key)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId: id, ...change }),
     });
-    if (!res.ok) return alert("That didn't save — please try again.");
+    if (!res.ok) return toast("That didn't save — please try again.", "error");
     const data = await res.json();
     setRequests((all) => ("remove" in change ? all.filter((r) => r.id !== id) : all.map((r) => (r.id === id ? data.request : r))));
     haptic();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Remove this submission?")) return;
+    if (!await ask("Remove this submission?")) return;
     setDeleting(id);
     try {
       // the key goes in as it is, even an account's (keyQuery leaves that out of links, not API calls)
@@ -221,7 +225,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         { method: "DELETE" }
       );
       if (!res.ok) {
-        alert("That didn't delete — please try again.");
+        toast("That didn't delete — please try again.", "error");
         return;
       }
       setSubmissions((prev) => prev.filter((s) => s.id !== id));
@@ -292,7 +296,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
       <GateScreen title="Admin Access">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🔒</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Admin Access</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
               {CLUB.name} – {lockedTeam ? `${teamName(team)} kit` : "Kit"} responses
@@ -332,7 +336,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
       <div className="mx-auto max-w-2xl px-4 py-4">
         {/* Team selector (combined admin only) */}
         {!lockedTeam && (
-          <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} disabled={loading} onChange={(event) => switchTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+          <TeamPicker className="mb-4 block" value={team} disabled={loading} onChange={(value) => switchTeam(value)} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
         )}
         <ToolTabs label="Kit views" tabs={[{ id: "sizes", label: "Sizes", count: submissions.length }, { id: "requests", label: "Requests", count: requests.filter((request) => !request.doneAt).length }, { id: "waiting", label: "Waiting", count: waiting.length }]} value={view} onChange={switchTo} panelId="kit-panel" />
         <div id="kit-panel" role="tabpanel" aria-label={view}>
@@ -403,7 +407,14 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                       <div className="border-t border-gray-100 px-4 pb-3 dark:border-white/10">
                         <ul className="divide-y divide-gray-100 dark:divide-white/10">
                           {g.items.map((r) => (
-                            <li key={r.id} className={`flex items-start gap-3 py-2.5 ${r.doneAt ? "opacity-60" : ""}`}>
+                            <SwipeRow
+                              key={r.id}
+                              actions={[
+                                { label: r.doneAt ? "Undo" : "Done", tone: r.doneAt ? "gray" : "green", onAction: () => changeRequest(r.id, { done: !r.doneAt }) },
+                                { label: "Remove", tone: "red", onAction: () => changeRequest(r.id, { remove: true }) },
+                              ]}
+                            >
+                            <div className={`flex items-start gap-3 py-2.5 ${r.doneAt ? "opacity-60" : ""}`}>
                               <span className="text-2xl leading-none">{KIT_ITEMS[r.item]?.emoji}</span>
                               <span className="min-w-0 flex-1">
                                 <span className={`block font-semibold text-gray-900 dark:text-gray-50 ${r.doneAt ? "line-through" : ""}`}>
@@ -433,7 +444,8 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                                   ✕
                                 </button>
                               </span>
-                            </li>
+                            </div>
+                            </SwipeRow>
                           ))}
                         </ul>
                         {waiting.length > 1 && (
@@ -501,7 +513,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
           </div>
         )}
 
-        {view === "requests" && !requests.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No kit requests yet.</p>}
+        {view === "requests" && !requests.length && <EmptyState icon="inbox" title="No kit requests yet" body="When a parent asks for new kit, it shows here to sort out." />}
         {view === "waiting" && !waiting.length && <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">Everyone in this squad has sent their sizes.</p>}
         <div hidden={view !== "sizes"}>
         {/* the sizes as spreadsheets (refreshed by themselves whenever the page is come back to) */}
@@ -515,9 +527,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
         )}
 
         {submissions.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-                        <p>No responses yet for {teamName(team)}.</p>
-          </div>
+          <EmptyState icon="shirt" title="No sizes yet" body={`Parents' kit sizes for ${teamName(team)} show here as they send them.`} />
         ) : (
           <div className="flex flex-col gap-3">
             {sorted.map((s) => (
@@ -541,11 +551,11 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   {[
-                    { icon: "👕", label: "Shirt", value: s.shirtSize },
-                    { icon: "🩳", label: "Shorts", value: s.shortsSize },
-                    { icon: "🧦", label: "Socks", value: s.socksSize },
+                    { icon: <Icon name="shirt" className="h-3.5 w-3.5" />, label: "Shirt", value: s.shirtSize },
+                    { icon: <Icon name="shorts" className="h-3.5 w-3.5" />, label: "Shorts", value: s.shortsSize },
+                    { icon: <Icon name="socks" className="h-3.5 w-3.5" />, label: "Socks", value: s.socksSize },
                     ...extrasIn(sorted, CLUB.kitExtras).map((e) => ({
-                      icon: KIT_EXTRAS[e].emoji,
+                      icon: null as React.ReactNode,
                       label: KIT_EXTRAS[e].short,
                       value: s.extras?.[e] ?? "—",
                     })),
@@ -554,7 +564,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
                       key={label}
                       className="bg-green-50 rounded-xl py-2 text-center dark:bg-green-400/10"
                     >
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{icon} {label}</p>
+                      <p className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">{icon}{label}</p>
                       <p className={`font-extrabold text-green-700 mt-0.5 dark:text-green-400 ${value.length > 4 ? "text-sm" : "text-base"}`}>{value}</p>
                     </div>
                   ))}

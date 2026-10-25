@@ -23,6 +23,8 @@ import {
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { GateIcon } from "./Icons";
+import TeamPicker from "./TeamPicker";
 
 interface Player {
   id: string;
@@ -294,7 +296,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
       <GateScreen title="Player of the Month">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🌟</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Player of the Month</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>
@@ -353,7 +355,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
       <TopBar title="Player of the Month" href={`/admin${keyQuery(key)}`} />
 
       <div className="mx-auto max-w-2xl px-4 py-4">
-        <label className="mb-4 block"><span className="sr-only">Team</span><select value={team} onChange={(event) => setTeam(event.target.value)} className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 dark:border-white/15 dark:bg-[#1c1c1e] dark:text-gray-50">{TEAMS.map((option) => <option key={option.slug} value={option.slug}>{option.name}</option>)}</select></label>
+        <TeamPicker className="mb-4 block" value={team} onChange={(value) => setTeam(value)} options={TEAMS.map((option) => ({ value: option.slug, label: option.name }))} />
         <ToolTabs label="Monthly award views" tabs={[{ id: "standings", label: "Standings" }, { id: "poster", label: "Poster" }]} value={view} onChange={switchTo} />
 
         {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}

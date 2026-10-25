@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { GateIcon } from "./Icons";
 
 const SECTIONS = [
   { id: "getting-started", title: "Getting Started" },
@@ -138,7 +139,7 @@ export default function HelpManual() {
       <GateScreen title="Help">
         <div className="bg-white rounded-3xl shadow-sm p-8 w-full max-w-sm dark:bg-[#1c1c1e]">
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">❓</div>
+            <GateIcon />
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50">Help</h1>
             <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Coaches only</p>
           </div>

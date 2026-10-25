@@ -5,6 +5,7 @@
 import { MAX_CHILDREN, type Child } from "@/lib/access";
 import type { ReactNode } from "react";
 import NameFields from "./NameFields";
+import { ask } from "@/lib/dialog";
 
 export type ChildDraft = {
   id?: string;
@@ -75,7 +76,7 @@ export default function ChildrenEditor({
     allowRemove && value.length > 1 && (
       <button
         type="button"
-        onClick={() => {
+        onClick={async () => {
           const c = value[i];
           const first = c.name.trim().split(/\s+/)[0] || "this child";
           const question = !confirmRemove || !c.id
@@ -85,7 +86,7 @@ export default function ChildrenEditor({
               : c.pending
                 ? `Cancel your request to add ${first}?\n\nTap Save afterwards to finish.`
                 : null;
-          if (question && !confirm(question)) return;
+          if (question && !await ask(question)) return;
           onChange(value.filter((_, j) => j !== i));
         }}
         aria-label={`Remove child ${i + 1}`}

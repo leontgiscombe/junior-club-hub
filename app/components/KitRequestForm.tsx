@@ -6,6 +6,7 @@
 // The page: app/kit/request.
 import { useState } from "react";
 import { KIT_ITEMS, type KitItem } from "@/lib/kitItems";
+import { ask, toast } from "@/lib/dialog";
 
 type Mine = {
   id: string;
@@ -99,10 +100,10 @@ export default function KitRequestForm({
   }
 
   async function takeBack(id: string) {
-    if (!confirm("Take this request back?")) return;
+    if (!await ask("Take this request back?")) return;
     const res = await fetch(`/api/kit/requests?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (res.ok) setMine((m) => m.filter((r) => r.id !== id));
-    else alert((await res.json().catch(() => ({}))).error ?? "That didn't work");
+    else toast((await res.json().catch(() => ({}))).error ?? "That didn't work", "error");
   }
 
   return (
