@@ -25,7 +25,7 @@ import { tenantFromHost } from "./lib/tenantHost";
 import { isAppUserAgent } from "./lib/inApp";
 
 // what the platform's site needs: its pages and APIs, plus shared images
-const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|billing\/revenuecat|cron-backup|cron-trial|finance\/cron-remind|auth|account|player\/find|feedback)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico)$/];
+const PLATFORM_PATHS = [/^\/platform(\/|$)/, /^\/(signin|account)(\/|$)/, /^\/api\/(signup|clubs|health|platform-admin|billing\/revenuecat|cron-backup|cron-trial|finance\/cron-remind|auth|account|player\/find|feedback|members\/alerts\/seen)(\/|$)/, /^\/(privacy|terms|support)$/, /^\/poster\//, /\.(png|jpe?g|svg|webp|ico|js)$/];
 
 // what a private club's hub shows people who aren't members yet: the join
 // page, Coach Admin, password resets, the legal pages, pictures and files —
