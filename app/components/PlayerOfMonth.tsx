@@ -25,6 +25,7 @@ import { ToolSkeleton } from "./Skeleton";
 import { TopBar, useScreens, GateScreen } from "./SettingsUI";
 import { GateIcon } from "./Icons";
 import TeamPicker from "./TeamPicker";
+import { StepBar, StepButtons } from "./Steps";
 
 interface Player {
   id: string;
@@ -390,7 +391,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
               </select>
             </label>
 
-            <StepBar step={step} canMove={!!winner} onChange={goTo} />
+            <StepBar steps={STEPS} step={step} canMove={!!winner} onChange={goTo} />
 
             {/* Step 1: the standings, to pick the winner */}
             <div hidden={step !== 0} className="mb-4 rounded-lg bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
@@ -627,6 +628,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
 
             <StepButtons
               step={step}
+              count={STEPS.length}
               canMove={!!winner}
               nextLabel={step === 1 && !photo ? "Skip – No Photo" : `Next: ${STEPS[step + 1]?.label}`}
               onChange={goTo}
@@ -635,90 +637,6 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
         )}
       </div>
     </main>
-  );
-}
-
-// ── The steps ──────────────────────────────────────────────────────────────
-
-/** The numbered steps along the top; tap one to go straight to it. */
-function StepBar({ step, canMove, onChange }: { step: number; canMove: boolean; onChange: (index: number) => void }) {
-  return (
-    <ol aria-label="Steps" className="mb-4 flex items-start">
-      {STEPS.map((s, i) => {
-        const done = i < step;
-        const current = i === step;
-        return (
-          <li key={s.id} className="relative flex flex-1 flex-col items-center">
-            {i > 0 && (
-              <span
-                aria-hidden="true"
-                className={`absolute right-1/2 top-4 h-0.5 w-full -translate-y-1/2 ${i <= step ? "bg-green-600" : "bg-gray-200 dark:bg-white/15"}`}
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => onChange(i)}
-              disabled={!canMove && i > 0}
-              aria-current={current ? "step" : undefined}
-              aria-label={`Step ${i + 1}: ${s.label}`}
-              className={`relative z-10 grid h-8 w-8 place-items-center rounded-full text-sm font-bold cursor-pointer disabled:cursor-default ${
-                current || done
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-500 ring-1 ring-gray-200 dark:bg-[#1c1c1e] dark:text-gray-400 dark:ring-white/15"
-              } ${current ? "ring-4 ring-green-600/25" : ""}`}
-            >
-              {done ? (
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12.5l4.5 4.5L19 7.5" />
-                </svg>
-              ) : (
-                i + 1
-              )}
-            </button>
-            <span
-              className={`mt-1 text-xs font-semibold ${current ? "text-gray-900 dark:text-gray-50" : "text-gray-500 dark:text-gray-400"}`}
-            >
-              {s.label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-/** Back and Next along the bottom of each step. */
-function StepButtons({
-  step,
-  canMove,
-  nextLabel,
-  onChange,
-}: {
-  step: number;
-  canMove: boolean;
-  nextLabel: string;
-  onChange: (index: number) => void;
-}) {
-  return (
-    <div className="mt-4 flex gap-2">
-      {step > 0 && (
-        <button
-          onClick={() => onChange(step - 1)}
-          className="flex-1 rounded-xl border border-gray-300 bg-white py-3 font-bold text-gray-700 hover:bg-gray-50 cursor-pointer dark:bg-[#1c1c1e] dark:text-gray-200 dark:border-white/15 dark:hover:bg-white/5"
-        >
-          Back
-        </button>
-      )}
-      {step < STEPS.length - 1 && (
-        <button
-          onClick={() => onChange(step + 1)}
-          disabled={!canMove}
-          className="flex-[2] rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-40 cursor-pointer"
-        >
-          {nextLabel}
-        </button>
-      )}
-    </div>
   );
 }
 

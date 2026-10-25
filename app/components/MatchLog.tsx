@@ -10,6 +10,7 @@ import { cleanSheetCount, isCleanSheet, playedCount } from "@/lib/cleanSheets";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
 import { ToolTabs, TopBar, useScreens, GateScreen } from "./SettingsUI";
+import { StepBar, StepButtons } from "./Steps";
 import { haptic } from "@/lib/haptics";
 import { ask } from "@/lib/dialog";
 import { EmptyState, GateIcon } from "./Icons";
@@ -62,6 +63,13 @@ type GameType = "league" | "friendly" | "cup";
 
 // League, friendly or cup — friendlies and cups both stay out of the league
 // record (friendly: true); cup tells the two apart.
+const LOG_STEPS = [
+  { id: "score", label: "Score" },
+  { id: "awards", label: "Awards" },
+  { id: "played", label: "Who Played" },
+  { id: "check", label: "Check" },
+];
+
 function gameType(g: { friendly: boolean; cup: boolean }): GameType {
   return !g.friendly ? "league" : g.cup ? "cup" : "friendly";
 }
@@ -168,6 +176,8 @@ export default function MatchLog() {
   const [assistFor, setAssistFor] = useState<Record<string, string>>({});
   // fixtures still to come stay compact until you open one up to log goals
   const [expanded, setExpanded] = useState<string[]>([]);
+  // which step of logging the open game is on; a game opens on the first
+  const [logStepFor, setLogStepFor] = useState({ id: "", step: 0 });
 
   const load = useCallback(async (adminKey: string) => {
     setLoading(true);
@@ -433,6 +443,11 @@ export default function MatchLog() {
 
   // a game folded to its one line unless tapped open; one still to score, and the next game, start open
   const gameOpen = (match: Match) => match.id === selectedId;
+  const logStep = logStepFor.id === selectedId ? logStepFor.step : 0;
+  const setLogStep = (step: number) => {
+    setLogStepFor({ id: selectedId, step });
+    window.scrollTo(0, 0);
+  };
   const visibleGames = selectedId ? shown.filter((match) => match.id === selectedId) : view === "results" ? results : upcoming;
 
   return (
@@ -779,6 +794,103 @@ export default function MatchLog() {
                 )}
 
                 {gameOpen(m) && editingId !== m.id && (<>
+                {/* A fixture still to come stays compact until you open it */}
+                {!isPlayed(m) && !expanded.includes(m.id) ? (
+                  <button
+                    onClick={() => { setExpanded((prev) => [...prev, m.id]); setLogStep(0); }}
+                    className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
+                  >
+                    Log the Game
+                  </button>
+                ) : (
+                  <>
+                {/* Logging the game a step at a time: each change saves as it's made */}
+                <StepBar steps={LOG_STEPS} step={logStep} onChange={setLogStep} className="mt-4 mb-4" />
+
+                {/* Step 1: the score and who scored */}
+                <div hidden={logStep !== 0}>
+                {/* Our score, for a result written up afterwards: the goals
+                    nobody can put a name to still count towards it. */}
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="w-36 shrink-0 break-words text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {teamName(m.team)} scored
+                  </span>
+                  <button
+                    onClick={() =>
+                      patch(m.id, { action: "our-goals", ourGoals: m.goals.length - 1 })
+                    }
+                    disabled={
+                      busyId === m.id ||
+                      m.goals.filter((g) => !g.scorerId).length === 0
+                    }
+                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
+                    title={
+                      m.goals.filter((g) => !g.scorerId).length === 0
+                        ? "Every goal here has a scorer — remove one from the list above"
+                        : `Fewer goals for ${teamName(m.team)}`
+                    }
+                    aria-label={`Fewer goals for ${teamName(m.team)}`}
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
+                    {m.goals.length}
+                  </span>
+                  <button
+                    onClick={() =>
+                      patch(m.id, { action: "our-goals", ourGoals: m.goals.length + 1 })
+                    }
+                    disabled={busyId === m.id}
+                    className="h-7 w-7 cursor-pointer rounded-lg bg-green-600 text-base font-bold leading-none text-white hover:bg-green-700 disabled:opacity-40"
+                    aria-label={`More goals for ${teamName(m.team)}`}
+                    title="Adds a goal with no scorer recorded — name it above if you remember"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Opponent score */}
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="w-36 shrink-0 break-words text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {m.opponent} scored
+                  </span>
+                  <button
+                    onClick={() =>
+                      patch(m.id, {
+                        action: "opponent-goals",
+                        opponentGoals: m.opponentGoals - 1,
+                      })
+                    }
+                    disabled={m.opponentGoals === 0 || busyId === m.id}
+                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
+                    aria-label={`Fewer goals for ${m.opponent}`}
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
+                    {m.opponentGoals}
+                  </span>
+                  <button
+                    onClick={() =>
+                      patch(m.id, {
+                        action: "opponent-goals",
+                        opponentGoals: m.opponentGoals + 1,
+                      })
+                    }
+                    disabled={busyId === m.id}
+                    className="h-7 w-7 cursor-pointer rounded-lg bg-green-600 text-base font-bold leading-none text-white hover:bg-green-700 disabled:opacity-40"
+                    aria-label={`More goals for ${m.opponent}`}
+                  >
+                    +
+                  </button>
+                  {/* A clean sheet is the team's, so it is counted here against
+                      the game rather than on anybody's card. */}
+                  {isCleanSheet(m) && (
+                    <span className="ml-auto text-xs font-semibold text-green-700 dark:text-green-400">
+                      Clean sheet
+                    </span>
+                  )}
+                </div>
                 {/* Goals */}
                 {m.goals.length > 0 && (
                   <div className="mt-3 flex flex-col gap-1.5">
@@ -829,17 +941,6 @@ export default function MatchLog() {
                     ))}
                   </div>
                 )}
-
-                {/* A fixture still to come stays compact until you open it */}
-                {!isPlayed(m) && !expanded.includes(m.id) ? (
-                  <button
-                    onClick={() => setExpanded((prev) => [...prev, m.id])}
-                    className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
-                  >
-                    Log Goals
-                  </button>
-                ) : (
-                  <>
                 {/* Add a goal */}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <select
@@ -882,7 +983,6 @@ export default function MatchLog() {
                     Add Goal
                   </button>
                 </div>
-
                 {/* A played game with nothing recorded needs confirming before
                     it counts towards the record — it may just be a 0–0. */}
                 {isPlayed(m) && !m.resultLogged && (
@@ -894,9 +994,42 @@ export default function MatchLog() {
                     Confirm 0–0 (counts it in the record)
                   </button>
                 )}
+                </div>
 
+                {/* Step 2: the game's awards */}
+                <div hidden={logStep !== 1}>
+                {/* Per-game awards */}
+                <div className="mt-1 flex flex-col gap-3">
+                  {AWARDS.map((a) => (
+                    <div key={a.field} className="flex items-center gap-2">
+                      <span className="w-28 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        {a.label}
+                      </span>
+                      <select
+                        value={m[a.field] ?? ""}
+                        onChange={(e) =>
+                          patch(m.id, { action: a.action, playerId: e.target.value })
+                        }
+                        disabled={busyId === m.id}
+                        aria-label={`${a.label} for ${m.opponent}`}
+                        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
+                      >
+                        <option value="">— Not Awarded —</option>
+                        {squad.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                </div>
+
+                {/* Step 3: who played */}
+                <div hidden={logStep !== 2}>
                 {/* Who played */}
-                <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/10">
+                <div className="mt-1">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       Who Played ({(m.appearanceIds ?? []).length})
@@ -959,119 +1092,72 @@ export default function MatchLog() {
                   )}
 
                 </div>
+                </div>
 
-                {/* Per-game awards */}
-                <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
-                  {AWARDS.map((a) => (
-                    <div key={a.field} className="flex items-center gap-2">
-                      <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                        {a.label}
-                      </span>
-                      <select
-                        value={m[a.field] ?? ""}
-                        onChange={(e) =>
-                          patch(m.id, { action: a.action, playerId: e.target.value })
-                        }
-                        disabled={busyId === m.id}
-                        aria-label={`${a.label} for ${m.opponent}`}
-                        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1c1c1e] dark:text-gray-50 dark:border-white/15"
-                      >
-                        <option value="">— Not Awarded —</option>
-                        {squad.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
+                {/* Step 4: check it all */}
+                {logStep === 3 && (
+                  <div className="flex flex-col gap-2 text-sm">
+                    <div className="rounded-2xl bg-gray-50 px-4 py-3 text-center dark:bg-white/5">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Final score</p>
+                      <p className="text-2xl font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
+                        {m.goals.length} – {m.opponentGoals}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {teamName(m.team)} v {m.opponent}
+                        {isCleanSheet(m) && " · Clean sheet"}
+                      </p>
+                      {isPlayed(m) && !m.resultLogged && (
+                        <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          No score logged yet — go back to Score to add one or confirm a 0–0.
+                        </p>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    {[
+                      {
+                        label: "Goals",
+                        value: m.goals.length
+                          ? m.goals.map((g) => (g.scorerId ? playerName(g.scorerId) : "Scorer not recorded")).join(", ")
+                          : "None",
+                        step: 0,
+                      },
+                      ...AWARDS.map((a) => ({
+                        label: a.label,
+                        value: m[a.field] ? playerName(m[a.field]) : "Not awarded",
+                        step: 1,
+                      })),
+                      {
+                        label: "Who Played",
+                        value: (m.appearanceIds ?? []).length
+                          ? `${(m.appearanceIds ?? []).length} player${(m.appearanceIds ?? []).length === 1 ? "" : "s"}`
+                          : "Nobody ticked",
+                        step: 2,
+                      },
+                    ].map((row) => (
+                      <button
+                        key={row.label}
+                        type="button"
+                        onClick={() => setLogStep(row.step)}
+                        className="flex cursor-pointer items-baseline gap-3 rounded-xl px-1 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-white/5"
+                      >
+                        <span className="w-28 shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400">{row.label}</span>
+                        <span className="min-w-0 flex-1 font-semibold text-gray-900 dark:text-gray-50">{row.value}</span>
+                        <span className="shrink-0 text-xs font-semibold text-green-700 dark:text-green-400">Change</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-                {/* Our score, for a result written up afterwards: the goals
-                    nobody can put a name to still count towards it. */}
-                <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {teamName(m.team)} scored
-                  </span>
-                  <button
-                    onClick={() =>
-                      patch(m.id, { action: "our-goals", ourGoals: m.goals.length - 1 })
-                    }
-                    disabled={
-                      busyId === m.id ||
-                      m.goals.filter((g) => !g.scorerId).length === 0
-                    }
-                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
-                    title={
-                      m.goals.filter((g) => !g.scorerId).length === 0
-                        ? "Every goal here has a scorer — remove one from the list above"
-                        : `Fewer goals for ${teamName(m.team)}`
-                    }
-                    aria-label={`Fewer goals for ${teamName(m.team)}`}
-                  >
-                    −
-                  </button>
-                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
-                    {m.goals.length}
-                  </span>
-                  <button
-                    onClick={() =>
-                      patch(m.id, { action: "our-goals", ourGoals: m.goals.length + 1 })
-                    }
-                    disabled={busyId === m.id}
-                    className="h-7 w-7 cursor-pointer rounded-lg bg-green-600 text-base font-bold leading-none text-white hover:bg-green-700 disabled:opacity-40"
-                    aria-label={`More goals for ${teamName(m.team)}`}
-                    title="Adds a goal with no scorer recorded — name it above if you remember"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Opponent score */}
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {m.opponent} scored
-                  </span>
-                  <button
-                    onClick={() =>
-                      patch(m.id, {
-                        action: "opponent-goals",
-                        opponentGoals: m.opponentGoals - 1,
-                      })
-                    }
-                    disabled={m.opponentGoals === 0 || busyId === m.id}
-                    className="h-7 w-7 cursor-pointer rounded-lg border border-gray-200 bg-white text-base font-bold leading-none text-gray-600 hover:border-green-400 hover:text-green-700 disabled:opacity-30 dark:bg-[#1c1c1e] dark:text-gray-300 dark:border-white/15"
-                    aria-label={`Fewer goals for ${m.opponent}`}
-                  >
-                    −
-                  </button>
-                  <span className="min-w-[1.25rem] text-center font-extrabold text-gray-900 tabular-nums dark:text-gray-50">
-                    {m.opponentGoals}
-                  </span>
-                  <button
-                    onClick={() =>
-                      patch(m.id, {
-                        action: "opponent-goals",
-                        opponentGoals: m.opponentGoals + 1,
-                      })
-                    }
-                    disabled={busyId === m.id}
-                    className="h-7 w-7 cursor-pointer rounded-lg bg-green-600 text-base font-bold leading-none text-white hover:bg-green-700 disabled:opacity-40"
-                    aria-label={`More goals for ${m.opponent}`}
-                  >
-                    +
-                  </button>
-                  {/* A clean sheet is the team's, so it is counted here against
-                      the game rather than on anybody's card. */}
-                  {isCleanSheet(m) && (
-                    <span className="ml-auto text-xs font-semibold text-green-700 dark:text-green-400">
-                      Clean sheet
-                    </span>
-                  )}
-                </div>
+                <StepButtons
+                  step={logStep}
+                  count={LOG_STEPS.length}
+                  nextLabel={`Next: ${LOG_STEPS[logStep + 1]?.label}`}
+                  onChange={setLogStep}
+                  finish={{ label: "Done", onClick: () => { setEditingId(null); close(); } }}
+                />
                   </>
                 )}
                 {/* change or remove the game: inside it, not crowding the card */}
+                {((!isPlayed(m) && !expanded.includes(m.id)) || logStep === 3) && (
                 <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
                   <button
                     onClick={() => startEdit(m)}
@@ -1094,6 +1180,7 @@ export default function MatchLog() {
                     Remove Game
                   </button>
                 </div>
+                )}
                 </>)}
                 </div>
               </Fragment>

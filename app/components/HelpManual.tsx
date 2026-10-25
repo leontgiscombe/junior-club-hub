@@ -334,9 +334,10 @@ export default function HelpManual() {
           <H3>Approving Someone</H3>
           <Steps>
             <li>Home shows how many are <B>waiting for approval</B>. Tap it, or open Members → <B>Waiting for Approval</B>.</li>
-            <li>Check you know them: their name, email, phone and who they say they are are shown.</li>
-            <li>For a parent, check each child. The hub picks the closest name in the squad; make sure it&apos;s the same child, or choose <B>New to the squad</B>.</li>
-            <li>Under <B>Approve as</B>, tick their roles, then tap <B>Approve</B>. Or <B>Decline</B> if you don&apos;t know them.</li>
+            <li>Tap <B>Review</B> next to their name.</li>
+            <li><B>Step 1 – Who:</B> check you know them: their name, email, phone and who they say they are.</li>
+            <li><B>Step 2 – Children</B> (if they added any): check each child. The hub picks the closest name in the squad; make sure it&apos;s the same child, or choose <B>New to the squad</B>.</li>
+            <li><B>Step 3 – Roles:</B> tick their roles, then tap <B>Approve</B>. Or tap <B>Decline</B> at any step if you don&apos;t know them.</li>
           </Steps>
           <p>
             Someone who says they&apos;re a coach starts as a parent: only tick <B>Coach</B> if you know them, as it opens Coach Admin.
@@ -414,14 +415,12 @@ export default function HelpManual() {
             players&apos; season totals and clean sheets.
           </p>
           <H3>Logging a Game After It&apos;s Played</H3>
-          <p>Open <B>Results</B>, tap the game to open its details, and fill in what you know. The league table is under <B>Record</B>.</p>
+          <p>Open <B>Results</B> and tap the game. It goes a step at a time. The league table is under <B>Record</B>.</p>
           <Steps>
-            <li><B>Goals:</B> pick the scorer and, if there was one, the assist, then tap <B>Add Goal</B>. ✕ removes a goal.</li>
-            <li><B>Opponent&apos;s goals:</B> use the opponent&apos;s <B>scored</B> stepper.</li>
-            <li><B>Can&apos;t remember who scored?</B> Set our score with our <B>scored</B> stepper; those goals show as <em>Scorer not recorded</em>.</li>
-            <li><B>A 0–0:</B> tap <B>✓ Confirm 0–0</B> so it counts.</li>
-            <li><B>Awards:</B> pick the <B>Player of the Match</B> and <B>Most Improved</B>.</li>
-            <li><B>👟 Who Played:</B> tap each player who took part. Each is one appearance.</li>
+            <li><B>Step 1 – Score:</B> use the two <B>scored</B> steppers for the score. Then name each scorer and, if there was one, the assist, and tap <B>Add Goal</B>; ✕ removes a goal. Goals nobody can name show as <em>Scorer not recorded</em>. For a 0–0, tap <B>Confirm 0–0</B> so it counts.</li>
+            <li><B>Step 2 – Awards:</B> pick the <B>Player of the Match</B> and <B>Most Improved</B>.</li>
+            <li><B>Step 3 – Who Played:</B> tap each player who took part. Each is one appearance.</li>
+            <li><B>Step 4 – Check:</B> look over the score, goals, awards and appearances. Tap any line to change it, then <B>Done</B>.</li>
           </Steps>
           <p>
             Everything saves as you tap. A game where the opponent didn&apos;t score is marked as a
@@ -483,13 +482,15 @@ export default function HelpManual() {
           </p>
           <H3>Setting Up the Plan</H3>
           <Steps>
-            <li>Tap <B>Edit Plan</B> to name it and pick the session <B>Week 1 is on</B>; each week after lands on the team&apos;s next training session.</li>
-            <li>Tap <B>+ Add Week</B>, tap <B>Topic</B> to give it one, then add its warm-up, technical drill and game. The drills on that topic come first.</li>
-            <li>Under <B>Season</B>, tap a week to open it: change its topic or drills, move it <B>Earlier</B> or <B>Later</B>, or remove it.</li>
-            <li>Tap <B>Save Plan</B>. Nothing is kept until you do.</li>
+            <li>A team with no plan yet: tap <B>Set Up the Plan</B>.</li>
+            <li><B>Step 1 – Name:</B> name it and pick the session <B>Week 1 is on</B>; each week after lands on the team&apos;s next training session.</li>
+            <li><B>Step 2 – Weeks:</B> pick how many weeks, or use the season plan for the team&apos;s age group if there is one.</li>
+            <li><B>Step 3 – Drills:</B> give each week a <B>Topic</B>, then add its warm-up, technical drill and game. The drills on that topic come first.</li>
+            <li><B>Step 4 – Save:</B> check it over and tap <B>Save Plan</B>. Nothing is kept until you do.</li>
           </Steps>
           <p>
-            If there&apos;s a season plan for the team&apos;s age group, <B>Edit Plan</B> has a button to use it.
+            Afterwards, tap a week under <B>Season</B> to change its topic or drills, move it <B>Earlier</B> or <B>Later</B>, or remove it, and <B>+ Add Week</B> adds another. Tap <B>Save Plan</B> after changes.
+            If there&apos;s a season plan for the team&apos;s age group, <B>Edit Plan</B> also has a button to use it.
           </p>
           <H3>Ticking Drills Off</H3>
           <p>

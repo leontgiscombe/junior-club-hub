@@ -29,6 +29,7 @@ import { haptic } from "@/lib/haptics";
 import { ask } from "@/lib/dialog";
 import { EmptyState, GateIcon, Icon, emptyAction } from "./Icons";
 import TeamPicker from "./TeamPicker";
+import { StepBar, StepButtons } from "./Steps";
 
 type View = "plan" | "library";
 
@@ -215,6 +216,13 @@ type SheetState =
   | { kind: "plan" }
   | null;
 
+const SETUP_STEPS = [
+  { id: "name", label: "Name" },
+  { id: "weeks", label: "Weeks" },
+  { id: "drills", label: "Drills" },
+  { id: "save", label: "Save" },
+];
+
 function move<T>(items: T[], from: number, to: number): T[] {
   if (to < 0 || to >= items.length) return items;
   const next = [...items];
@@ -245,6 +253,8 @@ export default function TrainingPlans() {
   const [sheet, setSheet] = useState<SheetState>(null);
   // weeks before the one coming up stay folded away until asked for
   const [showEarlier, setShowEarlier] = useState(false);
+  // setting up a first plan a step at a time: which step, or null when not
+  const [setupStep, setSetupStep] = useState<number | null>(null);
   const [drillForm, setDrillForm] = useState<DrillDraft | null>(null);
   // photos and PDFs picked for a drill not saved yet: they go up once it is
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -471,8 +481,10 @@ export default function TrainingPlans() {
       setPlans((prev) => prev.map((p) => (p.team === team ? data.plan : p)));
       haptic();
       setDirty(false);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't save");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -491,6 +503,7 @@ export default function TrainingPlans() {
     setDirty(false);
     setSheet(null);
     setShowEarlier(false);
+    setSetupStep(null);
     setTeam(slug);
   }
 
@@ -877,8 +890,8 @@ export default function TrainingPlans() {
             <EmptyState
               icon="clipboard"
               title="Plan the season"
-              body="Add a week, give it a topic, then pick its warm-up, technical and game."
-              action={seasonPlan.length > 0 ? <button onClick={applySeasonPlan} className={emptyAction}>Use the {seasonPlan.length}-Week Season Plan</button> : undefined}
+              body="Name the plan, pick how many weeks, then give each week a topic and its warm-up, technical and game."
+              action={<button onClick={() => setSetupStep(0)} className={emptyAction}>Set Up the Plan</button>}
             />
           </div>
         ) : (
@@ -1320,46 +1333,199 @@ export default function TrainingPlans() {
   }
 
   /** Whichever sheet is open: a drill, picking one for a week, a week's topic, or the plan's details. */
+  // the plan's name and the session week 1 is on
+  function planFields() {
+    if (!draft) return null;
+    return (
+      <>
+      <label className="mb-4 block">
+        <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Name</span>
+        <input
+          value={draft.title}
+          onChange={(e) => editPlan((p) => ({ ...p, title: e.target.value }))}
+          placeholder={`${teamName(team)} Plan, e.g. Autumn block`}
+          maxLength={120}
+          className={`${inputClass} mt-1 rounded-xl py-2.5`}
+        />
+      </label>
+      <label className="mb-4 block">
+        <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Week 1 is on</span>
+        <select
+          value={draft.startDate}
+          onChange={(e) => editPlan((p) => ({ ...p, startDate: e.target.value }))}
+          className={`${inputClass} mt-1 rounded-xl py-2.5`}
+        >
+          <option value="">Not scheduled yet</option>
+          {/* a start date the schedule no longer covers still shows */}
+          {draft.startDate && !sessionsHere.some((s) => s.date === draft.startDate) && (
+            <option value={draft.startDate}>{formatDate(draft.startDate)}</option>
+          )}
+          {sessionsHere.map((s) => (
+            <option key={s.date} value={s.date}>
+              {formatDate(s.date)}
+              {s.cancelled ? " — no training" : ""}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block px-1 text-[11px] text-gray-500 dark:text-gray-400">
+          Each week goes on the team&apos;s next training session, and shows in the Training Log. A session marked as
+          no training is skipped, so the plan moves back one.
+        </span>
+      </label>
+      </>
+    );
+  }
+
+  // A team's first plan, set up a step at a time: its name and start, how many
+  // weeks, each week's topic and drills, then Save.
+  function setupView() {
+    if (!draft || setupStep === null) return null;
+    const step = setupStep;
+    const filled = draft.weeks.filter((w) => w.theme && drillCount(w) > 0).length;
+    const weekCount = draft.weeks.length;
+    const setWeekCount = (n: number) =>
+      editPlan((p) => ({
+        ...p,
+        weeks:
+          n > p.weeks.length
+            ? [...p.weeks, ...Array.from({ length: n - p.weeks.length }, () => ({ id: newId(), theme: "", drillIds: [], doneIds: [] }))]
+            : p.weeks.slice(0, n),
+      }));
+    const card = "mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]";
+    return (
+      <>
+        <div className="mb-3 flex items-center justify-between px-1">
+          <h2 className="text-[19px] font-bold text-gray-900 dark:text-gray-50">Set Up {possessive(teamName(team))} Plan</h2>
+          <button
+            onClick={async () => {
+              if (dirty && !await ask("Stop setting up the plan? Nothing's been saved yet.")) return;
+              setDirty(false);
+              setSetupStep(null);
+            }}
+            className="cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          >
+            Cancel
+          </button>
+        </div>
+        <StepBar steps={SETUP_STEPS} step={step} onChange={setSetupStep} />
+
+        {step === 0 && <div className={card}>{planFields()}</div>}
+
+        {step === 1 && (
+          <div className={card}>
+            {seasonPlan.length > 0 && (
+              <>
+                <button
+                  onClick={async () => {
+                    await applySeasonPlan();
+                    setSetupStep(2);
+                  }}
+                  className="mb-4 w-full cursor-pointer rounded-2xl bg-white p-3 text-left text-sm shadow-sm ring-2 ring-green-600/30 dark:bg-[#2c2c2e]"
+                >
+                  <span className="font-bold text-gray-900 dark:text-gray-50">Use the {seasonPlan.length}-Week Season Plan</span>
+                  <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                    Fills the weeks with the{seasonPlanTitle ? ` ${seasonPlanTitle}` : " season plan"}&apos;s topics and drills. You can change any of them next.
+                  </span>
+                </button>
+                <p className="mb-3 text-center text-xs font-semibold text-gray-400">or start with empty weeks</p>
+              </>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">How many weeks?</span>
+              <span className="flex items-center gap-3">
+                <button
+                  onClick={() => setWeekCount(Math.max(0, weekCount - 1))}
+                  disabled={weekCount === 0}
+                  aria-label="One week fewer"
+                  className="h-9 w-9 cursor-pointer rounded-xl border border-gray-200 text-lg font-bold text-gray-600 disabled:opacity-30 dark:text-gray-300 dark:border-white/15"
+                >
+                  −
+                </button>
+                <span className="min-w-[2ch] text-center text-xl font-extrabold tabular-nums text-gray-900 dark:text-gray-50">{weekCount}</span>
+                <button
+                  onClick={() => setWeekCount(Math.min(52, weekCount + 1))}
+                  disabled={weekCount >= 52}
+                  aria-label="One more week"
+                  className="h-9 w-9 cursor-pointer rounded-xl bg-green-600 text-lg font-bold text-white disabled:opacity-40"
+                >
+                  +
+                </button>
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">You can add or take out weeks later too.</p>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="flex flex-col gap-3">
+            {draft.weeks.length === 0 && (
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+                No weeks yet — go back a step and add some.
+              </p>
+            )}
+            {draft.weeks.map((week, wi) => (
+              <div key={week.id} className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="text-[15px] font-bold text-gray-900 dark:text-gray-50">Week {wi + 1}</span>
+                  <button
+                    onClick={() => setSheet({ kind: "topic", weekId: week.id })}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700 hover:text-green-700 dark:bg-white/10 dark:text-gray-200"
+                  >
+                    Topic: {week.theme || "pick one"}
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                  </button>
+                </div>
+                {weekDrills(week)}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className={card}>
+            <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
+              <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+              <dd className="font-semibold text-gray-900 dark:text-gray-50">{draft.title || `${teamName(team)} Plan`}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Week 1 is on</dt>
+              <dd className="font-semibold text-gray-900 dark:text-gray-50">{draft.startDate ? formatDate(draft.startDate) : "Not scheduled yet"}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Weeks</dt>
+              <dd className="font-semibold text-gray-900 dark:text-gray-50">{weekCount}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Filled in</dt>
+              <dd className="font-semibold text-gray-900 dark:text-gray-50">
+                {filled} of {weekCount} week{weekCount === 1 ? "" : "s"} have a topic and drills
+              </dd>
+            </dl>
+            {filled < weekCount && (
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">That&apos;s fine — you can fill in the rest any time from the plan.</p>
+            )}
+          </div>
+        )}
+
+        <StepButtons
+          step={step}
+          count={SETUP_STEPS.length}
+          nextLabel={step === 1 && weekCount === 0 ? "Add Some Weeks First" : `Next: ${SETUP_STEPS[step + 1]?.label}`}
+          canMove={step !== 1 || weekCount > 0}
+          onChange={setSetupStep}
+          finish={{
+            label: saving ? "Saving…" : "Save Plan",
+            disabled: saving || weekCount === 0,
+            onClick: async () => {
+              if (await savePlan()) setSetupStep(null);
+            },
+          }}
+        />
+      </>
+    );
+  }
+
   function sheetView() {
     if (!sheet || !draft) return null;
     const close = () => setSheet(null);
     if (sheet.kind === "plan") {
       return (
         <Sheet title="Edit Plan" onClose={close}>
-          <label className="mb-4 block">
-            <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Name</span>
-            <input
-              value={draft.title}
-              onChange={(e) => editPlan((p) => ({ ...p, title: e.target.value }))}
-              placeholder={`${teamName(team)} Plan, e.g. Autumn block`}
-              maxLength={120}
-              className={`${inputClass} mt-1 rounded-xl py-2.5`}
-            />
-          </label>
-          <label className="mb-4 block">
-            <span className="px-1 text-xs font-semibold text-gray-600 dark:text-gray-300">Week 1 is on</span>
-            <select
-              value={draft.startDate}
-              onChange={(e) => editPlan((p) => ({ ...p, startDate: e.target.value }))}
-              className={`${inputClass} mt-1 rounded-xl py-2.5`}
-            >
-              <option value="">Not scheduled yet</option>
-              {/* a start date the schedule no longer covers still shows */}
-              {draft.startDate && !sessionsHere.some((s) => s.date === draft.startDate) && (
-                <option value={draft.startDate}>{formatDate(draft.startDate)}</option>
-              )}
-              {sessionsHere.map((s) => (
-                <option key={s.date} value={s.date}>
-                  {formatDate(s.date)}
-                  {s.cancelled ? " — no training" : ""}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 block px-1 text-[11px] text-gray-500 dark:text-gray-400">
-              Each week goes on the team&apos;s next training session, and shows in the Training Log. A session marked as
-              no training is skipped, so the plan moves back one.
-            </span>
-          </label>
+          {planFields()}
           {seasonPlan.length > 0 && (
             <button
               onClick={() => {
@@ -1622,13 +1788,13 @@ export default function TrainingPlans() {
           </div>
         )}
 
-        {view === "plan" ? planView() : libraryView()}
+        {view === "plan" ? (setupStep !== null ? setupView() : planView()) : libraryView()}
       </div>
 
       {sheetView()}
 
       {/* Unsaved plan changes follow the coach down the page */}
-      {dirty && (
+      {dirty && setupStep === null && (
         <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#1c1c1e]/95">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
