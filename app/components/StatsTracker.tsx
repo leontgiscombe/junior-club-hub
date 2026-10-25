@@ -17,7 +17,7 @@ import { countsTowardsRecord, outcome, seasonRecord } from "@/lib/record";
 import type { Position } from "@/lib/statsStorage";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
 import { ToolSkeleton } from "./Skeleton";
-import { GateScreen, ICONS, ToolTabs, TopBar, useScreens } from "./SettingsUI";
+import { GateScreen, Group, ICONS, Row, ToolTabs, TopBar, useScreens } from "./SettingsUI";
 import { ask } from "@/lib/dialog";
 import { EmptyState, GateIcon, Icon, emptyAction, type IconName } from "./Icons";
 import TeamPicker from "./TeamPicker";
@@ -81,7 +81,7 @@ const STATS: { field: StatField; label: string; short: string; icon: IconName }[
   { field: "saves", label: "Saves", short: "Saves", icon: "glove" },
   { field: "penaltiesSaved", label: "Penalties Saved", short: "Pens Saved", icon: "stop" },
   { field: "potm", label: "Player of the Match", short: "POTM", icon: "trophy" },
-  { field: "mostImproved", label: "Most Improved", short: "Most Improved", icon: "trend" },
+  { field: "mostImproved", label: "Most Improved", short: "Improved", icon: "trend" },
   { field: "bestTrainer", label: "Best Trainer", short: "Best Trainer", icon: "bolt" },
 ];
 
@@ -905,8 +905,8 @@ export default function StatsTracker() {
 
         {shown.length > 0 && (
           <>
-            {/* Squad totals — the sum of the players' own tallies */}
-            <div hidden={view !== "totals"} className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
+            {/* Squad totals — the sum of the players' own tallies, on the Team tab under the record */}
+            <div hidden={view !== "totals" && view !== "team"} className="mb-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
               <FoldHeader
                 title="Squad Totals"
                 open={cardIsOpen("totals")}
@@ -1207,8 +1207,12 @@ export default function StatsTracker() {
         )}
 
         </section>
-        {view === "team" && shown.length > 0 && <button onClick={() => open("totals")} className="mt-4 flex min-h-11 w-full items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">Squad totals<span aria-hidden="true">›</span></button>}
-        {view === "team" && <button onClick={() => open("season")} className="mt-4 flex min-h-11 w-full items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">Season management<span aria-hidden="true">›</span></button>}
+        {/* exports, the presentation and ending the season: needed now and then, so a row of their own */}
+        {view === "team" && (
+          <Group>
+            <Row icon={ICONS.grid} label="Manage Season" detail={season} onClick={() => open("season")} />
+          </Group>
+        )}
 
         {/* Season management */}
         <div hidden={view !== "season"} className="rounded-3xl bg-white p-4 shadow-sm dark:bg-[#1c1c1e]">
