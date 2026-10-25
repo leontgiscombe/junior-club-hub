@@ -22,6 +22,7 @@ interface Match {
   home: boolean;
   cameraHolder: string;
   footageUploaded: boolean;
+  calledOff?: "" | "postponed" | "cancelled";
 }
 
 
@@ -175,7 +176,8 @@ export default function CameraRegister() {
   }
 
   const filtered = matches
-    .filter((m) => m.home)
+    // a game called off has nothing to film
+    .filter((m) => m.home && !m.calledOff)
     .filter((m) => filter === "all" || m.team === filter)
     .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`));
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
