@@ -852,12 +852,8 @@ export default function MatchLog() {
                     </button>
                   </div>
                 ) : !isPlayed(m) && !expanded.includes(m.id) ? (
-                  <button
-                    onClick={() => { setExpanded((prev) => [...prev, m.id]); setLogStep(0); }}
-                    className="mt-3 cursor-pointer text-xs font-semibold text-green-700 hover:text-green-800 dark:text-green-400"
-                  >
-                    Log the Game
-                  </button>
+                  // a fixture still to come: Log the Game is with the buttons below
+                  null
                 ) : (
                   <>
                 {/* Logging the game a step at a time: each change saves as it's made */}
@@ -1217,7 +1213,16 @@ export default function MatchLog() {
                 {/* change or remove the game: inside it, not crowding the card */}
                 {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && !anythingLogged(m) && callOffRow(m, "Called off?")}
                 {(m.calledOff || (!isPlayed(m) && !expanded.includes(m.id)) || logStep === 3) && (
-                <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3 dark:border-white/10">
+                <div className="mt-4 border-t border-gray-100 pt-3 dark:border-white/10">
+                  {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && (
+                    <button
+                      onClick={() => { setExpanded((prev) => [...prev, m.id]); setLogStep(0); }}
+                      className="mb-2 min-h-10 w-full cursor-pointer rounded-xl bg-green-600 text-sm font-bold text-white hover:bg-green-700"
+                    >
+                      Log the Game
+                    </button>
+                  )}
+                <div className="flex gap-2">
                   <button
                     onClick={() => startEdit(m)}
                     disabled={busyId === m.id}
@@ -1238,6 +1243,7 @@ export default function MatchLog() {
                   >
                     Remove Game
                   </button>
+                </div>
                 </div>
                 )}
                 </>)}
