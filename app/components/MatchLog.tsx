@@ -302,11 +302,11 @@ export default function MatchLog() {
     await patch(match.id, { action: "call-off", calledOff });
   }
 
-  function callOffRow(match: Match, label: string) {
+  function callOffRow(match: Match, label?: string) {
     const button = "cursor-pointer rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-amber-400 hover:text-amber-800 disabled:opacity-40 dark:text-gray-200 dark:border-white/15";
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+        {label && <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>}
         <button onClick={() => callOff(match, "postponed")} disabled={busyId === match.id} className={button}>
           Postponed
         </button>
@@ -1257,7 +1257,7 @@ export default function MatchLog() {
                   </>
                 )}
                 {/* change or remove the game: inside it, not crowding the card */}
-                {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && !anythingLogged(m) && callOffRow(m, "Called off?")}
+                {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && !anythingLogged(m) && callOffRow(m)}
                 {!inSteps(m) && (
                 <div className="mt-4 border-t border-gray-100 pt-3 dark:border-white/10">
                   {!m.calledOff && !isPlayed(m) && !expanded.includes(m.id) && (
