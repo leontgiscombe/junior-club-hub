@@ -5,8 +5,6 @@ import type { SetupStep } from "@/lib/setupChecklist";
 import NoTabBar from "./NoTabBar";
 import Link from "next/link";
 import { backOr } from "@/lib/back";
-import Image from "next/image";
-import { Anton } from "next/font/google";
 import { useEffect, useState, useCallback } from "react";
 import { SESSION_KEY } from "@/lib/access";
 import { accountKey, keyQuery, rememberCoachKey } from "./coachKey";
@@ -16,43 +14,23 @@ import { useClub } from "./ClubProvider";
 import { AlertsPrompt, useJoinRequests } from "./JoinAlerts";
 import type { Feature } from "@/lib/clubSettings";
 import { Icon } from "./Icons";
-
-// the same heavy lettering as the home page and the player of the month poster
-const display = Anton({ weight: "400", subsets: ["latin"] });
+import { TILE_COLOURS } from "@/lib/tileColours";
 
 // Each tool's app-style icon: its tile colour and a line drawing — looks only;
 // the list and its order are below.
 const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
-  "/admin/stats/matches": { colour: "bg-green-700", icon: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></> },
-  "/admin/stats/training": { colour: "bg-cyan-700", icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
-  "/admin/stats/player-of-the-month": { colour: "bg-amber-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
-  "/admin/awards": { colour: "bg-rose-700", icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
-  "/admin/training/plans": { colour: "bg-blue-700", icon: <><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></> },
-  "/admin/stats": { colour: "bg-indigo-600", icon: <path d="M5 20V10M12 20V4M19 20v-7" /> },
-  "/admin/camera": { colour: "bg-rose-700", icon: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></> },
-  "/admin/kit": { colour: "bg-orange-700", icon: <path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /> },
-  "/admin/members": { colour: "bg-emerald-700", icon: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></> },
-  "/admin/settings": { colour: "bg-gray-600", icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></> },
-  "/admin/help": { colour: "bg-slate-700", icon: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></> },
+  "/admin/stats/matches": { colour: TILE_COLOURS.matches, icon: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></> },
+  "/admin/stats/training": { colour: TILE_COLOURS.trainingLog, icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
+  "/admin/stats/player-of-the-month": { colour: TILE_COLOURS.potm, icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
+  "/admin/awards": { colour: TILE_COLOURS.awards, icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
+  "/admin/training/plans": { colour: TILE_COLOURS.plans, icon: <><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></> },
+  "/admin/stats": { colour: TILE_COLOURS.stats, icon: <path d="M5 20V10M12 20V4M19 20v-7" /> },
+  "/admin/camera": { colour: TILE_COLOURS.camera, icon: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></> },
+  "/admin/kit": { colour: TILE_COLOURS.kit, icon: <path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" /> },
+  "/admin/members": { colour: TILE_COLOURS.members, icon: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></> },
+  "/admin/settings": { colour: TILE_COLOURS.settings, icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></> },
+  "/admin/help": { colour: TILE_COLOURS.help, icon: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></> },
 };
-
-// The dark paint-stroke banner shared with the home page.
-function BrushBackdrop() {
-  return (
-    <>
-      <Image
-        src="/poster/brush-background.jpg"
-        alt=""
-        style={{ filter: "var(--club-brush-filter)" }}
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-top opacity-70"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-transparent to-green-950/80" />
-    </>
-  );
-}
 
 // The match log leads: it is where the season's work actually goes in, and
 // everything else here reads what it records.
@@ -227,29 +205,15 @@ export default function AdminHome({
   if (!authed) {
     if (checking) return <ToolSkeleton />;
     return (
-      <main className="themed wp-page relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--club-night)] px-4 py-10">
-        <div className="wp-decoration absolute inset-0"><BrushBackdrop /></div>
-        <div className="relative w-full max-w-sm">
-          <div className="mb-6 text-center text-white">
-            <Image
-              src={CLUB.crest.src}
-              unoptimized
-              alt={CLUB.crest.alt}
-              width={CLUB.crest.width}
-              height={CLUB.crest.height}
-              className="mx-auto mb-4 h-24 w-auto"
-              priority
-            />
-            <h1
-              className={`${display.className} text-4xl uppercase leading-none tracking-wide drop-shadow-[3px_3px_0_rgba(0,0,0,0.8)]`}
-            >
-              Coach Admin
-            </h1>
-            <p className={`${display.className} mt-1 text-lg uppercase tracking-wider text-[var(--club-bright)]`}>
-              {CLUB.fullName}
-            </p>
+      // laid out like Coach Admin once you're in: the header row, the large title, then a card
+      <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
+          <AppHeader viewer={viewer} crest={CLUB.crest} />
+          <div>
+            <h1 data-large-title className="wp-text text-[34px] font-extrabold leading-tight tracking-tight">Coach Admin</h1>
+            <p className="wp-text mt-0.5 truncate text-[15px] text-gray-500 dark:text-gray-400">{CLUB.fullName}</p>
           </div>
-          <div className="rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
+          <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-[#1c1c1e]">
             <NoTabBar />
             <p className="mb-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-gray-500 dark:text-gray-400"><Icon name="lock" /> Coaches only</p>
             {account && !account.canCoach && (
@@ -264,7 +228,7 @@ export default function AdminHome({
                   href="/signin?next=/admin"
                   className="mb-3 block w-full rounded-xl bg-green-600 py-3 text-center font-bold text-white hover:bg-green-700"
                 >
-                  Sign In With Your Email
+                  Sign In with Your Email
                 </Link>
                 {!passwordOff && <p className="mb-3 text-center text-xs text-gray-400">or use the coach password</p>}
               </>
@@ -278,16 +242,17 @@ export default function AdminHome({
               value={key}
               onChange={(e) => setKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && login(key)}
-              placeholder="Enter admin password"
+              placeholder="Coach password"
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 mb-3 dark:text-gray-50 dark:border-white/15"
             />
             {error && <p className="text-sm text-red-600 mb-3 text-center dark:text-red-400">{error}</p>}
             <button
               onClick={() => login(key)}
               disabled={loading || !key}
-              className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40 cursor-pointer dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900"
+              // the second way in: lighter than the email button, so the two don't compete
+              className="w-full cursor-pointer rounded-xl bg-gray-100 py-3 font-bold text-gray-900 hover:bg-gray-200 disabled:cursor-default disabled:text-gray-400 disabled:hover:bg-gray-100 dark:bg-white/10 dark:text-gray-50 dark:hover:bg-white/15 dark:disabled:text-gray-500"
             >
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? "Signing in…" : "Sign In"}
             </button>
               </>
             )}
@@ -306,8 +271,8 @@ export default function AdminHome({
               ← Back to Team Hub
             </Link>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 

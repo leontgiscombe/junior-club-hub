@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useScrollLock } from "./useScrollLock";
 import { createPortal } from "react-dom";
 import { haptic } from "@/lib/haptics";
+import { TILE_COLOURS } from "@/lib/tileColours";
 
 export type ShortcutId =
   | "matches"
@@ -35,25 +36,25 @@ type Tool = { href: string; label: string; colour: string; icon: React.ReactNode
 
 const svg = (children: React.ReactNode) => children;
 const TOOLS: Record<ShortcutId, Tool> = {
-  matches: { href: "/admin/stats/matches", label: "Match Log", colour: "bg-green-700", icon: svg(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></>) },
-  training: { href: "/admin/stats/training", label: "Training Log", colour: "bg-cyan-700", icon: svg(<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>) },
-  stats: { href: "/admin/stats", label: "Stats", colour: "bg-indigo-600", icon: svg(<path d="M5 20V10M12 20V4M19 20v-7" />) },
-  potm: { href: "/admin/stats/player-of-the-month", label: "Player of the Month", colour: "bg-amber-700", icon: svg(<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" />) },
-  plans: { href: "/admin/training/plans", label: "Training Plans", colour: "bg-blue-700", icon: svg(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></>) },
-  camera: { href: "/admin/camera", label: "Camera", colour: "bg-rose-700", icon: svg(<><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>) },
-  kitResponses: { href: "/admin/kit", label: "Kit Responses", colour: "bg-orange-700", icon: svg(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>) },
-  members: { href: "/admin/members", label: "Members", colour: "bg-emerald-700", icon: svg(<><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>) },
-  settings: { href: "/admin/settings", label: "Settings", colour: "bg-gray-600", icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>) },
-  help: { href: "/admin/help", label: "Help", colour: "bg-slate-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></>) },
-  results: { href: "/results", label: "Results", colour: "bg-yellow-700", icon: svg(<><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" /></>) },
-  finances: { href: "/finance", label: "Finances", colour: "bg-emerald-800", icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
+  matches: { href: "/admin/stats/matches", label: "Match Log", colour: TILE_COLOURS.matches, icon: svg(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></>) },
+  training: { href: "/admin/stats/training", label: "Training Log", colour: TILE_COLOURS.trainingLog, icon: svg(<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>) },
+  stats: { href: "/admin/stats", label: "Stats", colour: TILE_COLOURS.stats, icon: svg(<path d="M5 20V10M12 20V4M19 20v-7" />) },
+  potm: { href: "/admin/stats/player-of-the-month", label: "Player of the Month", colour: TILE_COLOURS.potm, icon: svg(<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" />) },
+  plans: { href: "/admin/training/plans", label: "Training Plans", colour: TILE_COLOURS.plans, icon: svg(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></>) },
+  camera: { href: "/admin/camera", label: "Camera", colour: TILE_COLOURS.camera, icon: svg(<><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>) },
+  kitResponses: { href: "/admin/kit", label: "Kit Responses", colour: TILE_COLOURS.kit, icon: svg(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>) },
+  members: { href: "/admin/members", label: "Members", colour: TILE_COLOURS.members, icon: svg(<><circle cx="9" cy="8" r="3.2" /><path d="M3 19a6 6 0 0 1 12 0M19 8v6M16 11h6" /></>) },
+  settings: { href: "/admin/settings", label: "Settings", colour: TILE_COLOURS.settings, icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>) },
+  help: { href: "/admin/help", label: "Help", colour: TILE_COLOURS.help, icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5v.01" /></>) },
+  results: { href: "/results", label: "Results", colour: TILE_COLOURS.results, icon: svg(<><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" /></>) },
+  finances: { href: "/finance", label: "Finances", colour: TILE_COLOURS.finances, icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
   // straight to one of Finances' tabs (the page opens on it once the team's open)
-  finSubs: { href: "/finance?view=subs", label: "Subs", colour: "bg-emerald-700", icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
-  finOwes: { href: "/finance?view=outstanding", label: "Who Owes", colour: "bg-red-700", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>), external: true },
-  finSpending: { href: "/finance?view=expenses", label: "In & Out", colour: "bg-violet-700", icon: svg(<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>), external: true },
-  finSettings: { href: "/finance?view=settings", label: "Finance Settings", colour: "bg-gray-600", icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>), external: true },
-  hub: { href: "/training-hub", label: "Training Hub", colour: "bg-green-800", icon: svg(<><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /><path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" /></>), external: true },
-  kit: { href: "/kit", label: "Kit Sizes", colour: "bg-orange-600", icon: svg(<path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" />) },
+  finSubs: { href: "/finance?view=subs", label: "Subs", colour: TILE_COLOURS.finances, icon: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>), external: true },
+  finOwes: { href: "/finance?view=outstanding", label: "Who Owes", colour: TILE_COLOURS.owes, icon: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>), external: true },
+  finSpending: { href: "/finance?view=expenses", label: "In & Out", colour: TILE_COLOURS.spending, icon: svg(<><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>), external: true },
+  finSettings: { href: "/finance?view=settings", label: "Finance Settings", colour: TILE_COLOURS.settings, icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>), external: true },
+  hub: { href: "/training-hub", label: "Training Hub", colour: TILE_COLOURS.hub, icon: svg(<><circle cx="12" cy="12" r="9" /><path d="m12 7 4 3-1.5 4.5h-5L8 10z" /><path d="M12 3v4M21 10l-5 0M3 10h5M9.5 14.5 7 19M14.5 14.5 17 19" /></>), external: true },
+  kit: { href: "/kit", label: "Kit Sizes", colour: TILE_COLOURS.kit, icon: svg(<path d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z" />) },
 };
 
 const MAX = 8;

@@ -25,6 +25,7 @@ import { nextPlanned } from "@/lib/nextSession";
 import { timesLabel } from "@/lib/clubSettings";
 import { SIGNED_OUT, getViewer } from "@/lib/viewer";
 import AppHeader from "../components/AppHeader";
+import { TILE_COLOURS } from "@/lib/tileColours";
 import HomeShortcuts, { type ShortcutId } from "../components/HomeShortcuts";
 import HomeWidgets from "../components/HomeWidgets";
 import { DEVICE_PROMPT_COOKIE, HIDDEN_COOKIE } from "@/lib/homeWidgets";
@@ -290,7 +291,7 @@ export default async function Home() {
 
         {showAwards && (
           <Link href="/awards" className={`press ${card} flex items-center gap-4 px-4 py-3.5`}>
-            <Tile colour="bg-rose-700">{ICON.star}</Tile>
+            <Tile colour={TILE_COLOURS.awards}>{ICON.star}</Tile>
             <span className="min-w-0 flex-1"><span className="block font-bold">End of Season Awards</span><span className={`block text-sm ${sub}`}>Your team&apos;s awards ballot</span></span>
             <Chevron />
           </Link>
@@ -437,7 +438,7 @@ export default async function Home() {
             )}
             {CLUB.features.kitSizes && (!viewer.signedIn || kitDue.length > 0) && (
               <Link href="/kit" className={`press ${card} flex items-center gap-4 p-4`}>
-                <Tile colour="bg-orange-700">{ICON.shirt}</Tile>
+                <Tile colour={TILE_COLOURS.kit}>{ICON.shirt}</Tile>
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-extrabold">Kit Sizes</span>
                   <span className={`block text-sm ${sub}`}>
@@ -458,7 +459,7 @@ export default async function Home() {
         {!viewer.signedIn && (
           <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
             <Link href="/signin" className="press flex items-center gap-4 px-4 py-3.5">
-              <Tile colour="bg-gray-700">{ICON.person}</Tile>
+              <Tile colour={TILE_COLOURS.account}>{ICON.person}</Tile>
               <span className="flex-1">
                 <span className="block font-bold">Sign In</span>
                 <span className={`block text-sm ${sub}`}>With the email the club knows you by</span>
@@ -466,7 +467,7 @@ export default async function Home() {
               <Chevron />
             </Link>
             <Link href="/admin" className="press flex items-center gap-4 px-4 py-3.5">
-              <Tile colour="bg-gray-900 dark:bg-gray-700">{ICON.coach}</Tile>
+              <Tile colour={TILE_COLOURS.coach}>{ICON.coach}</Tile>
               <span className="flex-1">
                 <span className="block font-bold">Coach Admin</span>
                 <span className={`block text-sm ${sub}`}>For coaches: sign in with your email</span>

@@ -83,7 +83,7 @@ export default function SignInForm({
       <form onSubmit={send} className="flex flex-col gap-4">
         {passkeys === "first" && (
           <>
-            <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-900 py-3.5 font-bold text-white hover:bg-black disabled:opacity-50 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900">
+            <button type="button" onClick={withPasskey} disabled={busy} className="rounded-xl bg-gray-100 py-3.5 font-bold text-gray-900 hover:bg-gray-200 disabled:opacity-50 dark:bg-white/10 dark:text-gray-50 dark:hover:bg-white/15">
               Sign In with a Passkey
             </button>
             <p className="-mt-2 text-center text-xs text-gray-400">Face ID, fingerprint or your screen lock — if you&apos;ve added one</p>

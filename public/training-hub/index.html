@@ -12,11 +12,11 @@
 <script src="/training-hub/home-navigation.js" defer></script>
 <link rel="stylesheet" href="/wallpaper.css">
 <script src="/wallpaper.js" defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 /* RESET */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f8f1; min-height: 100vh; overflow-x: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; background: #f1f8f1; min-height: 100vh; overflow-x: hidden; }
 
 /* ── APP HOME ── */
 #app-home { min-height:100vh; background:#eef6ee; display:flex; flex-direction:column; align-items:stretch; padding:0 0 32px; text-align:center; }
@@ -287,7 +287,7 @@ html.dark .hub-search{background:rgba(28,28,30,.85);color:#e5e7eb}
 .home-body .tod-box{max-width:none;margin-top:0;background:white;border:none;border-left:6px solid #f9a825;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}
 .home-body .tod-label{color:#b45309;font-size:11px}
 .home-body .tod-text{color:#1f2937;font-size:14px}
-.home-foot{margin-top:6px;text-align:center;font-family:'Anton',sans-serif;text-transform:uppercase;color:#15803d;font-size:16px;letter-spacing:.5px}
+.home-foot{margin-top:6px;text-align:center;font-size:13px;font-weight:600;color:#15803d}
 
 /* Dark mode (the hub's Your Account → Appearance; the script in <head> sets html.dark). Screen only. */
 @media screen {
@@ -384,8 +384,8 @@ html.dark .guide-footer{color:#9ca3af}
 .home-hero.home-compact{max-width:576px;width:100%;margin:0 auto;padding:20px 20px 16px;background:none;color:#111827;align-items:stretch;text-align:left}
 .home-compact::before,.home-compact::after,.home-compact .main-badge,.home-compact .motto-row{display:none}
 .home-compact .hub-head{width:100%;margin-bottom:20px}
-.home-compact .home-title{font-family:inherit;font-size:22px;font-weight:800;line-height:1.3;letter-spacing:0;text-transform:none;text-shadow:none;color:#111827;overflow-wrap:anywhere}
-.home-compact .home-title2{font-family:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;color:#6b7280;margin-top:2px}
+.home-compact .home-title{font-family:inherit;font-size:34px;font-weight:800;line-height:1.15;letter-spacing:-.5px;text-transform:none;text-shadow:none;color:#111827;overflow-wrap:anywhere}
+.home-compact .home-title2{font-family:inherit;font-size:15px;font-weight:400;letter-spacing:0;text-transform:none;color:#6b7280;margin-top:2px}
 .home-compact .home-sub{display:block;border:0;border-radius:0;background:none;padding:0;font-size:12px;color:#6b7280;margin-top:3px;letter-spacing:0;text-transform:none}
 .home-body{max-width:576px;margin:0 auto;padding:0 20px 32px;gap:18px}
 .no-team[hidden],.no-team-error[hidden]{display:none}
@@ -488,9 +488,9 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
       </span>
     </div>
     <img class="main-badge" src="/club-crest.png" alt="">
-    <h1 class="home-title"><span data-club="name">Your Club</span></h1>
-    <p class="home-title2">Training Hub</p>
-    <p class="home-sub"><span class="team-age"></span><span class="fmt-shape" id="home-fmt">7v7 &middot; 2-3-1</span></p>
+    <!-- the page's name as a large title and the club underneath, like Home's -->
+    <h1 class="home-title">Training Hub</h1>
+    <p class="home-title2"><span data-club="name">Your Club</span> &middot; <span class="team-age"></span><span class="fmt-shape" id="home-fmt">7v7 &middot; 2-3-1</span></p>
     <!-- coaches and club admins: which team's hub to look at (players and parents see their own) -->
     <div class="motto-row">
       <div class="motto-chip"><span data-club="slogan"></span></div>

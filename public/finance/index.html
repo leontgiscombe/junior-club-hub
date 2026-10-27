@@ -258,14 +258,14 @@
 
   /* ── locked: the team password, or opening with your account ── */
   body.locked header.app, body.locked nav.tabs, body.locked main { display: none !important; }
-  .gate { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
-  body.locked .gate { display: flex; }
-  .gate-card { width: 100%; max-width: 400px; text-align: center; margin: auto; }
-  .gate-head { position: fixed; top: calc(max(20px, env(safe-area-inset-top)) + 8px); left: 50%; transform: translateX(-50%); z-index: 1; display: flex; align-items: center; justify-content: space-between; width: min(100vw - 40px, 536px); }
+  /* laid out like the unlocked page (and Home): the header row, then a large title on the left, scrolling together */
+  .gate { position: fixed; inset: 0; z-index: 200; display: none; padding: max(20px, env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
+  body.locked .gate { display: block; }
+  .gate-card { width: 100%; max-width: 536px; margin: 0 auto; text-align: left; }
+  .gate-head { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 536px; margin: 0 auto; }
   .gate-head .hub-head-right { display: flex; align-items: center; gap: 12px; }
-  .gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 10px; }
-  .gate-kicker { font-size: 30px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
-  .gate-card h2 { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: var(--muted); }
+  .gate-kicker { margin: 14px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; }
+  .gate-card h2 { margin: 22px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -.2px; }
   .gate-card p.gate-sub { margin: 4px 0 18px; font-size: 14px; color: var(--muted); }
   .gate-card form, #account-box, #team-status { background: var(--card); border-radius: var(--radius); padding: 18px; text-align: left; }
   /* signed in with a team that opens from the account: the password is behind a button */
@@ -322,13 +322,12 @@
     </span>
   </div>
   <div class="gate-card">
-    <img class="gate-logo" id="gate-crest" src="/club-crest.png" alt="">
-    <p class="gate-kicker">Finances</p>
+    <h1 class="gate-kicker">Finances</h1>
     <h2 id="gate-title">Enter Password</h2>
     <p class="gate-sub" id="gate-sub">This tracker is password protected.</p>
     <!-- the teams already set up (opened with the account) first, then the ones still to set up -->
     <div id="account-box" style="display:none;margin-bottom:14px">
-      <p class="gate-sub" id="account-who" style="margin-bottom:10px;text-align:center"></p>
+      <p class="gate-sub" id="account-who" style="margin-bottom:10px"></p>
       <div id="account-teams"></div>
       <div class="gate-err" id="account-err"></div>
     </div>
@@ -565,7 +564,7 @@
     TEAM_IDS = c.teams.map(t=>t.id);
     // just the team ("Lions"), as the rest of the hub names it
     TEAMS = Object.fromEntries(c.teams.map(t=>[t.id, { name: t.short || t.name }]));
-    ['#club-badge', '#gate-crest', '#gate-head-crest'].forEach(sel=>{ const img = $(sel); if(img){ img.src = CLUB.crest; img.alt = CLUB.name; } });
+    ['#club-badge', '#gate-head-crest'].forEach(sel=>{ const img = $(sel); if(img){ img.src = CLUB.crest; img.alt = CLUB.name; } });
     configReady();
   }
   // the header's profile button: your photo or initials (Your Account)

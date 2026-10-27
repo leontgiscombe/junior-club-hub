@@ -302,7 +302,7 @@ export function SignInScreen({ adminKey, children }: { adminKey: string; childre
             </button>
           ) : (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
-              To change this, sign in with your own club admin account (Coach Admin → Sign In With Your Email).
+              To change this, sign in with your own club admin account (Coach Admin → Sign In with Your Email).
             </p>
           )}
         </section>
