@@ -318,7 +318,7 @@ export default function AdminView({ lockedTeam }: { lockedTeam?: TeamSlug }) {
             disabled={loading || !key}
             className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-40 cursor-pointer"
           >
-            {loading ? "Loading…" : "View responses"}
+            {loading ? "Loading…" : "View Responses"}
           </button>
         </div>
       </GateScreen>

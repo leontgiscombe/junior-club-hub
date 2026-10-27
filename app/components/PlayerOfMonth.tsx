@@ -324,7 +324,7 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
             disabled={loading || !key}
             className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-40 cursor-pointer"
           >
-            {loading ? "Loading…" : "Open player of the month"}
+            {loading ? "Loading…" : "Open Player of the Month"}
           </button>
         </div>
       </GateScreen>

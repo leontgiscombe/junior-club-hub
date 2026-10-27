@@ -656,7 +656,8 @@ export default function ClubSettings() {
           <TopBar title="Club Settings" href={`/admin${keyQuery(key)}`} />
           <div className="mx-auto max-w-xl px-4">
             <div className="flex flex-col items-center pb-4 pt-2 text-center">
-              <span className="grid h-32 w-32 place-items-center rounded-3xl bg-[var(--club-night)] p-3 shadow-lg">
+              {/* the crest on a card like the rows below, rather than a dark block on the light page */}
+              <span className="grid h-24 w-24 place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-black/5 dark:bg-[#1c1c1e] dark:ring-white/10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={club.crest.src} alt={club.crest.alt} className="max-h-full max-w-full object-contain" />
               </span>
