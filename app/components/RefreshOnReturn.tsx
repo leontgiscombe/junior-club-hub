@@ -1,21 +1,27 @@
 "use client";
 
-// Home is drawn on the server, and going back to it shows the copy the phone
-// already has — so something just changed (a mobile number added, someone
-// approved) would still show the old way until the app was closed. This asks
-// for a fresh copy whenever Home is come back to: by Back or the tab bar
-// (not on the first load, which is fresh already), from the browser's
-// back-forward cache, or when the app is reopened from the background.
+// Home is drawn on the server, and the phone keeps the copy it has: going back
+// to it shows that copy straight away. If that copy is more than a little
+// while old, someone may have changed something since (a mobile number added,
+// someone approved), so this asks for a fresh one — but not when the copy has
+// only just arrived, which would fetch Home twice. Also when the page comes
+// back from the browser's back-forward cache, or the app is reopened from the
+// background. (A save of your own refreshes it already: FreshAfterSave.)
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-let loaded = false;
+const FRESH_MS = 30_000;
+// when this phone first showed each copy of Home, by the time it was drawn
+const firstShown = new Map<number, number>();
 
-export default function RefreshOnReturn() {
+export default function RefreshOnReturn({ drawnAt }: { drawnAt: number }) {
   const router = useRouter();
   useEffect(() => {
-    if (loaded) router.refresh();
-    loaded = true;
+    const shown = firstShown.get(drawnAt);
+    if (shown === undefined) firstShown.set(drawnAt, Date.now());
+    else if (Date.now() - shown > FRESH_MS) router.refresh();
+  }, [drawnAt, router]);
+  useEffect(() => {
     let hiddenAt = 0;
     const onShow = (e: PageTransitionEvent) => {
       if (e.persisted) router.refresh();
