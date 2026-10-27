@@ -18,7 +18,7 @@ export default async function StartPage() {
   const user = await currentUser().catch(() => null);
   const clubs = user ? (await clubsOfUser(user.id).catch(() => [])).map((c) => ({ name: c.name, home: c.url })) : null;
   return (
-    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-16">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#f2f2f7] dark:bg-black px-4 pb-10 pt-16">
       <AuthBackdrop />
       <NoTabBar />
       <StartScreen platform={PLATFORM_NAME} root={rootDomain()} clubs={clubs} appView={await inApp()} />
