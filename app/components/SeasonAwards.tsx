@@ -219,7 +219,7 @@ function QuickAdd({ current, lastSeason, saving, onStarter, onCopy }: {
   if (!missing.length && !copyable.length) return null;
   return <>
     {copyable.length > 0 && <button type="button" className={`${secondary} self-start bg-white dark:bg-[#1c1c1e]`} disabled={saving} onClick={() => void onCopy()}>Copy {last} awards ({copyable.length})</button>}
-    {missing.length > 0 && !show && <button type="button" className={`${secondary} self-start bg-white dark:bg-[#1c1c1e]`} disabled={saving} onClick={() => setShow(true)}>Add the usual awards</button>}
+    {missing.length > 0 && !show && <button type="button" className={`${secondary} self-start bg-white dark:bg-[#1c1c1e]`} disabled={saving} onClick={() => setShow(true)}>Add the Usual Awards</button>}
     {missing.length > 0 && show && <section className={`${panel} space-y-3`} aria-label="The usual awards">
       <div><h2 className="text-lg font-bold">Add the usual awards</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Untick any you don&apos;t want. You can rename them, or change who votes, afterwards. They&apos;re added with voting closed.</p></div>
       <ul className="divide-y divide-gray-100 dark:divide-white/10">

@@ -12,7 +12,9 @@ Already set up for you in this folder and on the site:
   `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`
   (1024 × 1024). The launch screen artwork is in
   `ios/App/App/Assets.xcassets/Splash.imageset/`. Changes to either require
-  rebuilding the iOS app.
+  rebuilding the iOS app. The launch screen goes as soon as the site's page has
+  loaded (`public/app-feel.js`); `launchShowDuration` in `capacitor.config.json`
+  is only the longest it stays, for a slow connection.
 - Camera and photo permission messages, and "no special encryption" (no export paperwork).
 - Passkeys (Face ID sign-in) and links into the app (`App/App.entitlements`).
 - An offline screen with a Try Again button.

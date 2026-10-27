@@ -15,7 +15,10 @@
      one in app/components/SettingsUI.tsx TopBar). Safari has its own.
    - Which way a move between pages goes, for its slide (globals.css:
      html[data-nav]): forward for a link, back for a back button or the
-     browser's Back, a cross-fade between the tab bar's tabs. */
+     browser's Back, a cross-fade between the tab bar's tabs.
+   - In the App Store app: the status bar's clock dark or white to suit the
+     page, the launch screen gone as soon as the page is here, and the icon's
+     red number cleared when the app is opened. */
 (function () {
   if (window.hubHaptic) return;
   var ua = navigator.userAgent;
@@ -222,5 +225,71 @@
   };
   document.addEventListener("touchend", endSwipe, { passive: true });
   document.addEventListener("touchcancel", endSwipe, { passive: true });
+
+  // ---- the app's own plugins, through the bridge it puts on every page ----
+  var cap = window.Capacitor;
+  var has = function (name) {
+    return !!(cap && typeof cap.nativePromise === "function" && cap.PluginHeaders && cap.PluginHeaders.some(function (h) { return h.name === name; }));
+  };
+  var call = function (plugin, method, options) {
+    return cap.nativePromise(plugin, method, options || {}).catch(function () {});
+  };
+
+  // the launch screen goes as soon as the page is here, rather than after a
+  // set time (capacitor.config.json's launchShowDuration is only the longest)
+  if (has("SplashScreen")) call("SplashScreen", "hide", { fadeOutDuration: 250 });
+
+  // The clock and battery: dark on a light page, white on a dark one — dark
+  // mode, a wallpaper, or a dark screen marked data-dark-top (the sign-in
+  // screens' green, the QR scanner).
+  if (has("StatusBar")) {
+    var bar = "";
+    var setBar = function () {
+      var dark = root.classList.contains("dark") || !!root.dataset.wallpaper || !!document.querySelector("[data-dark-top]");
+      var style = dark ? "DARK" : "LIGHT"; // the plugin's names for the page behind it
+      if (style === bar) return;
+      bar = style;
+      call("StatusBar", "setStyle", { style: style });
+    };
+    var barQueued = false;
+    var queueBar = function () {
+      if (barQueued) return;
+      barQueued = true;
+      requestAnimationFrame(function () { barQueued = false; setBar(); });
+    };
+    setBar();
+    new MutationObserver(queueBar).observe(root, { attributes: true, attributeFilter: ["class", "data-wallpaper"] });
+    new MutationObserver(queueBar).observe(document.body, { childList: true, subtree: true });
+    // back to a page kept from before: the app may have shown another since
+    addEventListener("pageshow", function (e) { if (e.persisted) { bar = ""; setBar(); } });
+  }
+
+  // The red number on the app's icon (lib/apns.ts) and the alerts waiting in
+  // Notification Centre, cleared whenever the app is opened. Registering with
+  // Apple each time it opens (alerts on) gives this phone's token, and the
+  // plugin only clears once the phone has registered since the app started.
+  if (has("PushNotifications") && typeof cap.nativeCallback === "function") {
+    var token = "";
+    var seen = function () {
+      if (document.hidden || !token) return;
+      call("PushNotifications", "removeAllDeliveredNotifications");
+      fetch("/api/members/alerts/seen", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token: token }),
+        keepalive: true,
+      }).catch(function () {});
+    };
+    call("PushNotifications", "checkPermissions").then(function (p) {
+      if (!p || p.receive !== "granted") return;
+      cap.nativeCallback("PushNotifications", "addListener", { eventName: "registration" }, function (d) {
+        if (!d || !d.value || token) return;
+        token = String(d.value);
+        seen();
+      });
+      call("PushNotifications", "register");
+    });
+    document.addEventListener("visibilitychange", seen);
+  }
 
 })();

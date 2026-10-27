@@ -68,11 +68,11 @@ export default function ResetPassword() {
   const input =
     "mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 dark:text-gray-50 dark:border-white/15";
   const button =
-    "mt-4 w-full cursor-pointer rounded-xl bg-gray-900 py-3 font-bold text-white hover:bg-black disabled:opacity-40 dark:hover:bg-gray-200 dark:bg-white dark:text-gray-900";
+    "mt-4 w-full cursor-pointer rounded-xl bg-green-600 py-3 text-center font-bold text-white hover:bg-green-700 disabled:opacity-40";
 
   return (
-    <main className="themed flex min-h-screen items-center justify-center bg-[var(--club-night)] px-4 py-10">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl dark:bg-[#1c1c1e]">
+    <main className="themed flex min-h-screen items-center justify-center bg-[#f2f2f7] px-4 py-10 dark:bg-black">
+      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-sm dark:bg-[#1c1c1e]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={club.crest.src} alt={club.crest.alt} className="mx-auto mb-3 h-16 w-auto" />
         <h1 className="text-center text-xl font-extrabold text-gray-900 dark:text-gray-50">Reset the Coach Password</h1>

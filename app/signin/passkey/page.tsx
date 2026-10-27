@@ -16,7 +16,7 @@ export default async function PasskeyOfferPage({ searchParams }: { searchParams:
   if (!user) redirect(next);
   const hasOne = (await listPasskeys(user.id)).length > 0;
   return (
-    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 py-10">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#f2f2f7] dark:bg-black px-4 py-10">
       <AuthBackdrop />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <PasskeyOffer next={next} hasOne={hasOne} />

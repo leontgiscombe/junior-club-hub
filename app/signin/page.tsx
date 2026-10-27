@@ -19,10 +19,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const tenant = await getTenant();
   const club = tenant ? await getClub() : null;
   return (
-    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-20">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#f2f2f7] dark:bg-black px-4 pb-10 pt-20">
       <AuthBackdrop />
       <NoTabBar />
-      <BackButton href="/" label="Home" className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" />
+      <BackButton href="/" label="Home" light className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="mb-6 text-center">
           {club ? (

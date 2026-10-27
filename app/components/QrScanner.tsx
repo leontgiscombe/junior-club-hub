@@ -71,7 +71,7 @@ export default function QrScanner({ onResult, onClose }: { onResult: (text: stri
   }, [onResult]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-black text-white">
+    <div data-dark-top className="fixed inset-0 z-[60] flex flex-col bg-black text-white">
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
         <span className="w-16" />
         <h2 className="text-[17px] font-semibold">Scan the QR Code</h2>

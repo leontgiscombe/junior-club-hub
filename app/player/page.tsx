@@ -18,7 +18,7 @@ export default async function PlayerPage({ searchParams }: { searchParams: Promi
   const session = await currentPlayer();
   const player = session ? await playerView(session) : null;
   return (
-    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-green-900 px-4 pb-10 pt-20">
+    <main className="themed relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#f2f2f7] dark:bg-black px-4 pb-10 pt-20">
       <AuthBackdrop />
       <NoTabBar />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">

@@ -36,7 +36,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   if (me?.person?.status === "approved" || member?.status === "approved") redirect("/");
 
   return (
-    <main className="themed relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-green-900 px-4 py-10">
+    <main className="themed relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f2f2f7] dark:bg-black px-4 py-10">
       <AuthBackdrop />
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl dark:bg-[#1c1c1e]">
         <div className="text-center">
@@ -69,7 +69,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
       </div>
       {/* back to the opening screen, which the app otherwise skips for the club picked last time */}
       {rootDomain() && (
-        <a href={platformUrl("/start?pick=1")} className="mt-5 text-sm font-semibold text-white/75 hover:text-white">
+        <a href={platformUrl("/start?pick=1")} className="mt-5 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50">
           Not {club.name}? Switch Club
         </a>
       )}
