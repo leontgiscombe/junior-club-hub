@@ -5,6 +5,7 @@
 // SHA-256, with the person's name and whether a coach has approved them.
 //
 // No server-only imports, so the proxy (which lets members in) can use it too.
+import { cache } from "react";
 import { CLUB } from "@/club.config";
 import { kvCredentials } from "./kvCreds";
 import { DEFAULT_TENANT } from "./tenantHost";
@@ -195,14 +196,15 @@ const parse = <T,>(v: unknown): T | null => {
   }
 };
 
-export async function readAccess(tenant: string): Promise<Access> {
+/** The club's access settings: read once while a page is drawn (the layout and the page both ask); API routes read them each time. */
+export const readAccess = cache(async (tenant: string): Promise<Access> => {
   const a = parse<Partial<Access>>(await kvCall(["GET", accessKey(tenant)]));
   return {
     private: a?.private === true,
     code: typeof a?.code === "string" ? a.code : null,
     ...(a?.passwordOff === true ? { passwordOff: true } : {}),
   };
-}
+});
 
 export async function readMember(tenant: string, token: string): Promise<Member | null> {
   if (!token) return null;

@@ -1,6 +1,8 @@
 // Who's looking at a club's pages, for what the app shows them: their initials
 // for the profile badge, and which tools are theirs to open. Server only.
+import { cache } from "react";
 import { FINANCE_ROLES } from "./financeDevices";
+import { currentUser } from "./auth";
 import { canCoach, currentPerson } from "./people";
 import { rootDomain } from "./tenantHost";
 import { photoUrl } from "./userPhoto";
@@ -30,9 +32,16 @@ const initialsOf = (name: string) =>
     .slice(0, 2)
     .join("");
 
-export async function getViewer(tenant: string | null): Promise<Viewer> {
+/** Who's looking: worked out once while a page is drawn (the layout and the page both ask). */
+export const getViewer = cache(async (tenant: string | null): Promise<Viewer> => {
   if (!tenant) return SIGNED_OUT;
-  const me = await currentPerson(tenant).catch(() => null);
+  const user = await currentUser().catch(() => null);
+  if (!user) return SIGNED_OUT;
+  // their place in the club and their photo, at the same time
+  const [me, photo] = await Promise.all([
+    currentPerson(tenant).catch(() => null),
+    photoUrl(user.id).catch(() => null),
+  ]);
   if (!me) return SIGNED_OUT;
   const person = me.person;
   const approved = person?.status === "approved";
@@ -40,9 +49,9 @@ export async function getViewer(tenant: string | null): Promise<Viewer> {
   return {
     signedIn: true,
     initials: initialsOf(name) || "?",
-    photo: await photoUrl(me.user.id).catch(() => null),
+    photo,
     canCoach: canCoach(person),
     canFinance: approved && !!person?.roles.some((r) => (FINANCE_ROLES as readonly string[]).includes(r)),
     switcher: !!rootDomain(),
   };
-}
+});

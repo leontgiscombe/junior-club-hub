@@ -20,6 +20,7 @@ import { PLANS, PLAN_IDS } from "@/lib/billing";
 import { listFeedback, setFeedbackDone } from "@/lib/feedback";
 import { NextRequest, NextResponse } from "next/server";
 import { listBackups, restoreClub, separateBackupDb } from "@/lib/backup";
+import { forgetClubSettings } from "@/lib/settings";
 import { emailConfigured } from "@/lib/email";
 import { platformAdminProblem } from "@/lib/platformAdmin";
 import { sendResetEmail } from "@/lib/resetEmail";
@@ -125,6 +126,7 @@ export async function POST(req: NextRequest) {
     if (deleted === null) return NextResponse.json({ error: "No such club" }, { status: 404 });
     console.log(`platform admin deleted club "${id}" (${deleted} records)`);
     await forgetClubExtras(id);
+    await forgetClubSettings(id);
     await logAdmin("Deleted", id, `${deleted} records`);
     return NextResponse.json({ message: `Deleted ${id} and ${deleted} records` });
   }
@@ -137,6 +139,7 @@ export async function POST(req: NextRequest) {
     const restored = await restoreClub(id, date);
     if (restored === null) return NextResponse.json({ error: `The ${date} backup doesn't have a club at "${id}"` }, { status: 404 });
     console.log(`platform admin restored club "${id}" from ${date} (${restored} records)`);
+    await forgetClubSettings(id);
     await logAdmin("Restored", id, `from the ${date} backup`);
     return NextResponse.json({ message: `Restored ${id} as it was on ${date} (${restored} records)` });
   }

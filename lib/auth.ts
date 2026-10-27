@@ -11,6 +11,7 @@
 //   platform:login-email:<email>    the latest one for an email, for typing the code
 //   platform:email-change:<id>      a new email address waiting for its code (15 minutes)
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import type { NextResponse } from "next/server";
 import { SESSION_COOKIE, kvCall, sessionKey, hashToken, sessionUserId } from "./access";
@@ -246,12 +247,15 @@ export function clearSessionCookie(res: NextResponse, req: { headers: Headers; n
   res.cookies.set(SESSION_COOKIE, "", { ...sessionCookie(req.headers.get("host") ?? "", secure), maxAge: 0 });
 }
 
-/** The signed-in account for this request, if any. */
-export async function currentUser(): Promise<User | null> {
+/**
+ * The signed-in account for this request, if any. Looked up once while a page
+ * is drawn (the layout and the page both ask); API routes look it up each time.
+ */
+export const currentUser = cache(async (): Promise<User | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
   const id = await sessionUserId(token).catch(() => null);
   return id ? getUser(id) : null;
-}
+});
 
 /** The signed-in account, only if this session was signed in with a passkey. */
 export async function currentPasskeyUser(): Promise<User | null> {

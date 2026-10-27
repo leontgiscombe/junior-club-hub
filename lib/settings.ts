@@ -61,12 +61,37 @@ async function kvFor(tenant?: string) {
   return t && (await tenantExists(t)) ? getKv(t) : null;
 }
 
+// Every page reads the club's settings, teams and picture details, and they
+// rarely change, so this server keeps each one for a short while rather than
+// asking the database on every tap. A save here forgets the club's at once;
+// another server (a preview's) sees the change within KEEP_MS.
+const KEEP_MS = 30_000;
+const kept = new Map<string, { at: number; value: Promise<unknown> }>();
+
+/** `key` from the club's database, kept for KEEP_MS; a failed read isn't kept. */
+async function keptGet<T>(tenant: string | undefined, key: string): Promise<T | null> {
+  const t = tenant ?? (await getTenant());
+  const kv = await kvFor(t ?? undefined);
+  if (!kv) return null;
+  const id = `${t}|${key}`;
+  const hit = kept.get(id);
+  if (hit && Date.now() - hit.at < KEEP_MS) return hit.value as Promise<T | null>;
+  const value = kv.get<T>(key).then((v) => v ?? null);
+  kept.set(id, { at: Date.now(), value });
+  value.catch(() => kept.delete(id));
+  return value;
+}
+
+/** Forget what this server keeps of a club's settings: after it saves them, restores them or deletes the club. */
+export async function forgetClubSettings(tenant?: string): Promise<void> {
+  const t = tenant ?? (await getTenant());
+  for (const id of kept.keys()) if (id.startsWith(`${t}|`)) kept.delete(id);
+}
+
 
 export async function getClubChanges(tenant?: string): Promise<ClubChanges> {
-  const kv = await kvFor(tenant);
-  if (!kv) return {};
   try {
-    return cleanChanges(await kv.get(CHANGES_KEY));
+    return cleanChanges(await keptGet(tenant, CHANGES_KEY));
   } catch {
     return {};
   }
@@ -76,13 +101,12 @@ export async function saveClubChanges(changes: ClubChanges, tenant?: string): Pr
   const kv = await getKv(tenant);
   if (!kv) throw new Error("Storage isn't set up");
   await kv.set(CHANGES_KEY, cleanChanges(changes));
+  await forgetClubSettings(tenant);
 }
 
 export async function getImageInfo(slot: ImageSlot, tenant?: string): Promise<Omit<StoredImage, "data"> | null> {
-  const kv = await kvFor(tenant);
-  if (!kv) return null;
   try {
-    return (await kv.get<Omit<StoredImage, "data">>(IMAGE_KEYS[slot].info)) ?? null;
+    return await keptGet<Omit<StoredImage, "data">>(tenant, IMAGE_KEYS[slot].info);
   } catch {
     return null;
   }
@@ -110,6 +134,7 @@ export async function saveImage(slot: ImageSlot, image: StoredImage | null, tena
   } else {
     await kv.del(keys.data, keys.info);
   }
+  await forgetClubSettings(tenant);
 }
 
 export const getCrest = () => getImage("crest");
@@ -168,10 +193,8 @@ export const getAllTeams = cache(() => getAllTeamsFor());
 
 /** Every team of `tenant` (by default, the request's club), archived ones included. */
 export async function getAllTeamsFor(tenant?: string): Promise<Team[]> {
-  const kv = await kvFor(tenant);
-  if (!kv) return DEFAULT_TEAMS;
   try {
-    return cleanTeams(await kv.get(TEAMS_KEY)) ?? DEFAULT_TEAMS;
+    return cleanTeams(await keptGet(tenant, TEAMS_KEY)) ?? DEFAULT_TEAMS;
   } catch {
     return DEFAULT_TEAMS;
   }
@@ -193,6 +216,7 @@ export async function saveTeams(teams: Team[], tenant?: string): Promise<void> {
   const kv = await getKv(tenant);
   if (!kv) throw new Error("Storage isn't set up");
   await kv.set(TEAMS_KEY, clean);
+  await forgetClubSettings(tenant);
 }
 
 /** Send a visitor away from a part of the hub the club has switched off. */

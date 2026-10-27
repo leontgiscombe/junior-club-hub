@@ -3,6 +3,7 @@
 // account id. Whoever signs in with the club's own email (the one it signed up
 // with) is its club admin. Server only.
 import { randomBytes } from "crypto";
+import { cache } from "react";
 import {
   COACH_ROLES,
   MAX_CHILDREN,
@@ -153,11 +154,11 @@ async function redeemInvite(tenant: string, user: User, existing: Person | null)
   return person;
 }
 
-/** The signed-in person at `tenant`, with their account. */
-export async function currentPerson(tenant: string): Promise<{ user: User; person: Person | null } | null> {
+/** The signed-in person at `tenant`, with their account: looked up once while a page is drawn, like currentUser. */
+export const currentPerson = cache(async (tenant: string): Promise<{ user: User; person: Person | null } | null> => {
   const user = await currentUser();
   return user ? { user, person: await personFor(tenant, user) } : null;
-}
+});
 
 export const canCoach = (p: Person | null) => p?.status === "approved" && p.roles.some((r) => COACH_ROLES.includes(r));
 
