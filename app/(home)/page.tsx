@@ -40,6 +40,8 @@ import { billingState } from "@/lib/billing";
 import { parentAwardsVisible } from "@/lib/seasonAwardsStorage";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+// when this copy of Home was drawn, so the phone can tell an old copy from a new one (RefreshOnReturn)
+const drawnAt = () => Date.now();
 // the time now, "HH:MM", in the UK
 const clockNow = () => new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false });
 const day = (date: string, opts: Intl.DateTimeFormatOptions) =>
@@ -213,7 +215,7 @@ export default async function Home() {
   return (
     <div className="themed wp-page relative isolate min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
       {/* a fresh copy whenever Home is come back to (e.g. after adding your mobile number) */}
-      <RefreshOnReturn />
+      <RefreshOnReturn drawnAt={drawnAt()} />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         {/* header: your photo (Your Account), Search, the club's crest */}
         <AppHeader viewer={viewer} crest={CLUB.crest} />

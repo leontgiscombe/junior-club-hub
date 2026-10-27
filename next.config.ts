@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Pages slide in and out as a phone app's do, through the browser's View
   // Transitions (app/template.tsx, globals.css). Without them a page just appears.
-  experimental: { viewTransition: true },
+  // A page the phone has seen in the last 30 seconds opens straight from what
+  // it kept, without asking the server again (FreshAfterSave drops them after
+  // a save, so nothing saved shows the old way).
+  experimental: { viewTransition: true, staleTimes: { dynamic: 30 } },
   // Error reporting in the browser (instrumentation-client.ts) needs Sentry's
   // address at build time; it's the same SENTRY_DSN the server uses, and isn't
   // a secret.
