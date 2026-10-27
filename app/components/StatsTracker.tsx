@@ -668,7 +668,7 @@ export default function StatsTracker() {
             disabled={loading || !key}
             className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-40 cursor-pointer"
           >
-            {loading ? "Loading…" : "Open stats"}
+            {loading ? "Loading…" : "Open Stats"}
           </button>
         </div>
       </GateScreen>
@@ -783,7 +783,7 @@ export default function StatsTracker() {
                 disabled={!bulkText.trim() || adding}
                 className="mt-3 w-full rounded-xl bg-green-600 px-5 py-2.5 font-bold text-white shadow-sm hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
               >
-                {adding ? "Adding…" : "Add all"}
+                {adding ? "Adding…" : "Add All"}
               </button>
               <p className="mt-2 text-xs text-gray-400">
                 Names already in {teamName(team)} are skipped, so it&apos;s safe to

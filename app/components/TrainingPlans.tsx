@@ -645,7 +645,7 @@ export default function TrainingPlans() {
             disabled={loading || !key}
             className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-40 cursor-pointer"
           >
-            {loading ? "Loading…" : "Open training plans"}
+            {loading ? "Loading…" : "Open Training Plans"}
           </button>
         </div>
       </GateScreen>
@@ -1222,7 +1222,7 @@ export default function TrainingPlans() {
             disabled={saving || !form.title.trim()}
             className="cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-40"
           >
-            {saving ? "Saving…" : "Save drill"}
+            {saving ? "Saving…" : "Save Drill"}
           </button>
         </div>
       </section>
