@@ -6,7 +6,9 @@
 // (the admins only if it has none). A member hears about their own things too:
 // being approved, a child added to the squad, kit they asked for being sorted —
 // and a treasurer with the App Store app, the subs reminder (web push doesn't
-// reach the app). No message has children's names in it. Server only.
+// reach the app). No message has children's names in it. Each one also goes
+// in the bell's notifications (lib/inbox.ts) of everyone it's for, phone
+// alerts on or not. Server only.
 import { createHash } from "crypto";
 import webpush from "web-push";
 import { childrenOf, joinAlertsKey, kvCall, type Person } from "./access";
@@ -16,6 +18,7 @@ import { listPeople } from "./people";
 import { getTenantRecord } from "./tenants";
 import { setUpVapid, vapidKeys } from "./vapid";
 import { apnsConfigured, sendApns } from "./apns";
+import { addToInbox, type InboxKind } from "./inbox";
 import { DEFAULT_TENANT, PLATFORM_NAME, tenantUrl } from "./tenant";
 
 const REPEAT_GAP_SECONDS = 1800; // someone sending the form again within half an hour isn't news
@@ -197,7 +200,22 @@ export async function notifyChildRequest(
   }
 }
 
-/** Alerts on the phones `people` have turned alerts on for; `what` names it in the log. */
+// each alert's kind of notification, by the name it has in the log
+const KIND: Record<string, InboxKind> = {
+  "Join request": "join",
+  "Child removed": "child",
+  "Child request": "child",
+  "Kit request": "kit",
+  "Season awards": "awards",
+  Approved: "approved",
+  "Child approved": "approved",
+  "Kit sorted": "kit",
+};
+
+/**
+ * The bell's notification for everyone in `people`, and alerts on the phones
+ * they've turned alerts on for; `what` names it in the log.
+ */
 async function pushTo(
   tenant: string,
   people: Person[],
@@ -206,6 +224,13 @@ async function pushTo(
   message: { title: string; body: string; url: string },
 ): Promise<void> {
   const ids = new Set(people.map((p) => p.userId));
+  // in the list, the alert's "Tap to…" has nothing to tap
+  await addToInbox(tenant, [...ids], {
+    kind: KIND[what] ?? "approved",
+    title: message.title,
+    body: message.body.replace(/\s*Tap to [^.]*\.$/, ""),
+    url: message.url,
+  });
   const alerts = (await listAlerts(tenant)).filter((a) => ids.has(a.userId));
   // counts only — no names or addresses in the log
   const summary = `${people.length} recipients, ${emailed} emails, ${alerts.length} phones`;
@@ -375,10 +400,12 @@ export async function notifyKitDone(tenant: string, userId: string, clubName: st
  */
 export async function notifyTreasurersInApp(tenant: string, message: { title: string; body: string; url: string }): Promise<number> {
   try {
-    if (!apnsConfigured()) return 0;
     const treasurers = new Set(
       (await listPeople(tenant)).filter((p) => p.status === "approved" && p.roles.includes("treasurer")).map((p) => p.userId),
     );
+    // every treasurer's notifications, app or not
+    await addToInbox(tenant, [...treasurers], { kind: "subs", ...message });
+    if (!apnsConfigured()) return 0;
     const phones = (await listAlerts(tenant)).filter((a) => a.apns && treasurers.has(a.userId));
     let sent = 0;
     for (const a of phones) {

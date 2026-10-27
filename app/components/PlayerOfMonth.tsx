@@ -162,6 +162,8 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [image, setImage] = useState<{ url: string; file: File } | null>(null);
   const [making, setMaking] = useState(false);
+  // telling the families, for each team and month: sending, or what happened
+  const [told, setTold] = useState<Record<string, { busy?: boolean; message: string; ok?: boolean }>>({});
 
   const posterRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -354,6 +356,27 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
   const clubTeam = findTeam(team);
   const squadLabel = `${CLUB.initials} ${clubTeam?.squadName ?? teamName(team)}`;
   const season = month ? defaultSeasonName(new Date(`${month}-01T00:00`)).replace(/^20(\d\d)\/(\d\d)$/, "$1/$2") : "";
+  const tellKey = `${team}:${month}`;
+  const tellFamilies = async () => {
+    if (!winner || !month) return;
+    setTold((t) => ({ ...t, [tellKey]: { busy: true, message: "" } }));
+    try {
+      const res = await fetch("/api/inbox/announce", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key, team, month, playerId: winner.playerId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setTold((t) => ({
+        ...t,
+        [tellKey]: res.ok
+          ? { ok: true, message: data.told ? `Sent — it's in ${data.told === 1 ? "1 person's" : `${data.told} people's`} notifications.` : "Sent, but nobody's joined with this team yet." }
+          : { message: data.error ?? "Could not send it. Please try again." },
+      }));
+    } catch {
+      setTold((t) => ({ ...t, [tellKey]: { message: "Could not send it. Please try again." } }));
+    }
+  };
   const canShare =
     image !== null &&
     typeof navigator !== "undefined" &&
@@ -623,6 +646,17 @@ export default function PlayerOfMonth({ posterFont }: { posterFont: string }) {
                   </div>
                 </div>
               )}
+              {/* the team's families see it behind the bell (lib/inbox.ts), with the winner's name */}
+              <button
+                onClick={tellFamilies}
+                disabled={!winner || told[tellKey]?.busy || told[tellKey]?.ok}
+                className="w-full cursor-pointer rounded-xl bg-gray-100 py-3 font-bold text-gray-900 hover:bg-gray-200 disabled:cursor-default disabled:opacity-50 dark:bg-white/10 dark:text-gray-50 dark:hover:bg-white/15"
+              >
+                {told[tellKey]?.busy ? "Sending…" : told[tellKey]?.ok ? "Families Told ✓" : "Tell the Families"}
+              </button>
+              <p className={`text-center text-xs ${told[tellKey]?.ok || !told[tellKey]?.message ? "text-gray-500 dark:text-gray-400" : "text-red-600 dark:text-red-400"}`}>
+                {told[tellKey]?.message || `Puts ${winnerName || "the winner"} in the ${teamName(team)} families' notifications, once for ${mName}.`}
+              </p>
             </div>
             </div>
 

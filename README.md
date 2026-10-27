@@ -29,6 +29,14 @@ Upstash Redis database, set up for a club from one settings file.
   `/kit/<team>` forms remain available. `/kit/request` forwards approved families
   to the dashboard's request form. Existing extras, guidance, basket limits and
   server-side withdrawal rules are preserved.
+- **Notifications** (`/notifications`, the bell in each main page's header):
+  everything the hub has told a signed-in member, newest first — the alerts it
+  sends to phones (join requests, approvals, kit, awards, the subs reminder),
+  even for people without phone alerts on; their teams' results, worked out
+  from the Match Log two hours after kick-off; and Player of the Month, when a
+  coach taps **Tell the Families** on the poster (once per team and month). The
+  bell's red number counts what's come since Notifications was last opened
+  (`lib/inbox.ts`).
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
 - **End of Season Awards** (`/awards`): approved parents vote for their children's
