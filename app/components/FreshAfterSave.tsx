@@ -21,7 +21,8 @@ export default function FreshAfterSave() {
       try {
         const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
         const url = new URL(input instanceof Request ? input.url : String(input), location.href);
-        if (res.ok && method !== "GET" && method !== "HEAD" && url.origin === location.origin) {
+        // opening Notifications isn't a change to show (it would clear what's highlighted as new)
+        if (res.ok && method !== "GET" && method !== "HEAD" && url.origin === location.origin && url.pathname !== "/api/inbox") {
           clearTimeout(timer);
           timer = setTimeout(() => router.refresh(), QUIET_MS);
         }
