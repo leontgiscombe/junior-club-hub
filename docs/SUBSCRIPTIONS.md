@@ -42,6 +42,12 @@ store subscription. Founding clubs and clubs marked free are never charged.
    (`.<starter|club|large>.<monthly|yearly>`), so keep that ending. Clubs
    already get a 30-day free trial from the hub, so don't add an Apple free
    trial on top.
+   **Promotional images:** if you promote the subscriptions on the App Store,
+   each one needs its own 1024×1024 image, different from the app icon and from
+   each other (App Review rejects copies). They're in `docs/app-store/iap-promo/`
+   (`<plan>-<period>.png`); upload each on its subscription's page under
+   **App Store Promotion**. To redraw them: `node scripts/iap-promo-images.mjs`.
+   If you'd rather not promote them, delete the promotional images instead.
 4. **Users and Access → Integrations → In-App Purchase**: create an In-App
    Purchase key and download the `.p8` file (RevenueCat needs it).
 
