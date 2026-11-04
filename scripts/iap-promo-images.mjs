@@ -3,12 +3,35 @@
 // the app icon, as App Review asks. Run: node scripts/iap-promo-images.mjs
 // Writes docs/app-store/iap-promo/<plan>-<period>.png (Playwright's Chromium).
 import { createRequire } from "node:module";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 
 // Playwright isn't a project dependency: use any installed copy (npx/global).
 const { chromium } = createRequire(import.meta.url)("playwright");
-const OUT =new URL("../docs/app-store/iap-promo/", import.meta.url).pathname;
+const OUT = new URL("../docs/app-store/iap-promo/", import.meta.url).pathname;
+const LOGO = new URL("../public/app-logo.jpg", import.meta.url).pathname;
+
+// The logo as a faint watermark: just the shield and wordmark from the middle
+// of public/app-logo.jpg (not the ring of app tiles, so it isn't the app icon),
+// with its dark background made transparent.
+function watermark() {
+  const tmp = `${tmpdir()}/iap-promo-logo.png`;
+  execFileSync("python3", ["-c", `
+import sys
+from PIL import Image, ImageDraw, ImageFilter, ImageChops
+i = Image.open(sys.argv[1]).convert("RGB").crop((118, 128, 394, 362)).resize((552, 468), Image.LANCZOS)
+lum = i.convert("L").point(lambda v: 0 if v < 40 else min(255, (v - 40) * 3))
+m = Image.new("L", i.size, 0)
+ImageDraw.Draw(m).ellipse((40, 10, 512, 462), fill=255)
+i.putalpha(ImageChops.multiply(lum, m.filter(ImageFilter.GaussianBlur(14))))
+i.save(sys.argv[2])
+`, LOGO, tmp]);
+  const uri = `data:image/png;base64,${readFileSync(tmp).toString("base64")}`;
+  rmSync(tmp);
+  return uri;
+}
+const LOGO_URI = watermark();
 
 const PLANS = {
   starter: { name: "Starter", teams: "Up to 3 teams", shirts: 3, a: "#22c55e", b: "#0b3d24" },
@@ -41,6 +64,7 @@ body{width:1024px;height:1024px;overflow:hidden;font-family:"DejaVu Sans","Helve
 .pitch{position:absolute;inset:0;opacity:.13;background:
   repeating-linear-gradient(${yearly ? 90 : 0}deg, transparent 0 128px, ${fg} 128px 130px)}
 .circle{position:absolute;width:520px;height:520px;border:6px solid ${fg};opacity:.2;border-radius:50%;${yearly ? "right:-180px;top:-180px" : "left:-180px;bottom:-180px"}}
+.logo{position:absolute;right:70px;top:${n > 10 ? 530 : 470}px;width:300px;opacity:${yearly ? 0.13 : 0.2};${yearly ? "filter:brightness(0);" : ""}}
 .top{position:absolute;top:70px;left:80px;right:80px;display:flex;justify-content:space-between;align-items:center}
 .brand{font-size:30px;font-weight:700;letter-spacing:4px;opacity:.8;text-transform:uppercase}
 .badge{display:flex;align-items:center;gap:14px;padding:14px 28px;border-radius:999px;background:${yearly ? p.b : "rgba(255,255,255,.12)"};color:#fff;border:3px solid ${yearly ? p.b : p.a};font-size:34px;font-weight:800}
@@ -53,7 +77,7 @@ h1 span{color:${accent}}
 .teams{margin-top:18px;font-size:50px;font-weight:700;color:${accent}}
 .note{margin-top:10px;font-size:32px;opacity:.75}
 </style></head><body>
-<div class="pitch"></div><div class="circle"></div>
+<div class="pitch"></div><div class="circle"></div><img class="logo" src="${LOGO_URI}" alt="">
 <div class="top"><div class="brand">Club Hub</div><div class="badge"><div class="cal">${t.glyph}</div>${t.label}</div></div>
 <div class="grid">${shirts}</div>
 <div class="bottom"><h1>${p.name}<span>.</span></h1><div class="teams">${p.teams}</div><div class="note">${t.note}</div></div>
