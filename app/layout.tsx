@@ -4,6 +4,7 @@ import { getClubWithIcons, getTeams } from "@/lib/settings";
 import { withoutTraining } from "@/lib/clubSettings";
 import { PLATFORM_NAME, getTenant, platformUrl, rootDomain } from "@/lib/tenant";
 import { tenantExists } from "@/lib/tenants";
+import { APP_STORE_ID } from "@/lib/appStore";
 import { cookies, headers } from "next/headers";
 import { MEMBER_COOKIE, PATH_HEADER, SESSION_COOKIE, isApprovedPerson, readAccess, readMember } from "@/lib/access";
 import { ClubProvider } from "./components/ClubProvider";
@@ -40,9 +41,6 @@ async function teamsHidden(tenant: string | null): Promise<boolean> {
     return true;
   }
 }
-
-// the app's Apple ID: https://apps.apple.com/gb/app/grassroots-club-hub/id6822429830
-const APP_STORE_ID = "6822429830";
 
 // edge to edge on phones, so the tab bar can sit above the home indicator
 export const viewport: Viewport = {

@@ -8,6 +8,7 @@ import FindClub from "./FindClub";
 import PlanList from "../components/PlanList";
 import { TRIAL_DAYS } from "@/lib/billing";
 import { operator } from "@/lib/legal";
+import { APP_STORE_LINK } from "@/lib/appStore";
 
 export const metadata = {
   title: `${PLATFORM_NAME} – Everything your junior football club needs`,
@@ -17,8 +18,8 @@ export const metadata = {
 
 const display = Anton({ weight: "400", subsets: ["latin"] });
 
-// the App Store listing, once the app is live there (APP_STORE_URL on Render)
-const appStoreUrl = () => process.env.APP_STORE_URL?.trim() || "";
+// the App Store listing (APP_STORE_URL on Render can point it elsewhere)
+const appStoreUrl = () => process.env.APP_STORE_URL?.trim() || APP_STORE_LINK;
 
 // screens from the app (public/site/), with what each shows
 const SCREENS = [

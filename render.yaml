@@ -78,8 +78,8 @@ services:
         sync: false
       - key: REVENUECAT_APPLE_KEY
         sync: false
-      # the app's App Store listing, once it's live: the website shows a
-      # "Download on the App Store" badge linking to it
+      # optional: a different App Store link for the website's "Download on the
+      # App Store" badge (it links to the live listing in lib/appStore.ts by default)
       - key: APP_STORE_URL
         sync: false
       # optional: the owner's password for changing the built-in drill library
