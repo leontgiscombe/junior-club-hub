@@ -38,6 +38,8 @@ import { setupFor } from "@/lib/setupChecklist";
 import { getTenantRecord } from "@/lib/tenants";
 import { billingState } from "@/lib/billing";
 import { parentAwardsVisible } from "@/lib/seasonAwardsStorage";
+import { inApp } from "@/lib/inAppServer";
+import AppStoreBadge from "../components/AppStoreBadge";
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 // when this copy of Home was drawn, so the phone can tell an old copy from a new one (RefreshOnReturn)
@@ -109,6 +111,8 @@ export default async function Home() {
   const teamName = (slug?: string) => TEAMS.find((t) => t.slug === slug)?.name ?? "";
   const kids = person ? childrenOf(person) : [];
   const showAwards = await parentAwardsVisible(person).catch(() => false);
+  // already in the App Store app: no "Download on the App Store"
+  const inTheApp = await inApp();
   const isParentView = viewer.signedIn && !viewer.canCoach && !viewer.canFinance;
 
   // the line under "Home": the club, and the team(s) Home is showing — no
@@ -476,6 +480,13 @@ export default async function Home() {
               </span>
               <Chevron />
             </Link>
+          </div>
+        )}
+
+        {/* in a browser: get the iPhone app */}
+        {!inTheApp && (
+          <div className="text-center">
+            <AppStoreBadge />
           </div>
         )}
 
