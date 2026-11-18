@@ -41,6 +41,9 @@ async function teamsHidden(tenant: string | null): Promise<boolean> {
   }
 }
 
+// the app's Apple ID: https://apps.apple.com/gb/app/grassroots-club-hub/id6822429830
+const APP_STORE_ID = "6822429830";
+
 // edge to edge on phones, so the tab bar can sit above the home indicator
 export const viewport: Viewport = {
   viewportFit: "cover",
@@ -54,6 +57,9 @@ export async function generateMetadata(): Promise<Metadata> {
     // the crest on the paint-stroke background, for phone home screens
     icons: { icon: icons.icon, apple: icons.apple },
     appleWebApp: { title: `${club.initials} Hub` },
+    // Safari on iPhone/iPad shows a "Get the app" bar at the top of the site
+    // (Smart App Banner). It never shows inside the app itself.
+    itunes: { appId: APP_STORE_ID },
   };
 }
 

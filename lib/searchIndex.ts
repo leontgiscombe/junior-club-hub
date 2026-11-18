@@ -26,6 +26,7 @@ export const PAGES: PageEntry[] = [
   { title: "Kit Sizes", where: "Kit", href: "/kit", words: "kit shirt shorts socks size form order", who: "all", feature: "kitSizes" },
   { title: "Request Kit", where: "Kit", href: "/kit/request", words: "ask kit new shirt lost jacket rain coat replacement order", who: "all", feature: "kitSizes" },
   { title: "Results", where: "Page", href: "/results", words: "scores league table top scorers fixtures", who: "all" },
+  { title: "Notifications", where: "Page", href: "/notifications", words: "bell alerts news messages updates player of the month results", who: "all" },
   { title: "Sign In", where: "Account", href: "/signin", words: "log in login email passkey", who: "all" },
   { title: "Privacy Policy", where: "Legal", href: "/privacy", words: "gdpr data information", who: "all" },
   { title: "Terms of Use", where: "Legal", href: "/terms", words: "rules legal", who: "all" },

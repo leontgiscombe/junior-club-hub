@@ -1,11 +1,12 @@
 // The row at the top of the tab bar's main pages (Home, Coach Admin): your
-// photo or initials (Your Account, or Sign In), Search, and the club's crest
-// (the club switcher).
+// photo or initials (Your Account, or Sign In), the notifications bell (signed
+// in), Search, and the club's crest (the club switcher).
 // No hooks: server and client pages both use it.
 import Link from "next/link";
 import Image from "next/image";
 import type { Club } from "@/lib/clubSettings";
 import ClubSwitcher from "./ClubSwitcher";
+import NotificationBell from "./NotificationBell";
 
 export type HeaderViewer = { signedIn: boolean; initials: string; photo: string | null; switcher?: boolean };
 
@@ -32,6 +33,7 @@ export default function AppHeader({ viewer, crest }: { viewer: HeaderViewer; cre
         )}
       </Link>
       <span className="flex items-center gap-3">
+        {viewer.signedIn && <NotificationBell />}
         {/* Search: pages, settings and (for those allowed) the club's own data */}
         <Link
           href="/search"
