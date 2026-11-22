@@ -44,6 +44,9 @@ Upstash Redis database, set up for a club from one settings file.
   send it to the families. Each game's coach page has Overview (sending,
   reminders, the coach's own availability, the result), Attendance (coming,
   can't come, no reply; coaches' availability) and a coach-only Line-up.
+  The ground box searches as you type: grounds played at before, then UK
+  places from Photon (photon.komoot.io, free OpenStreetMap search, no key),
+  asked through `/api/places`; picking one fills in the ground and address.
   Each side's kit colour can be picked (a new game starts in the team's last
   home or away colours) and families see what to wear. A new game can repeat
   every week or two (up to 26 games), set up as separate games in a series:

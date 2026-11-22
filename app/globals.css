@@ -252,3 +252,28 @@ html[data-nav="back"]::view-transition-group(.page-exit) {
 body:has(.no-tabbar) .hub-tabbar {
   display: none;
 }
+
+/* iPhone's date and time boxes ignore the width they're given and run off the
+   side of the screen, with their text centred; keep them in their box, left
+   aligned, and the same height as the other fields even when empty */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+/* in the fixture steps, the same height as the other fields even when empty */
+.fixture-wizard input[type="date"],
+.fixture-wizard input[type="time"],
+.fixture-wizard input[type="datetime-local"] {
+  min-height: 3.25rem;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}

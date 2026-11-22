@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { toast } from "@/lib/dialog";
 import { haptic } from "@/lib/haptics";
 import { KIT_COLOURS, Shirt, type KitColour } from "@/lib/kitColours";
+import GroundSearch from "./GroundSearch";
 
 export type WizardTeam = { slug: string; name: string; opponents: string[]; squad: { id: string; name: string }[] };
 export type Venue = { team: string; venue: string; address: string; home: boolean };
@@ -190,7 +191,7 @@ export default function FixtureWizard({
   const title = v.type === "tournament" ? v.opponent || "Tournament" : `${team?.name ?? ""} vs ${v.opponent || "…"}`;
 
   return (
-    <div className="flex flex-col gap-5 pb-32">
+    <div className="fixture-wizard flex flex-col gap-5 pb-32">
       {/* where they are */}
       <div className="flex gap-1.5" aria-hidden="true">
         {steps.map((s, i) => (
@@ -316,7 +317,7 @@ export default function FixtureWizard({
             <input type="date" value={v.date} onChange={(e) => set("date", e.target.value)} className={field} />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block">
+            <label className="block min-w-0">
               <span className={label}>{v.type === "tournament" ? "Starts" : "Kick-off"}</span>
               <input
                 type="time"
@@ -329,31 +330,21 @@ export default function FixtureWizard({
                 className={field}
               />
             </label>
-            <label className="block">
+            <label className="block min-w-0">
               <span className={label}>Meet at</span>
               <input type="time" value={v.meetTime} onChange={(e) => set("meetTime", e.target.value)} className={field} />
             </label>
           </div>
-          <label className="block">
+          <div>
             <span className={label}>Ground</span>
-            <input
-              list="wizard-venues"
-              value={v.venue}
-              onChange={(e) => {
-                const name = e.target.value;
-                const hit = known.find((x) => x.venue.trim().toLowerCase() === name.trim().toLowerCase());
-                setV((x) => ({ ...x, venue: name, address: hit && !x.address.trim() ? hit.address : x.address }));
-              }}
-              placeholder="e.g. Woodhall Sports Hub, pitch 1C"
+            <GroundSearch
+              venue={v.venue}
+              known={known}
               className={field}
-              autoComplete="off"
+              onType={(venue) => set("venue", venue)}
+              onPick={(place) => setV((x) => ({ ...x, venue: place.venue, address: place.address }))}
             />
-            <datalist id="wizard-venues">
-              {known.map((x) => (
-                <option key={x.venue} value={x.venue} />
-              ))}
-            </datalist>
-          </label>
+          </div>
           <label className="block">
             <span className={label}>Address</span>
             <textarea value={v.address} onChange={(e) => set("address", e.target.value)} rows={2} placeholder="Street and postcode, for the map" className={field} />
