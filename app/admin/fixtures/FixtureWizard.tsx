@@ -62,17 +62,20 @@ export default function FixtureWizard({
   initial,
   matchId,
   sent,
+  startAt,
 }: {
   teams: WizardTeam[];
   venues: Venue[];
   initial: WizardValues;
   matchId?: string;
   sent?: boolean;
+  /** open on this step (a game from FA Full-Time starts on "when") */
+  startAt?: "when" | "who";
 }) {
   const router = useRouter();
   const [v, setV] = useState<WizardValues>(initial);
   const steps = (["team", "type", "when", "who", "check"] as const).filter((s) => s !== "team" || (!matchId && teams.length > 1));
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => Math.max(0, startAt ? steps.indexOf(startAt) : 0));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"" | "save" | "send">("");
   const [tell, setTell] = useState(true);
