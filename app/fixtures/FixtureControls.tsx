@@ -113,96 +113,77 @@ export function ReplyToggle({
   );
 }
 
-/** The coaches' buttons: send it to the families, remind them, call it off, remove it. */
-export function CoachActions({
-  matchId,
-  sent,
-  waitingFamilies,
-  calledOff,
-  canCallOff,
-}: {
-  matchId: string;
-  sent: boolean;
-  waitingFamilies: number;
-  calledOff: "" | "postponed" | "cancelled";
-  canCallOff: boolean;
-}) {
+/** The coaches' main button: send the game to the families, or remind the ones still to answer. */
+export function SendButton({ matchId, sent, waitingFamilies }: { matchId: string; sent: boolean; waitingFamilies: number }) {
   const router = useRouter();
-  const [busy, setBusy] = useState("");
-
-  async function act(action: string, extra: Record<string, unknown> = {}, done?: (d: Record<string, unknown>) => void) {
-    setBusy(action);
-    const { ok, data } = await send("/api/fixtures", "PATCH", { matchId, action, ...extra });
-    setBusy("");
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    setBusy(true);
+    const { ok, data } = await send("/api/fixtures", "PATCH", { matchId, action: sent ? "remind" : "send" });
+    setBusy(false);
     if (!ok) return;
     haptic();
-    done?.(data);
+    const n = Number(data.told ?? 0);
+    toast(n ? `Sent to ${n} ${n === 1 ? "family" : "families"}` : sent ? "Reminder sent" : "Sent");
     router.refresh();
   }
-  const told = (d: Record<string, unknown>) => {
-    const n = Number(d.told ?? 0);
-    toast(n ? `Sent to ${n} ${n === 1 ? "family" : "families"}` : "Saved — no families with phone alerts to tell yet");
-  };
+  if (sent && !waitingFamilies) return null;
+  return (
+    <button type="button" disabled={busy} onClick={go} className="press w-full rounded-2xl bg-green-700 py-3.5 font-bold text-white disabled:opacity-50">
+      {busy ? "Sending…" : sent ? `Remind ${waitingFamilies} ${waitingFamilies === 1 ? "family" : "families"}` : "Send to families"}
+    </button>
+  );
+}
 
+/** Everything else a coach might do with a game, kept out of the way: edit, postpone, cancel, remove. */
+export function MoreActions({ matchId, calledOff, canCallOff }: { matchId: string; calledOff: "" | "postponed" | "cancelled"; canCallOff: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+
+  async function callOff(value: "" | "postponed" | "cancelled") {
+    if (value && !(await ask(value === "postponed" ? "Postpone this game?\n\nFamilies who've had it are told." : "Cancel this game?\n\nFamilies who've had it are told.", { ok: value === "postponed" ? "Postpone" : "Cancel game" }))) return;
+    setBusy(true);
+    const { ok } = await send("/api/fixtures", "PATCH", { matchId, action: "call-off", calledOff: value });
+    setBusy(false);
+    if (!ok) return;
+    haptic();
+    router.refresh();
+  }
   async function remove() {
     if (!(await ask("Remove this game?\n\nIts answers, line-up and anything logged against it in the Match Log go too.", { ok: "Remove", danger: true }))) return;
-    setBusy("delete");
+    setBusy(true);
     const { ok } = await send(`/api/fixtures?id=${encodeURIComponent(matchId)}`, "DELETE");
-    setBusy("");
-    if (ok) {
-      toast("Removed");
-      router.replace("/fixtures");
-    }
+    setBusy(false);
+    if (!ok) return;
+    toast("Removed");
+    router.replace("/admin/fixtures");
   }
 
-  const button = "press flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-50";
+  const row = "press flex w-full items-center px-4 py-3.5 text-left text-[15px] font-semibold disabled:opacity-50";
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
-        {!sent ? (
-          <button
-            type="button"
-            disabled={!!busy || !!calledOff}
-            onClick={() => act("send", {}, told)}
-            className={`${button} bg-green-700 text-white`}
-          >
-            {busy === "send" ? "Sending…" : "Send to families"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={!!busy || !waitingFamilies || !!calledOff}
-            onClick={() => act("remind", {}, told)}
-            className={`${button} bg-green-700 text-white`}
-          >
-            {busy === "remind" ? "Sending…" : waitingFamilies ? `Remind ${waitingFamilies} ${waitingFamilies === 1 ? "family" : "families"}` : "Everyone's replied"}
-          </button>
-        )}
-        <Link href={`/fixtures/${matchId}/edit`} className={`${button} bg-white text-center text-gray-900 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-50`}>
-          Edit details
-        </Link>
-      </div>
-      <div className="flex gap-2">
-        {calledOff ? (
-          <button type="button" disabled={!!busy} onClick={() => act("call-off", { calledOff: "" })} className={`${button} bg-white text-green-700 shadow-sm dark:bg-[#1c1c1e] dark:text-green-400`}>
-            It&apos;s back on
-          </button>
-        ) : (
-          canCallOff && (
-            <>
-              <button type="button" disabled={!!busy} onClick={() => act("call-off", { calledOff: "postponed" })} className={`${button} bg-white text-amber-700 shadow-sm dark:bg-[#1c1c1e] dark:text-amber-400`}>
-                Postpone
-              </button>
-              <button type="button" disabled={!!busy} onClick={() => act("call-off", { calledOff: "cancelled" })} className={`${button} bg-white text-amber-700 shadow-sm dark:bg-[#1c1c1e] dark:text-amber-400`}>
-                Cancel
-              </button>
-            </>
-          )
-        )}
-        <button type="button" disabled={!!busy} onClick={remove} className={`${button} bg-white text-red-600 shadow-sm dark:bg-[#1c1c1e] dark:text-red-400`}>
-          Remove
+    <div className="divide-y divide-gray-100 overflow-hidden rounded-3xl bg-white shadow-sm dark:divide-white/10 dark:bg-[#1c1c1e]">
+      <Link href={`/admin/fixtures/${matchId}/edit`} className={row}>
+        Edit game
+      </Link>
+      {calledOff ? (
+        <button type="button" disabled={busy} onClick={() => callOff("")} className={`${row} text-green-700 dark:text-green-400`}>
+          It&apos;s back on
         </button>
-      </div>
+      ) : (
+        canCallOff && (
+          <>
+            <button type="button" disabled={busy} onClick={() => callOff("postponed")} className={row}>
+              Postpone
+            </button>
+            <button type="button" disabled={busy} onClick={() => callOff("cancelled")} className={row}>
+              Cancel game
+            </button>
+          </>
+        )
+      )}
+      <button type="button" disabled={busy} onClick={remove} className={`${row} text-red-600 dark:text-red-400`}>
+        Remove game
+      </button>
     </div>
   );
 }

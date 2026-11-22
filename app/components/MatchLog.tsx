@@ -1270,10 +1270,10 @@ export default function MatchLog() {
                   )}
                 {/* the game as families see it: sending it, answers, venue, line-up (app/fixtures) */}
                 <Link
-                  href={`/fixtures/${m.id}`}
+                  href={`/admin/fixtures/${m.id}`}
                   className="mb-2 flex min-h-10 items-center justify-center rounded-xl bg-green-50 text-sm font-bold text-green-800 dark:bg-green-400/10 dark:text-green-300"
                 >
-                  Fixture page: send to families, replies &amp; line-up
+                  Send to families, attendance &amp; line-up
                 </Link>
                 <div className="flex gap-2">
                   <button

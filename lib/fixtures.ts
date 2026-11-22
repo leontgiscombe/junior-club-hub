@@ -71,6 +71,20 @@ export async function squadOf(team: string): Promise<Player[]> {
   return (await listPlayers()).filter((p) => p.team === team).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** The players asked about a game: those the coaches picked, else the whole squad. */
+export function invitedOf<T extends { id: string }>(squad: T[], match: Pick<Match, "invited">): T[] {
+  if (!match.invited) return squad;
+  const picked = new Set(match.invited);
+  return squad.filter((p) => picked.has(p.id));
+}
+
+/** Whether the reply-by time ("YYYY-MM-DDTHH:MM", UK) has gone. */
+export function deadlinePassed(match: Pick<Match, "deadline">, now = new Date()): boolean {
+  if (!match.deadline) return false;
+  const here = now.toLocaleString("sv-SE", { timeZone: "Europe/London" }).slice(0, 16).replace(" ", "T");
+  return here >= match.deadline;
+}
+
 export const isCoachPerson = (p: Person) => p.status === "approved" && p.roles.some((r) => COACH_ROLES.includes(r));
 
 /**

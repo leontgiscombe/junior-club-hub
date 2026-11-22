@@ -3,6 +3,7 @@
 // thing. Deep shades that sit beside the club's green without fighting it.
 export const TILE_COLOURS = {
   matches: "bg-green-700",
+  fixtures: "bg-emerald-700",
   hub: "bg-green-700",
   trainingLog: "bg-teal-700",
   plans: "bg-cyan-700",

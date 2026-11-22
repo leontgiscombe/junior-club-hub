@@ -19,6 +19,7 @@ import { TILE_COLOURS } from "@/lib/tileColours";
 // Each tool's app-style icon: its tile colour and a line drawing — looks only;
 // the list and its order are below.
 const TILE: Record<string, { colour: string; icon: React.ReactNode }> = {
+  "/admin/fixtures": { colour: TILE_COLOURS.fixtures, icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /><circle cx="12" cy="15.5" r="2" /></> },
   "/admin/stats/matches": { colour: TILE_COLOURS.matches, icon: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14M7 10v4M15.5 10h2v4h-2z" /></> },
   "/admin/stats/training": { colour: TILE_COLOURS.trainingLog, icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
   "/admin/stats/player-of-the-month": { colour: TILE_COLOURS.potm, icon: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /> },
@@ -46,11 +47,17 @@ const TOOLS: {
   feature?: Feature;
 }[] = [
   {
+    path: "/admin/fixtures",
+    icon: "📅",
+    title: "Fixtures",
+    body: "Set up games, send them to families, see who's coming and pick the line-up.",
+    badge: "Start Here",
+  },
+  {
     path: "/admin/stats/matches",
     icon: "⚽",
     title: "Match Log",
-    body: "Fixtures, and each game's goals with who assisted, the awards and who played.",
-    badge: "Start Here",
+    body: "Each game's goals with who assisted, the awards and who played.",
   },
   {
     path: "/admin/stats/training",

@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import { getMatch } from "@/lib/matchStorage";
 import { canCoach, currentPerson } from "@/lib/people";
 import { getTenant } from "@/lib/tenant";
-import { myPlayersIn, saveReply, squadOf, type Answer } from "@/lib/fixtures";
+import { deadlinePassed, invitedOf, myPlayersIn, saveReply, squadOf, type Answer } from "@/lib/fixtures";
 
 export const runtime = "nodejs";
 
@@ -35,10 +35,13 @@ export async function POST(request: Request) {
   }
 
   const playerId = String(body.playerId ?? "");
-  const squad = await squadOf(match.team);
-  if (!squad.some((p) => p.id === playerId)) return bad("That player isn't in this team");
+  const squad = invitedOf(await squadOf(match.team), match);
+  if (!squad.some((p) => p.id === playerId)) return bad("That player isn't invited to this game");
+  const coach = canCoach(person);
   const mine = myPlayersIn(person, squad).some((c) => c.playerId === playerId);
-  if (!mine && !canCoach(person)) return bad("You can only answer for your own children", 403);
+  if (!mine && !coach) return bad("You can only answer for your own children", 403);
+  // after the reply-by time, a family asks the coaches, who can still change it
+  if (!coach && deadlinePassed(match)) return bad("The reply-by time has passed — message the coaches to change your answer");
   await saveReply(match.id, { kind: "p", id: playerId }, reply);
   return NextResponse.json({ success: true });
 }

@@ -1,8 +1,10 @@
 // Fixtures, for coaches signed in with their own account (app/fixtures).
-//   POST   { team, opponent, date, time?, meetTime?, home, type, venue?, address?, notes?, send? }
+//   POST   { team, type, competition?, opponent, date, time?, meetTime?, venue?, address?, notes?, invited?, deadline?, send? }
+//          type "home" | "away" | "tournament" | "training"; competition "league" | "cup" | "friendly";
+//          invited: squad player ids (null or left out: the whole squad); deadline "YYYY-MM-DDTHH:MM"
 //          -> a new game in the match log; with send, it goes to the team's families
 //   PATCH  { matchId, action, ... }
-//          action "edit"     { opponent?, date?, time?, meetTime?, home?, type?, venue?, address?, notes?, tell? }
+//          action "edit"     { any of the above but team, tell? }
 //                            — tell: families who've had it hear it's changed
 //          action "send"     — to the team's families: they're asked who can play
 //          action "remind"   — to the families still to answer
@@ -29,7 +31,7 @@ import {
 import { canCoach, currentPerson, listPeople } from "@/lib/people";
 import { getTeams, isTeam } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
-import { familiesOf, lineupSlots, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
+import { familiesOf, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
 import { notifyFixture } from "@/lib/notify";
 import { FORMATIONS, teamFormat } from "@/lib/clubSettings";
 import { fixtureWhen } from "@/lib/fixtureFormat";
@@ -48,12 +50,16 @@ async function coach() {
 
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
-/** The details in a request, checked; only the ones it has. */
-function details(body: Record<string, unknown>): Partial<MatchDetails> | string {
+/**
+ * The details in a request, checked; only the ones it has. `type` is what the
+ * coach picked — "home", "away", "tournament" or "training" — and, for a home
+ * or away match, `competition` "league", "cup" or "friendly".
+ */
+async function details(body: Record<string, unknown>, team: string): Promise<Partial<MatchDetails> | string> {
   const d: Partial<MatchDetails> = {};
   if ("opponent" in body) {
     d.opponent = text(body.opponent, 120);
-    if (!d.opponent) return "Who are you playing?";
+    if (!d.opponent) return body.type === "tournament" ? "What's the tournament called?" : "Who are you playing?";
   }
   if ("date" in body) {
     d.date = String(body.date ?? "");
@@ -65,15 +71,37 @@ function details(body: Record<string, unknown>): Partial<MatchDetails> | string 
       if (d[k] && !TIME.test(d[k]!)) return k === "time" ? "Kick-off should look like 10:30" : "Meet time should look like 09:45";
     }
   }
-  if ("home" in body) d.home = Boolean(body.home);
   if ("type" in body) {
     const type = String(body.type);
-    d.friendly = type === "friendly" || type === "cup";
-    d.cup = type === "cup";
+    if (type === "tournament" || type === "training") {
+      d.kind = type;
+      d.friendly = true;
+      d.cup = false;
+      if ("home" in body) d.home = Boolean(body.home);
+    } else if (type === "home" || type === "away") {
+      d.kind = "";
+      d.home = type === "home";
+      const competition = String(body.competition ?? "league");
+      d.friendly = competition === "friendly" || competition === "cup";
+      d.cup = competition === "cup";
+    } else return "Pick what sort of game it is";
   }
   if ("venue" in body) d.venue = text(body.venue, 120);
   if ("address" in body) d.address = text(body.address, 300);
   if ("notes" in body) d.notes = text(body.notes, 2000);
+  if ("deadline" in body) {
+    d.deadline = String(body.deadline ?? "");
+    if (d.deadline && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d.deadline)) return "Pick a reply-by date and time";
+  }
+  if ("invited" in body) {
+    if (body.invited === null) d.invited = null;
+    else {
+      const squad = new Set((await squadOf(team)).map((p) => p.id));
+      const picked = (Array.isArray(body.invited) ? body.invited.map(String) : []).filter((id: string) => squad.has(id));
+      if (!picked.length) return "Pick at least one player";
+      d.invited = [...new Set(picked)];
+    }
+  }
   return d;
 }
 
@@ -85,8 +113,9 @@ async function tell(tenant: string, match: Match, kind: "new" | "changed" | "rem
     squadOf(match.team),
     kind === "reminder" ? readReplies(match.id) : null,
   ]);
-  let families = familiesOf(people, match.team);
-  if (replies) families = families.filter((p) => myPlayersIn(p, squad).some((c) => !replies.players[c.playerId]));
+  const invited = invitedOf(squad, match);
+  let families = familiesOf(people, match.team).filter((p) => myPlayersIn(p, invited).length > 0);
+  if (replies) families = families.filter((p) => myPlayersIn(p, invited).some((c) => !replies.players[c.playerId]));
   return notifyFixture(tenant, {
     id: match.id,
     teamName: teams.find((t) => t.slug === match.team)?.name ?? "Your team",
@@ -103,9 +132,9 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const team = String(body.team ?? "");
   if (!(await isTeam(team))) return bad("Pick the team");
-  const d = details({ type: "league", ...body });
+  const d = await details({ type: "home", ...body }, team);
   if (typeof d === "string") return bad(d);
-  if (!d.opponent || !d.date) return bad("Who you're playing and the date are needed");
+  if (!d.opponent || !d.date) return bad(d.kind === "tournament" ? "The tournament's name and date are needed" : "Who you're playing and the date are needed");
   const { saved, match } = await addMatch({
     team,
     opponent: d.opponent,
@@ -118,6 +147,9 @@ export async function POST(request: Request) {
     venue: d.venue,
     address: d.address,
     notes: d.notes,
+    kind: d.kind,
+    invited: d.invited ?? null,
+    deadline: d.deadline,
   });
   if (!saved) return bad("Storage isn't set up", 503);
   let told = 0;
@@ -137,7 +169,7 @@ export async function PATCH(request: Request) {
   const action = String(body.action ?? "");
 
   if (action === "edit") {
-    const d = details(body);
+    const d = await details(body, match.team);
     if (typeof d === "string") return bad(d);
     const updated = await updateMatch(match.id, d);
     const told = updated && body.tell === true && updated.sentAt ? await tell(me.tenant, updated, "changed") : 0;
