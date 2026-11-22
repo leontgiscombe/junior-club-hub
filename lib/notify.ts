@@ -210,6 +210,7 @@ const KIND: Record<string, InboxKind> = {
   Approved: "approved",
   "Child approved": "approved",
   "Kit sorted": "kit",
+  Fixture: "fixture",
 };
 
 /**
@@ -445,5 +446,34 @@ export async function sendTestAlert(tenant: string, userId: string, endpoint: st
     }
     console.error("Test alert not sent:", err);
     return `The alert service refused it${code ? ` (${code})` : ""}`;
+  }
+}
+
+/**
+ * A game sent to a team's families (app/fixtures): an alert to each parent
+ * with a child in the squad — or, for a reminder, just to `userIds`, the
+ * parents still to answer. No children's names. Returns how many it went to.
+ * Never throws.
+ */
+export async function notifyFixture(
+  tenant: string,
+  game: { id: string; teamName: string; opponent: string; when: string; kind: "new" | "changed" | "reminder"; userIds: string[] },
+): Promise<number> {
+  try {
+    const ids = new Set(game.userIds);
+    const people = (await listPeople(tenant)).filter((p) => p.status === "approved" && ids.has(p.userId));
+    if (!people.length) return 0;
+    const vs = `${game.teamName} vs ${game.opponent}`;
+    const message =
+      game.kind === "new"
+        ? { title: `New fixture: ${vs}`, body: `${game.when}. Let the coaches know if your child can play.` }
+        : game.kind === "changed"
+          ? { title: `Fixture updated: ${vs}`, body: `${game.when}. Open it for the latest details.` }
+          : { title: `Can your child play? ${vs}`, body: `${game.when}. The coaches are still waiting for your answer.` };
+    await pushTo(tenant, people, 0, "Fixture", { ...message, url: `/fixtures/${game.id}` });
+    return people.length;
+  } catch (e) {
+    console.error("Fixture alerts not sent:", e);
+    return 0;
   }
 }

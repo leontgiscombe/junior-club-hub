@@ -53,7 +53,25 @@ export interface Match {
   // it has a new date) or "cancelled" (not played at all). Either way it isn't
   // a result, so it stays out of the record; "" for a game that's on.
   calledOff: CalledOff;
+  // What families need to get there (Fixtures, app/fixtures): when to meet,
+  // where (a name and the address the map finds), and anything else the
+  // coaches want to say. "" when not set.
+  meetTime: string; // HH:MM
+  venue: string;
+  address: string;
+  notes: string;
+  // The coaches' line-up: only coaches ever see it (lib/fixtures.ts).
+  lineup: Lineup | null;
+  // When the coaches last sent it to the team's families ("" never): from
+  // then on, parents are asked whether each child can play.
+  sentAt: string;
   createdAt: string;
+}
+
+/** A line-up: the shape, and who's in each position (slot 0 the keeper; "" empty). */
+export interface Lineup {
+  formation: string;
+  slots: string[];
 }
 
 export type CalledOff = "" | "postponed" | "cancelled";
@@ -100,6 +118,12 @@ function parse(value: unknown): Match {
     cup: (m.friendly ?? false) && (m.cup ?? false),
     faId: m.faId ?? "",
     calledOff: m.calledOff ?? "",
+    meetTime: m.meetTime ?? "",
+    venue: m.venue ?? "",
+    address: m.address ?? "",
+    notes: m.notes ?? "",
+    lineup: m.lineup ?? null,
+    sentAt: m.sentAt ?? "",
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -149,7 +173,7 @@ export async function clearMatches(): Promise<void> {
 
 export async function addMatch(
   data: Pick<Match, "team" | "opponent" | "date" | "home" | "friendly"> &
-    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId">>
+    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes">>
 ): Promise<{ saved: boolean; match: Match }> {
   const match: Match = {
     ...data,
@@ -159,6 +183,12 @@ export async function addMatch(
     footageUploaded: data.footageUploaded ?? false,
     cup: data.friendly && (data.cup ?? false),
     faId: data.faId ?? "",
+    meetTime: data.meetTime ?? "",
+    venue: data.venue ?? "",
+    address: data.address ?? "",
+    notes: data.notes ?? "",
+    lineup: null,
+    sentAt: "",
     goals: [],
     opponentGoals: 0,
     appearanceIds: [],
@@ -179,7 +209,7 @@ export async function addMatch(
 /** The details of a fixture, as opposed to what happened in it. */
 export type MatchDetails = Pick<
   Match,
-  "opponent" | "date" | "time" | "home" | "friendly" | "cup"
+  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes"
 >;
 
 /**
@@ -210,6 +240,9 @@ export async function updateMatch(
   if (typeof details.home === "boolean") match.home = details.home;
   if (typeof details.friendly === "boolean") match.friendly = details.friendly;
   if (typeof details.cup === "boolean") match.cup = details.cup;
+  for (const k of ["meetTime", "venue", "address", "notes"] as const) {
+    if (typeof details[k] === "string") match[k] = details[k].trim();
+  }
   // a league game is neither a friendly nor a cup game
   if (!match.friendly) match.cup = false;
   await write(match);
@@ -411,6 +444,8 @@ export async function deleteMatch(id: string): Promise<boolean> {
     await adjustPlayerStat(id, "appearances", -1);
   }
   await kv.hdel(KEY, id);
+  // and the families' answers to it (lib/fixtures.ts)
+  await kv.del(`fixture_responses:${id}`);
   return true;
 }
 
@@ -468,3 +503,24 @@ export async function syncFaFixtures(
   }
   return { added, updated, matches: all };
 }
+
+/** Save a game's line-up (null clears it). Coaches only — the route checks. */
+export async function setLineup(matchId: string, lineup: Lineup | null): Promise<Match | null> {
+  const match = await read(matchId);
+  if (!match) return null;
+  match.lineup = lineup;
+  await write(match);
+  return match;
+}
+
+/** Note that the coaches have sent a game to the team's families. */
+export async function markSent(matchId: string): Promise<Match | null> {
+  const match = await read(matchId);
+  if (!match) return null;
+  match.sentAt = new Date().toISOString();
+  await write(match);
+  return match;
+}
+
+/** One game, by id. */
+export const getMatch = read;
