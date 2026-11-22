@@ -13,7 +13,8 @@
 import Link from "next/link";
 import { awaitingApproval, childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
-import { myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
+import { invitedOf, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
+import { gameTitle } from "@/lib/fixtureFormat";
 import { getSubmissions } from "@/lib/storage";
 import { listMembers } from "@/lib/members";
 import { currentPerson, listPeople } from "@/lib/people";
@@ -196,7 +197,7 @@ export default async function Home() {
     // a parent: their children in the next game's squad still to answer (lib/fixtures.ts)
     if (nextMatch && person && !nextMatch.calledOff) {
       const [squad, replies] = await Promise.all([squadOf(nextMatch.team).catch(() => []), readReplies(nextMatch.id).catch(() => null)]);
-      if (replies) replyDue = myPlayersIn(person, squad).filter((k) => !replies.players[k.playerId]).length;
+      if (replies) replyDue = myPlayersIn(person, invitedOf(squad, nextMatch)).filter((k) => !replies.players[k.playerId]).length;
     }
   }
   const many = viewer.canCoach ? TEAMS.length > 1 && !person?.team : familyTeams.length > 1;
@@ -354,11 +355,11 @@ export default async function Home() {
               : []),
             ...(showNext
               ? [{ id: "match" as const, label: "Next match", node: nextMatch ? (
-                <NextRow link href={`/fixtures/${nextMatch.id}`}>
+                <NextRow link href={`${viewer.canCoach ? "/admin" : ""}/fixtures/${nextMatch.id}`}>
                   <DateBadge date={nextMatch.date} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">
-                      {many ? `${teamName(nextMatch.team)} ` : ""}vs {nextMatch.opponent || "TBC"}
+                      {many ? `${teamName(nextMatch.team)} ` : ""}{gameTitle(nextMatch)}
                     </span>
                     <span className={`block text-sm ${sub}`}>
                       {/* a game called off still shows, so families know it's off */}
@@ -371,12 +372,12 @@ export default async function Home() {
                       {nextMatch.time && !nextMatch.calledOff ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>
                     {replyDue > 0 && !nextMatch.calledOff && (
-                      <span className="block text-sm font-semibold text-amber-600 dark:text-amber-400">Can {replyDue === 1 ? "your child" : "they"} play? Tap to answer</span>
+                      <span className="block text-sm font-semibold text-amber-600 dark:text-amber-400">Can {replyDue === 1 ? "your child" : "they"} come? Tap to answer</span>
                     )}
                   </span>
                 </NextRow>
                 ) : (
-                <NextRow link={viewer.canCoach || familyTeams.length > 0} href={viewer.canCoach ? "/fixtures/new" : "/fixtures"}>
+                <NextRow link={viewer.canCoach || familyTeams.length > 0} href={viewer.canCoach ? "/admin/fixtures/new" : "/fixtures"}>
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700 dark:bg-green-400/10 dark:text-green-400">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       {ICON.ball}
@@ -394,7 +395,7 @@ export default async function Home() {
           <section className="flex flex-col gap-2.5">
             <h2 className="wp-text px-1 text-xl font-bold">Last result</h2>
             <div className={`${card} overflow-hidden`}>
-              <NextRow link href={`/fixtures/${lastResult.id}`}>
+              <NextRow link href={`${viewer.canCoach ? "/admin" : ""}/fixtures/${lastResult.id}`}>
                 <span className={`grid h-12 min-w-14 shrink-0 place-items-center rounded-xl px-2 text-xl font-extrabold text-white ${RESULT[outcome(lastResult)].badge}`}>
                   {lastResult.goals.length}–{lastResult.opponentGoals}
                 </span>

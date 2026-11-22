@@ -4024,7 +4024,7 @@ function showGames(t){
           badge.appendChild(el('span', null, day(g.date, { day:'numeric' })));
           row.appendChild(badge);
           var main = el('div', 'game-main');
-          main.appendChild(el('p', 'game-vs', 'vs ' + g.opponent));
+          main.appendChild(el('p', 'game-vs', g.tournament ? g.opponent : 'vs ' + g.opponent));
           var when = g.date === today ? 'Today' : g.date === tomorrow ? 'Tomorrow' : day(g.date, { weekday:'long' });
           var sub = el('p', 'game-sub');
           if(g.postponed) sub.appendChild(el('span', 'game-off', 'Postponed · '));

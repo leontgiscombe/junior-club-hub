@@ -62,11 +62,23 @@ export interface Match {
   notes: string;
   // The coaches' line-up: only coaches ever see it (lib/fixtures.ts).
   lineup: Lineup | null;
+  // What sort of game, as the coaches set it up: a match against one side
+  // (home or away, by `home`), a tournament (`opponent` is its name), or a
+  // training match. Tournaments and training matches stay out of the league
+  // record (they're saved as friendlies).
+  kind: MatchKind;
+  // The squad players asked whether they can play: null for the whole squad.
+  invited: string[] | null;
+  // Families answer by then ("YYYY-MM-DDTHH:MM", UK time); "" for no deadline.
+  deadline: string;
   // When the coaches last sent it to the team's families ("" never): from
   // then on, parents are asked whether each child can play.
   sentAt: string;
   createdAt: string;
 }
+
+export type MatchKind = "" | "tournament" | "training";
+export const MATCH_KINDS: MatchKind[] = ["", "tournament", "training"];
 
 /** A line-up: the shape, and who's in each position (slot 0 the keeper; "" empty). */
 export interface Lineup {
@@ -124,6 +136,9 @@ function parse(value: unknown): Match {
     notes: m.notes ?? "",
     lineup: m.lineup ?? null,
     sentAt: m.sentAt ?? "",
+    kind: m.kind ?? "",
+    invited: Array.isArray(m.invited) ? m.invited : null,
+    deadline: m.deadline ?? "",
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -173,7 +188,7 @@ export async function clearMatches(): Promise<void> {
 
 export async function addMatch(
   data: Pick<Match, "team" | "opponent" | "date" | "home" | "friendly"> &
-    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes">>
+    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline">>
 ): Promise<{ saved: boolean; match: Match }> {
   const match: Match = {
     ...data,
@@ -189,6 +204,9 @@ export async function addMatch(
     notes: data.notes ?? "",
     lineup: null,
     sentAt: "",
+    kind: data.kind ?? "",
+    invited: data.invited ?? null,
+    deadline: data.deadline ?? "",
     goals: [],
     opponentGoals: 0,
     appearanceIds: [],
@@ -209,7 +227,7 @@ export async function addMatch(
 /** The details of a fixture, as opposed to what happened in it. */
 export type MatchDetails = Pick<
   Match,
-  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes"
+  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline"
 >;
 
 /**
@@ -240,6 +258,9 @@ export async function updateMatch(
   if (typeof details.home === "boolean") match.home = details.home;
   if (typeof details.friendly === "boolean") match.friendly = details.friendly;
   if (typeof details.cup === "boolean") match.cup = details.cup;
+  if (typeof details.kind === "string") match.kind = details.kind;
+  if (details.invited !== undefined) match.invited = details.invited;
+  if (typeof details.deadline === "string") match.deadline = details.deadline;
   for (const k of ["meetTime", "venue", "address", "notes"] as const) {
     if (typeof details[k] === "string") match[k] = details[k].trim();
   }

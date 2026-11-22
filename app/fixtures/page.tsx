@@ -1,14 +1,14 @@
-// Fixtures: the coming games and the results of a family's teams (every
-// team's, for a coach). Parents see at a glance which games are still waiting
-// for their answer; coaches see how many of the squad can play. Each game
-// opens its own page (app/fixtures/[id]).
+// Fixtures, for families: their teams' coming games and results, with a
+// "Reply" on any game still waiting for their answer. Each game opens its own
+// page (app/fixtures/[id]). Coaches use Coach Admin → Fixtures instead.
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { TopBar } from "../components/SettingsUI";
 import { listMatches, type Match } from "@/lib/matchStorage";
 import { outcome } from "@/lib/record";
 import { getClub } from "@/lib/settings";
-import { myPlayersIn, readRepliesFor, squadOf, tally } from "@/lib/fixtures";
-import { dayWords, relativeDay, ukToday } from "@/lib/fixtureFormat";
+import { invitedOf, myPlayersIn, readRepliesFor, squadOf } from "@/lib/fixtures";
+import { dayWords, gameTitle, kindLabel, relativeDay, ukToday } from "@/lib/fixtureFormat";
 import type { Player } from "@/lib/statsStorage";
 import { fixturesViewer } from "./viewer";
 
@@ -30,6 +30,7 @@ const RESULT = {
 
 export default async function FixturesPage({ searchParams }: { searchParams: Promise<{ team?: string; view?: string }> }) {
   const v = await fixturesViewer("/fixtures");
+  if (v.coach) redirect("/admin/fixtures");
   const q = await searchParams;
   const view = q.view === "results" ? "results" : "upcoming";
   // the team picked, else a coach's own, else everything they can see
@@ -70,20 +71,6 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
     <main className="themed min-h-screen bg-[#f2f2f7] pb-16 text-gray-900 dark:bg-black dark:text-gray-50">
       <TopBar title="Fixtures" href="/" />
       <div className="mx-auto flex max-w-xl flex-col gap-4 px-4">
-        {v.coach && (
-          <Link href={`/fixtures/new${team ? `?team=${encodeURIComponent(team)}` : ""}`} className={`press ${card} flex items-center gap-3 px-4 py-3.5`}>
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-green-700 text-white" aria-hidden="true">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </span>
-            <span className="flex-1">
-              <span className="block font-bold">New fixture</span>
-              <span className={`block text-sm ${sub}`}>Add a game and send it to the families</span>
-            </span>
-          </Link>
-        )}
-
         {/* which games: coming up or results */}
         <div className="grid grid-cols-2 gap-1 rounded-2xl bg-gray-200/70 p-1 dark:bg-white/10" role="tablist" aria-label="Fixtures or results">
           {(["upcoming", "results"] as const).map((id) => (
@@ -114,21 +101,16 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
           <div className={`${card} px-6 py-10 text-center`}>
             <p className="font-semibold">{view === "upcoming" ? "No games coming up" : "No results yet"}</p>
             <p className={`mt-1 text-sm ${sub}`}>
-              {view === "upcoming"
-                ? v.coach
-                  ? "Add one with New fixture, or bring them in from FA Full-Time in the Match Log."
-                  : "They'll show here once the coaches have arranged them."
-                : "Scores show here once the coaches have put them in."}
+              {view === "upcoming" ? "They'll show here once the coaches have arranged them." : "Scores show here once the coaches have put them in."}
             </p>
           </div>
         ) : (
           <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
             {games.map((m) => {
               const squad = squads.get(m.team) ?? [];
-              const r = (replies as Record<string, Parameters<typeof tally>[1]>)[m.id];
-              const kids = view === "upcoming" ? myPlayersIn(v.person, squad) : [];
+              const r = (replies as Record<string, { players: Record<string, unknown> }>)[m.id];
+              const kids = view === "upcoming" ? myPlayersIn(v.person, invitedOf(squad, m)) : [];
               const toAnswer = r && !m.calledOff ? kids.filter((k) => !r.players[k.playerId]).length : 0;
-              const t = r ? tally(squad, r) : null;
               return (
                 <Link key={m.id} href={`/fixtures/${m.id}`} className="press flex items-center gap-3.5 px-4 py-3.5">
                   {view === "results" ? (
@@ -143,7 +125,8 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">
-                      {many ? `${teamName(m.team)} ` : ""}vs {m.opponent || "TBC"}
+                      {many ? `${teamName(m.team)} · ` : ""}
+                      {gameTitle(m)}
                     </span>
                     <span className={`block truncate text-sm ${sub}`}>
                       {m.calledOff && (
@@ -151,7 +134,7 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
                       )}
                       {view === "results"
                         ? `${RESULT[outcome(m)].label} · ${dayWords(m.date, { weekday: "short", day: "numeric", month: "short" })}`
-                        : `${relativeDay(m.date, today)}${m.time && !m.calledOff ? ` · ${m.time}` : ""} · ${m.home ? "Home" : "Away"}`}
+                        : `${relativeDay(m.date, today)}${m.time && !m.calledOff ? ` · ${m.time}` : ""} · ${kindLabel(m).split(" · ")[0]}`}
                     </span>
                   </span>
                   {/* a parent: whether they still have to answer; a coach: how the squad's answered */}
@@ -162,12 +145,6 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
                       }`}
                     >
                       {toAnswer ? "Reply" : "Replied"}
-                    </span>
-                  )}
-                  {view === "upcoming" && !m.calledOff && v.coach && kids.length === 0 && t && squad.length > 0 && (
-                    <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
-                      <span className="block text-green-700 dark:text-green-400">{t.yes} in</span>
-                      <span className={`block ${sub}`}>{t.waiting} to reply</span>
                     </span>
                   )}
                 </Link>

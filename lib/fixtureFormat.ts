@@ -32,3 +32,17 @@ export function fixtureWhen(m: Pick<Match, "date" | "time" | "meetTime" | "home"
 export const appleMapsUrl = (address: string) => `https://maps.apple.com/?q=${encodeURIComponent(address)}`;
 /** Apple Maps' directions to an address. */
 export const appleDirectionsUrl = (address: string) => `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`;
+
+/** What sort of game it is, in words. */
+export function kindLabel(m: Pick<Match, "kind" | "home" | "friendly" | "cup">): string {
+  if (m.kind === "tournament") return "Tournament";
+  if (m.kind === "training") return "Training match";
+  return `${m.home ? "Home" : "Away"} · ${m.cup ? "Cup" : m.friendly ? "Friendly" : "League"}`;
+}
+
+/** A game's name: "vs Calverley United", or a tournament's own name. */
+export const gameTitle = (m: Pick<Match, "kind" | "opponent">) => (m.kind === "tournament" ? m.opponent || "Tournament" : `vs ${m.opponent || "TBC"}`);
+
+/** A reply-by time ("YYYY-MM-DDTHH:MM") in words: "Fri 27 Nov, 18:00". */
+export const deadlineWords = (deadline: string) =>
+  `${dayWords(deadline.slice(0, 10), { weekday: "short", day: "numeric", month: "short" })}, ${deadline.slice(11, 16)}`;

@@ -40,7 +40,8 @@ export async function GET(request: Request) {
       home: m.home,
       venue: m.venue,
       postponed: m.calledOff === "postponed",
-      kind: m.cup ? "Cup" : m.friendly ? "Friendly" : "League",
+      kind: m.kind === "tournament" ? "Tournament" : m.kind === "training" ? "Training match" : m.cup ? "Cup" : m.friendly ? "Friendly" : "League",
+      tournament: m.kind === "tournament",
     }));
   const results = ours
     .filter((m) => m.resultLogged && !m.calledOff)
