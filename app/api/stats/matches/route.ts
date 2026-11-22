@@ -53,6 +53,8 @@ import { isCoach } from "@/lib/adminAuth";
 import { isTeam } from "@/lib/settings";
 import { isValidHolder } from "@/lib/cameraHolders";
 import type { FaFixture } from "@/lib/faFullTime";
+import { tellFamilies } from "@/lib/fixtureAlerts";
+import { getTenant } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 
@@ -261,6 +263,9 @@ async function faSync(team: string, raw: unknown) {
         (f.time === "" || /^\d{2}:\d{2}$/.test(f.time)) &&
         f.opponent
     );
-  const result = await syncFaFixtures(team, fixtures);
-  return NextResponse.json({ success: true, ...result });
+  const { moved, ...result } = await syncFaFixtures(team, fixtures);
+  // families who've had a game Full-Time has since moved hear about it (lib/fixtureAlerts.ts)
+  const tenant = await getTenant();
+  if (tenant) for (const m of moved) await tellFamilies(tenant, m, "changed");
+  return NextResponse.json({ success: true, ...result, moved: moved.length });
 }

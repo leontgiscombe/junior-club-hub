@@ -3,8 +3,9 @@
 // Keeps a team's fixtures in step with FA Full-Time. The team's official
 // Full-Time snippet is loaded in a hidden frame in the coach's own browser
 // (Full-Time blocks servers), the games are read out of it and sent to the
-// match log to add or update. It runs by itself when a team's match log is
-// opened — at most once an hour per team on each device — and on "Sync now".
+// match log to add or update. It runs by itself when a team's match log (or
+// Coach Admin → Fixtures) is opened — at most once an hour per team on each
+// device — and on "Sync now".
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSnippet, type FaFixture } from "@/lib/faFullTime";
 import { useClub, useTeams } from "./ClubProvider";
@@ -86,10 +87,16 @@ export default function FaSync<M>({
   team,
   adminKey,
   onMatches,
+  onSynced,
+  label,
 }: {
   team: string;
   adminKey: string;
   onMatches: (matches: M[]) => void;
+  /** after a sync that changed something: how many games were added or updated */
+  onSynced?: (changes: { added: number; updated: number }) => void;
+  /** the card's heading, e.g. the team's name where several teams sync at once */
+  label?: string;
 }) {
   const club = useClub();
   const code = useTeams().findTeam(team)?.faSnippet;
@@ -116,6 +123,7 @@ export default function FaSync<M>({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "The match log didn't save them");
       onMatches(data.matches ?? []);
+      if (data.added || data.updated) onSynced?.({ added: data.added ?? 0, updated: data.updated ?? 0 });
       next = {
         at: Date.now(),
         games: fixtures.length,
@@ -130,7 +138,7 @@ export default function FaSync<M>({
     setResult(next);
     setSyncing(false);
     running.current = false;
-  }, [code, adminKey, team, onMatches, club.faClubName, club.name, club.fullName]);
+  }, [code, adminKey, team, onMatches, onSynced, club.faClubName, club.name, club.fullName]);
 
   // On opening a team's log: show the last sync, and run one if it's been a while.
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -147,7 +155,7 @@ export default function FaSync<M>({
   return (
     <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm dark:bg-[#1c1c1e] dark:border-white/10">
       <p className="min-w-0 text-xs text-gray-600 dark:text-gray-300">
-        <span className="font-semibold text-gray-800 dark:text-gray-100">🔄 Fixtures from FA Full-Time</span>
+        <span className="font-semibold text-gray-800 dark:text-gray-100">🔄 {label ?? "Fixtures from FA Full-Time"}</span>
         <br />
         {syncing
           ? "Checking Full-Time…"

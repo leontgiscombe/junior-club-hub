@@ -10,6 +10,7 @@ import { invitedOf, readRepliesFor, squadOf, tally } from "@/lib/fixtures";
 import { dayWords, gameTitle, kindLabel, relativeDay, ukToday } from "@/lib/fixtureFormat";
 import type { Player } from "@/lib/statsStorage";
 import { coachViewer } from "./load";
+import FaSyncTeams from "./FaSyncTeams";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,9 @@ export default async function CoachFixtures({ searchParams }: { searchParams: Pr
           New game
         </Link>
 
+        {/* games from FA Full-Time, for teams with a code snippet set in Settings */}
+        <FaSyncTeams teams={v.teams.filter((t) => shown.includes(t.slug) && t.faSnippet).map((t) => ({ slug: t.slug, name: t.name }))} />
+
         {v.visible.length > 1 && (
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Teams">
             <Link href={link({ team: "all" })} className={chip(!team)}>All teams</Link>
@@ -110,6 +114,12 @@ export default async function CoachFixtures({ searchParams }: { searchParams: Pr
                       {!team && shown.length > 1 ? `${teamName(m.team)} · ` : ""}
                       {gameTitle(m)}
                     </span>
+                    {m.faId && view === "upcoming" && !m.sentAt && !m.calledOff && (
+                      <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
+                        <span className="rounded bg-sky-100 px-1 py-px text-[10px] font-extrabold dark:bg-sky-400/15">FA</span>
+                        {m.venue && m.meetTime ? "Ready to send" : `Add ${[!m.venue && "the ground", !m.meetTime && "the meet time"].filter(Boolean).join(" and ")}`}
+                      </span>
+                    )}
                     <span className={`block truncate text-sm ${sub}`}>
                       {m.calledOff ? (
                         <span className="font-bold text-red-600 dark:text-red-400">{m.calledOff === "postponed" ? "Postponed" : "Cancelled"}</span>

@@ -25,16 +25,14 @@ import {
   setOurGoals,
   updateMatch,
   type CalledOff,
-  type Match,
   type MatchDetails,
 } from "@/lib/matchStorage";
-import { canCoach, currentPerson, listPeople } from "@/lib/people";
+import { canCoach, currentPerson } from "@/lib/people";
 import { getTeams, isTeam } from "@/lib/settings";
 import { getTenant } from "@/lib/tenant";
-import { familiesOf, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
-import { notifyFixture } from "@/lib/notify";
+import { lineupSlots, squadOf } from "@/lib/fixtures";
+import { tellFamilies as tell } from "@/lib/fixtureAlerts";
 import { FORMATIONS, teamFormat } from "@/lib/clubSettings";
-import { fixtureWhen } from "@/lib/fixtureFormat";
 
 export const runtime = "nodejs";
 
@@ -103,27 +101,6 @@ async function details(body: Record<string, unknown>, team: string): Promise<Par
     }
   }
   return d;
-}
-
-/** Tell the team's families about a game: everyone, or (a reminder) those still to answer. */
-async function tell(tenant: string, match: Match, kind: "new" | "changed" | "reminder"): Promise<number> {
-  const [people, teams, squad, replies] = await Promise.all([
-    listPeople(tenant),
-    getTeams(),
-    squadOf(match.team),
-    kind === "reminder" ? readReplies(match.id) : null,
-  ]);
-  const invited = invitedOf(squad, match);
-  let families = familiesOf(people, match.team).filter((p) => myPlayersIn(p, invited).length > 0);
-  if (replies) families = families.filter((p) => myPlayersIn(p, invited).some((c) => !replies.players[c.playerId]));
-  return notifyFixture(tenant, {
-    id: match.id,
-    teamName: teams.find((t) => t.slug === match.team)?.name ?? "Your team",
-    opponent: match.opponent,
-    when: fixtureWhen(match),
-    kind,
-    userIds: families.map((p) => p.userId),
-  });
 }
 
 export async function POST(request: Request) {

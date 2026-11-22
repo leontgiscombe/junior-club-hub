@@ -79,6 +79,22 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
             <GameHero match={match} teamName={team.name} today={today} />
             <CalledOff match={match} />
 
+            {/* a game from FA Full-Time: what it still needs before it goes to families */}
+            {open && match.faId && !match.sentAt && (!match.venue || !match.meetTime) && (
+              <Link href={`/admin/fixtures/${match.id}/edit?step=when`} className="press flex items-center gap-3 rounded-3xl bg-sky-50 px-4 py-3.5 text-sky-900 dark:bg-sky-400/10 dark:text-sky-200">
+                <span className="rounded-md bg-sky-200/70 px-1.5 py-0.5 text-xs font-extrabold dark:bg-sky-400/20">FA</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold">From FA Full-Time</span>
+                  <span className="block text-sm opacity-80">
+                    Add {[!match.venue && "the ground", !match.meetTime && "the meet time"].filter(Boolean).join(" and ")} before sending
+                  </span>
+                </span>
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 opacity-60" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            )}
+
             {/* sending it, and how it's going */}
             {open && (
               <section className={`${card} flex flex-col gap-3 p-4`}>

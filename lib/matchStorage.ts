@@ -470,6 +470,13 @@ export async function deleteMatch(id: string): Promise<boolean> {
   return true;
 }
 
+const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+/** "HH:MM" moved by `by` minutes (within the day). */
+function shiftTime(t: string, by: number): string {
+  const m = (((minutes(t) + by) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
 /**
  * Bring a team's fixtures in line with FA Full-Time (see lib/faFullTime.ts).
  * A game already linked to a Full-Time fixture has its date, kick-off, venue
@@ -481,11 +488,17 @@ export async function deleteMatch(id: string): Promise<boolean> {
 export async function syncFaFixtures(
   team: string,
   fixtures: FaFixture[]
-): Promise<{ added: number; updated: number; matches: Match[] }> {
+): Promise<{ added: number; updated: number; matches: Match[]; moved: Match[] }> {
   const all = await listMatches();
   const ours = all.filter((m) => m.team === team);
   let added = 0;
   let updated = 0;
+  // games already sent to families whose day or kick-off Full-Time has changed
+  const moved: Match[] = [];
+  // where this team (else the club) last played at home, for new home games
+  const lastHome = [...ours, ...all.filter((m) => m.team !== team)]
+    .filter((m) => m.home && m.venue && !m.kind)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
   for (const f of fixtures) {
     const details = {
       date: f.date,
@@ -504,25 +517,33 @@ export async function syncFaFixtures(
         return sameDay.length === 1 ? sameDay[0] : undefined;
       })();
     if (existing) {
+      // a game a coach set up as a tournament or training match stays one
+      const { friendly, cup, ...rest } = details;
+      const want: Partial<typeof details> = existing.kind ? rest : { ...rest, friendly, cup };
       const changed =
         existing.faId !== f.faId ||
-        (Object.keys(details) as (keyof typeof details)[]).some(
-          (k) => existing[k] !== details[k]
-        );
+        (Object.keys(want) as (keyof typeof details)[]).some((k) => existing[k] !== want[k]);
       if (!changed) continue;
       // a postponed game Full-Time has given a new date is back on
       if (existing.calledOff === "postponed" && existing.date !== f.date) existing.calledOff = "";
-      Object.assign(existing, details, { faId: f.faId });
+      const shifted = existing.date !== f.date || (!!f.time && existing.time !== f.time);
+      // switched to the other side's ground: the old ground no longer applies
+      if (existing.home !== f.home && !existing.sentAt) Object.assign(existing, { venue: "", address: "" });
+      // a kick-off moved takes the meet time with it (meet 30 minutes before stays 30 minutes before)
+      const meetTime = existing.meetTime && existing.time && f.time && existing.time !== f.time ? shiftTime(existing.meetTime, minutes(f.time) - minutes(existing.time)) : existing.meetTime;
+      Object.assign(existing, want, { faId: f.faId, meetTime });
+      if (shifted && existing.sentAt && !existing.resultLogged && existing.calledOff !== "cancelled") moved.push(existing);
       await write(existing);
       updated++;
     } else {
-      const { match } = await addMatch({ team, ...details, faId: f.faId });
+      const ground = f.home && lastHome ? { venue: lastHome.venue, address: lastHome.address } : {};
+      const { match } = await addMatch({ team, ...details, ...ground, faId: f.faId });
       ours.push(match);
       all.push(match);
       added++;
     }
   }
-  return { added, updated, matches: all };
+  return { added, updated, matches: all, moved };
 }
 
 /** Save a game's line-up (null clears it). Coaches only — the route checks. */

@@ -13,8 +13,9 @@ export async function generateMetadata() {
   return { title: `Edit game – ${(await getClub()).name}` };
 }
 
-export default async function EditGame({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditGame({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ step?: string }> }) {
   const { id } = await params;
+  const { step } = await searchParams;
   const v = await coachViewer(`/admin/fixtures/${id}/edit`);
   const match = await getMatch(id).catch(() => null);
   if (!match) notFound();
@@ -27,6 +28,7 @@ export default async function EditGame({ params }: { params: Promise<{ id: strin
         <FixtureWizard
           matchId={match.id}
           sent={!!match.sentAt}
+          startAt={step === "when" || step === "who" ? step : undefined}
           teams={teams}
           venues={venues}
           initial={{

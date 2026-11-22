@@ -50,6 +50,12 @@ Upstash Redis database, set up for a club from one settings file.
   without them the page keeps the address and its Open in Maps / Directions
   buttons). Players' own devices see their team's games and results in the
   Training Hub's Games tab.
+  Games from FA Full-Time (a team's code snippet in Settings) come in on their
+  own when Coach Admin → Fixtures or the Match Log is opened, marked FA: a new
+  home game takes the team's last home ground, and the coach adds what's
+  missing (the meet time, an away ground) and sends it. When Full-Time moves a
+  game families have already had, the meet time moves with the kick-off and
+  they're told.
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
 - **End of Season Awards** (`/awards`): approved parents vote for their children's
