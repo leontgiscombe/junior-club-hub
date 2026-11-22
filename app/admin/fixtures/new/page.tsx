@@ -14,7 +14,7 @@ export async function generateMetadata() {
 export default async function NewGame({ searchParams }: { searchParams: Promise<{ team?: string }> }) {
   const v = await coachViewer("/admin/fixtures/new");
   const q = await searchParams;
-  const { teams, venues } = await wizardData(v.teams);
+  const { teams, venues, lastKits } = await wizardData(v.teams);
   const own = v.person.team?.slug;
   const team = teams.some((t) => t.slug === q.team) ? q.team! : teams.length === 1 ? teams[0].slug : own && teams.some((t) => t.slug === own) ? own : "";
   return (
@@ -25,7 +25,24 @@ export default async function NewGame({ searchParams }: { searchParams: Promise<
         <FixtureWizard
           teams={teams}
           venues={venues}
-          initial={{ team, type: "home", competition: "league", opponent: "", date: "", time: "", meetTime: "", venue: "", address: "", notes: "", invited: null, deadline: "" }}
+          lastKits={lastKits}
+          initial={{
+            team,
+            type: "home",
+            competition: "league",
+            opponent: "",
+            date: "",
+            time: "",
+            meetTime: "",
+            venue: "",
+            address: "",
+            notes: "",
+            invited: null,
+            deadline: "",
+            ourKit: lastKits[team]?.home?.ourKit ?? "",
+            theirKit: lastKits[team]?.home?.theirKit ?? "",
+            repeat: { every: 0, times: 1 },
+          }}
         />
       </div>
     </main>

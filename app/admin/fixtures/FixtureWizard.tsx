@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "@/lib/dialog";
 import { haptic } from "@/lib/haptics";
+import { KIT_COLOURS, Shirt, type KitColour } from "@/lib/kitColours";
 
 export type WizardTeam = { slug: string; name: string; opponents: string[]; squad: { id: string; name: string }[] };
 export type Venue = { team: string; venue: string; address: string; home: boolean };
@@ -32,7 +33,14 @@ export type WizardValues = {
   invited: string[] | null;
   /** "YYYY-MM-DDTHH:MM", or "" */
   deadline: string;
+  /** shirt colours (lib/kitColours.tsx), "" for not said */
+  ourKit: string;
+  theirKit: string;
+  /** a new game repeating: every 1 or 2 weeks, so many times in all; every 0 for just once */
+  repeat: { every: 0 | 1 | 2; times: number };
 };
+/** The colours a team last played in, at home and away, to start from. */
+export type LastKits = Record<string, { home?: { ourKit: string; theirKit: string }; away?: { ourKit: string; theirKit: string } }>;
 
 const field =
   "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-white/15 dark:bg-[#2c2c2e] dark:text-gray-50";
@@ -53,6 +61,10 @@ function before(time: string, minutes: number): string {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
 
+/** The date of the last game in a repeat. */
+const lastDate = (v: WizardValues) =>
+  v.date ? new Date(Date.parse(`${v.date}T12:00:00Z`) + (v.repeat.times - 1) * 7 * v.repeat.every * 86_400_000).toISOString().slice(0, 10) : "";
+
 const day = (date: string) =>
   date ? new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }) : "";
 
@@ -63,6 +75,8 @@ export default function FixtureWizard({
   matchId,
   sent,
   startAt,
+  lastKits = {},
+  inSeries = 0,
 }: {
   teams: WizardTeam[];
   venues: Venue[];
@@ -71,14 +85,26 @@ export default function FixtureWizard({
   sent?: boolean;
   /** open on this step (a game from FA Full-Time starts on "when") */
   startAt?: "when" | "who";
+  lastKits?: LastKits;
+  /** editing a game with this many later games in its series */
+  inSeries?: number;
 }) {
   const router = useRouter();
   const [v, setV] = useState<WizardValues>(initial);
   const steps = (["team", "type", "when", "who", "check"] as const).filter((s) => s !== "team" || (!matchId && teams.length > 1));
-  const [step, setStep] = useState(() => Math.max(0, startAt ? steps.indexOf(startAt) : 0));
+  // straight past "Which team?" when it's already chosen (New game from a team's list)
+  const [step, setStep] = useState(() => Math.max(0, startAt ? steps.indexOf(startAt) : initial.team ? steps.indexOf("type") : 0));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"" | "save" | "send">("");
   const [tell, setTell] = useState(true);
+  const [wholeSeries, setWholeSeries] = useState(false);
+  // a new game starts in the colours the team last wore at home (or away), until a coach picks
+  const [kitPicked, setKitPicked] = useState(!!matchId);
+  const kitsFor = (x: WizardValues): WizardValues => {
+    if (kitPicked) return x;
+    const last = lastKits[x.team]?.[x.type === "away" ? "away" : "home"];
+    return { ...x, ourKit: last?.ourKit ?? "", theirKit: last?.theirKit ?? "" };
+  };
   const set = <K extends keyof WizardValues>(k: K, value: WizardValues[K]) => setV((x) => ({ ...x, [k]: value }));
 
   const team = teams.find((t) => t.slug === v.team);
@@ -135,7 +161,7 @@ export default function FixtureWizard({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(
           matchId
-            ? { matchId, action: "edit", ...values, team: undefined, tell: !!sent && tell }
+            ? { matchId, action: "edit", ...values, team: undefined, repeat: undefined, tell: !!sent && tell, series: wholeSeries }
             : { ...values, send },
         ),
       });
@@ -147,7 +173,8 @@ export default function FixtureWizard({
       }
       haptic();
       const told = Number(data.told ?? 0);
-      toast(send || told ? `Sent${told ? ` to ${told} ${told === 1 ? "family" : "families"}` : ""}` : "Saved");
+      if (Number(data.games) > 1) toast(`${data.games} games ${send ? "sent" : "saved"}`);
+      else toast(send || told ? `Sent${told ? ` to ${told} ${told === 1 ? "family" : "families"}` : ""}` : "Saved");
       router.replace(`/admin/fixtures/${matchId ?? data.match.id}`);
     } catch {
       setError("No connection — try again");
@@ -179,7 +206,7 @@ export default function FixtureWizard({
               key={t.slug}
               type="button"
               onClick={() => {
-                setV((x) => ({ ...x, team: t.slug, invited: null, opponent: x.team === t.slug ? x.opponent : "" }));
+                setV((x) => kitsFor({ ...x, team: t.slug, invited: null, opponent: x.team === t.slug ? x.opponent : "" }));
                 setError("");
                 setStep(1);
               }}
@@ -200,7 +227,7 @@ export default function FixtureWizard({
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setV((x) => ({ ...x, type: t.id, opponent: (x.type === "tournament") === (t.id === "tournament") ? x.opponent : "" }))}
+                onClick={() => setV((x) => kitsFor({ ...x, type: t.id, opponent: (x.type === "tournament") === (t.id === "tournament") ? x.opponent : "" }))}
                 className={`press flex flex-col items-start gap-2 rounded-2xl p-4 text-left ring-2 ${
                   v.type === t.id ? "bg-green-50 ring-green-600 dark:bg-green-400/10" : "bg-white ring-transparent shadow-sm dark:bg-[#1c1c1e]"
                 }`}
@@ -246,6 +273,38 @@ export default function FixtureWizard({
               autoComplete="off"
             />
           </label>
+
+          {/* the shirts each side plays in, so families know what to wear and look for */}
+          {[
+            { k: "ourKit" as const, title: `Our kit${team ? ` (${team.name})` : ""}` },
+            ...(v.type !== "tournament" ? [{ k: "theirKit" as const, title: "Their kit" }] : []),
+          ].map(({ k, title: t }) => (
+            <div key={k} className="mt-2">
+              <span className={label}>
+                {t} <span className="font-normal text-gray-500 dark:text-gray-400">· {v[k] ? KIT_COLOURS[v[k] as KitColour]?.label : "optional"}</span>
+              </span>
+              <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1">
+                <button type="button" onClick={() => { setKitPicked(true); set(k, ""); }} aria-pressed={!v[k]} aria-label="Not said" className={`press grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ${!v[k] ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}>
+                  <Shirt colour="" className="h-6 w-6" />
+                </button>
+                {(Object.keys(KIT_COLOURS) as KitColour[]).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      setKitPicked(true);
+                      set(k, c);
+                    }}
+                    aria-pressed={v[k] === c}
+                    aria-label={KIT_COLOURS[c].label}
+                    className={`press grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ${v[k] === c ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}
+                  >
+                    <Shirt colour={c} className="h-7 w-7" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
@@ -299,6 +358,34 @@ export default function FixtureWizard({
             <span className={label}>Address</span>
             <textarea value={v.address} onChange={(e) => set("address", e.target.value)} rows={2} placeholder="Street and postcode, for the map" className={field} />
           </label>
+
+          {/* the same game again each week or two, as separate games */}
+          {!matchId && (
+            <div>
+              <span className={label}>Repeat</span>
+              <div className="flex flex-wrap gap-2">
+                {([0, 1, 2] as const).map((every) => (
+                  <button key={every} type="button" onClick={() => set("repeat", { every, times: every ? Math.max(v.repeat.times, 4) : 1 })} className={pill(v.repeat.every === every)}>
+                    {every === 0 ? "Just once" : every === 1 ? "Every week" : "Every 2 weeks"}
+                  </button>
+                ))}
+              </div>
+              {v.repeat.every > 0 && (
+                <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm dark:bg-[#1c1c1e]">
+                  <span className="flex-1 text-[15px] font-semibold">
+                    {v.repeat.times} games
+                    {v.date && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Last one {day(lastDate(v))}</span>}
+                  </span>
+                  <button type="button" aria-label="One fewer" onClick={() => set("repeat", { ...v.repeat, times: Math.max(2, v.repeat.times - 1) })} className="press grid h-10 w-10 place-items-center rounded-full bg-gray-100 text-xl font-bold dark:bg-white/10">
+                    −
+                  </button>
+                  <button type="button" aria-label="One more" onClick={() => set("repeat", { ...v.repeat, times: Math.min(26, v.repeat.times + 1) })} className="press grid h-10 w-10 place-items-center rounded-full bg-gray-100 text-xl font-bold dark:bg-white/10">
+                    +
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
@@ -386,10 +473,11 @@ export default function FixtureWizard({
             {[
               ["Game", title],
               ["Type", `${TYPES.find((t) => t.id === v.type)?.title}${isMatch ? ` · ${v.competition === "league" ? "League" : v.competition === "cup" ? "Cup" : "Friendly"}` : ""}`],
-              ["Date", day(v.date)],
+              ["Date", v.repeat.every && !matchId ? `${day(v.date)}, then ${v.repeat.every === 1 ? "every week" : "every 2 weeks"} (${v.repeat.times} games, to ${day(lastDate(v))})` : day(v.date)],
               ["Meet", v.meetTime || "—"],
               [v.type === "tournament" ? "Starts" : "Kick-off", v.time || "—"],
               ["Where", [v.venue, v.address].filter(Boolean).join(", ") || "—"],
+              ["Kit", [v.ourKit && `Us: ${KIT_COLOURS[v.ourKit as KitColour]?.label}`, v.theirKit && v.type !== "tournament" && `Them: ${KIT_COLOURS[v.theirKit as KitColour]?.label}`].filter(Boolean).join(" · ") || "—"],
               ["Invited", v.invited ? `${v.invited.length} of ${squad.length} players` : `Whole squad (${squad.length})`],
               ["Reply by", v.deadline ? `${day(v.deadline.slice(0, 10))}, ${v.deadline.slice(11)}` : "No deadline"],
             ].map(([k, val], i) => (
@@ -397,7 +485,7 @@ export default function FixtureWizard({
                 key={k}
                 type="button"
                 // tap a line to change it
-                onClick={() => setStep(steps.indexOf(i === 0 || i === 1 ? "type" : i < 6 ? "when" : "who"))}
+                onClick={() => setStep(steps.indexOf(i <= 1 || i === 6 ? "type" : i < 6 ? "when" : "who"))}
                 className="flex w-full items-start gap-3 px-4 py-3 text-left"
               >
                 <span className="w-20 shrink-0 text-sm text-gray-500 dark:text-gray-400">{k}</span>
@@ -406,6 +494,15 @@ export default function FixtureWizard({
             ))}
           </div>
           {v.notes.trim() && <p className="whitespace-pre-line rounded-2xl bg-white px-4 py-3 text-[15px] shadow-sm dark:bg-[#1c1c1e]">{v.notes.trim()}</p>}
+          {matchId && inSeries > 0 && (
+            <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-sm dark:bg-[#1c1c1e]">
+              <input type="checkbox" checked={wholeSeries} onChange={(e) => setWholeSeries(e.target.checked)} className="h-5 w-5 accent-green-700" />
+              <span className="text-[15px] font-semibold">
+                Also change the {inSeries} later {inSeries === 1 ? "game" : "games"} in this series
+                <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Everything but the date: each keeps its own day</span>
+              </span>
+            </label>
+          )}
           {matchId && sent && (
             <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-sm dark:bg-[#1c1c1e]">
               <input type="checkbox" checked={tell} onChange={(e) => setTell(e.target.checked)} className="h-5 w-5 accent-green-700" />

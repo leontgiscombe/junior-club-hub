@@ -44,6 +44,11 @@ Upstash Redis database, set up for a club from one settings file.
   send it to the families. Each game's coach page has Overview (sending,
   reminders, the coach's own availability, the result), Attendance (coming,
   can't come, no reply; coaches' availability) and a coach-only Line-up.
+  Each side's kit colour can be picked (a new game starts in the team's last
+  home or away colours) and families see what to wear. A new game can repeat
+  every week or two (up to 26 games), set up as separate games in a series:
+  families get one alert for the lot, and a game can be changed or removed
+  with the later games in its series.
   Families (`/fixtures`, the Fixtures tab, Home's Up next) see the game and
   answer for each invited child, nothing more. The address shows on an Apple
   map (MapKit JS: set `MAPKIT_KEY`, `MAPKIT_KEY_ID` and `APPLE_TEAM_ID`;

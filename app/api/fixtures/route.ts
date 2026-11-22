@@ -24,7 +24,10 @@ import {
   setOpponentGoals,
   setOurGoals,
   updateMatch,
+  anythingLogged,
+  listMatches,
   type CalledOff,
+  type Match,
   type MatchDetails,
 } from "@/lib/matchStorage";
 import { canCoach, currentPerson } from "@/lib/people";
@@ -33,6 +36,7 @@ import { getTenant } from "@/lib/tenant";
 import { lineupSlots, squadOf } from "@/lib/fixtures";
 import { tellFamilies as tell } from "@/lib/fixtureAlerts";
 import { FORMATIONS, teamFormat } from "@/lib/clubSettings";
+import { isKitColour } from "@/lib/kitColours";
 
 export const runtime = "nodejs";
 
@@ -84,6 +88,13 @@ async function details(body: Record<string, unknown>, team: string): Promise<Par
       d.cup = competition === "cup";
     } else return "Pick what sort of game it is";
   }
+  for (const k of ["ourKit", "theirKit"] as const) {
+    if (k in body) {
+      const c = String(body[k] ?? "");
+      if (c && !isKitColour(c)) return "Pick a kit colour";
+      d[k] = c;
+    }
+  }
   if ("venue" in body) d.venue = text(body.venue, 120);
   if ("address" in body) d.address = text(body.address, 300);
   if ("notes" in body) d.notes = text(body.notes, 2000);
@@ -103,6 +114,18 @@ async function details(body: Record<string, unknown>, team: string): Promise<Par
   return d;
 }
 
+const MAX_REPEATS = 26;
+const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+const dayGap = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
+/** A reply-by time set against one game, moved to the same distance from another. */
+const shiftDeadline = (deadline: string, from: string, to: string) =>
+  deadline ? `${addDays(deadline.slice(0, 10), dayGap(from, to))}${deadline.slice(10)}` : "";
+
+/** The games after `match` in its series that haven't been played. */
+async function laterInSeries(match: Match): Promise<Match[]> {
+  return (await listMatches()).filter((g) => g.seriesId === match.seriesId && g.id !== match.id && g.date > match.date && !g.resultLogged);
+}
+
 export async function POST(request: Request) {
   const me = await coach();
   if (!me) return bad("Only coaches can add fixtures", 403);
@@ -112,29 +135,44 @@ export async function POST(request: Request) {
   const d = await details({ type: "home", ...body }, team);
   if (typeof d === "string") return bad(d);
   if (!d.opponent || !d.date) return bad(d.kind === "tournament" ? "The tournament's name and date are needed" : "Who you're playing and the date are needed");
-  const { saved, match } = await addMatch({
-    team,
-    opponent: d.opponent,
-    date: d.date,
-    home: d.home ?? true,
-    friendly: d.friendly ?? false,
-    cup: d.cup,
-    time: d.time,
-    meetTime: d.meetTime,
-    venue: d.venue,
-    address: d.address,
-    notes: d.notes,
-    kind: d.kind,
-    invited: d.invited ?? null,
-    deadline: d.deadline,
-  });
-  if (!saved) return bad("Storage isn't set up", 503);
+  // repeating: the same game every week or two, as separate games in a series
+  const every = Number((body.repeat as { every?: unknown } | undefined)?.every);
+  const times = Math.floor(Number((body.repeat as { times?: unknown } | undefined)?.times));
+  const repeat = (every === 1 || every === 2) && times >= 2 ? Math.min(times, MAX_REPEATS) : 1;
+  const seriesId = repeat > 1 ? crypto.randomUUID() : "";
+  const games: Match[] = [];
+  for (let i = 0; i < repeat; i++) {
+    const shift = i * 7 * (every || 1);
+    const { saved, match } = await addMatch({
+      team,
+      opponent: d.opponent,
+      date: addDays(d.date, shift),
+      home: d.home ?? true,
+      friendly: d.friendly ?? false,
+      cup: d.cup,
+      time: d.time,
+      meetTime: d.meetTime,
+      venue: d.venue,
+      address: d.address,
+      notes: d.notes,
+      kind: d.kind,
+      invited: d.invited ?? null,
+      // the reply-by time keeps its distance from each game
+      deadline: d.deadline ? `${addDays(d.deadline.slice(0, 10), shift)}${d.deadline.slice(10)}` : "",
+      ourKit: d.ourKit,
+      theirKit: d.theirKit,
+      seriesId,
+    });
+    if (!saved) return bad("Storage isn't set up", 503);
+    games.push(match);
+  }
   let told = 0;
   if (body.send === true) {
-    await markSent(match.id);
-    told = await tell(me.tenant, match, "new");
+    for (const g of games) await markSent(g.id);
+    // one alert for a whole series, not one per game
+    told = await tell(me.tenant, games[0], "new", games.length > 1 ? { count: games.length, every: every as 1 | 2 } : undefined);
   }
-  return NextResponse.json({ success: true, match, told });
+  return NextResponse.json({ success: true, match: games[0], games: games.length, told });
 }
 
 export async function PATCH(request: Request) {
@@ -149,8 +187,22 @@ export async function PATCH(request: Request) {
     const d = await details(body, match.team);
     if (typeof d === "string") return bad(d);
     const updated = await updateMatch(match.id, d);
-    const told = updated && body.tell === true && updated.sentAt ? await tell(me.tenant, updated, "changed") : 0;
-    return NextResponse.json({ success: true, match: updated, told });
+    let told = updated && body.tell === true && updated.sentAt ? await tell(me.tenant, updated, "changed") : 0;
+    // "this and later games": everything but the date (each keeps its own day)
+    let others = 0;
+    if (body.series === true && match.seriesId) {
+      const rest = { ...d };
+      delete rest.date;
+      delete rest.deadline;
+      for (const g of await laterInSeries(match)) {
+        // a reply-by time keeps the same distance from each game as from this one
+        const deadline = d.deadline !== undefined ? shiftDeadline(d.deadline, match.date, g.date) : undefined;
+        const next = await updateMatch(g.id, { ...rest, ...(deadline !== undefined ? { deadline } : {}) });
+        others++;
+        if (next && body.tell === true && next.sentAt) told = Math.max(told, await tell(me.tenant, next, "changed"));
+      }
+    }
+    return NextResponse.json({ success: true, match: updated, told, others });
   }
   if (action === "send") {
     const first = !match.sentAt;
@@ -203,7 +255,12 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const me = await coach();
   if (!me) return bad("Only coaches can remove fixtures", 403);
-  const id = new URL(request.url).searchParams.get("id") ?? "";
-  if (!(await deleteMatch(id))) return bad("That game isn't in the fixtures any more", 404);
-  return NextResponse.json({ success: true });
+  const params = new URL(request.url).searchParams;
+  const match = await getMatch(params.get("id") ?? "");
+  if (!match) return bad("That game isn't in the fixtures any more", 404);
+  // "this and later games in the series": the later ones go if nothing's logged against them
+  const later = params.get("series") === "1" && match.seriesId ? (await laterInSeries(match)).filter((g) => !anythingLogged(g)) : [];
+  await deleteMatch(match.id);
+  for (const g of later) await deleteMatch(g.id);
+  return NextResponse.json({ success: true, removed: 1 + later.length });
 }

@@ -10,7 +10,13 @@ import { notifyFixture } from "./notify";
 import { fixtureWhen } from "./fixtureFormat";
 
 /** Tell the invited families about `match`; how many it went to. Never throws. */
-export async function tellFamilies(tenant: string, match: Match, kind: "new" | "changed" | "reminder"): Promise<number> {
+export async function tellFamilies(
+  tenant: string,
+  match: Match,
+  kind: "new" | "changed" | "reminder",
+  /** a repeating game, set up as several at once: one alert for them all */
+  series?: { count: number; every: 1 | 2 },
+): Promise<number> {
   try {
     const [people, teams, squad, replies] = await Promise.all([
       listPeople(tenant),
@@ -27,6 +33,7 @@ export async function tellFamilies(tenant: string, match: Match, kind: "new" | "
       opponent: match.opponent,
       when: fixtureWhen(match),
       kind,
+      series,
       userIds: families.map((p) => p.userId),
     });
   } catch (e) {

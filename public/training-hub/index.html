@@ -4030,7 +4030,7 @@ function showGames(t){
           if(g.postponed) sub.appendChild(el('span', 'game-off', 'Postponed · '));
           sub.appendChild(document.createTextNode([when, !g.postponed && g.meetTime ? 'meet ' + g.meetTime : '', !g.postponed && g.time ? 'KO ' + g.time : '', g.home ? 'Home' : 'Away', g.kind !== 'League' ? g.kind : ''].filter(Boolean).join(' · ')));
           main.appendChild(sub);
-          if(g.venue) main.appendChild(el('p', 'game-sub', g.venue));
+          if(g.venue || g.kit) main.appendChild(el('p', 'game-sub', [g.venue, g.kit ? 'wear ' + g.kit : ''].filter(Boolean).join(' · ')));
           row.appendChild(main);
           list.appendChild(row);
         });

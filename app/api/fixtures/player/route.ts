@@ -10,6 +10,7 @@ import { currentPlayer, playerView } from "@/lib/playerRequest";
 import { getTenant } from "@/lib/tenant";
 import { ukToday } from "@/lib/fixtureFormat";
 import { outcome } from "@/lib/record";
+import { KIT_COLOURS, isKitColour } from "@/lib/kitColours";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export async function GET(request: Request) {
       postponed: m.calledOff === "postponed",
       kind: m.kind === "tournament" ? "Tournament" : m.kind === "training" ? "Training match" : m.cup ? "Cup" : m.friendly ? "Friendly" : "League",
       tournament: m.kind === "tournament",
+      kit: isKitColour(m.ourKit) ? KIT_COLOURS[m.ourKit].label.toLowerCase() : "",
     }));
   const results = ours
     .filter((m) => m.resultLogged && !m.calledOff)

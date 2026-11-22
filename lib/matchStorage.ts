@@ -71,6 +71,12 @@ export interface Match {
   invited: string[] | null;
   // Families answer by then ("YYYY-MM-DDTHH:MM", UK time); "" for no deadline.
   deadline: string;
+  // The shirt colours each side plays in (lib/kitColours.ts); "" when not said.
+  ourKit: string;
+  theirKit: string;
+  // Games set up together to repeat (every week, every two weeks) share an
+  // id, so they can be changed or removed together; "" for a one-off.
+  seriesId: string;
   // When the coaches last sent it to the team's families ("" never): from
   // then on, parents are asked whether each child can play.
   sentAt: string;
@@ -139,6 +145,9 @@ function parse(value: unknown): Match {
     kind: m.kind ?? "",
     invited: Array.isArray(m.invited) ? m.invited : null,
     deadline: m.deadline ?? "",
+    ourKit: m.ourKit ?? "",
+    theirKit: m.theirKit ?? "",
+    seriesId: m.seriesId ?? "",
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -188,7 +197,7 @@ export async function clearMatches(): Promise<void> {
 
 export async function addMatch(
   data: Pick<Match, "team" | "opponent" | "date" | "home" | "friendly"> &
-    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline">>
+    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline" | "ourKit" | "theirKit" | "seriesId">>
 ): Promise<{ saved: boolean; match: Match }> {
   const match: Match = {
     ...data,
@@ -207,6 +216,9 @@ export async function addMatch(
     kind: data.kind ?? "",
     invited: data.invited ?? null,
     deadline: data.deadline ?? "",
+    ourKit: data.ourKit ?? "",
+    theirKit: data.theirKit ?? "",
+    seriesId: data.seriesId ?? "",
     goals: [],
     opponentGoals: 0,
     appearanceIds: [],
@@ -227,7 +239,7 @@ export async function addMatch(
 /** The details of a fixture, as opposed to what happened in it. */
 export type MatchDetails = Pick<
   Match,
-  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline"
+  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "deadline" | "ourKit" | "theirKit"
 >;
 
 /**
@@ -261,7 +273,7 @@ export async function updateMatch(
   if (typeof details.kind === "string") match.kind = details.kind;
   if (details.invited !== undefined) match.invited = details.invited;
   if (typeof details.deadline === "string") match.deadline = details.deadline;
-  for (const k of ["meetTime", "venue", "address", "notes"] as const) {
+  for (const k of ["meetTime", "venue", "address", "notes", "ourKit", "theirKit"] as const) {
     if (typeof details[k] === "string") match[k] = details[k].trim();
   }
   // a league game is neither a friendly nor a cup game
