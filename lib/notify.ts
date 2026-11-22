@@ -457,7 +457,16 @@ export async function sendTestAlert(tenant: string, userId: string, endpoint: st
  */
 export async function notifyFixture(
   tenant: string,
-  game: { id: string; teamName: string; opponent: string; when: string; kind: "new" | "changed" | "reminder"; userIds: string[] },
+  game: {
+    id: string;
+    teamName: string;
+    opponent: string;
+    when: string;
+    kind: "new" | "changed" | "reminder";
+    /** several games set up at once, repeating */
+    series?: { count: number; every: 1 | 2 };
+    userIds: string[];
+  },
 ): Promise<number> {
   try {
     const ids = new Set(game.userIds);
@@ -465,7 +474,12 @@ export async function notifyFixture(
     if (!people.length) return 0;
     const vs = `${game.teamName} vs ${game.opponent}`;
     const message =
-      game.kind === "new"
+      game.series && game.kind === "new"
+        ? {
+            title: `${game.series.count} new games: ${vs}`,
+            body: `${game.series.every === 1 ? "Every week" : "Every two weeks"} from ${game.when}. Let the coaches know which ones your child can play.`,
+          }
+        : game.kind === "new"
         ? { title: `New fixture: ${vs}`, body: `${game.when}. Let the coaches know if your child can play.` }
         : game.kind === "changed"
           ? { title: `Fixture updated: ${vs}`, body: `${game.when}. Open it for the latest details.` }

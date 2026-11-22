@@ -136,7 +136,18 @@ export function SendButton({ matchId, sent, waitingFamilies }: { matchId: string
 }
 
 /** Everything else a coach might do with a game, kept out of the way: edit, postpone, cancel, remove. */
-export function MoreActions({ matchId, calledOff, canCallOff }: { matchId: string; calledOff: "" | "postponed" | "cancelled"; canCallOff: boolean }) {
+export function MoreActions({
+  matchId,
+  calledOff,
+  canCallOff,
+  laterInSeries = 0,
+}: {
+  matchId: string;
+  calledOff: "" | "postponed" | "cancelled";
+  canCallOff: boolean;
+  /** later games in this game's series, which can go with it */
+  laterInSeries?: number;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -149,13 +160,14 @@ export function MoreActions({ matchId, calledOff, canCallOff }: { matchId: strin
     haptic();
     router.refresh();
   }
-  async function remove() {
-    if (!(await ask("Remove this game?\n\nIts answers, line-up and anything logged against it in the Match Log go too.", { ok: "Remove", danger: true }))) return;
+  async function remove(series = false) {
+    const what = series ? `this game and the ${laterInSeries} after it in the series` : "this game";
+    if (!(await ask(`Remove ${what}?\n\nAnswers, line-ups and anything logged in the Match Log go too.`, { ok: "Remove", danger: true }))) return;
     setBusy(true);
-    const { ok } = await send(`/api/fixtures?id=${encodeURIComponent(matchId)}`, "DELETE");
+    const { ok, data } = await send(`/api/fixtures?id=${encodeURIComponent(matchId)}${series ? "&series=1" : ""}`, "DELETE");
     setBusy(false);
     if (!ok) return;
-    toast("Removed");
+    toast(Number(data.removed) > 1 ? `${data.removed} games removed` : "Removed");
     router.replace("/admin/fixtures");
   }
 
@@ -181,9 +193,14 @@ export function MoreActions({ matchId, calledOff, canCallOff }: { matchId: strin
           </>
         )
       )}
-      <button type="button" disabled={busy} onClick={remove} className={`${row} text-red-600 dark:text-red-400`}>
+      <button type="button" disabled={busy} onClick={() => remove()} className={`${row} text-red-600 dark:text-red-400`}>
         Remove game
       </button>
+      {laterInSeries > 0 && (
+        <button type="button" disabled={busy} onClick={() => remove(true)} className={`${row} text-red-600 dark:text-red-400`}>
+          Remove this and the {laterInSeries} later {laterInSeries === 1 ? "game" : "games"} in the series
+        </button>
+      )}
     </div>
   );
 }

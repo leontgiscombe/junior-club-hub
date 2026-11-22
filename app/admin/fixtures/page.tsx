@@ -113,6 +113,7 @@ export default async function CoachFixtures({ searchParams }: { searchParams: Pr
                     <span className="block truncate font-bold">
                       {!team && shown.length > 1 ? `${teamName(m.team)} · ` : ""}
                       {gameTitle(m)}
+                      {m.seriesId && <span className={`ml-1 text-xs font-semibold ${sub}`} title="Repeating">↻</span>}
                     </span>
                     {m.faId && view === "upcoming" && !m.sentAt && !m.calledOff && (
                       <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">

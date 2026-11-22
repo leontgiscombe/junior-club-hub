@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { TopBar } from "../../../components/SettingsUI";
-import { getMatch } from "@/lib/matchStorage";
+import { getMatch, listMatches } from "@/lib/matchStorage";
 import { listPeople } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { FORMATIONS, teamFormat, teamFormation } from "@/lib/clubSettings";
@@ -48,6 +48,9 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
   const families = familiesOf(people, match.team).filter((f) => myPlayersIn(f, invited).length > 0);
   const waitingFamilies = families.filter((f) => myPlayersIn(f, invited).some((c) => !replies.players[c.playerId])).length;
   const me = replies.hosts[v.person.userId];
+  // the games after this one in a repeating series, not yet played
+  const series = match.seriesId ? (await listMatches().catch(() => [])).filter((g) => g.seriesId === match.seriesId).sort((a, b) => a.date.localeCompare(b.date)) : [];
+  const laterInSeries = series.filter((g) => g.date > match.date && !g.resultLogged).length;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -78,6 +81,11 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
           <>
             <GameHero match={match} teamName={team.name} today={today} />
             <CalledOff match={match} />
+            {series.length > 1 && (
+              <p className={`-mt-2 px-1 text-sm ${sub}`}>
+                Game {series.findIndex((g) => g.id === match.id) + 1} of {series.length} in a repeating series
+              </p>
+            )}
 
             {/* a game from FA Full-Time: what it still needs before it goes to families */}
             {open && match.faId && !match.sentAt && (!match.venue || !match.meetTime) && (
@@ -146,7 +154,7 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
 
             <section className="flex flex-col gap-2">
               <h2 className={heading}>More</h2>
-              <MoreActions matchId={match.id} calledOff={match.calledOff} canCallOff={!over} />
+              <MoreActions matchId={match.id} calledOff={match.calledOff} canCallOff={!over} laterInSeries={laterInSeries} />
             </section>
           </>
         )}

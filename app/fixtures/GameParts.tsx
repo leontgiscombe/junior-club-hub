@@ -4,6 +4,7 @@ import type { Match } from "@/lib/matchStorage";
 import { outcome } from "@/lib/record";
 import { dayWords, gameTitle, kindLabel, relativeDay } from "@/lib/fixtureFormat";
 import VenueMap from "./VenueMap";
+import { KIT_COLOURS, Shirt, isKitColour } from "@/lib/kitColours";
 
 export const card = "rounded-3xl bg-white shadow-sm dark:bg-[#1c1c1e]";
 export const sub = "text-gray-500 dark:text-gray-400";
@@ -34,7 +35,10 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
         </div>
       ) : (
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pb-5 pt-3">
-          <span className="text-left text-lg font-extrabold leading-tight">{left}</span>
+          <span className="text-left text-lg font-extrabold leading-tight">
+            {(match.home || match.kind === "training" ? match.ourKit : match.theirKit) && <Shirt colour={match.home || match.kind === "training" ? match.ourKit : match.theirKit} className="mb-1 block h-7 w-7" />}
+            {left}
+          </span>
           {played ? (
             <span className="rounded-2xl bg-white/15 px-3 py-1.5 text-3xl font-black tabular-nums">
               {match.home ? match.goals.length : match.opponentGoals}–{match.home ? match.opponentGoals : match.goals.length}
@@ -42,7 +46,10 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
           ) : (
             <span className="rounded-2xl bg-white/15 px-3 py-2 text-center text-sm font-black">{match.time || "TBC"}</span>
           )}
-          <span className="text-right text-lg font-extrabold leading-tight">{right}</span>
+          <span className="flex flex-col items-end text-right text-lg font-extrabold leading-tight">
+            {(match.home || match.kind === "training" ? match.theirKit : match.ourKit) && <Shirt colour={match.home || match.kind === "training" ? match.theirKit : match.ourKit} className="mb-1 block h-7 w-7" />}
+            {right}
+          </span>
         </div>
       )}
       <div className="flex items-center justify-between gap-2 bg-black/15 px-5 py-2.5 text-sm font-semibold">
@@ -89,6 +96,20 @@ export function GameDetails({ match, teamName }: { match: Match; teamName: strin
           <TimeRow label="Date" value={dayWords(match.date, { weekday: "short", day: "numeric", month: "short" })} icon={<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>} />
           {match.meetTime && <TimeRow label="Meet at" value={match.meetTime} icon={<><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 19a4 4 0 0 1 7 0" /></>} />}
           <TimeRow label={match.kind === "tournament" ? "Starts" : "Kick-off"} value={match.time || "TBC"} icon={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>} />
+          {isKitColour(match.ourKit) && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gray-50 dark:bg-white/5">
+                <Shirt colour={match.ourKit} className="h-6 w-6" />
+              </span>
+              <span className={`flex-1 text-sm ${sub}`}>Wear</span>
+              <span className="font-bold">
+                {KIT_COLOURS[match.ourKit].label} kit
+                {isKitColour(match.theirKit) && match.kind !== "tournament" && (
+                  <span className={`block text-right text-xs font-semibold ${sub}`}>They&apos;re in {KIT_COLOURS[match.theirKit].label.toLowerCase()}</span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
       </section>
 

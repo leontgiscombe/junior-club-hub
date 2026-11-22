@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import NoTabBar from "../../../../components/NoTabBar";
 import { TopBar } from "../../../../components/SettingsUI";
-import { getMatch } from "@/lib/matchStorage";
+import { getMatch, listMatches } from "@/lib/matchStorage";
 import { getClub } from "@/lib/settings";
 import { coachViewer, wizardData } from "../../load";
 import FixtureWizard from "../../FixtureWizard";
@@ -20,6 +20,9 @@ export default async function EditGame({ params, searchParams }: { params: Promi
   const match = await getMatch(id).catch(() => null);
   if (!match) notFound();
   const { teams, venues } = await wizardData(v.teams);
+  const later = match.seriesId
+    ? (await listMatches().catch(() => [])).filter((g) => g.seriesId === match.seriesId && g.id !== match.id && g.date > match.date && !g.resultLogged).length
+    : 0;
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] text-gray-900 dark:bg-black dark:text-gray-50">
       <NoTabBar />
@@ -44,7 +47,11 @@ export default async function EditGame({ params, searchParams }: { params: Promi
             notes: match.notes,
             invited: match.invited,
             deadline: match.deadline,
+            ourKit: match.ourKit,
+            theirKit: match.theirKit,
+            repeat: { every: 0, times: 1 },
           }}
+          inSeries={later}
         />
       </div>
     </main>

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { listMatches } from "@/lib/matchStorage";
 import { listPlayers } from "@/lib/statsStorage";
 import { fixturesViewer } from "../../fixtures/viewer";
-import type { Venue, WizardTeam } from "./FixtureWizard";
+import type { LastKits, Venue, WizardTeam } from "./FixtureWizard";
 
 export async function coachViewer(next: string) {
   const v = await fixturesViewer(next);
@@ -13,9 +13,16 @@ export async function coachViewer(next: string) {
   return v;
 }
 
-export async function wizardData(teams: { slug: string; name: string; opponents?: string[] }[]): Promise<{ teams: WizardTeam[]; venues: Venue[] }> {
+export async function wizardData(teams: { slug: string; name: string; opponents?: string[] }[]): Promise<{ teams: WizardTeam[]; venues: Venue[]; lastKits: LastKits }> {
   const [players, matches] = await Promise.all([listPlayers().catch(() => []), listMatches().catch(() => [])]);
+  // each team's colours in its latest home and away games
+  const lastKits: LastKits = {};
+  for (const m of [...matches].sort((a, b) => a.date.localeCompare(b.date))) {
+    if (!m.ourKit && !m.theirKit) continue;
+    (lastKits[m.team] ??= {})[m.home ? "home" : "away"] = { ourKit: m.ourKit, theirKit: m.theirKit };
+  }
   return {
+    lastKits,
     teams: teams.map((t) => ({
       slug: t.slug,
       name: t.name,
