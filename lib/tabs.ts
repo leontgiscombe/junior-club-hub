@@ -16,7 +16,8 @@ export type TabId =
   | "trainingLog"
   | "stats"
   | "members"
-  | "search";
+  | "search"
+  | "fixtures";
 
 export type TabContext = {
   signedIn: boolean;
@@ -68,6 +69,8 @@ export function tabDef(id: TabId, ctx: TabContext): TabDef {
       return { href: "/admin/members", label: "Members", match: (p) => p === "/admin/members" };
     case "search":
       return { href: "/search", label: "Search", match: (p) => p === "/search" };
+    case "fixtures":
+      return { href: "/fixtures", label: "Fixtures", match: (p) => p === "/fixtures" };
   }
 }
 
@@ -77,6 +80,8 @@ export function availableTabs(ctx: TabContext): TabId[] {
   if (ctx.features.trainingHub !== false) out.push("training");
   if (ctx.features.financialAdmin !== false && ctx.canFinance) out.push("finances");
   if (ctx.features.kitSizes !== false) out.push("kit");
+  // a club member's (or their children's) games (app/fixtures)
+  if (ctx.signedIn) out.push("fixtures");
   if (ctx.canCoach) out.push("coach");
   if (ctx.publicResults) out.push("results");
   // not Account: your photo, top left of every main page, opens it
@@ -89,7 +94,7 @@ export function availableTabs(ctx: TabContext): TabId[] {
 export function defaultTabs(ctx: TabContext): TabId[] {
   const out: TabId[] = ["home"];
   const can = availableTabs(ctx);
-  for (const id of ["training", "finances", "kit", "coach"] as TabId[]) if (can.includes(id)) out.push(id);
+  for (const id of ["training", "finances", "kit", "coach", "fixtures"] as TabId[]) if (can.includes(id)) out.push(id);
   return out.slice(0, MAX_TABS);
 }
 

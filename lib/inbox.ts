@@ -11,7 +11,7 @@ import { listMatches, type Match } from "./matchStorage";
 import { outcome } from "./record";
 import { getClub, getTeams } from "./settings";
 
-export type InboxKind = "join" | "child" | "kit" | "awards" | "approved" | "subs" | "result" | "potm";
+export type InboxKind = "join" | "child" | "kit" | "awards" | "approved" | "subs" | "result" | "potm" | "fixture";
 
 export type InboxItem = {
   id: string;

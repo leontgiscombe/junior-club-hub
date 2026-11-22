@@ -33,6 +33,7 @@ const TILE: Record<InboxKind, { colour: string; icon: React.ReactNode }> = {
   join: { colour: TILE_COLOURS.members, icon: people },
   child: { colour: TILE_COLOURS.members, icon: people },
   approved: { colour: TILE_COLOURS.hub, icon: <><circle cx="12" cy="12" r="9" /><path d="m8 12.5 2.7 2.7L16 9.8" /></> },
+  fixture: { colour: TILE_COLOURS.matches, icon: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
   subs: { colour: TILE_COLOURS.finances, icon: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></> },
 };
 

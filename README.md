@@ -37,6 +37,17 @@ Upstash Redis database, set up for a club from one settings file.
   coach taps **Tell the Families** on the poster (once per team and month). The
   bell's red number counts what's come since Notifications was last opened
   (`lib/inbox.ts`).
+- **Fixtures** (`/fixtures`, the Fixtures tab, Home's Up next): each coming game and
+  result for a family's teams. A coach adds a game (team from a drop-down of the
+  club's teams, opponent, home/away, date, meet and kick-off times, ground and
+  address, notes) and sends it to the families, who answer for each child
+  (playing / can't play, with an optional reason). Coaches see every answer
+  (playing, can't play, no reply), say whether they can host, remind the
+  families still to answer, put in the score and pick a line-up only coaches
+  can see. The address shows on an Apple map (MapKit JS: set `MAPKIT_KEY`,
+  `MAPKIT_KEY_ID` and `APPLE_TEAM_ID`; without them the page keeps the address
+  and its Open in Maps / Directions buttons). Players' own devices see their
+  team's coming games and results in the Training Hub's Games tab.
 - **Results** (`/results`): scores, tables and top scorers for parents
   (`publicResults` turns it off for non-competitive football).
 - **End of Season Awards** (`/awards`): approved parents vote for their children's

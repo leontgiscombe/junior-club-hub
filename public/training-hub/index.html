@@ -416,6 +416,26 @@ html.dark .up-next-empty{color:#9ca3af}
 html.dark .up-next{background:#1c1c1e;box-shadow:none}
 html.dark .up-next-topic,html.dark .up-next-name{color:#fff}
 html.dark .up-next-what{color:#d1d5db}
+/* the Games tab: the team's coming games and results (/api/fixtures/player) */
+.games-h{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#6b7280;margin:14px 2px 6px}
+.games-list{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgb(0 0 0 / 5%);overflow:hidden}
+.game-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid #f3f4f6}
+.game-row:first-child{border-top:0}
+.game-date{width:46px;flex-shrink:0;text-align:center;border-radius:12px;background:#f0fdf4;padding:5px 0}
+.game-date b{display:block;font-size:10px;font-weight:800;text-transform:uppercase;color:#15803d}
+.game-date span{display:block;font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;line-height:1.1;color:#111827}
+.game-score{min-width:54px;flex-shrink:0;text-align:center;border-radius:12px;padding:10px 6px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;color:#fff}
+.game-score.W{background:#16a34a}.game-score.D{background:#f59e0b}.game-score.L{background:#dc2626}
+.game-main{flex:1;min-width:0}
+.game-vs{font-weight:800;font-size:15px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-sub{font-size:12px;color:#6b7280;margin-top:1px}
+.game-off{color:#dc2626;font-weight:800}
+html.dark .games-list{background:#1c1c1e;box-shadow:none}
+html.dark .game-row{border-color:rgba(255,255,255,.08)}
+html.dark .game-date{background:rgba(74,222,128,.1)}
+html.dark .game-date b{color:#4ade80}
+html.dark .game-date span,html.dark .game-vs{color:#fff}
+html.dark .games-h,html.dark .game-sub{color:#9ca3af}
 html.dark .up-next-drill{border-color:#2c2c2e}
 html.dark .up-next-when{color:#86efac}
 html.dark .up-next-kind{background:rgba(74,222,128,.15);color:#86efac}
@@ -506,6 +526,7 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     </div>
     <div class="hub-views" role="tablist" aria-label="Training views">
       <button id="hub-tab-next" type="button" role="tab" data-hub-view="next" aria-controls="hub-next" aria-selected="false" tabindex="-1" hidden>Up Next</button>
+      <button id="hub-tab-games" type="button" role="tab" data-hub-view="games" aria-controls="hub-games" aria-selected="false" tabindex="-1" hidden>Games</button>
       <button id="hub-tab-learn" type="button" role="tab" data-hub-view="learn" aria-controls="hub-learn" aria-selected="true">Learn</button>
       <button id="hub-tab-practice" type="button" role="tab" data-hub-view="practice" aria-controls="hub-practice" aria-selected="false" tabindex="-1">Practice</button>
       <button id="hub-tab-progress" type="button" role="tab" data-hub-view="progress" aria-controls="hub-progress" aria-selected="false" tabindex="-1">Progress</button>
@@ -514,6 +535,11 @@ html[data-wallpaper] .home-body .tod-label{color:#fbbf24}
     <div id="hub-next" role="tabpanel" aria-labelledby="hub-tab-next" hidden>
     <h2 class="hub-view-title">Next session</h2>
     <section class="up-next" id="hub-up-next"></section>
+    </div>
+    <!-- the team's coming games and latest results (/api/fixtures/player) -->
+    <div id="hub-games" role="tabpanel" aria-labelledby="hub-tab-games" hidden>
+    <h2 class="hub-view-title">Your games</h2>
+    <section id="hub-games-box"></section>
     </div>
     <div id="hub-progress" role="tabpanel" aria-labelledby="hub-tab-progress" hidden>
     <div class="progress-card">
@@ -3968,6 +3994,65 @@ function showUpNext(t){
       });
     }).catch(off);
 }
+/* The Games tab: the team's coming games (when to meet, kick-off, where) and
+   its latest scores. Only for the team's own players and families. */
+function showGames(t){
+  var tab = document.getElementById('hub-tab-games');
+  var box = document.getElementById('hub-games-box');
+  var off = function(){
+    if(tab.getAttribute('aria-selected') === 'true') setHubHomeView('learn');
+    tab.hidden = true;
+  };
+  if(!t){ off(); return; }
+  fetch('/api/fixtures/player?team=' + encodeURIComponent(t.id), { cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d || (!d.upcoming.length && !d.results.length)){ off(); return; }
+      var el = function(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+      var day = function(date, o){ return new Date(date + 'T12:00:00Z').toLocaleDateString('en-GB', Object.assign({ timeZone:'UTC' }, o)); };
+      var today = new Date().toLocaleDateString('en-CA', { timeZone:'Europe/London' });
+      var tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+      box.innerHTML = '';
+      tab.hidden = false;
+      if(d.upcoming.length){
+        box.appendChild(el('p', 'games-h', 'Coming up'));
+        var list = el('div', 'games-list');
+        d.upcoming.forEach(function(g){
+          var row = el('div', 'game-row');
+          var badge = el('span', 'game-date');
+          badge.appendChild(el('b', null, day(g.date, { month:'short' })));
+          badge.appendChild(el('span', null, day(g.date, { day:'numeric' })));
+          row.appendChild(badge);
+          var main = el('div', 'game-main');
+          main.appendChild(el('p', 'game-vs', 'vs ' + g.opponent));
+          var when = g.date === today ? 'Today' : g.date === tomorrow ? 'Tomorrow' : day(g.date, { weekday:'long' });
+          var sub = el('p', 'game-sub');
+          if(g.postponed) sub.appendChild(el('span', 'game-off', 'Postponed · '));
+          sub.appendChild(document.createTextNode([when, !g.postponed && g.meetTime ? 'meet ' + g.meetTime : '', !g.postponed && g.time ? 'KO ' + g.time : '', g.home ? 'Home' : 'Away', g.kind !== 'League' ? g.kind : ''].filter(Boolean).join(' · ')));
+          main.appendChild(sub);
+          if(g.venue) main.appendChild(el('p', 'game-sub', g.venue));
+          row.appendChild(main);
+          list.appendChild(row);
+        });
+        box.appendChild(list);
+      }
+      if(d.results.length){
+        box.appendChild(el('p', 'games-h', 'Results'));
+        var res = el('div', 'games-list');
+        var words = { W:'Won', D:'Drew', L:'Lost' };
+        d.results.forEach(function(g){
+          var row = el('div', 'game-row');
+          row.appendChild(el('span', 'game-score ' + g.outcome, g.us + '–' + g.them));
+          var main = el('div', 'game-main');
+          main.appendChild(el('p', 'game-vs', 'vs ' + g.opponent));
+          main.appendChild(el('p', 'game-sub', words[g.outcome] + ' · ' + day(g.date, { weekday:'short', day:'numeric', month:'short' }) + ' · ' + (g.home ? 'Home' : 'Away')));
+          row.appendChild(main);
+          res.appendChild(row);
+        });
+        box.appendChild(res);
+      }
+    }).catch(off);
+}
 function showTeam(teams){
   var find = function(slug){ return teams.find(function(x){ return x.id === slug; }) || null; };
   // their team's name in the headers, and its format (and a 7v7 team's shape) decides the guide, quiz and challenges (formats.js)
@@ -3979,6 +4064,7 @@ function showTeam(teams){
     }
     chooseHubFormat(t && t.format, t && t.shape);
     showUpNext(t);
+    showGames(t);
   };
   var onThisPhone = function(){ try { return find(localStorage.getItem('club:my-team') || ''); } catch(e){ return null; } };
   var label = function(t){ return t.short || t.name; };

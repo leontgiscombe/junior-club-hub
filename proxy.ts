@@ -49,7 +49,7 @@ const OPEN_TO_ALL = [
 const PLAYER_PATHS = [
   /^\/training-hub(\/|$)/,
   /^\/player$/,
-  /^\/api\/(club|auth\/me|me\/club|player\/(me|progress|signout|link))$/,
+  /^\/api\/(club|auth\/me|me\/club|player\/(me|progress|signout|link)|training\/next|fixtures\/player)$/,
   /^\/(privacy|terms|support)$/,
   /^\/manifest\.webmanifest$/,
   /^\/poster\//,

@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { awaitingApproval, childrenOf, teamsOf } from "@/lib/access";
 import { listMatches, type Match } from "@/lib/matchStorage";
+import { myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
 import { getSubmissions } from "@/lib/storage";
 import { listMembers } from "@/lib/members";
 import { currentPerson, listPeople } from "@/lib/people";
@@ -164,6 +165,7 @@ export default async function Home() {
   let nextTopic = "";
   let nextMatch: Match | null = null;
   let lastResult: Match | null = null;
+  let replyDue = 0;
   if (showNext && tenant) {
     const myTeams = !viewer.canCoach ? familyTeams : person?.team ? [person.team.slug] : TEAMS.map((t) => t.slug);
     const now = today();
@@ -191,6 +193,11 @@ export default async function Home() {
     const mine = matches.filter((m) => myTeams.includes(m.team));
     nextMatch = mine.filter((m) => !m.resultLogged && m.date >= now).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
     lastResult = mine.filter((m) => m.resultLogged).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+    // a parent: their children in the next game's squad still to answer (lib/fixtures.ts)
+    if (nextMatch && person && !nextMatch.calledOff) {
+      const [squad, replies] = await Promise.all([squadOf(nextMatch.team).catch(() => []), readReplies(nextMatch.id).catch(() => null)]);
+      if (replies) replyDue = myPlayersIn(person, squad).filter((k) => !replies.players[k.playerId]).length;
+    }
   }
   const many = viewer.canCoach ? TEAMS.length > 1 && !person?.team : familyTeams.length > 1;
 
@@ -347,7 +354,7 @@ export default async function Home() {
               : []),
             ...(showNext
               ? [{ id: "match" as const, label: "Next match", node: nextMatch ? (
-                <NextRow link={viewer.canCoach} href="/admin/stats/matches">
+                <NextRow link href={`/fixtures/${nextMatch.id}`}>
                   <DateBadge date={nextMatch.date} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">
@@ -363,10 +370,13 @@ export default async function Home() {
                       {upcoming(nextMatch.date)}
                       {nextMatch.time && !nextMatch.calledOff ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>
+                    {replyDue > 0 && !nextMatch.calledOff && (
+                      <span className="block text-sm font-semibold text-amber-600 dark:text-amber-400">Can {replyDue === 1 ? "your child" : "they"} play? Tap to answer</span>
+                    )}
                   </span>
                 </NextRow>
                 ) : (
-                <NextRow link={viewer.canCoach} href="/admin/stats/matches">
+                <NextRow link={viewer.canCoach || familyTeams.length > 0} href={viewer.canCoach ? "/fixtures/new" : "/fixtures"}>
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700 dark:bg-green-400/10 dark:text-green-400">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       {ICON.ball}
@@ -374,7 +384,7 @@ export default async function Home() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold">No match coming up</span>
-                    <span className={`block text-sm ${sub}`}>{viewer.canCoach ? "Add one in the Match Log" : "It'll show here once it's arranged"}</span>
+                    <span className={`block text-sm ${sub}`}>{viewer.canCoach ? "Tap to add a fixture" : "It'll show here once it's arranged"}</span>
                   </span>
                 </NextRow>
                 ) }]
@@ -384,7 +394,7 @@ export default async function Home() {
           <section className="flex flex-col gap-2.5">
             <h2 className="wp-text px-1 text-xl font-bold">Last result</h2>
             <div className={`${card} overflow-hidden`}>
-              <NextRow link={viewer.canCoach} href={CLUB.publicResults ? "/results" : "/admin/stats/matches"}>
+              <NextRow link href={`/fixtures/${lastResult.id}`}>
                 <span className={`grid h-12 min-w-14 shrink-0 place-items-center rounded-xl px-2 text-xl font-extrabold text-white ${RESULT[outcome(lastResult)].badge}`}>
                   {lastResult.goals.length}–{lastResult.opponentGoals}
                 </span>

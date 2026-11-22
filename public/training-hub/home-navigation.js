@@ -1,6 +1,6 @@
 (function () {
-  // "next" (Up Next) only shows for a team's own players and families (index.html showUpNext)
-  const views = ["next", "learn", "practice", "progress"];
+  // "next" (Up Next) and "games" only show for a team's own players and families (index.html showUpNext)
+  const views = ["next", "games", "learn", "practice", "progress"];
   const tabOf = (name) => document.querySelector(`[data-hub-view="${name}"]`);
   const shown = () => views.filter((name) => tabOf(name) && !tabOf(name).hidden);
   function selectView(view) {
