@@ -255,6 +255,7 @@ async function faSync(team: string, raw: unknown) {
       home: Boolean(f?.home),
       opponent: String(f?.opponent ?? "").trim().slice(0, 120),
       cup: Boolean(f?.cup),
+      tbc: Boolean(f?.tbc),
     }))
     .filter(
       (f) =>

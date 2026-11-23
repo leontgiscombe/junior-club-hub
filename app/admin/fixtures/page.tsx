@@ -118,14 +118,14 @@ export default async function CoachFixtures({ searchParams }: { searchParams: Pr
                     {m.faId && view === "upcoming" && !m.sentAt && !m.calledOff && (
                       <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
                         <span className="rounded bg-sky-100 px-1 py-px text-[10px] font-extrabold dark:bg-sky-400/15">FA</span>
-                        {m.venue && m.meetTime ? "Ready to send" : `Add ${[!m.venue && "the ground", !m.meetTime && "the meet time"].filter(Boolean).join(" and ")}`}
+                        {m.dateTbc ? "Date to be confirmed by FA" : m.venue && m.meetTime ? "Ready to send" : `Add ${[!m.venue && "the ground", !m.meetTime && "the meet time"].filter(Boolean).join(" and ")}`}
                       </span>
                     )}
                     <span className={`block truncate text-sm ${sub}`}>
                       {m.calledOff ? (
                         <span className="font-bold text-red-600 dark:text-red-400">{m.calledOff === "postponed" ? "Postponed" : "Cancelled"}</span>
                       ) : (
-                        `${view === "upcoming" ? relativeDay(m.date, today) : dayWords(m.date, { weekday: "short", day: "numeric", month: "short" })}${m.time ? ` · ${m.time}` : ""} · ${kindLabel(m)}`
+                        `${m.dateTbc && view === "upcoming" ? "Date TBC · " : ""}${view === "upcoming" ? relativeDay(m.date, today) : dayWords(m.date, { weekday: "short", day: "numeric", month: "short" })}${m.time ? ` · ${m.time}` : ""} · ${kindLabel(m)}`
                       )}
                     </span>
                   </span>
