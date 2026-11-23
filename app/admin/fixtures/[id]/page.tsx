@@ -11,7 +11,7 @@ import { getMatch, listMatches } from "@/lib/matchStorage";
 import { listPeople } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { FORMATIONS, teamFormat, teamFormation } from "@/lib/clubSettings";
-import { deadlinePassed, familiesOf, hostsOf, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf, tally, type Reply } from "@/lib/fixtures";
+import { deadlinePassed, familiesOf, hostsFor, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf, tally, type Reply } from "@/lib/fixtures";
 import { dayWords, deadlineWords, gameTitle, ukToday } from "@/lib/fixtureFormat";
 import { LineupEditor, MoreActions, ReplyToggle, ScoreEditor, SendButton } from "../../../fixtures/FixtureControls";
 import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../../../fixtures/GameParts";
@@ -218,7 +218,7 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
               ))}
             {open && invited.length > 0 && <p className={`px-1 text-xs ${sub}`}>Use the tick or cross to answer for a family who told you another way.</p>}
 
-            <CoachList people={people} team={match.team} hosts={replies.hosts} me={v.person.userId} />
+            <CoachList people={people} match={match} hosts={replies.hosts} me={v.person.userId} />
           </>
         )}
 
@@ -269,8 +269,19 @@ function Lineup({
 }
 
 /** The coaches and whether they can be there. */
-function CoachList({ people, team, hosts, me }: { people: Awaited<ReturnType<typeof listPeople>>; team: string; hosts: Record<string, Reply>; me: string }) {
-  const own = hostsOf(people, team);
+function CoachList({
+  people,
+  match,
+  hosts,
+  me,
+}: {
+  people: Awaited<ReturnType<typeof listPeople>>;
+  match: Parameters<typeof hostsFor>[1];
+  hosts: Record<string, Reply>;
+  me: string;
+}) {
+  // the coaches asked to host it, then any other coach who's said either way
+  const own = hostsFor(people, match);
   const ids = new Set(own.map((h) => h.userId));
   const list = [...own, ...people.filter((p) => !ids.has(p.userId) && hosts[p.userId])];
   if (!list.length) return null;

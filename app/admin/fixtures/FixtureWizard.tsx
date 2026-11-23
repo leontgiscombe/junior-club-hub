@@ -32,6 +32,8 @@ export type WizardValues = {
   notes: string;
   /** null: the whole squad */
   invited: string[] | null;
+  /** the coaches asked to host it (account ids); null: the team's own coaches */
+  hosts: string[] | null;
   /** "YYYY-MM-DDTHH:MM", or "" */
   deadline: string;
   /** shirt colours (lib/kitColours.tsx), "" for not said */
@@ -40,6 +42,15 @@ export type WizardValues = {
   /** a new game repeating: every 1 or 2 weeks, so many times in all; every 0 for just once */
   repeat: { every: 0 | 1 | 2; times: number };
 };
+/** A coach or club admin, who can be asked to host a game. */
+export type Coach = { userId: string; name: string; team: string; admin: boolean };
+
+/** The coaches a team's games go to unless picked otherwise: its own, else the admins and coaches of every team (lib/fixtures.ts hostsOf). */
+function defaultHosts(coaches: Coach[], team: string): string[] {
+  const own = coaches.filter((c) => c.team === team);
+  return (own.length ? own : coaches.filter((c) => !c.team || c.admin)).map((c) => c.userId);
+}
+
 /** The colours a team last played in, at home and away, to start from. */
 export type LastKits = Record<string, { home?: { ourKit: string; theirKit: string }; away?: { ourKit: string; theirKit: string } }>;
 
@@ -100,6 +111,7 @@ export default function FixtureWizard({
   startAt,
   lastKits = {},
   inSeries = 0,
+  coaches = [],
 }: {
   teams: WizardTeam[];
   venues: Venue[];
@@ -111,6 +123,8 @@ export default function FixtureWizard({
   lastKits?: LastKits;
   /** editing a game with this many later games in its series */
   inSeries?: number;
+  /** the club's coaches, to ask to host it */
+  coaches?: Coach[];
 }) {
   const router = useRouter();
   const [v, setV] = useState<WizardValues>(initial);
@@ -231,7 +245,7 @@ export default function FixtureWizard({
               key={t.slug}
               type="button"
               onClick={() => {
-                setV((x) => kitsFor({ ...x, team: t.slug, invited: null, opponent: x.team === t.slug ? x.opponent : "" }));
+                setV((x) => kitsFor({ ...x, team: t.slug, invited: null, hosts: null, opponent: x.team === t.slug ? x.opponent : "" }));
                 setError("");
                 setStep(1);
               }}
@@ -479,6 +493,39 @@ export default function FixtureWizard({
             </div>
           )}
 
+          {/* the coaches asked to host it: told when it's sent, and asked if they can be there */}
+          {coaches.length > 0 && (
+            <div>
+              <span className={label}>Coaches</span>
+              <div className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+                {[...coaches]
+                  // the team's own coaches first
+                  .sort((a, b) => Number(b.team === v.team) - Number(a.team === v.team))
+                  .map((c) => {
+                    const chosen = v.hosts ?? defaultHosts(coaches, v.team);
+                    const on = chosen.includes(c.userId);
+                    return (
+                      <label key={c.userId} className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-0 dark:border-white/10">
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => set("hosts", on ? chosen.filter((id) => id !== c.userId) : [...chosen, c.userId])}
+                          className="h-5 w-5 accent-green-700"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold">{c.name}</span>
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
+                            {c.team === v.team ? `${team?.name ?? ""} coach` : c.admin ? "Club admin" : "Coach"}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">They&apos;re told when it&apos;s sent and asked if they can be there.</p>
+            </div>
+          )}
+
           <div>
             <span className={label}>Reply by</span>
             <div className="flex flex-wrap gap-2">
@@ -525,6 +572,11 @@ export default function FixtureWizard({
               ["Where", [v.venue, v.address].filter(Boolean).join(", ") || "—"],
               ["Kit", [v.ourKit && `Us: ${KIT_COLOURS[v.ourKit as KitColour]?.label}`, v.theirKit && v.type !== "tournament" && `Them: ${KIT_COLOURS[v.theirKit as KitColour]?.label}`].filter(Boolean).join(" · ") || "—"],
               ["Invited", v.invited ? `${v.invited.length} of ${squad.length} players` : `Whole squad (${squad.length})`],
+              ["Coaches", (() => {
+                const ids = v.hosts ?? defaultHosts(coaches, v.team);
+                const names = coaches.filter((c) => ids.includes(c.userId)).map((c) => c.name);
+                return names.length ? names.join(", ") : "None";
+              })()],
               ["Reply by", v.deadline ? `${day(v.deadline.slice(0, 10))}, ${v.deadline.slice(11)}` : "No deadline"],
             ].map(([k, val], i) => (
               <button

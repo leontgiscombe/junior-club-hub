@@ -40,7 +40,8 @@ Upstash Redis database, set up for a club from one settings file.
 - **Fixtures**: coaches set up games in **Coach Admin → Fixtures** (`/admin/fixtures`),
   one step at a time: the team, what it is (home match, away match, tournament
   or training match) and who against, when and where, who's invited (the whole
-  squad or chosen players) with an optional reply-by time and a message, then
+  squad or chosen players) with an optional reply-by time, the coaches asked to host it (the
+  team's own to start with; they get their own alert), and a message, then
   send it to the families. Each game's coach page has Overview (sending,
   reminders, the coach's own availability, the result), Attendance (coming,
   can't come, no reply; coaches' availability) and a coach-only Line-up.

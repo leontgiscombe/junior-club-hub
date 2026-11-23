@@ -97,6 +97,13 @@ export function hostsOf(people: Person[], team: string): Person[] {
   return own.length ? own : coaches.filter((p) => !p.team || p.roles.includes("admin"));
 }
 
+/** The coaches asked to host a game: the ones the coaches picked, else the team's own (hostsOf). */
+export function hostsFor(people: Person[], match: Pick<Match, "team" | "hosts">): Person[] {
+  if (!match.hosts) return hostsOf(people, match.team);
+  const picked = new Set(match.hosts);
+  return people.filter((p) => isCoachPerson(p) && picked.has(p.userId));
+}
+
 /** The approved parents with a child in `team`'s squad. */
 export function familiesOf(people: Person[], team: string): Person[] {
   return people.filter(

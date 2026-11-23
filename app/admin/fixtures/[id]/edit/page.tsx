@@ -19,7 +19,7 @@ export default async function EditGame({ params, searchParams }: { params: Promi
   const v = await coachViewer(`/admin/fixtures/${id}/edit`);
   const match = await getMatch(id).catch(() => null);
   if (!match) notFound();
-  const { teams, venues } = await wizardData(v.teams);
+  const { teams, venues, coaches } = await wizardData(v.teams, v.tenant);
   const later = match.seriesId
     ? (await listMatches().catch(() => [])).filter((g) => g.seriesId === match.seriesId && g.id !== match.id && g.date > match.date && !g.resultLogged).length
     : 0;
@@ -46,12 +46,14 @@ export default async function EditGame({ params, searchParams }: { params: Promi
             address: match.address,
             notes: match.notes,
             invited: match.invited,
+            hosts: match.hosts,
             deadline: match.deadline,
             ourKit: match.ourKit,
             theirKit: match.theirKit,
             repeat: { every: 0, times: 1 },
           }}
           inSeries={later}
+          coaches={coaches}
         />
       </div>
     </main>
