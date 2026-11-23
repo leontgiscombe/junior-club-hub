@@ -368,6 +368,7 @@ export default async function Home() {
                           {nextMatch.calledOff === "postponed" ? "Postponed" : "Cancelled"} ·{" "}
                         </span>
                       )}
+                      {nextMatch.dateTbc ? "Date TBC · " : ""}
                       {upcoming(nextMatch.date)}
                       {nextMatch.time && !nextMatch.calledOff ? ` · ${nextMatch.time}` : ""} · {nextMatch.home ? "Home" : "Away"}
                     </span>

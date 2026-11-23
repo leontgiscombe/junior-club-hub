@@ -134,7 +134,7 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
                       )}
                       {view === "results"
                         ? `${RESULT[outcome(m)].label} · ${dayWords(m.date, { weekday: "short", day: "numeric", month: "short" })}`
-                        : `${relativeDay(m.date, today)}${m.time && !m.calledOff ? ` · ${m.time}` : ""} · ${kindLabel(m).split(" · ")[0]}`}
+                        : `${m.dateTbc ? "Date TBC · " : ""}${relativeDay(m.date, today)}${m.time && !m.calledOff ? ` · ${m.time}` : ""} · ${kindLabel(m).split(" · ")[0]}`}
                     </span>
                   </span>
                   {/* a parent: whether they still have to answer; a coach: how the squad's answered */}

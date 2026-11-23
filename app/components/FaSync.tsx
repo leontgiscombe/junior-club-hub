@@ -169,7 +169,7 @@ export default function FaSync<M>({
                 (result.added || result.updated
                   ? ` (${result.added} added, ${result.updated} updated)`
                   : ", all up to date") +
-                (result.undated ? ` · ${result.undated} not dated yet` : "")}
+                (result.undated ? ` · ${result.undated} with dates to be confirmed` : "")}
       </p>
       <button
         onClick={sync}

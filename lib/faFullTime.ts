@@ -18,6 +18,9 @@ export interface FaFixture {
   home: boolean;
   opponent: string;
   cup: boolean; // a cup tie rather than a league game
+  // Listed with other games under the same date: a date Full-Time has only
+  // pencilled in (or not set at all), to be confirmed later.
+  tbc: boolean;
 }
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -46,52 +49,56 @@ const clean = (el: Element | undefined) => (el?.textContent ?? "").replace(/\s+/
  * for the division, "Cup:" for a cup tie), home side, score, away side, venue —
  * each linking to displayFixture.html?id=….
  *
- * A game listed under another game's date, with no date row of its own, is one
- * Full-Time hasn't dated yet; it's left out (and counted) until it has one.
+ * Several games under one date row are dates Full-Time has only pencilled in
+ * (a team plays once a day): each comes in on that date, marked to be
+ * confirmed, and moves when Full-Time gives it its own (the sync goes by
+ * Full-Time's id). `undated` counts them.
  */
 export function parseSnippet(
   root: ParentNode,
   clubNames: readonly string[]
 ): { fixtures: FaFixture[]; undated: number } {
   const fixtures: FaFixture[] = [];
-  let undated = 0;
   const clubPatterns = clubNames
     .map((name) => name.trim())
     .filter((name) => name && name !== "Your Club")
     .map((name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\w)`, "i"));
   const isOurClub = (name: string) => clubPatterns.some((pattern) => pattern.test(name));
   let current: { date: string; time: string } | null = null;
-  let usedHeader = false;
+  // the games under the current date row, to mark if there's more than one
+  let group: FaFixture[] = [];
   for (const row of Array.from(root.querySelectorAll("tr"))) {
     const cells = Array.from(row.children).filter((c) => c.tagName === "TD");
     if (cells.length === 1 && cells[0].getAttribute("colspan")) {
       const parsed = parseFaDate(clean(cells[0]));
       if (parsed) {
         current = parsed;
-        usedHeader = false;
+        group = [];
       }
       continue;
     }
     const link = row.querySelector('a[href*="displayFixture.html?id="]');
     const faId = link?.getAttribute("href")?.match(/id=(\d+)/)?.[1];
     if (!faId || cells.length < 6) continue;
-    if (!current || usedHeader) {
-      undated++;
-      continue;
-    }
-    usedHeader = true;
+    if (!current) continue;
     const homeSide = clean(cells[1]);
     const awaySide = clean(cells[5]);
     const home = isOurClub(homeSide);
     if (!home && !isOurClub(awaySide)) continue;
-    fixtures.push({
+    const fixture: FaFixture = {
       faId,
       date: current.date,
       time: current.time,
       home,
       opponent: home ? awaySide : homeSide,
       cup: /cup/i.test(clean(cells[0])),
-    });
+      tbc: false,
+    };
+    group.push(fixture);
+    // a second game on the date: every game on it is pencilled in
+    if (group.length > 1) for (const g of group) g.tbc = true;
+    fixtures.push(fixture);
   }
+  const undated = fixtures.filter((f) => f.tbc).length;
   return { fixtures, undated };
 }

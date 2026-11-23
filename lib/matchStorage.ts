@@ -84,6 +84,9 @@ export interface Match {
   // Games set up together to repeat (every week, every two weeks) share an
   // id, so they can be changed or removed together; "" for a one-off.
   seriesId: string;
+  // A date FA Full-Time has only pencilled in (lib/faFullTime.ts), shown as
+  // "date to be confirmed" until it gives the game its own.
+  dateTbc: boolean;
   // When the coaches last sent it to the team's families ("" never): from
   // then on, parents are asked whether each child can play.
   sentAt: string;
@@ -162,6 +165,7 @@ function parse(value: unknown): Match {
     ourKit: m.ourKit ?? "",
     theirKit: m.theirKit ?? "",
     seriesId: m.seriesId ?? "",
+    dateTbc: m.dateTbc ?? false,
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -211,7 +215,7 @@ export async function clearMatches(): Promise<void> {
 
 export async function addMatch(
   data: Pick<Match, "team" | "opponent" | "date" | "home" | "friendly"> &
-    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "autoRemind" | "ourKit" | "theirKit" | "seriesId">>
+    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "autoRemind" | "ourKit" | "theirKit" | "seriesId" | "dateTbc">>
 ): Promise<{ saved: boolean; match: Match }> {
   const match: Match = {
     ...data,
@@ -236,6 +240,7 @@ export async function addMatch(
     ourKit: data.ourKit ?? "",
     theirKit: data.theirKit ?? "",
     seriesId: data.seriesId ?? "",
+    dateTbc: data.dateTbc ?? false,
     goals: [],
     opponentGoals: 0,
     appearanceIds: [],
@@ -539,6 +544,7 @@ export async function syncFaFixtures(
     .sort((a, b) => b.date.localeCompare(a.date))[0];
   for (const f of fixtures) {
     const details = {
+      dateTbc: f.tbc,
       date: f.date,
       time: f.time,
       home: f.home,
@@ -550,6 +556,8 @@ export async function syncFaFixtures(
       ours.find((m) => m.faId === f.faId) ??
       ours.find((m) => !m.faId && m.date === f.date && m.opponent === f.opponent) ??
       (() => {
+        // a date only pencilled in isn't enough to say it's a game entered by hand
+        if (f.tbc) return undefined;
         // one unlinked game that day — the same fixture, entered by hand
         const sameDay = ours.filter((m) => !m.faId && m.date === f.date);
         return sameDay.length === 1 ? sameDay[0] : undefined;

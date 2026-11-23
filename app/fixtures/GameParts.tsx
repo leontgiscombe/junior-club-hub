@@ -55,7 +55,10 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
         </div>
       )}
       <div className="flex items-center justify-between gap-2 bg-black/15 px-5 py-2.5 text-sm font-semibold">
-        <span>{relativeDay(match.date, today)}</span>
+        <span>
+          {relativeDay(match.date, today)}
+          {match.dateTbc && <span className="text-white/75"> · date to be confirmed</span>}
+        </span>
         {played && <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${RESULT[outcome(match)].tone}`}>{RESULT[outcome(match)].label}</span>}
       </div>
     </section>
@@ -95,7 +98,7 @@ export function GameDetails({ match, teamName }: { match: Match; teamName: strin
       <section className="flex flex-col gap-2">
         <h2 className={heading}>When</h2>
         <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
-          <TimeRow label="Date" value={dayWords(match.date, { weekday: "short", day: "numeric", month: "short" })} icon={<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>} />
+          <TimeRow label="Date" value={`${dayWords(match.date, { weekday: "short", day: "numeric", month: "short" })}${match.dateTbc ? " (TBC)" : ""}`} icon={<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>} />
           {match.meetTime && <TimeRow label="Meet at" value={match.meetTime} icon={<><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 19a4 4 0 0 1 7 0" /></>} />}
           <TimeRow label={match.kind === "tournament" ? "Starts" : "Kick-off"} value={match.time || "TBC"} icon={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>} />
           {/* the kits, a row each, like the times above */}
