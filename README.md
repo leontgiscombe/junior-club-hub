@@ -50,6 +50,10 @@ Upstash Redis database, set up for a club from one settings file.
   one fills in the ground and its full address. Without MapKit set up, it
   uses Photon (photon.komoot.io, free OpenStreetMap search) through
   `/api/places` instead. Pull-to-refresh is off while a game is being set up.
+  An automatic reminder (on by default for new games: 1, 2 or 3 days before
+  the reply-by time, or the game) goes to families and coaches still to
+  answer, once, from the daily job (`/api/cron-fixtures`, which asks each club
+  at its own address).
   Each side's kit colour can be picked (a new game starts in the team's last
   home or away colours) and families see what to wear. A new game can repeat
   every week or two (up to 26 games), set up as separate games in a series:

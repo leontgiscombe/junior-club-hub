@@ -41,6 +41,7 @@ export default async function NewGame({ searchParams }: { searchParams: Promise<
             notes: "",
             invited: null,
             hosts: null,
+            autoRemind: 2,
             deadline: "",
             ourKit: lastKits[team]?.home?.ourKit ?? "",
             theirKit: lastKits[team]?.home?.theirKit ?? "",
