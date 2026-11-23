@@ -47,6 +47,7 @@ export default async function EditGame({ params, searchParams }: { params: Promi
             notes: match.notes,
             invited: match.invited,
             hosts: match.hosts,
+            autoRemind: match.autoRemind,
             deadline: match.deadline,
             ourKit: match.ourKit,
             theirKit: match.theirKit,

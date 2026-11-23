@@ -122,6 +122,13 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
                     {deadlinePassed(match) ? " (passed)" : ""}
                   </p>
                 )}
+                <p className={`text-sm ${sub}`}>
+                  {match.autoRemind
+                    ? match.autoRemindedAt
+                      ? `Automatic reminder sent ${dayWords(match.autoRemindedAt.slice(0, 10), { day: "numeric", month: "short" })}`
+                      : `Automatic reminder ${match.autoRemind} day${match.autoRemind === 1 ? "" : "s"} before ${match.deadline ? "the reply-by time" : "the game"}${match.sentAt ? "" : ", once it's sent"}`
+                    : "No automatic reminder"}
+                </p>
                 <SendButton matchId={match.id} sent={!!match.sentAt} waitingFamilies={waitingFamilies} />
                 {match.sentAt && (
                   <Link href={`/admin/fixtures/${match.id}?tab=attendance`} replace className="text-center text-sm font-bold text-green-700 dark:text-green-400">

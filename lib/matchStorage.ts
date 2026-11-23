@@ -73,6 +73,11 @@ export interface Match {
   hosts: string[] | null;
   // Families answer by then ("YYYY-MM-DDTHH:MM", UK time); "" for no deadline.
   deadline: string;
+  // An automatic reminder to those still to answer, this many days before the
+  // reply-by time (or the game, without one), sent by the daily job
+  // (app/api/cron-fixtures); 0 for none. And when it went ("" not yet).
+  autoRemind: number;
+  autoRemindedAt: string;
   // The shirt colours each side plays in (lib/kitColours.ts); "" when not said.
   ourKit: string;
   theirKit: string;
@@ -148,6 +153,9 @@ function parse(value: unknown): Match {
     invited: Array.isArray(m.invited) ? m.invited : null,
     hosts: Array.isArray(m.hosts) ? m.hosts : null,
     deadline: m.deadline ?? "",
+    // games set up before automatic reminders: none, so nobody's surprised
+    autoRemind: m.autoRemind ?? 0,
+    autoRemindedAt: m.autoRemindedAt ?? "",
     ourKit: m.ourKit ?? "",
     theirKit: m.theirKit ?? "",
     seriesId: m.seriesId ?? "",
@@ -200,7 +208,7 @@ export async function clearMatches(): Promise<void> {
 
 export async function addMatch(
   data: Pick<Match, "team" | "opponent" | "date" | "home" | "friendly"> &
-    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "ourKit" | "theirKit" | "seriesId">>
+    Partial<Pick<Match, "time" | "cameraHolder" | "footageUploaded" | "cup" | "faId" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "autoRemind" | "ourKit" | "theirKit" | "seriesId">>
 ): Promise<{ saved: boolean; match: Match }> {
   const match: Match = {
     ...data,
@@ -220,6 +228,8 @@ export async function addMatch(
     invited: data.invited ?? null,
     hosts: data.hosts ?? null,
     deadline: data.deadline ?? "",
+    autoRemind: data.autoRemind ?? 0,
+    autoRemindedAt: "",
     ourKit: data.ourKit ?? "",
     theirKit: data.theirKit ?? "",
     seriesId: data.seriesId ?? "",
@@ -243,7 +253,7 @@ export async function addMatch(
 /** The details of a fixture, as opposed to what happened in it. */
 export type MatchDetails = Pick<
   Match,
-  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "ourKit" | "theirKit"
+  "opponent" | "date" | "time" | "home" | "friendly" | "cup" | "meetTime" | "venue" | "address" | "notes" | "kind" | "invited" | "hosts" | "deadline" | "autoRemind" | "ourKit" | "theirKit"
 >;
 
 /**
@@ -262,6 +272,7 @@ export async function updateMatch(
 ): Promise<Match | null> {
   const match = await read(matchId);
   if (!match) return null;
+  const dateBefore = match.date;
   if (typeof details.opponent === "string" && details.opponent.trim()) {
     match.opponent = details.opponent.trim();
   }
@@ -277,7 +288,14 @@ export async function updateMatch(
   if (typeof details.kind === "string") match.kind = details.kind;
   if (details.invited !== undefined) match.invited = details.invited;
   if (details.hosts !== undefined) match.hosts = details.hosts;
+  // a new day, reply-by time or reminder setting: the automatic reminder is due again
+  const rearm =
+    match.date !== dateBefore ||
+    (typeof details.deadline === "string" && details.deadline !== match.deadline) ||
+    (typeof details.autoRemind === "number" && details.autoRemind !== match.autoRemind);
+  if (rearm) match.autoRemindedAt = "";
   if (typeof details.deadline === "string") match.deadline = details.deadline;
+  if (typeof details.autoRemind === "number") match.autoRemind = details.autoRemind;
   for (const k of ["meetTime", "venue", "address", "notes", "ourKit", "theirKit"] as const) {
     if (typeof details[k] === "string") match[k] = details[k].trim();
   }
@@ -583,3 +601,11 @@ export async function markSent(matchId: string): Promise<Match | null> {
 
 /** One game, by id. */
 export const getMatch = read;
+
+/** Note that a game's automatic reminder has gone. */
+export async function markAutoReminded(matchId: string): Promise<void> {
+  const match = await read(matchId);
+  if (!match) return;
+  match.autoRemindedAt = new Date().toISOString();
+  await write(match);
+}

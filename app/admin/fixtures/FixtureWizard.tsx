@@ -37,6 +37,8 @@ export type WizardValues = {
   hosts: string[] | null;
   /** "YYYY-MM-DDTHH:MM", or "" */
   deadline: string;
+  /** the automatic reminder: days before the reply-by time (or the game); 0 for none */
+  autoRemind: number;
   /** shirt colours (lib/kitColours.tsx), "" for not said */
   ourKit: string;
   theirKit: string;
@@ -95,6 +97,12 @@ function before(time: string, minutes: number): string {
   const t = (h * 60 + m - minutes + 1440) % 1440;
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
+
+/** The day the automatic reminder goes (the first game's, for a repeat), or "". */
+const remindOn = (v: WizardValues) => {
+  const from = v.deadline ? v.deadline.slice(0, 10) : v.date;
+  return from && v.autoRemind ? new Date(Date.parse(`${from}T12:00:00Z`) - v.autoRemind * 86_400_000).toISOString().slice(0, 10) : "";
+};
 
 /** The date of the last game in a repeat. */
 const lastDate = (v: WizardValues) =>
@@ -557,6 +565,51 @@ export default function FixtureWizard({
             <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">After this, families can&apos;t change their answer without asking you.</p>
           </div>
 
+          {/* an automatic reminder for anyone still to answer, sent by the daily job */}
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-[#1c1c1e]">
+            <label className="flex items-center gap-3 px-4 py-3.5">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold">Automatic reminder</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">To families and coaches who haven&apos;t answered</span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={v.autoRemind > 0}
+                onChange={(e) => set("autoRemind", e.target.checked ? 2 : 0)}
+                className="peer sr-only"
+              />
+              <span
+                aria-hidden="true"
+                className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ${v.autoRemind > 0 ? "bg-green-600" : "bg-gray-300 dark:bg-white/20"} peer-focus-visible:ring-2 peer-focus-visible:ring-green-400`}
+              >
+                <span className={`absolute top-0.5 h-[27px] w-[27px] rounded-full bg-white shadow transition-all ${v.autoRemind > 0 ? "left-[22px]" : "left-0.5"}`} />
+              </span>
+            </label>
+            {v.autoRemind > 0 && (
+              <div className="border-t border-gray-100 px-4 py-3 dark:border-white/10">
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/10" role="radiogroup" aria-label="When to remind">
+                  {[1, 2, 3].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      role="radio"
+                      aria-checked={v.autoRemind === d}
+                      onClick={() => set("autoRemind", d)}
+                      className={`rounded-lg py-2 text-sm font-bold ${v.autoRemind === d ? "bg-white shadow-sm dark:bg-[#3a3a3c]" : "text-gray-600 dark:text-gray-300"}`}
+                    >
+                      {d} day{d === 1 ? "" : "s"}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Sent in the morning, {v.autoRemind} day{v.autoRemind === 1 ? "" : "s"} before {v.deadline ? "the reply-by time" : "the game"}
+                  {remindOn(v) ? ` (${day(remindOn(v))})` : ""}.
+                </p>
+              </div>
+            )}
+          </div>
+
           <label className="block">
             <span className={label}>Message for families (optional)</span>
             <textarea value={v.notes} onChange={(e) => set("notes", e.target.value)} rows={4} placeholder="Kit, parking, what to bring…" className={field} />
@@ -582,6 +635,7 @@ export default function FixtureWizard({
                 const names = coaches.filter((c) => ids.includes(c.userId)).map((c) => c.name);
                 return names.length ? names.join(", ") : "None";
               })()],
+              ["Reminder", v.autoRemind ? `${v.autoRemind} day${v.autoRemind === 1 ? "" : "s"} before ${v.deadline ? "the reply-by time" : "the game"}${remindOn(v) ? `, ${day(remindOn(v))}` : ""}` : "Off"],
               ["Reply by", v.deadline ? `${day(v.deadline.slice(0, 10))}, ${v.deadline.slice(11)}` : "No deadline"],
             ].map(([k, val], i) => (
               <button

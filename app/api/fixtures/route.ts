@@ -111,6 +111,11 @@ async function details(body: Record<string, unknown>, team: string): Promise<Par
       d.invited = [...new Set(picked)];
     }
   }
+  if ("autoRemind" in body) {
+    // days before the reply-by time (or the game) for the automatic reminder; 0 for none
+    const days = Math.floor(Number(body.autoRemind));
+    d.autoRemind = Number.isFinite(days) ? Math.min(Math.max(days, 0), 7) : 0;
+  }
   if ("hosts" in body) {
     if (body.hosts === null) d.hosts = null;
     else {
@@ -166,6 +171,7 @@ export async function POST(request: Request) {
       kind: d.kind,
       invited: d.invited ?? null,
       hosts: d.hosts ?? null,
+      autoRemind: d.autoRemind ?? 0,
       // the reply-by time keeps its distance from each game
       deadline: d.deadline ? `${addDays(d.deadline.slice(0, 10), shift)}${d.deadline.slice(10)}` : "",
       ourKit: d.ourKit,
