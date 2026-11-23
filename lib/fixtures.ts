@@ -120,16 +120,7 @@ export function myPlayersIn(person: Person | null, squad: Player[]): { playerId:
     .map((c) => ({ playerId: c.playerId!, name: squad.find((p) => p.id === c.playerId)?.name ?? c.name }));
 }
 
-/** A line-up's positions for a shape ("2-3-1"): the keeper, then each line from the back. */
-export function lineupSlots(formation: string): { label: string; line: number; index: number; of: number }[] {
-  const lines = formation.split("-").map(Number).filter((n) => Number.isInteger(n) && n > 0 && n <= 6);
-  const names = lines.length === 4 ? ["DEF", "DM", "AM", "FWD"] : lines.length === 2 ? ["DEF", "FWD"] : ["DEF", "MID", "FWD"];
-  const out = [{ label: "GK", line: 0, index: 0, of: 1 }];
-  lines.forEach((n, li) => {
-    for (let i = 0; i < n; i++) out.push({ label: names[li] ?? "MID", line: li + 1, index: i, of: n });
-  });
-  return out;
-}
+export { lineupSlots } from "./lineups";
 
 /** "Can play": squad players whose families said yes. */
 export function tally(squad: Player[], replies: Replies) {

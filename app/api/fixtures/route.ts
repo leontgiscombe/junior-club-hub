@@ -31,12 +31,12 @@ import {
   type MatchDetails,
 } from "@/lib/matchStorage";
 import { canCoach, currentPerson, listPeople } from "@/lib/people";
-import { getTeams, isTeam } from "@/lib/settings";
+import { isTeam } from "@/lib/settings";
 import { getTenant, requireTenant } from "@/lib/tenant";
 import { isCoachPerson, lineupSlots, squadOf } from "@/lib/fixtures";
 import { tellFamilies as tell } from "@/lib/fixtureAlerts";
-import { FORMATIONS, teamFormat } from "@/lib/clubSettings";
 import { isKitColour } from "@/lib/kitColours";
+import { isLineupFormation } from "@/lib/lineups";
 
 export const runtime = "nodejs";
 
@@ -231,9 +231,8 @@ export async function PATCH(request: Request) {
   }
   if (action === "lineup") {
     if (body.slots === null) return NextResponse.json({ success: true, match: await setLineup(match.id, null) });
-    const team = (await getTeams()).find((t) => t.slug === match.team);
     const formation = String(body.formation ?? "");
-    if (!team || !FORMATIONS[teamFormat(team)].includes(formation)) return bad("Pick a formation");
+    if (!isLineupFormation(formation)) return bad("Pick a formation");
     const squad = new Set((await squadOf(match.team)).map((p) => p.id));
     const size = lineupSlots(formation).length;
     const raw = Array.isArray(body.slots) ? body.slots.map(String) : [];
