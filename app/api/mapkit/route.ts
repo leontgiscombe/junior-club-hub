@@ -6,7 +6,8 @@
 // Store app), Certificates, IDs & Profiles → Keys, make a key with MapKit JS
 // ticked, then set MAPKIT_KEY (the .p8 file's text), MAPKIT_KEY_ID (its Key ID)
 // and APPLE_TEAM_ID (already set for the app's alerts).
-import { createPrivateKey, sign } from "crypto";
+import { sign } from "crypto";
+import { readAppleKey } from "@/lib/appleKey";
 import { NextResponse } from "next/server";
 import { currentPerson } from "@/lib/people";
 import { getTenant } from "@/lib/tenant";
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
 const b64url = (b: Buffer | string) => Buffer.from(b).toString("base64url");
 
 export async function GET() {
-  const key = (process.env.MAPKIT_KEY ?? "").replace(/\\n/g, "\n").trim();
+  const key = (process.env.MAPKIT_KEY ?? "").trim();
   const keyId = (process.env.MAPKIT_KEY_ID ?? "").trim();
   const team = (process.env.APPLE_TEAM_ID ?? "").trim();
   if (!key || !keyId || !team) return NextResponse.json({ error: "Maps aren't set up" }, { status: 404 });
@@ -29,7 +30,7 @@ export async function GET() {
     const head = b64url(JSON.stringify({ alg: "ES256", kid: keyId, typ: "JWT" }));
     const body = b64url(JSON.stringify({ iss: team, iat: now, exp: now + 30 * 60 }));
     const signature = sign("sha256", Buffer.from(`${head}.${body}`), {
-      key: createPrivateKey(key),
+      key: readAppleKey(key),
       dsaEncoding: "ieee-p1363",
     });
     return NextResponse.json({ token: `${head}.${body}.${b64url(signature)}` }, { headers: { "cache-control": "private, no-store" } });
