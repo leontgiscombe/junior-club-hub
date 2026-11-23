@@ -16,6 +16,7 @@ import { dayWords, deadlineWords, fixtureTeamName, gameTitle, ukToday } from "@/
 import { LineupEditor, MoreActions, ReplyToggle, ScoreEditor, SendButton } from "../../../fixtures/FixtureControls";
 import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../../../fixtures/GameParts";
 import { coachViewer } from "../load";
+import ChildReplies from "../../../fixtures/ChildReplies";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,8 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
   const families = familiesOf(people, match.team).filter((f) => myPlayersIn(f, invited).length > 0);
   const waitingFamilies = families.filter((f) => myPlayersIn(f, invited).some((c) => !replies.players[c.playerId])).length;
   const me = replies.hosts[v.person.userId];
+  // the coach's own children invited to it, if they're a parent too
+  const myKids = myPlayersIn(v.person, invited);
   // the games after this one in a repeating series, not yet played
   const series = match.seriesId ? (await listMatches().catch(() => [])).filter((g) => g.seriesId === match.seriesId).sort((a, b) => a.date.localeCompare(b.date)) : [];
   const laterInSeries = series.filter((g) => g.date > match.date && !g.resultLogged).length;
@@ -83,6 +86,11 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
           <>
             <GameHero match={match} teamName={ourName} today={today} />
             <CalledOff match={match} />
+
+            {/* a coach who's a parent too: their own child's answer, first */}
+            {open && (
+              <ChildReplies matchId={match.id} kids={myKids} replies={replies.players} open deadline={match.deadline} closed={false} />
+            )}
             {series.length > 1 && (
               <p className={`-mt-2 px-1 text-sm ${sub}`}>
                 Game {series.findIndex((g) => g.id === match.id) + 1} of {series.length} in a repeating series
