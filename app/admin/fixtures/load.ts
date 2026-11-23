@@ -16,7 +16,7 @@ export async function coachViewer(next: string) {
 }
 
 export async function wizardData(
-  teams: { slug: string; name: string; opponents?: string[] }[],
+  teams: { slug: string; name: string; age?: number; opponents?: string[] }[],
   tenant: string,
 ): Promise<{ teams: WizardTeam[]; venues: Venue[]; lastKits: LastKits; coaches: Coach[] }> {
   const [players, matches, people] = await Promise.all([listPlayers().catch(() => []), listMatches().catch(() => []), listPeople(tenant).catch(() => [])]);
@@ -37,6 +37,7 @@ export async function wizardData(
     teams: teams.map((t) => ({
       slug: t.slug,
       name: t.name,
+      age: t.age,
       opponents: t.opponents ?? [],
       squad: players.filter((p) => p.team === t.slug).sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ id: p.id, name: p.name })),
     })),

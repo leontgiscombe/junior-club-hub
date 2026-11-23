@@ -12,7 +12,7 @@ import { listPeople } from "@/lib/people";
 import { getClub } from "@/lib/settings";
 import { FORMATIONS, teamFormat, teamFormation } from "@/lib/clubSettings";
 import { deadlinePassed, familiesOf, hostsFor, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf, tally, type Reply } from "@/lib/fixtures";
-import { dayWords, deadlineWords, gameTitle, ukToday } from "@/lib/fixtureFormat";
+import { dayWords, deadlineWords, fixtureTeamName, gameTitle, ukToday } from "@/lib/fixtureFormat";
 import { LineupEditor, MoreActions, ReplyToggle, ScoreEditor, SendButton } from "../../../fixtures/FixtureControls";
 import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../../../fixtures/GameParts";
 import { coachViewer } from "../load";
@@ -34,6 +34,8 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
   if (!v.visible.includes(match.team)) redirect("/admin/fixtures");
 
   const team = v.teams.find((t) => t.slug === match.team)!;
+  // written like the opposition: "Pudsey Juniors U10 Greens"
+  const ourName = fixtureTeamName((await getClub()).name, team);
   const today = ukToday();
   const [squad, replies, people] = await Promise.all([
     squadOf(match.team).catch(() => []),
@@ -79,7 +81,7 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
 
         {tab === "overview" && (
           <>
-            <GameHero match={match} teamName={team.name} today={today} />
+            <GameHero match={match} teamName={ourName} today={today} />
             <CalledOff match={match} />
             {series.length > 1 && (
               <p className={`-mt-2 px-1 text-sm ${sub}`}>
@@ -145,12 +147,12 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
               <section className="flex flex-col gap-2">
                 <h2 className={heading}>Result</h2>
                 <div className={`${card} p-4`}>
-                  <ScoreEditor matchId={match.id} us={match.goals.length} them={match.opponentGoals} logged={match.resultLogged} teamName={team.name} opponent={match.opponent} />
+                  <ScoreEditor matchId={match.id} us={match.goals.length} them={match.opponentGoals} logged={match.resultLogged} teamName={ourName} opponent={match.opponent} />
                 </div>
               </section>
             )}
 
-            <GameDetails match={match} teamName={team.name} />
+            <GameDetails match={match} teamName={ourName} />
 
             <section className="flex flex-col gap-2">
               <h2 className={heading}>More</h2>

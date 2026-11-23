@@ -54,6 +54,7 @@ export default async function EditGame({ params, searchParams }: { params: Promi
           }}
           inSeries={later}
           coaches={coaches}
+          clubName={(await getClub()).name}
         />
       </div>
     </main>

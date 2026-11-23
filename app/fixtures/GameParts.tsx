@@ -22,6 +22,8 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
   const tournament = match.kind === "tournament";
   const left = match.home || tournament || match.kind === "training" ? teamName : match.opponent;
   const right = match.home || match.kind === "training" ? match.opponent : teamName;
+  // long names ("Calverley United Juniors U10 Flames") a size smaller, so the card stays a sensible height
+  const size = Math.max(left.length, right.length) > 22 ? "text-base" : "text-lg";
   return (
     <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-green-700 to-emerald-900 text-white shadow-sm">
       <p className="px-5 pt-4 text-xs font-bold uppercase tracking-wider text-white/75">{kindLabel(match)}</p>
@@ -35,7 +37,7 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
         </div>
       ) : (
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pb-5 pt-3">
-          <span className="text-left text-lg font-extrabold leading-tight">
+          <span className={`text-left ${size} font-extrabold leading-tight`}>
             {(match.home || match.kind === "training" ? match.ourKit : match.theirKit) && <Shirt colour={match.home || match.kind === "training" ? match.ourKit : match.theirKit} className="mb-1 block h-7 w-7" />}
             {left}
           </span>
@@ -46,7 +48,7 @@ export function GameHero({ match, teamName, today }: { match: Match; teamName: s
           ) : (
             <span className="rounded-2xl bg-white/15 px-3 py-2 text-center text-sm font-black">{match.time || "TBC"}</span>
           )}
-          <span className="flex flex-col items-end text-right text-lg font-extrabold leading-tight">
+          <span className={`flex flex-col items-end text-right ${size} font-extrabold leading-tight`}>
             {(match.home || match.kind === "training" ? match.theirKit : match.ourKit) && <Shirt colour={match.home || match.kind === "training" ? match.theirKit : match.ourKit} className="mb-1 block h-7 w-7" />}
             {right}
           </span>
