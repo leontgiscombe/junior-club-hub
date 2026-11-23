@@ -1,6 +1,7 @@
 // How a fixture's day and times read, the same on the server (alerts) and in
 // the browser. No server-only imports.
 import type { Match } from "./matchStorage";
+import { teamAge, type Team } from "./clubSettings";
 
 /** Today, "YYYY-MM-DD", in the UK. */
 export const ukToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
@@ -46,3 +47,22 @@ export const gameTitle = (m: Pick<Match, "kind" | "opponent">) => (m.kind === "t
 /** A reply-by time ("YYYY-MM-DDTHH:MM") in words: "Fri 27 Nov, 18:00". */
 export const deadlineWords = (deadline: string) =>
   `${dayWords(deadline.slice(0, 10), { weekday: "short", day: "numeric", month: "short" })}, ${deadline.slice(11, 16)}`;
+
+/**
+ * A team's name as it's written on a fixture, like the opposition's: the
+ * club, the age group and the team — "Pudsey Juniors U10 Greens". A part the
+ * team's own name already has isn't said twice ("U10 Greens", "Pudsey Greens").
+ */
+export function fixtureTeamName(clubName: string, team: Pick<Team, "name" | "age">): string {
+  const name = team.name.trim();
+  const age = teamAge(team);
+  const hasAge = /\b(u|under)[\s-]?\d{1,2}s?\b/i.test(name);
+  const hasClub = !!clubName && name.toLowerCase().includes(clubName.trim().toLowerCase());
+  const ageWords = hasAge || !age ? "" : `U${age}`;
+  // the club's name already in the team's: the age group goes straight after it
+  if (hasClub) {
+    const at = name.toLowerCase().indexOf(clubName.trim().toLowerCase()) + clubName.trim().length;
+    return ageWords ? `${name.slice(0, at)} ${ageWords}${name.slice(at)}` : name;
+  }
+  return [clubName.trim(), ageWords, name].filter(Boolean).join(" ");
+}

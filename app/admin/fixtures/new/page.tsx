@@ -27,6 +27,7 @@ export default async function NewGame({ searchParams }: { searchParams: Promise<
           venues={venues}
           lastKits={lastKits}
           coaches={coaches}
+          clubName={(await getClub()).name}
           initial={{
             team,
             type: "home",

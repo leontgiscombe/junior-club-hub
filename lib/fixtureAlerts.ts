@@ -4,10 +4,10 @@
 // game families have already had. Server only.
 import type { Match } from "./matchStorage";
 import { listPeople } from "./people";
-import { getTeams } from "./settings";
+import { getClub, getTeams } from "./settings";
 import { familiesOf, hostsFor, invitedOf, myPlayersIn, readReplies, squadOf } from "./fixtures";
 import { notifyFixture } from "./notify";
-import { fixtureWhen } from "./fixtureFormat";
+import { fixtureTeamName, fixtureWhen } from "./fixtureFormat";
 
 /** Tell the invited families about `match`, and the coaches asked to host it; how many families it went to. Never throws. */
 export async function tellFamilies(
@@ -20,9 +20,10 @@ export async function tellFamilies(
   from?: string,
 ): Promise<number> {
   try {
-    const [people, teams, squad, replies] = await Promise.all([
+    const [people, teams, club, squad, replies] = await Promise.all([
       listPeople(tenant),
       getTeams(),
+      getClub(),
       squadOf(match.team),
       kind === "reminder" ? readReplies(match.id) : null,
     ]);
@@ -31,7 +32,7 @@ export async function tellFamilies(
     if (replies) families = families.filter((p) => myPlayersIn(p, invited).some((c) => !replies.players[c.playerId]));
     const game = {
       id: match.id,
-      teamName: teams.find((t) => t.slug === match.team)?.name ?? "Your team",
+      teamName: ((t) => (t ? fixtureTeamName(club.name, t) : "Your team"))(teams.find((t) => t.slug === match.team)),
       opponent: match.opponent,
       when: fixtureWhen(match),
       kind,

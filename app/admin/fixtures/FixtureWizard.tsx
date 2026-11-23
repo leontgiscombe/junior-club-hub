@@ -15,8 +15,9 @@ import { toast } from "@/lib/dialog";
 import { haptic } from "@/lib/haptics";
 import { KIT_COLOURS, Shirt, type KitColour } from "@/lib/kitColours";
 import GroundSearch from "./GroundSearch";
+import { fixtureTeamName } from "@/lib/fixtureFormat";
 
-export type WizardTeam = { slug: string; name: string; opponents: string[]; squad: { id: string; name: string }[] };
+export type WizardTeam = { slug: string; name: string; age?: number; opponents: string[]; squad: { id: string; name: string }[] };
 export type Venue = { team: string; venue: string; address: string; home: boolean };
 export type GameType = "home" | "away" | "tournament" | "training";
 export type WizardValues = {
@@ -112,6 +113,7 @@ export default function FixtureWizard({
   lastKits = {},
   inSeries = 0,
   coaches = [],
+  clubName = "",
 }: {
   teams: WizardTeam[];
   venues: Venue[];
@@ -125,6 +127,8 @@ export default function FixtureWizard({
   inSeries?: number;
   /** the club's coaches, to ask to host it */
   coaches?: Coach[];
+  /** the club's name, for writing the team's name in full ("Pudsey Juniors U10 Greens") */
+  clubName?: string;
 }) {
   const router = useRouter();
   const [v, setV] = useState<WizardValues>(initial);
@@ -224,7 +228,8 @@ export default function FixtureWizard({
       on ? "bg-green-50 ring-green-600 dark:bg-green-400/10" : "bg-white ring-transparent shadow-sm dark:bg-[#1c1c1e]"
     }`;
   const pill = (on: boolean) => `press rounded-full px-4 py-2 text-sm font-bold ${on ? "bg-green-700 text-white" : "bg-white text-gray-700 shadow-sm dark:bg-[#1c1c1e] dark:text-gray-200"}`;
-  const title = v.type === "tournament" ? v.opponent || "Tournament" : `${team?.name ?? ""} vs ${v.opponent || "…"}`;
+  const ourName = team ? fixtureTeamName(clubName, { name: team.name, age: team.age }) : "";
+  const title = v.type === "tournament" ? v.opponent || "Tournament" : `${ourName} vs ${v.opponent || "…"}`;
 
   return (
     <div className="fixture-wizard flex flex-col gap-5 pb-32">

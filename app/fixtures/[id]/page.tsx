@@ -7,7 +7,7 @@ import { TopBar } from "../../components/SettingsUI";
 import { getMatch } from "@/lib/matchStorage";
 import { getClub } from "@/lib/settings";
 import { deadlinePassed, invitedOf, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
-import { deadlineWords, gameTitle, ukToday } from "@/lib/fixtureFormat";
+import { deadlineWords, fixtureTeamName, gameTitle, ukToday } from "@/lib/fixtureFormat";
 import { fixturesViewer } from "../viewer";
 import { ReplyToggle } from "../FixtureControls";
 import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../GameParts";
@@ -27,6 +27,8 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   if (!v.visible.includes(match.team)) redirect("/fixtures");
 
   const team = v.teams.find((t) => t.slug === match.team)!;
+  // written like the opposition: "Pudsey Juniors U10 Greens"
+  const ourName = fixtureTeamName((await getClub()).name, team);
   const today = ukToday();
   const [squad, replies] = await Promise.all([
     squadOf(match.team).catch(() => []),
@@ -42,7 +44,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
     <main className="themed min-h-screen bg-[#f2f2f7] pb-28 text-gray-900 dark:bg-black dark:text-gray-50">
       <TopBar title={gameTitle(match)} href="/fixtures" />
       <div className="mx-auto flex max-w-xl flex-col gap-5 px-4">
-        <GameHero match={match} teamName={team.name} today={today} />
+        <GameHero match={match} teamName={ourName} today={today} />
         <CalledOff match={match} />
 
         {/* the one thing a family is asked */}
@@ -76,7 +78,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           </section>
         )}
 
-        <GameDetails match={match} teamName={team.name} />
+        <GameDetails match={match} teamName={ourName} />
       </div>
     </main>
   );
