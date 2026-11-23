@@ -87,6 +87,10 @@ export interface Match {
   // A date FA Full-Time has only pencilled in (lib/faFullTime.ts), shown as
   // "date to be confirmed" until it gives the game its own.
   dateTbc: boolean;
+  // A game from FA Full-Time that Full-Time no longer lists (taken off,
+  // rearranged as a new fixture): flagged for the coaches to sort out, never
+  // removed by the sync, as families may have answered it.
+  faGone: boolean;
   // When the coaches last sent it to the team's families ("" never): from
   // then on, parents are asked whether each child can play.
   sentAt: string;
@@ -166,6 +170,7 @@ function parse(value: unknown): Match {
     theirKit: m.theirKit ?? "",
     seriesId: m.seriesId ?? "",
     dateTbc: m.dateTbc ?? false,
+    faGone: m.faGone ?? false,
     // Games logged before this existed count as recorded if they have a score.
     resultLogged: m.resultLogged ?? (goals.length > 0 || opponentGoals > 0),
   };
@@ -241,6 +246,7 @@ export async function addMatch(
     theirKit: data.theirKit ?? "",
     seriesId: data.seriesId ?? "",
     dateTbc: data.dateTbc ?? false,
+    faGone: false,
     goals: [],
     opponentGoals: 0,
     appearanceIds: [],
@@ -531,7 +537,7 @@ function shiftTime(t: string, by: number): string {
 export async function syncFaFixtures(
   team: string,
   fixtures: FaFixture[]
-): Promise<{ added: number; updated: number; matches: Match[]; moved: Match[] }> {
+): Promise<{ added: number; updated: number; matches: Match[]; moved: Match[]; gone: number }> {
   const all = await listMatches();
   const ours = all.filter((m) => m.team === team);
   let added = 0;
@@ -589,7 +595,23 @@ export async function syncFaFixtures(
       added++;
     }
   }
-  return { added, updated, matches: all, moved };
+  // Full-Time's games not in its list any more: flagged, and unflagged if they come back. Only
+  // games still to be played, and only when Full-Time gave a list at all (a failed read isn't news).
+  let gone = 0;
+  if (fixtures.length) {
+    const listed = new Set(fixtures.map((f) => f.faId));
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+    for (const m of ours) {
+      if (!m.faId) continue;
+      const missing = !listed.has(m.faId) && m.date >= today && !m.resultLogged;
+      if (missing) gone++;
+      if (m.faGone !== missing) {
+        m.faGone = missing;
+        await write(m);
+      }
+    }
+  }
+  return { added, updated, matches: all, moved, gone };
 }
 
 /** Save a game's line-up (null clears it). Coaches only — the route checks. */
