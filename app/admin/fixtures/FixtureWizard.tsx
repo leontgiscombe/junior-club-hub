@@ -55,6 +55,28 @@ const TYPES: { id: GameType; title: string; body: string; icon: React.ReactNode 
 ];
 
 /** "HH:MM" less `minutes`, for a suggested meet time. */
+/** The meet times offered, in minutes before kick-off. */
+const MEET_GAPS = [0, 15, 30, 45, 60, 75, 90, 120];
+
+/** "At kick-off", "30 minutes before", "1 hour before", "1 hour 15 minutes before". */
+function gapWords(m: number): string {
+  if (m === 0) return "At kick-off";
+  if (m < 0) return `${-m} minutes after`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  const hours = h ? `${h} hour${h === 1 ? "" : "s"}` : "";
+  const mins = r ? `${r} minutes` : "";
+  return `${[hours, mins].filter(Boolean).join(" ")} before`;
+}
+
+/** How many minutes `meet` is before `kickOff` (both "HH:MM"). */
+function minutesBefore(kickOff: string, meet: string): number {
+  const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const gap = (m(kickOff) - m(meet) + 1440) % 1440;
+  // a meet "after" kick-off reads as such, not as 23 hours before
+  return gap > 720 ? gap - 1440 : gap;
+}
+
 function before(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);
   if (!Number.isFinite(h) || !Number.isFinite(m)) return "";
@@ -318,25 +340,56 @@ export default function FixtureWizard({
             <span className={label}>Date</span>
             <input type="date" value={v.date} onChange={(e) => set("date", e.target.value)} className={field} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block min-w-0">
-              <span className={label}>{v.type === "tournament" ? "Starts" : "Kick-off"}</span>
-              <input
-                type="time"
-                value={v.time}
-                onChange={(e) => {
-                  const time = e.target.value;
-                  // meet half an hour before, until they choose their own
-                  setV((x) => ({ ...x, time, meetTime: x.meetTime && x.meetTime !== before(x.time, 30) ? x.meetTime : time ? before(time, 30) : "" }));
-                }}
-                className={field}
-              />
-            </label>
-            <label className="block min-w-0">
-              <span className={label}>Meet at</span>
-              <input type="time" value={v.meetTime} onChange={(e) => set("meetTime", e.target.value)} className={field} />
-            </label>
-          </div>
+          <label className="block">
+            <span className={label}>{v.type === "tournament" ? "Starts" : "Kick-off"}</span>
+            <input
+              type="time"
+              value={v.time}
+              onChange={(e) => {
+                const time = e.target.value;
+                // the meet time keeps its distance from kick-off (half an hour, to start with)
+                setV((x) => {
+                  const gap = x.time && x.meetTime ? minutesBefore(x.time, x.meetTime) : 30;
+                  return { ...x, time, meetTime: time ? before(time, gap) : x.meetTime };
+                });
+              }}
+              className={field}
+            />
+          </label>
+          <label className="block">
+            <span className={label}>Meet</span>
+            {(() => {
+              const gap = v.time && v.meetTime ? minutesBefore(v.time, v.meetTime) : null;
+              // a meet time that isn't one of the usual gaps (set before, or moved by FA Full-Time) stays as it is
+              const custom = gap !== null && !MEET_GAPS.includes(gap);
+              return (
+                <select
+                  value={!v.meetTime ? "none" : gap === null ? "none" : String(gap)}
+                  disabled={!v.time}
+                  onChange={(e) => set("meetTime", e.target.value === "none" ? "" : before(v.time, Number(e.target.value)))}
+                  className={`${field} disabled:opacity-60`}
+                >
+                  {!v.time ? (
+                    <option value="none">Set the {v.type === "tournament" ? "start" : "kick-off"} time first</option>
+                  ) : (
+                    <>
+                      <option value="none">No meet time</option>
+                      {MEET_GAPS.map((m) => (
+                        <option key={m} value={m}>
+                          {gapWords(m)} ({before(v.time, m)})
+                        </option>
+                      ))}
+                      {custom && (
+                        <option value={gap}>
+                          {gapWords(gap)} ({v.meetTime})
+                        </option>
+                      )}
+                    </>
+                  )}
+                </select>
+              );
+            })()}
+          </label>
           <div>
             <span className={label}>Ground</span>
             <GroundSearch
@@ -467,7 +520,7 @@ export default function FixtureWizard({
               ["Game", title],
               ["Type", `${TYPES.find((t) => t.id === v.type)?.title}${isMatch ? ` · ${v.competition === "league" ? "League" : v.competition === "cup" ? "Cup" : "Friendly"}` : ""}`],
               ["Date", v.repeat.every && !matchId ? `${day(v.date)}, then ${v.repeat.every === 1 ? "every week" : "every 2 weeks"} (${v.repeat.times} games, to ${day(lastDate(v))})` : day(v.date)],
-              ["Meet", v.meetTime || "—"],
+              ["Meet", v.meetTime ? `${v.meetTime}${v.time ? ` · ${gapWords(minutesBefore(v.time, v.meetTime)).toLowerCase()}` : ""}` : "—"],
               [v.type === "tournament" ? "Starts" : "Kick-off", v.time || "—"],
               ["Where", [v.venue, v.address].filter(Boolean).join(", ") || "—"],
               ["Kit", [v.ourKit && `Us: ${KIT_COLOURS[v.ourKit as KitColour]?.label}`, v.theirKit && v.type !== "tournament" && `Them: ${KIT_COLOURS[v.theirKit as KitColour]?.label}`].filter(Boolean).join(" · ") || "—"],
