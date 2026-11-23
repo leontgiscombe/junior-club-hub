@@ -192,6 +192,8 @@ export default function FixtureWizard({
 
   return (
     <div className="fixture-wizard flex flex-col gap-5 pb-32">
+      {/* a game half set up: pulling the page down mustn't reload it and lose what's typed (public/app-feel.js) */}
+      <span hidden data-unsaved />
       {/* where they are */}
       <div className="flex gap-1.5" aria-hidden="true">
         {steps.map((s, i) => (
