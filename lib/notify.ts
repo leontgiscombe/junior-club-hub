@@ -466,6 +466,8 @@ export async function notifyFixture(
     /** several games set up at once, repeating */
     series?: { count: number; every: 1 | 2 };
     userIds: string[];
+    /** coaches asked to host it, rather than families: their own words, and their page */
+    hosts?: boolean;
   },
 ): Promise<number> {
   try {
@@ -473,8 +475,16 @@ export async function notifyFixture(
     const people = (await listPeople(tenant)).filter((p) => p.status === "approved" && ids.has(p.userId));
     if (!people.length) return 0;
     const vs = `${game.teamName} vs ${game.opponent}`;
-    const message =
-      game.series && game.kind === "new"
+    const message = game.hosts
+      ? game.kind === "new"
+        ? {
+            title: `You're down to coach: ${vs}`,
+            body: `${game.series ? `${game.series.count} games, ${game.series.every === 1 ? "every week" : "every two weeks"} from ` : ""}${game.when}. Let the other coaches know if you can be there.`,
+          }
+        : game.kind === "changed"
+          ? { title: `Game updated: ${vs}`, body: `${game.when}. Open it for the latest details.` }
+          : { title: `Can you be there? ${vs}`, body: `${game.when}. The other coaches are waiting to hear.` }
+      : game.series && game.kind === "new"
         ? {
             title: `${game.series.count} new games: ${vs}`,
             body: `${game.series.every === 1 ? "Every week" : "Every two weeks"} from ${game.when}. Let the coaches know which ones your child can play.`,
@@ -484,7 +494,7 @@ export async function notifyFixture(
         : game.kind === "changed"
           ? { title: `Fixture updated: ${vs}`, body: `${game.when}. Open it for the latest details.` }
           : { title: `Can your child play? ${vs}`, body: `${game.when}. The coaches are still waiting for your answer.` };
-    await pushTo(tenant, people, 0, "Fixture", { ...message, url: `/fixtures/${game.id}` });
+    await pushTo(tenant, people, 0, "Fixture", { ...message, url: `${game.hosts ? "/admin" : ""}/fixtures/${game.id}` });
     return people.length;
   } catch (e) {
     console.error("Fixture alerts not sent:", e);

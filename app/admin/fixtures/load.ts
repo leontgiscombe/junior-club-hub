@@ -4,8 +4,10 @@
 import { redirect } from "next/navigation";
 import { listMatches } from "@/lib/matchStorage";
 import { listPlayers } from "@/lib/statsStorage";
+import { listPeople } from "@/lib/people";
+import { isCoachPerson } from "@/lib/fixtures";
 import { fixturesViewer } from "../../fixtures/viewer";
-import type { LastKits, Venue, WizardTeam } from "./FixtureWizard";
+import type { Coach, LastKits, Venue, WizardTeam } from "./FixtureWizard";
 
 export async function coachViewer(next: string) {
   const v = await fixturesViewer(next);
@@ -13,8 +15,16 @@ export async function coachViewer(next: string) {
   return v;
 }
 
-export async function wizardData(teams: { slug: string; name: string; opponents?: string[] }[]): Promise<{ teams: WizardTeam[]; venues: Venue[]; lastKits: LastKits }> {
-  const [players, matches] = await Promise.all([listPlayers().catch(() => []), listMatches().catch(() => [])]);
+export async function wizardData(
+  teams: { slug: string; name: string; opponents?: string[] }[],
+  tenant: string,
+): Promise<{ teams: WizardTeam[]; venues: Venue[]; lastKits: LastKits; coaches: Coach[] }> {
+  const [players, matches, people] = await Promise.all([listPlayers().catch(() => []), listMatches().catch(() => []), listPeople(tenant).catch(() => [])]);
+  // the club's coaches and admins, who can be asked to host a game
+  const coaches: Coach[] = people
+    .filter(isCoachPerson)
+    .map((p) => ({ userId: p.userId, name: p.name, team: p.team?.slug ?? "", admin: p.roles.includes("admin") }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   // each team's colours in its latest home and away games
   const lastKits: LastKits = {};
   for (const m of [...matches].sort((a, b) => a.date.localeCompare(b.date))) {
@@ -22,6 +32,7 @@ export async function wizardData(teams: { slug: string; name: string; opponents?
     (lastKits[m.team] ??= {})[m.home ? "home" : "away"] = { ourKit: m.ourKit, theirKit: m.theirKit };
   }
   return {
+    coaches,
     lastKits,
     teams: teams.map((t) => ({
       slug: t.slug,

@@ -14,7 +14,7 @@ export async function generateMetadata() {
 export default async function NewGame({ searchParams }: { searchParams: Promise<{ team?: string }> }) {
   const v = await coachViewer("/admin/fixtures/new");
   const q = await searchParams;
-  const { teams, venues, lastKits } = await wizardData(v.teams);
+  const { teams, venues, lastKits, coaches } = await wizardData(v.teams, v.tenant);
   const own = v.person.team?.slug;
   const team = teams.some((t) => t.slug === q.team) ? q.team! : teams.length === 1 ? teams[0].slug : own && teams.some((t) => t.slug === own) ? own : "";
   return (
@@ -26,6 +26,7 @@ export default async function NewGame({ searchParams }: { searchParams: Promise<
           teams={teams}
           venues={venues}
           lastKits={lastKits}
+          coaches={coaches}
           initial={{
             team,
             type: "home",
@@ -38,6 +39,7 @@ export default async function NewGame({ searchParams }: { searchParams: Promise<
             address: "",
             notes: "",
             invited: null,
+            hosts: null,
             deadline: "",
             ourKit: lastKits[team]?.home?.ourKit ?? "",
             theirKit: lastKits[team]?.home?.theirKit ?? "",

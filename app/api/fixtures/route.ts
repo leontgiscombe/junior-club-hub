@@ -30,10 +30,10 @@ import {
   type Match,
   type MatchDetails,
 } from "@/lib/matchStorage";
-import { canCoach, currentPerson } from "@/lib/people";
+import { canCoach, currentPerson, listPeople } from "@/lib/people";
 import { getTeams, isTeam } from "@/lib/settings";
-import { getTenant } from "@/lib/tenant";
-import { lineupSlots, squadOf } from "@/lib/fixtures";
+import { getTenant, requireTenant } from "@/lib/tenant";
+import { isCoachPerson, lineupSlots, squadOf } from "@/lib/fixtures";
 import { tellFamilies as tell } from "@/lib/fixtureAlerts";
 import { FORMATIONS, teamFormat } from "@/lib/clubSettings";
 import { isKitColour } from "@/lib/kitColours";
@@ -111,6 +111,14 @@ async function details(body: Record<string, unknown>, team: string): Promise<Par
       d.invited = [...new Set(picked)];
     }
   }
+  if ("hosts" in body) {
+    if (body.hosts === null) d.hosts = null;
+    else {
+      // only the club's coaches and admins can host
+      const coaches = new Set((await listPeople(await requireTenant())).filter(isCoachPerson).map((p) => p.userId));
+      d.hosts = [...new Set((Array.isArray(body.hosts) ? body.hosts.map(String) : []).filter((id: string) => coaches.has(id)))];
+    }
+  }
   return d;
 }
 
@@ -157,6 +165,7 @@ export async function POST(request: Request) {
       notes: d.notes,
       kind: d.kind,
       invited: d.invited ?? null,
+      hosts: d.hosts ?? null,
       // the reply-by time keeps its distance from each game
       deadline: d.deadline ? `${addDays(d.deadline.slice(0, 10), shift)}${d.deadline.slice(10)}` : "",
       ourKit: d.ourKit,
@@ -170,7 +179,7 @@ export async function POST(request: Request) {
   if (body.send === true) {
     for (const g of games) await markSent(g.id);
     // one alert for a whole series, not one per game
-    told = await tell(me.tenant, games[0], "new", games.length > 1 ? { count: games.length, every: every as 1 | 2 } : undefined);
+    told = await tell(me.tenant, games[0], "new", games.length > 1 ? { count: games.length, every: every as 1 | 2 } : undefined, me.person.userId);
   }
   return NextResponse.json({ success: true, match: games[0], games: games.length, told });
 }
@@ -187,7 +196,7 @@ export async function PATCH(request: Request) {
     const d = await details(body, match.team);
     if (typeof d === "string") return bad(d);
     const updated = await updateMatch(match.id, d);
-    let told = updated && body.tell === true && updated.sentAt ? await tell(me.tenant, updated, "changed") : 0;
+    let told = updated && body.tell === true && updated.sentAt ? await tell(me.tenant, updated, "changed", undefined, me.person.userId) : 0;
     // "this and later games": everything but the date (each keeps its own day)
     let others = 0;
     if (body.series === true && match.seriesId) {
@@ -199,7 +208,7 @@ export async function PATCH(request: Request) {
         const deadline = d.deadline !== undefined ? shiftDeadline(d.deadline, match.date, g.date) : undefined;
         const next = await updateMatch(g.id, { ...rest, ...(deadline !== undefined ? { deadline } : {}) });
         others++;
-        if (next && body.tell === true && next.sentAt) told = Math.max(told, await tell(me.tenant, next, "changed"));
+        if (next && body.tell === true && next.sentAt) told = Math.max(told, await tell(me.tenant, next, "changed", undefined, me.person.userId));
       }
     }
     return NextResponse.json({ success: true, match: updated, told, others });
@@ -207,11 +216,11 @@ export async function PATCH(request: Request) {
   if (action === "send") {
     const first = !match.sentAt;
     const updated = await markSent(match.id);
-    const told = await tell(me.tenant, match, first ? "new" : "changed");
+    const told = await tell(me.tenant, match, first ? "new" : "changed", undefined, me.person.userId);
     return NextResponse.json({ success: true, match: updated, told });
   }
   if (action === "remind") {
-    const told = await tell(me.tenant, match, "reminder");
+    const told = await tell(me.tenant, match, "reminder", undefined, me.person.userId);
     return NextResponse.json({ success: true, told });
   }
   if (action === "lineup") {
@@ -246,7 +255,7 @@ export async function PATCH(request: Request) {
     if (!CALLED_OFF.includes(calledOff)) return bad("Unknown option");
     const result = await setCalledOff(match.id, calledOff);
     if (result === "logged") return bad("This game already has a score logged — take that off first.");
-    if (result && calledOff && result.sentAt) await tell(me.tenant, result, "changed");
+    if (result && calledOff && result.sentAt) await tell(me.tenant, result, "changed", undefined, me.person.userId);
     return NextResponse.json({ success: true, match: result });
   }
   return bad("Unknown action");
