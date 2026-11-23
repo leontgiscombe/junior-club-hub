@@ -95,8 +95,11 @@ export const MATCH_KINDS: MatchKind[] = ["", "tournament", "training"];
 
 /** A line-up: the shape, and who's in each position (slot 0 the keeper; "" empty). */
 export interface Lineup {
+  /** one of lib/lineups.ts's, or "custom" */
   formation: string;
   slots: string[];
+  /** a custom line-up's positions, per cent across and down the pitch, in slot order */
+  spots?: { x: number; y: number }[];
 }
 
 export type CalledOff = "" | "postponed" | "cancelled";

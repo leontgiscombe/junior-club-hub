@@ -4,7 +4,7 @@
 // (or a coach can host), the coaches' buttons, the result, and the line-up.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ask, askText, toast } from "@/lib/dialog";
 import { haptic } from "@/lib/haptics";
 
@@ -246,6 +246,11 @@ type Slot = { label: string; line: number; lines: number; index: number; of: num
 /** a squad player for the line-up: their answer, and their photo's address if they have one */
 type SquadPlayer = { id: string; name: string; answer: Answer; photo?: string };
 
+/** A custom line-up's position: per cent across the pitch, and down it (our goal at the bottom). */
+type Spot = { x: number; y: number };
+/** The formation a coach makes themselves, by dragging positions about. */
+const CUSTOM = "custom";
+
 /** A player's face on the line-up: their photo, else their initials. */
 function Face({ player, className, keeper = false }: { player: SquadPlayer; className: string; keeper?: boolean }) {
   return player.photo ? (
@@ -267,6 +272,7 @@ export function LineupEditor({
   sizes,
   initialFormation,
   initialSlots,
+  initialSpots = [],
   slotsFor,
   squad,
 }: {
@@ -275,24 +281,55 @@ export function LineupEditor({
   sizes: Record<number, string[]>;
   initialFormation: string;
   initialSlots: string[];
+  /** a custom line-up's positions (per cent across and down the pitch), in slot order */
+  initialSpots?: Spot[];
   slotsFor: Record<string, Slot[]>;
   squad: SquadPlayer[];
 }) {
   const router = useRouter();
   const [formation, setFormation] = useState(initialFormation);
-  const size = Object.keys(sizes).map(Number).find((n) => sizes[n].includes(formation)) ?? 7;
+  const custom = formation === CUSTOM;
+  const [spots, setSpots] = useState<Spot[]>(initialSpots);
+  // a formation's size; a custom line-up's is how many positions it has
+  const [size, setSize] = useState(() =>
+    initialFormation === CUSTOM ? initialSpots.length || 7 : Object.keys(sizes).map(Number).find((n) => sizes[n].includes(initialFormation)) ?? 7,
+  );
+  const pitch = useRef<HTMLDivElement>(null);
+  // a press on a position: where it started, and whether it's become a drag (custom only)
+  const press = useRef<{ i: number; x: number; y: number; moved: boolean } | null>(null);
+  const dragged = useRef(false);
   const [slots, setSlots] = useState<string[]>(initialSlots);
   const [picking, setPicking] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const positions = slotsFor[formation] ?? [];
-  // every line of the formation, an empty one ("2-4-0") included, so the others keep their places
-  const lines = Math.max(1, positions[0]?.lines ?? 0, ...positions.map((p) => p.line));
+  /** Where a formation puts each position on the pitch (per cent across and down). */
+  const layout = (f: string): Spot[] => {
+    const ps = slotsFor[f] ?? [];
+    // every line of the formation, an empty one ("2-4-0") included, so the others keep their places
+    const lines = Math.max(1, ps[0]?.lines ?? 0, ...ps.map((p) => p.line));
+    return ps.map((p) => ({
+      x: ((p.index + 1) / (p.of + 1)) * 100,
+      // the keeper at the bottom, each line further up the pitch
+      y: p.line === 0 ? 88 : 88 - (p.line / lines) * 70,
+    }));
+  };
+  const where = custom ? spots : layout(formation);
+  // a custom position is named by where it is: the keeper, then by how far up the pitch
+  const labels = custom
+    ? spots.map((sp, i) => (i === 0 ? "GK" : sp.y > 62 ? "DEF" : sp.y > 38 ? "MID" : "FWD"))
+    : (slotsFor[formation] ?? []).map((p) => p.label);
   const byId = new Map(squad.map((p) => [p.id, p]));
   const placed = new Set(slots.filter(Boolean));
   const bench = squad.filter((p) => p.answer === "yes" && !placed.has(p.id));
 
   function changeFormation(next: string) {
+    if (next === CUSTOM) {
+      // custom starts from the shape on the pitch now, everyone where they are
+      setSpots(where.map((sp) => ({ ...sp })));
+      setFormation(CUSTOM);
+      setDirty(true);
+      return;
+    }
     setFormation(next);
     // keep who's picked, in order, as far as the new shape has room
     const kept = slots.filter(Boolean);
@@ -302,7 +339,7 @@ export function LineupEditor({
   }
   function put(i: number, id: string) {
     setSlots((s) => {
-      const next = Array.from({ length: positions.length }, (_, j) => s[j] ?? "");
+      const next = Array.from({ length: where.length }, (_, j) => s[j] ?? "");
       // a player moved from one position to another leaves the first empty
       const was = next.indexOf(id);
       if (id && was >= 0) next[was] = "";
@@ -314,7 +351,7 @@ export function LineupEditor({
   }
   async function save() {
     setBusy(true);
-    const { ok } = await send("/api/fixtures", "PATCH", { matchId, action: "lineup", formation, slots });
+    const { ok } = await send("/api/fixtures", "PATCH", { matchId, action: "lineup", formation, slots, ...(custom ? { spots } : {}) });
     setBusy(false);
     if (!ok) return;
     setDirty(false);
@@ -336,7 +373,11 @@ export function LineupEditor({
           <span className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Team size</span>
           <select
             value={size}
-            onChange={(e) => changeFormation(sizes[Number(e.target.value)][0])}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              setSize(n);
+              changeFormation(sizes[n][0]);
+            }}
             className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[15px] font-semibold dark:border-white/15 dark:bg-[#2c2c2e]"
           >
             {Object.keys(sizes).map((n) => (
@@ -358,12 +399,14 @@ export function LineupEditor({
                 {f}
               </option>
             ))}
+            <option value={CUSTOM}>Custom</option>
           </select>
         </label>
       </div>
 
       {/* the pitch, our goal at the bottom */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-700 to-emerald-800">
+      {custom && <p className="text-xs text-gray-500 dark:text-gray-400">Drag a position to move it anywhere. Tap it to choose who plays there.</p>}
+      <div ref={pitch} className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-700 to-emerald-800">
         <svg viewBox="0 0 300 400" className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-hidden="true">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
             <rect key={i} x="0" y={i * 50} width="300" height="25" fill="rgba(255,255,255,0.04)" />
@@ -376,19 +419,48 @@ export function LineupEditor({
             <rect x="85" y="12" width="130" height="58" />
           </g>
         </svg>
-        {positions.map((p, i) => {
-          // the keeper at the bottom, each line further up the pitch
-          const top = p.line === 0 ? 88 : 88 - (p.line / lines) * 70;
-          const left = ((p.index + 1) / (p.of + 1)) * 100;
+        {where.map((sp, i) => {
+          const label = labels[i] ?? "";
           const player = byId.get(slots[i] ?? "");
           return (
             <button
               key={i}
               type="button"
-              onClick={() => setPicking(i)}
-              style={{ top: `${top}%`, left: `${left}%` }}
-              className="press absolute flex w-[4.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-              aria-label={`${p.label}: ${player ? player.name : "empty"} — choose`}
+              onClick={() => {
+                // the end of a drag isn't a tap
+                if (dragged.current) {
+                  dragged.current = false;
+                  return;
+                }
+                setPicking(i);
+              }}
+              onPointerDown={(e) => {
+                if (!custom) return;
+                press.current = { i, x: e.clientX, y: e.clientY, moved: false };
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                const d = press.current;
+                if (!d || d.i !== i || !pitch.current) return;
+                // a wobble of the finger is still a tap
+                if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+                d.moved = true;
+                const r = pitch.current.getBoundingClientRect();
+                const at = (v: number) => Math.round(Math.min(Math.max(v, 5), 95) * 10) / 10;
+                const spot = { x: at(((e.clientX - r.left) / r.width) * 100), y: at(((e.clientY - r.top) / r.height) * 100) };
+                setSpots((all) => all.map((old, j) => (j === i ? spot : old)));
+                setDirty(true);
+              }}
+              onPointerUp={() => {
+                if (press.current?.moved) dragged.current = true;
+                press.current = null;
+              }}
+              onPointerCancel={() => {
+                press.current = null;
+              }}
+              style={{ top: `${sp.y}%`, left: `${sp.x}%`, touchAction: custom ? "none" : undefined }}
+              className={`absolute flex w-[4.5rem] -translate-x-1/2 -translate-y-1/2 select-none flex-col items-center gap-1 ${custom ? "cursor-grab active:cursor-grabbing" : "press"}`}
+              aria-label={`${label}: ${player ? player.name : "empty"} — choose`}
             >
               {player ? (
                 // the keeper's ring in amber, so they stand out
@@ -397,7 +469,7 @@ export function LineupEditor({
                 <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-dashed border-white/70 text-xs font-extrabold text-white/90">+</span>
               )}
               <span className="max-w-full truncate rounded-md bg-black/35 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                {player ? short(player.name) : p.label}
+                {player ? short(player.name) : label}
               </span>
             </button>
           );
@@ -407,7 +479,7 @@ export function LineupEditor({
       {picking !== null && (
         <div className="rounded-2xl bg-gray-50 p-3 dark:bg-white/5">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-bold">Who plays {positions[picking]?.label}?</p>
+            <p className="text-sm font-bold">Who plays {labels[picking]}?</p>
             <button type="button" onClick={() => setPicking(null)} className="text-sm font-semibold text-gray-500 dark:text-gray-400">
               Done
             </button>

@@ -287,7 +287,7 @@ function Lineup({
 }) {
   // the saved line-up's formation; else the team's own shape, if its size has it; else that size's usual one
   const usual = LINEUP_FORMATIONS[sizeOfFormat(teamFormat(team))] ?? LINEUP_FORMATIONS[7];
-  const formation = match.lineup && isLineupFormation(match.lineup.formation)
+  const formation = match.lineup && (isLineupFormation(match.lineup.formation) || match.lineup.formation === "custom")
     ? match.lineup.formation
     : usual.includes(teamFormation(team)) ? teamFormation(team) : usual[0];
   const all = Object.values(LINEUP_FORMATIONS).flat();
@@ -297,6 +297,7 @@ function Lineup({
       sizes={LINEUP_FORMATIONS}
       initialFormation={formation}
       initialSlots={match.lineup?.formation === formation ? match.lineup.slots : []}
+      initialSpots={formation === "custom" ? match.lineup?.spots ?? [] : []}
       slotsFor={Object.fromEntries(all.map((f) => [f, lineupSlots(f)]))}
       squad={invited}
     />
