@@ -10,13 +10,15 @@ import { TopBar } from "../../../components/SettingsUI";
 import { getMatch, listMatches } from "@/lib/matchStorage";
 import { listPeople } from "@/lib/people";
 import { getClub } from "@/lib/settings";
-import { FORMATIONS, teamFormat, teamFormation } from "@/lib/clubSettings";
+import { teamFormat, teamFormation } from "@/lib/clubSettings";
 import { deadlinePassed, familiesOf, hostsFor, invitedOf, lineupSlots, myPlayersIn, readReplies, squadOf, tally, type Reply } from "@/lib/fixtures";
 import { dayWords, deadlineWords, fixtureTeamName, gameTitle, ukToday } from "@/lib/fixtureFormat";
 import { LineupEditor, MoreActions, ReplyToggle, ScoreEditor, SendButton } from "../../../fixtures/FixtureControls";
 import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../../../fixtures/GameParts";
 import { coachViewer } from "../load";
 import ChildReplies from "../../../fixtures/ChildReplies";
+import { LINEUP_FORMATIONS, isLineupFormation, sizeOfFormat } from "@/lib/lineups";
+import { playerPhotoVersions } from "@/lib/playerPhoto";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +55,8 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
   const me = replies.hosts[v.person.userId];
   // the coach's own children invited to it, if they're a parent too
   const myKids = myPlayersIn(v.person, invited);
+  // the players with a photo (for the line-up), by version so a new one shows straight away
+  const photos = tab === "lineup" ? await playerPhotoVersions().catch(() => ({}) as Record<string, string>) : {};
   // the games after this one in a repeating series, not yet played
   const series = match.seriesId ? (await listMatches().catch(() => [])).filter((g) => g.seriesId === match.seriesId).sort((a, b) => a.date.localeCompare(b.date)) : [];
   const laterInSeries = series.filter((g) => g.date > match.date && !g.resultLogged).length;
@@ -250,7 +254,17 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
             </p>
             {invited.length ? (
               <div className={`${card} p-4`}>
-                <Lineup match={match} team={team} invited={invited.map((p) => ({ id: p.id, name: p.name, answer: replies.players[p.id]?.answer ?? null }))} />
+                <Lineup
+                  match={match}
+                  team={team}
+                  invited={invited.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    answer: replies.players[p.id]?.answer ?? null,
+                    // their photo, for coaches only (app/api/players/photo checks)
+                    ...(photos[p.id] ? { photo: `/api/players/photo?id=${encodeURIComponent(p.id)}&v=${photos[p.id]}` } : {}),
+                  }))}
+                />
               </div>
             ) : (
               <div className={`${card} px-6 py-10 text-center text-sm ${sub}`}>No players to pick from yet.</div>
@@ -269,17 +283,21 @@ function Lineup({
 }: {
   match: NonNullable<Awaited<ReturnType<typeof getMatch>>>;
   team: Parameters<typeof teamFormat>[0] & Parameters<typeof teamFormation>[0];
-  invited: { id: string; name: string; answer: "yes" | "no" | null }[];
+  invited: { id: string; name: string; answer: "yes" | "no" | null; photo?: string }[];
 }) {
-  const shapes = [...FORMATIONS[teamFormat(team)]];
-  const formation = match.lineup && shapes.includes(match.lineup.formation) ? match.lineup.formation : teamFormation(team);
+  // the saved line-up's formation; else the team's own shape, if its size has it; else that size's usual one
+  const usual = LINEUP_FORMATIONS[sizeOfFormat(teamFormat(team))] ?? LINEUP_FORMATIONS[7];
+  const formation = match.lineup && isLineupFormation(match.lineup.formation)
+    ? match.lineup.formation
+    : usual.includes(teamFormation(team)) ? teamFormation(team) : usual[0];
+  const all = Object.values(LINEUP_FORMATIONS).flat();
   return (
     <LineupEditor
       matchId={match.id}
-      formations={shapes}
+      sizes={LINEUP_FORMATIONS}
       initialFormation={formation}
       initialSlots={match.lineup?.formation === formation ? match.lineup.slots : []}
-      slotsFor={Object.fromEntries(shapes.map((f) => [f, lineupSlots(f)]))}
+      slotsFor={Object.fromEntries(all.map((f) => [f, lineupSlots(f)]))}
       squad={invited}
     />
   );

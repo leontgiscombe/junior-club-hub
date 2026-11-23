@@ -242,8 +242,21 @@ export function ScoreEditor({ matchId, us, them, logged, teamName, opponent }: {
   );
 }
 
-type Slot = { label: string; line: number; index: number; of: number };
-type SquadPlayer = { id: string; name: string; answer: Answer };
+type Slot = { label: string; line: number; lines: number; index: number; of: number };
+/** a squad player for the line-up: their answer, and their photo's address if they have one */
+type SquadPlayer = { id: string; name: string; answer: Answer; photo?: string };
+
+/** A player's face on the line-up: their photo, else their initials. */
+function Face({ player, className, keeper = false }: { player: SquadPlayer; className: string; keeper?: boolean }) {
+  return player.photo ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={player.photo} alt="" className={`${className} object-cover`} />
+  ) : (
+    <span aria-hidden="true" className={`${className} grid place-items-center font-extrabold ${keeper ? "bg-amber-400 text-amber-950" : "bg-white text-emerald-800"}`}>
+      {player.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("")}
+    </span>
+  );
+}
 
 /**
  * The line-up, on a pitch drawn from the back: pick the shape, then tap each
@@ -251,14 +264,15 @@ type SquadPlayer = { id: string; name: string; answer: Answer };
  */
 export function LineupEditor({
   matchId,
-  formations,
+  sizes,
   initialFormation,
   initialSlots,
   slotsFor,
   squad,
 }: {
   matchId: string;
-  formations: string[];
+  /** the formations for each team size (lib/lineups.ts) */
+  sizes: Record<number, string[]>;
   initialFormation: string;
   initialSlots: string[];
   slotsFor: Record<string, Slot[]>;
@@ -266,12 +280,14 @@ export function LineupEditor({
 }) {
   const router = useRouter();
   const [formation, setFormation] = useState(initialFormation);
+  const size = Object.keys(sizes).map(Number).find((n) => sizes[n].includes(formation)) ?? 7;
   const [slots, setSlots] = useState<string[]>(initialSlots);
   const [picking, setPicking] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const positions = slotsFor[formation] ?? [];
-  const lines = Math.max(1, ...positions.map((p) => p.line));
+  // every line of the formation, an empty one ("2-4-0") included, so the others keep their places
+  const lines = Math.max(1, positions[0]?.lines ?? 0, ...positions.map((p) => p.line));
   const byId = new Map(squad.map((p) => [p.id, p]));
   const placed = new Set(slots.filter(Boolean));
   const bench = squad.filter((p) => p.answer === "yes" && !placed.has(p.id));
@@ -314,19 +330,36 @@ export function LineupEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2" role="radiogroup" aria-label="Formation">
-        {formations.map((f) => (
-          <button
-            key={f}
-            type="button"
-            role="radio"
-            aria-checked={formation === f}
-            onClick={() => changeFormation(f)}
-            className={`press rounded-full px-3.5 py-1.5 text-sm font-bold ${formation === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200"}`}
+      {/* the team size, then its formations */}
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Team size</span>
+          <select
+            value={size}
+            onChange={(e) => changeFormation(sizes[Number(e.target.value)][0])}
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[15px] font-semibold dark:border-white/15 dark:bg-[#2c2c2e]"
           >
-            {f}
-          </button>
-        ))}
+            {Object.keys(sizes).map((n) => (
+              <option key={n} value={n}>
+                {n} a side
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Formation</span>
+          <select
+            value={formation}
+            onChange={(e) => changeFormation(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[15px] font-semibold dark:border-white/15 dark:bg-[#2c2c2e]"
+          >
+            {sizes[size].map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {/* the pitch, our goal at the bottom */}
@@ -357,13 +390,12 @@ export function LineupEditor({
               className="press absolute flex w-[4.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
               aria-label={`${p.label}: ${player ? player.name : "empty"} — choose`}
             >
-              <span
-                className={`grid h-11 w-11 place-items-center rounded-full text-xs font-extrabold shadow-md ${
-                  player ? (i === 0 ? "bg-amber-400 text-amber-950" : "bg-white text-emerald-800") : "border-2 border-dashed border-white/70 text-white/90"
-                }`}
-              >
-                {player ? player.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("") : "+"}
-              </span>
+              {player ? (
+                // the keeper's ring in amber, so they stand out
+                <Face player={player} keeper={i === 0} className={`h-11 w-11 rounded-full text-xs shadow-md ring-2 ${i === 0 ? "ring-amber-400" : "ring-white"}`} />
+              ) : (
+                <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-dashed border-white/70 text-xs font-extrabold text-white/90">+</span>
+              )}
               <span className="max-w-full truncate rounded-md bg-black/35 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                 {player ? short(player.name) : p.label}
               </span>
@@ -393,7 +425,7 @@ export function LineupEditor({
                   key={pl.id}
                   type="button"
                   onClick={() => put(picking, pl.id)}
-                  className={`press rounded-full px-3 py-1.5 text-sm font-semibold ${
+                  className={`press flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-sm font-semibold ${
                     slots[picking] === pl.id
                       ? "bg-green-700 text-white"
                       : pl.answer === "yes"
@@ -401,6 +433,7 @@ export function LineupEditor({
                         : "bg-transparent text-gray-400 ring-1 ring-gray-200 dark:ring-white/10"
                   }`}
                 >
+                  <Face player={pl} className="h-7 w-7 rounded-full text-[10px]" />
                   {short(pl.name)}
                   {pl.answer === "no" ? " ✕" : pl.answer === null ? " ?" : ""}
                   {placed.has(pl.id) && slots[picking] !== pl.id ? " •" : ""}
