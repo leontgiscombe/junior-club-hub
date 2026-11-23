@@ -36,7 +36,7 @@ import { getTenant, requireTenant } from "@/lib/tenant";
 import { isCoachPerson, lineupSlots, squadOf } from "@/lib/fixtures";
 import { tellFamilies as tell } from "@/lib/fixtureAlerts";
 import { isKitColour } from "@/lib/kitColours";
-import { isLineupFormation } from "@/lib/lineups";
+import { LINEUP_SIZES, isLineupFormation } from "@/lib/lineups";
 
 export const runtime = "nodejs";
 
@@ -232,9 +232,19 @@ export async function PATCH(request: Request) {
   if (action === "lineup") {
     if (body.slots === null) return NextResponse.json({ success: true, match: await setLineup(match.id, null) });
     const formation = String(body.formation ?? "");
-    if (!isLineupFormation(formation)) return bad("Pick a formation");
+    // a custom line-up: its positions, each somewhere on the pitch, for a team size there's a formation for
+    const custom = formation === "custom";
+    const spots = custom
+      ? (Array.isArray(body.spots) ? body.spots : []).map((sp: { x?: unknown; y?: unknown }) => ({
+          x: Math.round(Math.min(Math.max(Number(sp?.x), 0), 100) * 10) / 10,
+          y: Math.round(Math.min(Math.max(Number(sp?.y), 0), 100) * 10) / 10,
+        }))
+      : [];
+    if (custom ? !LINEUP_SIZES.includes(spots.length) || spots.some((sp: { x: number; y: number }) => !Number.isFinite(sp.x) || !Number.isFinite(sp.y)) : !isLineupFormation(formation)) {
+      return bad("Pick a formation");
+    }
     const squad = new Set((await squadOf(match.team)).map((p) => p.id));
-    const size = lineupSlots(formation).length;
+    const size = custom ? spots.length : lineupSlots(formation).length;
     const raw = Array.isArray(body.slots) ? body.slots.map(String) : [];
     const seen = new Set<string>();
     const slots = Array.from({ length: size }, (_, i) => {
@@ -243,7 +253,7 @@ export async function PATCH(request: Request) {
       seen.add(id);
       return id;
     });
-    return NextResponse.json({ success: true, match: await setLineup(match.id, { formation, slots }) });
+    return NextResponse.json({ success: true, match: await setLineup(match.id, { formation, slots, ...(custom ? { spots } : {}) }) });
   }
   if (action === "score") {
     const ours = Math.max(0, Math.min(99, Math.floor(Number(body.ourGoals))));
