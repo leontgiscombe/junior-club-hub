@@ -322,8 +322,8 @@ export default function FixtureWizard({
               <span className={label}>
                 {t} <span className="font-normal text-gray-500 dark:text-gray-400">· {v[k] ? KIT_COLOURS[v[k] as KitColour]?.label : "optional"}</span>
               </span>
-              <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1">
-                <button type="button" onClick={() => { setKitPicked(true); set(k, ""); }} aria-pressed={!v[k]} aria-label="Not said" className={`press grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ${!v[k] ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}>
+              <div className="grid grid-cols-7 gap-2 p-1">
+                <button type="button" onClick={() => { setKitPicked(true); set(k, ""); }} aria-pressed={!v[k]} aria-label="Not said" className={`press grid aspect-square w-full max-w-11 place-items-center justify-self-center rounded-full ring-2 ${!v[k] ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}>
                   <Shirt colour="" className="h-6 w-6" />
                 </button>
                 {(Object.keys(KIT_COLOURS) as KitColour[]).map((c) => (
@@ -336,7 +336,7 @@ export default function FixtureWizard({
                     }}
                     aria-pressed={v[k] === c}
                     aria-label={KIT_COLOURS[c].label}
-                    className={`press grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ${v[k] === c ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}
+                    className={`press grid aspect-square w-full max-w-11 place-items-center justify-self-center rounded-full ring-2 ${v[k] === c ? "ring-green-600" : "ring-transparent"} bg-white shadow-sm dark:bg-[#1c1c1e]`}
                   >
                     <Shirt colour={c} className="h-7 w-7" />
                   </button>

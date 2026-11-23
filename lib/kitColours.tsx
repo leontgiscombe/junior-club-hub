@@ -27,7 +27,8 @@ export function Shirt({ colour, className = "h-6 w-6" }: { colour: string; class
       <path
         d="M8 3 4 5.5 2.5 10l3 1.2V21h13v-9.8l3-1.2L20 5.5 16 3a4 4 0 0 1-8 0z"
         fill={kit?.fill ?? "none"}
-        stroke={kit && colour !== "white" ? "rgba(0,0,0,.25)" : "#9ca3af"}
+        // white and black get a grey edge, so they show on a light page and a dark one
+        stroke={kit && colour !== "white" && colour !== "black" ? "rgba(0,0,0,.25)" : "#9ca3af"}
         strokeWidth={1.4}
         strokeLinejoin="round"
         strokeDasharray={kit ? undefined : "2 2"}
