@@ -7,10 +7,10 @@ import { TopBar } from "../../components/SettingsUI";
 import { getMatch } from "@/lib/matchStorage";
 import { getClub } from "@/lib/settings";
 import { deadlinePassed, invitedOf, myPlayersIn, readReplies, squadOf } from "@/lib/fixtures";
-import { deadlineWords, fixtureTeamName, gameTitle, ukToday } from "@/lib/fixtureFormat";
+import { fixtureTeamName, gameTitle, ukToday } from "@/lib/fixtureFormat";
 import { fixturesViewer } from "../viewer";
-import { ReplyToggle } from "../FixtureControls";
-import { Avatar, CalledOff, GameDetails, GameHero, card, heading, sub } from "../GameParts";
+import ChildReplies from "../ChildReplies";
+import { CalledOff, GameDetails, GameHero } from "../GameParts";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,6 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   const over = (match.resultLogged && !match.calledOff) || match.date < today;
   const closed = deadlinePassed(match);
   const open = !over && match.calledOff !== "cancelled" && !closed;
-  const first = (name: string) => name.split(/\s+/)[0];
 
   return (
     <main className="themed min-h-screen bg-[#f2f2f7] pb-28 text-gray-900 dark:bg-black dark:text-gray-50">
@@ -48,34 +47,8 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         <CalledOff match={match} />
 
         {/* the one thing a family is asked */}
-        {kids.length > 0 && !over && match.calledOff !== "cancelled" && (
-          <section className="flex flex-col gap-2">
-            <h2 className={heading}>{kids.length > 1 ? "Can they come?" : `Can ${first(kids[0].name)} come?`}</h2>
-            <div className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-white/10`}>
-              {kids.map((k) => {
-                const r = replies.players[k.playerId];
-                return (
-                  <div key={k.playerId} className="flex flex-wrap items-center gap-3 px-4 py-3.5">
-                    <Avatar name={k.name} tone={r?.answer === "yes" ? "green" : "gray"} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-bold">{first(k.name)}</span>
-                      <span className={`block text-xs ${r ? sub : "font-semibold text-amber-600 dark:text-amber-400"}`}>
-                        {r ? (r.answer === "yes" ? "Coming" : "Not coming") : "Please answer"}
-                      </span>
-                    </span>
-                    {open && <ReplyToggle wide matchId={match.id} playerId={k.playerId} initial={r?.answer ?? null} initialNote={r?.note ?? ""} labels={["Coming", "Can't come"]} />}
-                  </div>
-                );
-              })}
-            </div>
-            <p className={`px-1 text-xs ${sub}`}>
-              {closed
-                ? "The reply-by time has passed. Message the coaches if anything's changed."
-                : match.deadline
-                  ? `Please answer by ${deadlineWords(match.deadline)}.`
-                  : "You can change your answer any time before the game."}
-            </p>
-          </section>
+        {!over && match.calledOff !== "cancelled" && (
+          <ChildReplies matchId={match.id} kids={kids} replies={replies.players} open={open} deadline={match.deadline} closed={closed} />
         )}
 
         <GameDetails match={match} teamName={ourName} />
