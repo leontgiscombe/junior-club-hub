@@ -98,20 +98,21 @@ export function GameDetails({ match, teamName }: { match: Match; teamName: strin
           <TimeRow label="Date" value={dayWords(match.date, { weekday: "short", day: "numeric", month: "short" })} icon={<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>} />
           {match.meetTime && <TimeRow label="Meet at" value={match.meetTime} icon={<><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 19a4 4 0 0 1 7 0" /></>} />}
           <TimeRow label={match.kind === "tournament" ? "Starts" : "Kick-off"} value={match.time || "TBC"} icon={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>} />
-          {isKitColour(match.ourKit) && (
-            <div className="flex items-center gap-3 px-4 py-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gray-50 dark:bg-white/5">
-                <Shirt colour={match.ourKit} className="h-6 w-6" />
-              </span>
-              <span className={`flex-1 text-sm ${sub}`}>Wear</span>
-              <span className="font-bold">
-                {KIT_COLOURS[match.ourKit].label} kit
-                {isKitColour(match.theirKit) && match.kind !== "tournament" && (
-                  <span className={`block text-right text-xs font-semibold ${sub}`}>They&apos;re in {KIT_COLOURS[match.theirKit].label.toLowerCase()}</span>
-                )}
-              </span>
-            </div>
-          )}
+          {/* the kits, a row each, like the times above */}
+          {[
+            { label: "Our kit", colour: match.ourKit },
+            ...(match.kind !== "tournament" ? [{ label: "Their kit", colour: match.theirKit }] : []),
+          ]
+            .filter((k) => isKitColour(k.colour))
+            .map((k) => (
+              <div key={k.label} className="flex items-center gap-3 px-4 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-green-50 dark:bg-green-400/10" aria-hidden="true">
+                  <Shirt colour={k.colour} className="h-5 w-5" />
+                </span>
+                <span className={`flex-1 text-sm ${sub}`}>{k.label}</span>
+                <span className="font-bold">{KIT_COLOURS[k.colour as keyof typeof KIT_COLOURS].label}</span>
+              </div>
+            ))}
         </div>
       </section>
 
