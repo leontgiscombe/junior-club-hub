@@ -8,6 +8,25 @@ import { useEffect, useRef, useState } from "react";
 import { appleDirectionsUrl, appleMapsUrl } from "@/lib/fixtureFormat";
 import { loadMapKit } from "@/lib/mapkit";
 
+/** `el` once it has a width and height on the page (null if it never does). */
+function hasSize(el: HTMLElement): Promise<HTMLElement | null> {
+  const sized = () => el.isConnected && el.clientWidth > 0 && el.clientHeight > 0;
+  if (sized()) return Promise.resolve(el);
+  return new Promise((resolve) => {
+    const watch = new ResizeObserver(() => {
+      if (!sized()) return;
+      watch.disconnect();
+      window.clearTimeout(timer);
+      resolve(el);
+    });
+    const timer = window.setTimeout(() => {
+      watch.disconnect();
+      resolve(null);
+    }, 8000);
+    watch.observe(el);
+  });
+}
+
 export default function VenueMap({ venue, address, label }: { venue: string; address: string; label: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<"loading" | "map" | "none">("loading");
@@ -16,29 +35,47 @@ export default function VenueMap({ venue, address, label }: { venue: string; add
   useEffect(() => {
     let map: { destroy: () => void } | null = null;
     let gone = false;
-    loadMapKit().then((mk) => {
+    (async () => {
+      const mk = await loadMapKit();
       if (gone) return;
       if (!mk || !box.current) return setState("none");
-      new mk.Geocoder({ language: "en-GB" }).lookup(address || venue, (err, data) => {
-        const where = data?.results?.[0]?.coordinate;
-        if (gone || err || !where || !box.current) return setState("none");
-        const dark = window.matchMedia("(prefers-color-scheme: dark)").matches || document.documentElement.dataset.theme === "dark";
-        const m = new mk.Map(box.current, {
+      const where = await new Promise<{ latitude: number; longitude: number } | null>((resolve) => {
+        new mk.Geocoder({ language: "en-GB" }).lookup(address || venue, (err, data) => {
+          const c = data?.results?.[0]?.coordinate as { latitude?: number; longitude?: number } | undefined;
+          // only a real place: Apple's map can't draw round a missing or broken one
+          resolve(!err && c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude) ? (c as { latitude: number; longitude: number }) : null);
+        });
+      });
+      if (gone) return;
+      if (!where) return setState("none");
+      // drawn only once its box has a size: one still sliding in (or just taken away) has none, and MapKit fails on that
+      const el = await hasSize(box.current);
+      if (gone) return;
+      if (!el) return setState("none");
+      try {
+        const dark = document.documentElement.classList.contains("dark");
+        const centre = new mk.Coordinate(where.latitude, where.longitude);
+        const m = new mk.Map(el, {
+          region: new mk.CoordinateRegion(centre, new mk.CoordinateSpan(0.008, 0.008)),
           colorScheme: dark ? mk.Map.ColorSchemes.Dark : mk.Map.ColorSchemes.Light,
           showsCompass: mk.FeatureVisibility.Hidden,
           showsZoomControl: false,
           showsMapTypeControl: false,
           isRotationEnabled: false,
         });
-        m.region = new mk.CoordinateRegion(where, new mk.CoordinateSpan(0.008, 0.008));
-        m.addAnnotation(new mk.MarkerAnnotation(where, { color: "#15803d", title: venue || label, glyphText: "⚽" }));
+        m.addAnnotation(new mk.MarkerAnnotation(centre, { color: "#15803d", title: venue || label, glyphText: "⚽" }));
         map = m;
         setState("map");
-      });
-    });
+      } catch {
+        setState("none");
+      }
+    })();
     return () => {
       gone = true;
-      map?.destroy();
+      try {
+        map?.destroy();
+      } catch {}
+      map = null;
     };
   }, [address, venue, label]);
 
