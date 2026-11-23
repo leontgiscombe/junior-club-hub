@@ -17,6 +17,8 @@ interface SyncResult {
   added?: number;
   updated?: number;
   undated?: number;
+  /** games from Full-Time it no longer lists */
+  gone?: number;
   error?: string;
 }
 
@@ -130,6 +132,7 @@ export default function FaSync<M>({
         added: data.added,
         updated: data.updated,
         undated,
+        gone: data.gone ?? 0,
       };
     } catch (err) {
       next = { at: Date.now(), error: err instanceof Error ? err.message : "Sync failed" };
@@ -169,7 +172,8 @@ export default function FaSync<M>({
                 (result.added || result.updated
                   ? ` (${result.added} added, ${result.updated} updated)`
                   : ", all up to date") +
-                (result.undated ? ` · ${result.undated} with dates to be confirmed` : "")}
+                (result.undated ? ` · ${result.undated} with dates to be confirmed` : "") +
+                (result.gone ? ` · ${result.gone} no longer on Full-Time` : "")}
       </p>
       <button
         onClick={sync}

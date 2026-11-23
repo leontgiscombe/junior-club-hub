@@ -115,7 +115,14 @@ export default async function CoachFixtures({ searchParams }: { searchParams: Pr
                       {gameTitle(m)}
                       {m.seriesId && <span className={`ml-1 text-xs font-semibold ${sub}`} title="Repeating">↻</span>}
                     </span>
-                    {m.faId && view === "upcoming" && !m.sentAt && !m.calledOff && (
+                    {/* Full-Time doesn't list it any more: for a coach to check, sent or not */}
+                    {m.faGone && view === "upcoming" && !m.calledOff && (
+                      <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                        <span className="rounded bg-red-100 px-1 py-px text-[10px] font-extrabold dark:bg-red-400/15">FA</span>
+                        No longer on FA Full-Time — check it
+                      </span>
+                    )}
+                    {m.faId && !m.faGone && view === "upcoming" && !m.sentAt && !m.calledOff && (
                       <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
                         <span className="rounded bg-sky-100 px-1 py-px text-[10px] font-extrabold dark:bg-sky-400/15">FA</span>
                         {m.dateTbc ? "Date to be confirmed by FA" : m.venue && m.meetTime ? "Ready to send" : `Add ${[!m.venue && "the ground", !m.meetTime && "the meet time"].filter(Boolean).join(" and ")}`}

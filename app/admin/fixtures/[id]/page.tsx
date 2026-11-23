@@ -101,8 +101,18 @@ export default async function CoachGame({ params, searchParams }: { params: Prom
               </p>
             )}
 
+            {/* Full-Time doesn't list it any more */}
+            {match.faGone && !match.calledOff && (
+              <div className="rounded-3xl bg-red-50 px-4 py-3.5 text-red-900 dark:bg-red-400/10 dark:text-red-200">
+                <p className="font-bold">FA Full-Time no longer lists this game</p>
+                <p className="mt-0.5 text-sm opacity-90">
+                  It may have been taken off or rearranged as a new fixture. If it isn&apos;t happening, remove it — or mark it postponed or cancelled so families are told — under More, below.
+                </p>
+              </div>
+            )}
+
             {/* a game from FA Full-Time: what it still needs before it goes to families */}
-            {open && match.faId && !match.sentAt && (!match.venue || !match.meetTime) && (
+            {open && match.faId && !match.faGone && !match.sentAt && (!match.venue || !match.meetTime) && (
               <Link href={`/admin/fixtures/${match.id}/edit?step=when`} className="press flex items-center gap-3 rounded-3xl bg-sky-50 px-4 py-3.5 text-sky-900 dark:bg-sky-400/10 dark:text-sky-200">
                 <span className="rounded-md bg-sky-200/70 px-1.5 py-0.5 text-xs font-extrabold dark:bg-sky-400/20">FA</span>
                 <span className="min-w-0 flex-1">
